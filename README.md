@@ -11,15 +11,11 @@
 5. 所有信息可以选择同步到服务器端，可自主选择
 6. 如果没有提供必要的信息的，比如什么时候提醒，这里就要结合AI然后推到大概需要提醒的时间
 
----
-
 #### (2) 日常习惯
 
 1. 可以设置每日要坚持的习惯，比如每天阅读一小时
 2. 可以通过微信提醒，AI提醒习惯
 3. 可以通过图表显示自己习惯坚持情况
-
----
 
 #### (3) 日历显示
 
@@ -54,8 +50,6 @@
 1. 可以自行设置纪念日，并且显示倒计时
 2. （可以做？）在纪念日当天为使用者生成一条对应的生日祝福，结合AI生成祝福
 
----
-
 #### (7) 搜索
 
 1. 可以按照条件过滤搜索自己的相关日程
@@ -75,21 +69,15 @@
 2. 生成微信通知
 3. 生成响铃通知
 
----
-
 #### (10) 桌面小插件显示
 
 1. 可以把显示在桌面上的那种小插件，可以切换：今日日程，日常习惯，最近3天
 2. 这个是重点，后面可以再构思
 
----
-
 #### (11) 个人信息界面
 
 1. 名字，头像什么的，该有的都有点
 2. 可以选择清楚某些时段的日志，节约空间，也可以选择导出
-
----
 
 #### (12) 可选？投送
 
@@ -99,3 +87,71 @@
 2. 可以穿越到日期上面的任意一天，可以看到发生的发事情，未来或者过去
 
 ---
+
+
+
+## 架构设计
+
+```
+Flutter UI
+负责页面展示、按钮、输入、状态显示
+        ↓ MethodChannel / EventChannel
+Kotlin Service / Bridge
+负责权限、通知、后台服务、系统回调、网络请求等Android系统能力
+        ↓ JNI
+C++ Core
+负责核心算法、搜索、压缩、加密、日志存储、全文搜索、本地索引、数据库修改等等
+		↓ 
+SQLite
+数据持久化存储
+```
+
+```
+ExcellentCalendarAPP
+│
+├── Flutter Client
+│   ├── Presentation Layer
+│   ├── Application Layer
+│   ├── State Management
+│   └── Native Gateway
+│
+├── Android Native Layer
+│   ├── Notification Service
+│   ├── Alarm Scheduler
+│   ├── Share Receiver
+│   ├── Widget Provider
+│   ├── Permission Manager
+│   └── WeChat Bridge
+│
+├── C++ Core Engine
+│   ├── Event Engine
+│   ├── Recurrence Engine
+│   ├── Search Engine
+│   ├── Reminder Engine
+│   ├── Habit Engine
+│   ├── AI Result Validator
+│   ├── Sync Log Engine
+│   └── Crypto / Export Engine
+│
+├── Local Storage
+│   ├── SQLite
+│   ├── FTS Index
+│   ├── Attachment Store
+│   └── Operation Log
+│
+├── Optional Cloud Backend
+│   ├── Auth
+│   ├── Sync API
+│   ├── Backup API
+│   ├── AI API Proxy
+│   └── WeChat Push Gateway
+│
+└── AI Pipeline
+    ├── OCR
+    ├── Text Extraction
+    ├── Time Parser
+    ├── Category Recommender
+    ├── Reminder Recommender
+    └── Candidate Event Builder
+```
+
