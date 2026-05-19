@@ -13,7 +13,7 @@
 
 ## 交付标准
 
-- 不写 UI 组件。
+- 不写 UI 组件，仅用于业务逻辑
 - 不直接访问 SQLite。
 - 调用 Gateway Interfaces 或 Core Engine 暴露的接口。
 - 每个业务流程应有明确输入、输出和失败处理。

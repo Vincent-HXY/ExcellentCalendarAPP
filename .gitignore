@@ -1,69 +1,141 @@
-# Prerequisites
-*.d
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-# Compiled Object files
+# Editor and IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+*.code-workspace
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+local.properties
+key.properties
+*.jks
+*.keystore
+*.pem
+*.p12
+*.mobileprovision
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
+*.swo
+*~
+.history/
+
+# Dart, Flutter and Pub
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+coverage/
+app.*.symbols
+app.*.map.json
+
+# Flutter generated build outputs
+build/
+Build/
+build-*/
+**/build/
+**/.build/
+**/.buildlog/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+
+# Android and Gradle
+.gradle/
+**/.gradle/
+captures/
+.externalNativeBuild/
+.cxx/
+**/.externalNativeBuild/
+**/.cxx/
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# C/C++ and CMake
+*.d
+*.dwo
 *.slo
 *.lo
 *.o
 *.obj
-
-# Precompiled Headers
 *.gch
 *.pch
-
-# Linker files
 *.ilk
-
-# Debugger Files
 *.pdb
-
-# Compiled Dynamic libraries
 *.so
+*.so.*
 *.dylib
 *.dll
-*.so.*
-
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
 *.lai
 *.la
 *.a
 *.lib
-
-# Executables
 *.exe
 *.out
 *.app
-
-# Build directories
-build/
-Build/
-build-*/
-
-# CMake generated files
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
 install_manifest.txt
 compile_commands.json
-
-# Temporary files
-*.tmp
-*.log
-*.bak
-*.swp
-
-# vcpkg
-vcpkg_installed/
-
-# debug information files
-*.dwo
-
-# test output & cache
 Testing/
+CTestTestfile.cmake
+cmake-build-*/
+
+# Package managers and native dependencies
+vcpkg_installed/
+node_modules/
+
+# Python caches for future AI/backend scripts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local app data, databases and exported artifacts
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+local_storage/**/*.db
+local_storage/**/*.sqlite*
+local_storage/attachment_store/files/
+local_storage/operation_log/*.log
+exports/
+backups/
+
+# Test output and generic caches
 .cache/
+test-results/
+reports/
