@@ -134,11 +134,11 @@
 | `title` | `string` | 是 | 标题 |
 | `content` | `string` | 否 | 内容、备注或详情 |
 | `startAt` | `datetime` | 是 | 日程开始时间 |
-| `endAt` | `datetime` | 否 | 日程结束时间 |
+| `endAt` | `datetime` | 是 | 日程结束时间 |
 | `isAllDay` | `boolean` | 是 | 是否全天日程 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
-| `hasRecurrence` | `boolean` | 是 | 是否循环 |
+| `hasRecurrence` | `boolean` | 是 | 是否循环（控制单次/循环） |
 | `recurrenceId` | `string` | 否 | 重复规则 ID；仅当 `hasRecurrence = true` 时存在 |
 | `categoryId` | `string` | 否 | 分类 ID |
 | `importance` | `Importance` | 否 | 重要性 |
@@ -225,7 +225,7 @@
 | `failureReason` | `string` | 否 | 调度或发送失败原因 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
-
+| `deleteAt` | `datetime` | 否 | 软删除时间 |
 ## Category：分类
 
 分类用于组织日程、习惯、纪念日等对象。
@@ -237,7 +237,6 @@
 | `color` | `string` | 否 | 分类颜色，例如十六进制色值 |
 | `icon` | `string` | 否 | 图标标识 |
 | `sortOrder` | `number` | 否 | 排序值 |
-| `isDefault` | `boolean` | 是 | 是否默认分类 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
 | `deletedAt` | `datetime` | 否 | 软删除时间 |
