@@ -11,8 +11,23 @@ void main() {
     await tester.pump();
 
     expect(find.text('日程'), findsOneWidget);
-    expect(find.text('Design homepage'), findsOneWidget);
+    expect(find.text('未完成'), findsOneWidget);
+    expect(find.text('即将到期'), findsOneWidget);
+    expect(find.text('已完成'), findsOneWidget);
+    expect(find.text('Buy notebook'), findsOneWidget);
     expect(find.text('Prepare Android smoke run'), findsOneWidget);
+    expect(
+      find.text('Write follow-up README for frontend test flow'),
+      findsNothing,
+    );
+
+    await tester.tap(find.text('已完成'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Write follow-up README for frontend test flow'),
+      findsOneWidget,
+    );
 
     expect(find.byIcon(Icons.inbox_rounded), findsOneWidget);
     expect(find.byIcon(Icons.calendar_month_rounded), findsOneWidget);

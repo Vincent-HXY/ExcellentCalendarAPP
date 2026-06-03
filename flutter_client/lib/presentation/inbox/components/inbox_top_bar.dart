@@ -10,8 +10,9 @@ class InboxTopBar extends StatelessWidget {
     return SizedBox(
       height: InboxSizes.topBarHeight,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 6, 20, 0),
+        padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             IconButton(
               tooltip: 'Menu',
@@ -25,15 +26,14 @@ class InboxTopBar extends StatelessWidget {
                 height: InboxSizes.topBarIconButton,
               ),
             ),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Text(
-                '日程',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: InboxTextStyles.headerTitle,
-              ),
+            const SizedBox(width: 12),
+            const Text(
+              '日程',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: InboxTextStyles.headerTitle,
             ),
+            const Spacer(),
             IconButton(
               tooltip: 'More',
               onPressed: () {},
