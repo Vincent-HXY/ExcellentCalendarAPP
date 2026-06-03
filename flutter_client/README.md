@@ -1,23 +1,53 @@
-# Flutter Client 客户端表现层
+# Flutter Client
 
-负责用户能直接看到和操作的部分，包括页面展示、按钮、输入、弹窗、loading 状态、页面状态管理，以及业务流程的客户端编排。
+This directory is the Android-first Flutter client for Excellent Calendar.
 
-## 负责范围
+## Current scope
 
-- 日程、习惯、日历、今日任务、纪念日、搜索、四象限、个人信息、投送消息等页面。
-- 表单校验提示、按钮可用状态、筛选条件、页面跳转和交互反馈。
-- 调用应用层服务完成创建日程、搜索、AI 导入确认、今日任务生成等流程。
-- 通过 Dart Gateway Interfaces 调用下层能力。
+The current implementation builds the first Inbox home page only. It includes:
 
-## 不负责
+- A custom `InboxPage` with no default `AppBar`.
+- The requested component split: `InboxTopBar`, `TaskListCard`, `TaskListItem`,
+  `CustomCheckbox`, `AddTaskButton`, `BottomNavBar`, and `BottomNavItem`.
+- A lightweight `InboxTaskViewData` view model aligned with the documented
+  `Importance` values.
+- An `InboxTaskGateway` interface and `MockInboxTaskAdapter` for display data.
 
-- 不直接实现重复日程展开、搜索排序、提醒时间计算等核心规则。
-- 不直接写 SQLite。
-- 不直接调用 Android SDK、微信 SDK 或 JNI 细节。
+This pass does not implement task creation, completion persistence, JSON
+storage, MethodChannel calls, Kotlin services, JNI, or C++ business logic.
 
-## 子目录
+## Run locally
 
-- `presentation`：页面和组件。
-- `application`：业务流程编排。
-- `state_management`：页面状态管理。
-- `gateway_interfaces`：Dart 层接口契约。
+```powershell
+cd A:\calendar\ExcellentCalendarAPP\flutter_client
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --debug
+flutter run -d <device-id>
+```
+
+If there is only one connected Android device, `flutter run` is enough.
+
+## Architecture direction
+
+The page currently depends only on the Dart gateway contract:
+
+```text
+InboxPage
+  -> InboxTaskGateway
+  -> MockInboxTaskAdapter
+```
+
+The intended production path is:
+
+```text
+Flutter UI
+  -> Dart Gateway Interface
+  -> Dart MethodChannel Adapter
+  -> Kotlin MethodChannel Handler
+  -> JNI / C++ Core
+  -> JSON Storage Repository
+```
+
+Keep UI code out of JSON file access, native Android APIs, and C++ details.
