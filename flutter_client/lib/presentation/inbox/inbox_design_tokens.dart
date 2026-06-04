@@ -1,8 +1,12 @@
+// 文件作用：集中管理 Inbox 首页的颜色、间距、尺寸和字体样式。
+// 设计边界：这里只放视觉 token，不放业务状态或任务分组逻辑。
 import 'package:flutter/material.dart';
 
 class InboxColors {
   const InboxColors._();
 
+  // 数据块作用：Inbox 页面使用的固定颜色集合，避免颜色散落在各组件中。
+  // 关键视觉：页面背景和主强调色决定当前首页的整体品牌观感。
   static const pageBackground = Color(0xFFE6F8FA);
   static const surface = Colors.white;
   static const title = Color(0xFF111518);
@@ -19,6 +23,7 @@ class InboxColors {
 class InboxSpacing {
   const InboxSpacing._();
 
+  // 数据块作用：Inbox 页面布局间距，控制页面边距、卡片间距和列表行内部间距。
   static const pageHorizontal = 22.0;
   static const cardTop = 14.0;
   static const contentBottom = 104.0;
@@ -34,6 +39,8 @@ class InboxSpacing {
 class InboxSizes {
   const InboxSizes._();
 
+  // 数据块作用：Inbox 页面固定尺寸，控制顶部栏、分组标题、任务行和按钮大小。
+  // 关键布局：rowHeight 影响列表一屏可见任务数量，widget_test 中有覆盖。
   static const topBarHeight = 62.0;
   static const topBarIconButton = 36.0;
   static const topBarIcon = 25.0;
@@ -49,6 +56,8 @@ class InboxSizes {
 class InboxTextStyles {
   const InboxTextStyles._();
 
+  // 数据块作用：Inbox 页面字体样式集合，统一标题、任务名、日期和计数字体。
+  // 关键字体：任务行和日期字体较小，调整时注意 390x844 小屏测试。
   static const headerTitle = TextStyle(
     color: InboxColors.titleSoft,
     fontSize: 20,

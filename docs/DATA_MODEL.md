@@ -225,7 +225,7 @@
 | `failureReason` | `string` | 否 | 调度或发送失败原因 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
-| `deleteAt` | `datetime` | 否 | 软删除时间 |
+| `deletedAt` | `datetime` | 否 | 软删除时间 |
 ## Category：分类
 
 分类用于组织日程、习惯、纪念日等对象。
