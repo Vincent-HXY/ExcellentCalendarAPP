@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_operation.schema.json",
+  "title": "SyncOperation",
+  "description": "Transport representation of a sync operation record. Field names are the snake_case mapping of DATA_MODEL.md SyncOperation.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "operation_type",
+    "target_type",
+    "target_id",
+    "user_id",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operation_type": {
+      "type": "string",
+      "enum": [
+        "create",
+        "update",
+        "delete",
+        "restore"
+      ]
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "event",
+        "habit",
+        "habit_check_in",
+        "reminder",
+        "notification",
+        "category",
+        "recurrence",
+        "user_data",
+        "dated_message",
+        "anniversary"
+      ]
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
+    "base_version": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "next_version": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "device_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "user_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "synced",
+        "conflict",
+        "failed"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "synced_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

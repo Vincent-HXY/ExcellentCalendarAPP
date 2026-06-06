@@ -1,0 +1,142 @@
+version: 1
+
+errors:
+  NATIVE_INTERNAL_ERROR:
+    module: common
+    message: "Native internal error"
+    retryable: false
+
+  CONTRACT_VALIDATION_FAILED:
+    module: common
+    message: "Request does not match contract schema"
+    retryable: false
+
+  CONTRACT_VERSION_UNSUPPORTED:
+    module: common
+    message: "Contract version is unsupported"
+    retryable: false
+
+  EVENT_TITLE_EMPTY:
+    module: event
+    message: "Event title cannot be empty"
+    retryable: false
+
+  EVENT_TIME_INVALID:
+    module: event
+    message: "Event start time must be earlier than end time"
+    retryable: false
+
+  EVENT_NOT_FOUND:
+    module: event
+    message: "Event not found"
+    retryable: false
+
+  EVENT_DELETE_SCOPE_INVALID:
+    module: event
+    message: "Event delete scope is invalid"
+    retryable: false
+
+  RECURRENCE_RULE_INVALID:
+    module: recurrence
+    message: "Recurrence rule is invalid"
+    retryable: false
+
+  RECURRENCE_TARGET_INVALID:
+    module: recurrence
+    message: "Recurrence target is invalid"
+    retryable: false
+
+  REMINDER_TIME_INVALID:
+    module: reminder
+    message: "Reminder time is invalid"
+    retryable: false
+
+  REMINDER_TARGET_NOT_FOUND:
+    module: reminder
+    message: "Reminder target does not exist"
+    retryable: false
+
+  REMINDER_METHOD_INVALID:
+    module: reminder
+    message: "Reminder method is invalid"
+    retryable: false
+
+  NOTIFICATION_DELIVERY_FAILED:
+    module: notification
+    message: "Notification delivery failed"
+    retryable: true
+
+  HABIT_TITLE_EMPTY:
+    module: habit
+    message: "Habit title cannot be empty"
+    retryable: false
+
+  HABIT_NOT_FOUND:
+    module: habit
+    message: "Habit not found"
+    retryable: false
+
+  HABIT_CHECK_IN_DUPLICATED:
+    module: habit
+    message: "Habit check-in already exists for this date"
+    retryable: false
+
+  CATEGORY_NAME_EMPTY:
+    module: category
+    message: "Category name cannot be empty"
+    retryable: false
+
+  CATEGORY_NOT_FOUND:
+    module: category
+    message: "Category not found"
+    retryable: false
+
+  ANNIVERSARY_TITLE_EMPTY:
+    module: anniversary
+    message: "Anniversary title cannot be empty"
+    retryable: false
+
+  ANNIVERSARY_DATE_INVALID:
+    module: anniversary
+    message: "Anniversary date is invalid"
+    retryable: false
+
+  ANNIVERSARY_NOT_FOUND:
+    module: anniversary
+    message: "Anniversary not found"
+    retryable: false
+
+  SEARCH_QUERY_INVALID:
+    module: search
+    message: "Search query is invalid"
+    retryable: false
+
+  AI_EXTRACTION_FAILED:
+    module: ai
+    message: "AI extraction failed"
+    retryable: true
+
+  SYNC_CONFLICT:
+    module: sync
+    message: "Sync conflict detected"
+    retryable: false
+
+  SYNC_OPERATION_INVALID:
+    module: sync
+    message: "Sync operation is invalid"
+    retryable: false
+
+  USER_SETTINGS_INVALID:
+    module: user
+    message: "User settings are invalid"
+    retryable: false
+
+  PERMISSION_DENIED:
+    module: android
+    message: "Required Android permission is denied"
+    retryable: true
+
+  ALARM_SCHEDULE_FAILED:
+    module: android
+    message: "Failed to schedule alarm"
+    retryable: true

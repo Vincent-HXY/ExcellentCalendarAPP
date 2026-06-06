@@ -1,0 +1,118 @@
+version: 1
+channel: excellent_calendar/native
+
+methods:
+  event.create:
+    module: event
+    request: event/create_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.update:
+    module: event
+    request: event/update_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.delete:
+    module: event
+    request: event/delete_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.search:
+    module: event
+    request: event/search_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_list_response.schema.json
+    event_stream: false
+
+  reminder.create:
+    module: reminder
+    request: reminder/create_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+    event_stream: false
+
+  notification.list:
+    module: notification
+    request: common/pagination_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_list_response.schema.json
+    event_stream: false
+
+  habit.create:
+    module: habit
+    request: habit/create_habit_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_response.schema.json
+    event_stream: false
+
+  habit.check_in:
+    module: habit
+    request: habit/habit_check_in_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_check_in_response.schema.json
+    event_stream: false
+
+  category.create:
+    module: category
+    request: category/create_category_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: category/category_response.schema.json
+    event_stream: false
+
+  anniversary.create:
+    module: anniversary
+    request: anniversary/create_anniversary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_response.schema.json
+    event_stream: false
+
+  ai.extract:
+    module: ai
+    request: ai/ai_extraction_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ai/ai_extraction_response.schema.json
+    event_stream: false
+
+  sync.apply:
+    module: sync
+    request: sync/sync_operation.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: sync/sync_result.schema.json
+    event_stream: false
+
+  user.update_settings:
+    module: user
+    request: user/update_user_settings_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: user/user_data_response.schema.json
+    event_stream: false
+
+event_channels:
+  reminder.status_changed:
+    module: reminder
+    channel: excellent_calendar/events/reminder
+    data: reminder/reminder_response.schema.json
+
+  notification.delivered:
+    module: notification
+    channel: excellent_calendar/events/notification
+    data: notification/notification_response.schema.json

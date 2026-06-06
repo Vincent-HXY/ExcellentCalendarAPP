@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/reminder_draft_request.schema.json",
+  "title": "ReminderDraftRequest",
+  "description": "Embedded reminder draft used while creating or updating a parent Event or Anniversary. target_id may be omitted or null because the parent entity may not have been persisted yet.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "target_type",
+    "methods",
+    "is_enabled",
+    "source"
+  ],
+  "properties": {
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "event",
+        "anniversary"
+      ]
+    },
+    "target_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "remind_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "advance_minutes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "methods": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "ring",
+          "popup",
+          "wechat"
+        ]
+      }
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "is_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "auto",
+        "ai_extraction",
+        "sync",
+        "import",
+        "wechat"
+      ]
+    }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "remind_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "remind_at"
+      ]
+    },
+    {
+      "properties": {
+        "advance_minutes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "advance_minutes"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/create_anniversary_request.schema.json",
+  "title": "CreateAnniversaryRequest",
+  "description": "Request payload for creating an anniversary, birthday, or yearly date-based event.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "date"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "calendar_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "solar",
+        "lunar",
+        null
+      ]
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recurrence": {
+      "oneOf": [
+        {
+          "$ref": "../recurrence/recurrence_rule.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "importance": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "unimportant_noturgent",
+        "important_noturgent",
+        "unimportant_urgent",
+        "important_urgent",
+        null
+      ]
+    },
+    "reminders": {
+      "type": "array",
+      "items": {
+        "$ref": "../reminder/reminder_draft_request.schema.json"
+      }
+    }
+  }
+}

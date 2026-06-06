@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/search/search_index_response.schema.json",
+  "title": "SearchIndexResponse",
+  "description": "Transport representation of a search index record. Field names are the snake_case mapping of DATA_MODEL.md SearchIndex.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "target_type",
+    "target_id",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "event",
+        "habit",
+        "anniversary"
+      ]
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title_text": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "body_text": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "category_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "occur_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

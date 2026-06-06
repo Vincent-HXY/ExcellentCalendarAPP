@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_response.schema.json",
+  "title": "AnniversaryResponse",
+  "description": "Transport representation of an anniversary, birthday, or yearly date-based event.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "date",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "calendar_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "solar",
+        "lunar",
+        null
+      ]
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recurrence_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "importance": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "unimportant_noturgent",
+        "important_noturgent",
+        "unimportant_urgent",
+        "important_urgent",
+        null
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deleted_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

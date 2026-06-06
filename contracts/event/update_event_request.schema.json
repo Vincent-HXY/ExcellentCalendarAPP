@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/update_event_request.schema.json",
+  "title": "UpdateEventRequest",
+  "description": "Partial update payload for an existing event. It carries only transport fields, not database or domain model internals.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "start_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_all_day": {
+      "type": "boolean"
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "importance": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "unimportant_noturgent",
+        "important_noturgent",
+        "unimportant_urgent",
+        "important_urgent",
+        null
+      ]
+    },
+    "location": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timezone": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "ai_extraction",
+        "sync",
+        "import",
+        "wechat"
+      ]
+    },
+    "recurrence": {
+      "oneOf": [
+        {
+          "$ref": "../recurrence/recurrence_rule.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reminders": {
+      "type": "array",
+      "items": {
+        "$ref": "../reminder/reminder_draft_request.schema.json"
+      }
+    }
+  }
+}

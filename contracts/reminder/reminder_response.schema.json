@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json",
+  "title": "ReminderResponse",
+  "description": "Transport representation of a reminder task that can be scanned and scheduled.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "target_type",
+    "target_id",
+    "remind_at",
+    "methods",
+    "is_enabled",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "event",
+        "habit",
+        "anniversary"
+      ]
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "remind_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "methods": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "ring",
+          "popup",
+          "wechat"
+        ]
+      }
+    },
+    "advance_minutes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "is_enabled": {
+      "type": "boolean"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "scheduled",
+        "sent",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "scheduled_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_triggered_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "failure_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deleted_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

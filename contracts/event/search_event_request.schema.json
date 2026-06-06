@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/search_event_request.schema.json",
+  "title": "SearchEventRequest",
+  "description": "Request payload for event search and filtering.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "keyword": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "start_at_from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "start_at_to": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "category_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "importance": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "unimportant_noturgent",
+          "important_noturgent",
+          "unimportant_urgent",
+          "important_urgent"
+        ]
+      }
+    },
+    "location": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "has_recurrence": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "ai_extraction",
+          "sync",
+          "import",
+          "wechat"
+        ]
+      }
+    },
+    "include_deleted": {
+      "type": "boolean",
+      "default": false
+    },
+    "pagination": {
+      "$ref": "../common/pagination_request.schema.json"
+    },
+    "sort_by": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "start_at",
+        "created_at",
+        "updated_at",
+        "importance",
+        "title",
+        null
+      ]
+    },
+    "sort_direction": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "asc",
+        "desc",
+        null
+      ]
+    }
+  }
+}

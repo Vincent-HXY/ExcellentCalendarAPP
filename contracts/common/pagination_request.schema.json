@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/common/pagination_request.schema.json",
+  "title": "PaginationRequest",
+  "description": "Common pagination request fragment for list and search methods.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "page": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "default": 1
+    },
+    "page_size": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 200,
+      "default": 20
+    },
+    "cursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sort_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sort_direction": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "asc",
+        "desc",
+        null
+      ],
+      "default": "desc"
+    }
+  }
+}

@@ -1,0 +1,135 @@
+version: 1
+
+Importance:
+  values:
+    - unimportant_noturgent
+    - important_noturgent
+    - unimportant_urgent
+    - important_urgent
+
+ReminderMethod:
+  values:
+    - ring
+    - popup
+    - wechat
+
+RecurrenceFrequency:
+  values:
+    - daily
+    - weekly
+    - monthly
+    - yearly
+    - custom
+
+ReminderStatus:
+  values:
+    - pending
+    - scheduled
+    - sent
+    - failed
+    - cancelled
+
+NotificationStatus:
+  values:
+    - pending
+    - sent
+    - failed
+    - cancelled
+
+HabitCheckInStatus:
+  values:
+    - done
+    - partial
+    - missed
+    - skipped
+
+SyncOperationType:
+  values:
+    - create
+    - update
+    - delete
+    - restore
+
+DataSource:
+  values:
+    - manual
+    - auto
+    - ai_extraction
+    - sync
+    - import
+    - wechat
+
+TargetType:
+  values:
+    - event
+    - habit
+    - anniversary
+    - dated_message
+
+EntityType:
+  values:
+    - event
+    - habit
+    - habit_check_in
+    - reminder
+    - notification
+    - category
+    - recurrence
+    - user_data
+    - dated_message
+    - anniversary
+
+DeleteMode:
+  values:
+    - soft
+    - hard
+
+RecurrenceDeleteScope:
+  values:
+    - single_occurrence
+    - future_occurrences
+    - all_occurrences
+
+SortDirection:
+  values:
+    - asc
+    - desc
+
+AIExtractionSourceType:
+  values:
+    - text
+    - image
+    - share
+    - wechat
+    - import
+
+AIExtractionStatus:
+  values:
+    - pending_review
+    - accepted
+    - rejected
+
+SyncStatus:
+  values:
+    - pending
+    - synced
+    - conflict
+    - failed
+
+DatedMessageChannel:
+  values:
+    - in_app
+    - notification
+    - wechat
+
+DatedMessageStatus:
+  values:
+    - draft
+    - scheduled
+    - sent
+    - cancelled
+
+CalendarType:
+  values:
+    - solar
+    - lunar

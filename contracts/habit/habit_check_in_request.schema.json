@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_check_in_request.schema.json",
+  "title": "HabitCheckInRequest",
+  "description": "Request payload for recording one local-date habit completion state.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "habit_id",
+    "check_date",
+    "status",
+    "source"
+  ],
+  "properties": {
+    "habit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "check_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "done",
+        "partial",
+        "missed",
+        "skipped"
+      ]
+    },
+    "completed_count": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "auto",
+        "ai_extraction",
+        "sync",
+        "import",
+        "wechat"
+      ]
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/event_response.schema.json",
+  "title": "EventResponse",
+  "description": "Transport representation returned after event create, update, query, or delete operations.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "start_at",
+    "end_at",
+    "is_all_day",
+    "has_recurrence",
+    "source",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "start_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_all_day": {
+      "type": "boolean"
+    },
+    "has_recurrence": {
+      "type": "boolean"
+    },
+    "recurrence_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "importance": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "unimportant_noturgent",
+        "important_noturgent",
+        "unimportant_urgent",
+        "important_urgent",
+        null
+      ]
+    },
+    "location": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timezone": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "ai_extraction",
+        "sync",
+        "import",
+        "wechat"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deleted_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/event_list_response.schema.json",
+  "title": "EventListResponse",
+  "description": "Paginated event list response for search and calendar queries.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "pagination"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "./event_response.schema.json"
+      }
+    },
+    "pagination": {
+      "$ref": "../common/pagination_response.schema.json"
+    }
+  }
+}
