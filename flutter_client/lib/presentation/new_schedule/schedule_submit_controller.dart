@@ -1,15 +1,16 @@
-// 文件作用：连接新建日程页面和创建日程用例的轻量控制器。
-// 设计边界：当前只转发 submit；复杂校验、默认提醒生成和失败处理应放到 Application Layer。
-import '../../gateway_interfaces/schedule_create_use_case.dart';
+import '../../application/event/create_event_use_case.dart';
+import '../../native_contract/event/create_event_request_dto.dart';
+import '../../native_contract/event/event_response_dto.dart';
+import '../../native_contract/shared/native_invocation.dart';
 
 class ScheduleSubmitController {
   const ScheduleSubmitController(this._useCase);
 
-  // 数据块作用：实际执行创建日程流程的用例对象。
-  final ScheduleCreateUseCase _useCase;
+  final CreateEventUseCase _useCase;
 
-  Future<void> submit(EventDraft draft) {
-    // 函数作用：转发页面提交的 EventDraft 到创建日程用例。
-    return _useCase.createSchedule(draft);
+  Future<NativeInvocation<EventResponseDto>> submit(
+    CreateEventRequestDto request,
+  ) {
+    return _useCase.execute(request);
   }
 }
