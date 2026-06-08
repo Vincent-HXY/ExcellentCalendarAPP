@@ -31,8 +31,8 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   bool _isMoreSettingsExpanded = true;
   bool _isSubmitting = false;
 
-  final DateTime _startAt = DateTime(2026, 6, 3, 8);
-  final DateTime _endAt = DateTime(2026, 6, 3, 9);
+  late final DateTime _startAt = _nextDefaultStartAt();
+  late final DateTime _endAt = _startAt.add(const Duration(hours: 1));
 
   @override
   void initState() {
@@ -51,6 +51,16 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
 
   void _handleTitleChanged() {
     setState(() {});
+  }
+
+  static DateTime _nextDefaultStartAt() {
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      now.hour,
+    ).add(const Duration(hours: 1));
   }
 
   bool get _canSubmit =>
@@ -75,7 +85,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
       isAllDay: _isAllDay,
       categoryId: '1',
       importance: 'unimportant_noturgent',
-      timezone: 'GMT+08:00 北京',
+      timezone: 'Asia/Shanghai',
       source: 'manual',
       reminders: const [],
     );
@@ -157,6 +167,8 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
                       ManualScheduleForm(
                         titleController: _titleController,
                         noteController: _noteController,
+                        startAt: _startAt,
+                        endAt: _endAt,
                         isAllDay: _isAllDay,
                         isRingingReminderEnabled: _isRingingReminderEnabled,
                         isMoreSettingsExpanded: _isMoreSettingsExpanded,

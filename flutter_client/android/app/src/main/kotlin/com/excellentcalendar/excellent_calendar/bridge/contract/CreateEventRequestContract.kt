@@ -129,16 +129,35 @@ data class CreateEventRequestContract(
             ContractValidators.optionalString(map, "target_id", parent)
             ContractValidators.optionalString(map, "remind_at", parent)
             ContractValidators.optionalInteger(map, "advance_minutes", parent)
-            if (!map.containsKey("remind_at") && !map.containsKey("advance_minutes")) {
+            val remindAt = map["remind_at"]
+            val advanceMinutes = map["advance_minutes"]
+            if (remindAt == null && advanceMinutes == null) {
                 throw NativeContractViolation(
                     "$parent requires remind_at or advance_minutes.",
                     "$parent.remind_at",
                 )
             }
+            when (advanceMinutes) {
+                is Int -> if (advanceMinutes < 0) {
+                    throw NativeContractViolation(
+                        "$parent.advance_minutes must be greater than or equal to 0.",
+                        "$parent.advance_minutes",
+                    )
+                }
+                is Long -> if (advanceMinutes < 0L) {
+                    throw NativeContractViolation(
+                        "$parent.advance_minutes must be greater than or equal to 0.",
+                        "$parent.advance_minutes",
+                    )
+                }
+            }
             ContractValidators.optionalStringArray(map, "methods", parent, ContractEnums.ReminderMethods)
             val methods = map["methods"]
             if (methods !is List<*> || methods.isEmpty()) {
                 throw NativeContractViolation("$parent.methods must be a non-empty array.", "$parent.methods")
+            }
+            if (methods.toSet().size != methods.size) {
+                throw NativeContractViolation("$parent.methods must not contain duplicates.", "$parent.methods")
             }
             ContractValidators.optionalString(map, "message", parent)
             ContractValidators.requireBoolean(map, "is_enabled", parent)

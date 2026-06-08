@@ -14,6 +14,8 @@ class ManualScheduleForm extends StatelessWidget {
   const ManualScheduleForm({
     required this.titleController,
     required this.noteController,
+    required this.startAt,
+    required this.endAt,
     required this.isAllDay,
     required this.isRingingReminderEnabled,
     required this.isMoreSettingsExpanded,
@@ -28,6 +30,10 @@ class ManualScheduleForm extends StatelessWidget {
   final TextEditingController titleController;
   // 数据块作用：备注输入控制器，由页面持有以参与提交。
   final TextEditingController noteController;
+  // 数据块作用：默认开始时间，由页面状态持有并参与提交。
+  final DateTime startAt;
+  // 数据块作用：默认结束时间，由页面状态持有并参与提交。
+  final DateTime endAt;
   // 数据块作用：全天开关状态。
   final bool isAllDay;
   // 数据块作用：响铃提醒开关状态。
@@ -56,6 +62,8 @@ class ManualScheduleForm extends StatelessWidget {
         ),
         const SizedBox(height: NewScheduleSpacing.sectionGap),
         TimeRangeCard(
+          startAt: startAt,
+          endAt: endAt,
           isAllDay: isAllDay,
           onAllDayChanged: onAllDayChanged,
           onStartTap: () => onTodoTap('开始时间选择功能后续实现'),

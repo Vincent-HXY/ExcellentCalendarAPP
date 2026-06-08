@@ -21,6 +21,22 @@ class ReminderDraftRequestDto {
 
   Map<String, dynamic> toJson() {
     _validateTargetType(targetType);
+    if (remindAt == null && advanceMinutes == null) {
+      throw const FormatException(
+        'ReminderDraft requires remind_at or advance_minutes.',
+      );
+    }
+    if (advanceMinutes != null && advanceMinutes! < 0) {
+      throw const FormatException(
+        'ReminderDraft advance_minutes must be greater than or equal to 0.',
+      );
+    }
+    if (methods.isEmpty) {
+      throw const FormatException('ReminderDraft methods must not be empty.');
+    }
+    if (methods.toSet().length != methods.length) {
+      throw const FormatException('ReminderDraft methods must be unique.');
+    }
     for (final method in methods) {
       _validateReminderMethod(method);
     }

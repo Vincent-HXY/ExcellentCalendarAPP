@@ -8,6 +8,8 @@ import 'form_section_card.dart';
 
 class TimeRangeCard extends StatelessWidget {
   const TimeRangeCard({
+    required this.startAt,
+    required this.endAt,
     required this.isAllDay,
     required this.onAllDayChanged,
     required this.onStartTap,
@@ -16,6 +18,10 @@ class TimeRangeCard extends StatelessWidget {
     super.key,
   });
 
+  // 数据块作用：页面状态中的开始时间，用于展示并与提交数据保持一致。
+  final DateTime startAt;
+  // 数据块作用：页面状态中的结束时间，用于展示并与提交数据保持一致。
+  final DateTime endAt;
   // 数据块作用：全天开关状态。
   final bool isAllDay;
   // 数据块作用：全天开关变化回调。
@@ -30,7 +36,7 @@ class TimeRangeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 函数作用：绘制时间范围区域，包括全天开关、开始结束时间和时区行。
-    // 关键数据：显示的时间/日期/时区仍是静态占位，提交用的 DateTime 在页面状态里。
+    // 关键数据：时间和日期来自页面状态；时区行保留面向用户的 GMT 显示文案。
     return FormSectionCard(
       child: Column(
         children: [
@@ -54,8 +60,8 @@ class TimeRangeCard extends StatelessWidget {
                 Expanded(
                   child: _TimeBlock(
                     label: '开始',
-                    time: '08:00',
-                    date: '2026/06/03',
+                    time: _formatTime(startAt),
+                    date: _formatDate(startAt),
                     onTap: onStartTap,
                   ),
                 ),
@@ -70,8 +76,8 @@ class TimeRangeCard extends StatelessWidget {
                 Expanded(
                   child: _TimeBlock(
                     label: '结束',
-                    time: '09:00',
-                    date: '2026/06/03',
+                    time: _formatTime(endAt),
+                    date: _formatDate(endAt),
                     onTap: onEndTap,
                   ),
                 ),
@@ -92,6 +98,18 @@ class TimeRangeCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatTime(DateTime value) {
+    return '${_twoDigits(value.hour)}:${_twoDigits(value.minute)}';
+  }
+
+  String _formatDate(DateTime value) {
+    return '${value.year}/${_twoDigits(value.month)}/${_twoDigits(value.day)}';
+  }
+
+  String _twoDigits(int value) {
+    return value.toString().padLeft(2, '0');
   }
 }
 

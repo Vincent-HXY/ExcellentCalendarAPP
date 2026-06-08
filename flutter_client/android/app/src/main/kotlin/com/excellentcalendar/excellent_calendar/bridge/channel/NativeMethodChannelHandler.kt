@@ -43,7 +43,7 @@ class AndroidNativeBridgeLogger : NativeBridgeLogger {
 
 class NativeMethodChannelHandler(
     private val nativeEventBridge: NativeEventBridge,
-    private val executor: Executor = Executors.newCachedThreadPool(),
+    private val executor: Executor = Executors.newSingleThreadExecutor(),
     private val resultDispatcher: ResultDispatcher = MainThreadResultDispatcher(),
     private val logger: NativeBridgeLogger = AndroidNativeBridgeLogger(),
 ) : MethodChannel.MethodCallHandler, AutoCloseable {
