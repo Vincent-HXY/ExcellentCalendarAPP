@@ -1,4 +1,5 @@
 import 'event_list_response_dto.dart';
+import 'event_occurrence_state_response_dto.dart';
 import 'event_response_dto.dart';
 
 class EventMapper {
@@ -16,5 +17,16 @@ class EventMapper {
       throw const FormatException('EventListResponse data must be object.');
     }
     return EventListResponseDto.fromJson(rawData);
+  }
+
+  static EventOccurrenceStateResponseDto eventOccurrenceStateFromNativeData(
+    Object? rawData,
+  ) {
+    if (rawData is! Map<String, dynamic>) {
+      throw const FormatException(
+        'EventOccurrenceStateResponse data must be object.',
+      );
+    }
+    return EventOccurrenceStateResponseDto.fromJson(rawData);
   }
 }

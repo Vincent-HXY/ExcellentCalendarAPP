@@ -25,9 +25,10 @@
 6. `ok = true` 时 `error` 必须为 `null`。
 7. `ok = false` 时 `data` 必须为 `null`，且 `error.code` 必须来自 `error_codes.yaml`。
 8. `EventResponse` 不直接嵌入 `Reminder`；详情页聚合数据使用 `EventDetailResponse`。
-9. `Reminder` 是未来要执行的提醒任务，`Notification` 是投递结果日志，二者不能混用。
-10. `Habit` 只描述习惯定义，`HabitCheckIn` 才是完成记录和统计来源。
-11. 独立创建 Reminder 必须使用 `CreateReminderRequest` 且包含 `target_id`；嵌入父对象创建流程时使用 `ReminderDraftRequest`。
+9. `Event.status` 只表示整个 Event 或整个重复系列的生命周期；重复日程单次 occurrence 状态使用 `EventOccurrenceStateResponse`。
+10. `Reminder` 是未来要执行的提醒任务，`Notification` 是投递结果日志，二者不能混用。
+11. `Habit` 只描述习惯定义，`HabitCheckIn` 才是完成记录和统计来源。
+12. 独立创建 Reminder 必须使用 `CreateReminderRequest` 且包含 `target_id`；嵌入父对象创建流程时使用 `ReminderDraftRequest`。
 
 ## Directory
 
@@ -83,6 +84,8 @@ NativeResult<T>
 ```text
 event.create -> NativeResult<EventResponse>
 event.search -> NativeResult<EventListResponse>
+event.complete -> NativeResult<EventOccurrenceStateResponse>
+event.reopen -> NativeResult<EventOccurrenceStateResponse>
 habit.check_in -> NativeResult<HabitCheckInResponse>
 ```
 

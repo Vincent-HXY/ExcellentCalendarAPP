@@ -9,6 +9,8 @@ object EventResponseContract {
         "end_at",
         "is_all_day",
         "has_recurrence",
+        "status",
+        "completed_at",
         "recurrence_id",
         "category_id",
         "importance",
@@ -37,6 +39,8 @@ object EventResponseContract {
         ContractValidators.requireString(map, "end_at", parent, nonEmpty = true)
         ContractValidators.requireBoolean(map, "is_all_day", parent)
         ContractValidators.requireBoolean(map, "has_recurrence", parent)
+        ContractValidators.requireEnum(map, "status", parent, ContractEnums.EventStatus)
+        ContractValidators.optionalString(map, "completed_at", parent)
         ContractValidators.optionalString(map, "recurrence_id", parent)
         ContractValidators.optionalString(map, "category_id", parent)
         ContractValidators.optionalEnum(map, "importance", parent, ContractEnums.Importance)

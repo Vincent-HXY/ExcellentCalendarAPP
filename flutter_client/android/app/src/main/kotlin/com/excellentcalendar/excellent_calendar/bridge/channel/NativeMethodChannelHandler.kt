@@ -3,12 +3,15 @@ package com.excellentcalendar.excellent_calendar.bridge.channel
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.excellentcalendar.excellent_calendar.bridge.contract.CompleteEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.CreateEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.EventListResponseContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.EventOccurrenceStateResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.EventResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeContractViolation
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReopenEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.SearchEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeBridgeUnavailableException
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
@@ -52,6 +55,8 @@ class NativeMethodChannelHandler(
         when (call.method) {
             MethodEventCreate -> handleCreateEvent(call, completion)
             MethodEventSearch -> handleSearchEvents(call, completion)
+            MethodEventComplete -> handleCompleteEvent(call, completion)
+            MethodEventReopen -> handleReopenEvent(call, completion)
             else -> completion.notImplemented()
         }
     }
@@ -83,6 +88,30 @@ class NativeMethodChannelHandler(
         }
         executeNative(call.method, completion, EventListResponseContract::validate) {
             nativeEventBridge.searchEvents(request.toJson())
+        }
+    }
+
+    private fun handleCompleteEvent(call: MethodCall, completion: SingleCompletion) {
+        val request = try {
+            CompleteEventRequestContract.fromMethodArguments(call.arguments)
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            return
+        }
+        executeNative(call.method, completion, EventOccurrenceStateResponseContract::validate) {
+            nativeEventBridge.completeEvent(request.toJson())
+        }
+    }
+
+    private fun handleReopenEvent(call: MethodCall, completion: SingleCompletion) {
+        val request = try {
+            ReopenEventRequestContract.fromMethodArguments(call.arguments)
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            return
+        }
+        executeNative(call.method, completion, EventOccurrenceStateResponseContract::validate) {
+            nativeEventBridge.reopenEvent(request.toJson())
         }
     }
 
@@ -171,6 +200,8 @@ class NativeMethodChannelHandler(
         const val ChannelName = "excellent_calendar/native"
         const val MethodEventCreate = "event.create"
         const val MethodEventSearch = "event.search"
+        const val MethodEventComplete = "event.complete"
+        const val MethodEventReopen = "event.reopen"
         const val LogTag = "ExcellentCalendarNative"
     }
 }

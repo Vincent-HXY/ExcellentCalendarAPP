@@ -7,6 +7,19 @@ Importance:
     - unimportant_urgent
     - important_urgent
 
+EventStatus:
+  values:
+    - active
+    - completed
+    - cancelled
+    - archived
+
+EventOccurrenceStatus:
+  values:
+    - completed
+    - skipped
+    - cancelled
+
 ReminderMethod:
   values:
     - ring
@@ -69,6 +82,7 @@ TargetType:
 EntityType:
   values:
     - event
+    - event_occurrence_state
     - habit
     - habit_check_in
     - reminder

@@ -8,6 +8,7 @@ class EventResponseDto {
     required this.endAt,
     required this.isAllDay,
     required this.hasRecurrence,
+    required this.status,
     required this.source,
     required this.createdAt,
     required this.updatedAt,
@@ -17,6 +18,7 @@ class EventResponseDto {
     this.importance,
     this.location,
     this.timezone,
+    this.completedAt,
     this.deletedAt,
   });
 
@@ -27,6 +29,8 @@ class EventResponseDto {
   final DateTime endAt;
   final bool isAllDay;
   final bool hasRecurrence;
+  final String status;
+  final DateTime? completedAt;
   final String? recurrenceId;
   final String? categoryId;
   final String? importance;
@@ -46,6 +50,8 @@ class EventResponseDto {
       'end_at',
       'is_all_day',
       'has_recurrence',
+      'status',
+      'completed_at',
       'recurrence_id',
       'category_id',
       'importance',
@@ -63,6 +69,7 @@ class EventResponseDto {
       'end_at',
       'is_all_day',
       'has_recurrence',
+      'status',
       'source',
       'created_at',
       'updated_at',
@@ -74,6 +81,8 @@ class EventResponseDto {
     }
     final source = _readString(json, 'source');
     _validateSource(source);
+    final status = _readString(json, 'status');
+    _validateEventStatus(status);
     return EventResponseDto(
       id: _readString(json, 'id'),
       title: _readString(json, 'title'),
@@ -82,6 +91,8 @@ class EventResponseDto {
       endAt: _readDateTime(json, 'end_at'),
       isAllDay: _readBool(json, 'is_all_day'),
       hasRecurrence: _readBool(json, 'has_recurrence'),
+      status: status,
+      completedAt: _readOptionalDateTime(json, 'completed_at'),
       recurrenceId: _readOptionalString(json, 'recurrence_id'),
       categoryId: _readOptionalString(json, 'category_id'),
       importance: importance,
@@ -161,6 +172,13 @@ class EventResponseDto {
     const allowed = {'manual', 'ai_extraction', 'sync', 'import', 'wechat'};
     if (!allowed.contains(value)) {
       throw FormatException('Unknown DataSource: $value');
+    }
+  }
+
+  static void _validateEventStatus(String value) {
+    const allowed = {'active', 'completed', 'cancelled', 'archived'};
+    if (!allowed.contains(value)) {
+      throw FormatException('Unknown EventStatus: $value');
     }
   }
 }

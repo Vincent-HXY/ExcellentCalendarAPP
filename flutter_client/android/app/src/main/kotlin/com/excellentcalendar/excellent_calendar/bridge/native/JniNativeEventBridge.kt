@@ -38,9 +38,31 @@ class JniNativeEventBridge(
         }
     }
 
+    override fun completeEvent(requestJson: String): String {
+        ensureLibraryLoaded()
+        return try {
+            nativeCompleteEvent(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeCompleteEvent is unavailable.", error)
+        }
+    }
+
+    override fun reopenEvent(requestJson: String): String {
+        ensureLibraryLoaded()
+        return try {
+            nativeReopenEvent(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeReopenEvent is unavailable.", error)
+        }
+    }
+
     external fun nativeCreateEvent(requestJson: String): String
 
     external fun nativeSearchEvents(requestJson: String): String
+
+    external fun nativeCompleteEvent(requestJson: String): String
+
+    external fun nativeReopenEvent(requestJson: String): String
 
     private fun ensureLibraryLoaded() {
         if (!loadAttempted) {

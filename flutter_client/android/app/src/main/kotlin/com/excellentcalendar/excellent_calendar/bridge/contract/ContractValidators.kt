@@ -1,6 +1,8 @@
 package com.excellentcalendar.excellent_calendar.bridge.contract
 
 internal object ContractEnums {
+    val EventStatus = setOf("active", "completed", "cancelled", "archived")
+    val EventOccurrenceStatus = setOf("completed", "skipped", "cancelled")
     val Importance = setOf(
         "unimportant_noturgent",
         "important_noturgent",

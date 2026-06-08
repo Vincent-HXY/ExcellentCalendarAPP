@@ -3,10 +3,13 @@ import 'package:flutter/services.dart';
 import '../../gateway_interfaces/event_native_gateway.dart';
 import '../../native_contract/common/native_error_codes.dart';
 import '../../native_contract/common/native_result_dto.dart';
+import '../../native_contract/event/complete_event_request_dto.dart';
 import '../../native_contract/event/create_event_request_dto.dart';
 import '../../native_contract/event/event_list_response_dto.dart';
+import '../../native_contract/event/event_occurrence_state_response_dto.dart';
 import '../../native_contract/event/event_mapper.dart';
 import '../../native_contract/event/event_response_dto.dart';
+import '../../native_contract/event/reopen_event_request_dto.dart';
 import '../../native_contract/event/search_event_request_dto.dart';
 import '../../native_contract/shared/native_invocation.dart';
 import '../../native_contract/shared/native_json_normalizer.dart';
@@ -22,6 +25,8 @@ class NativeEventMethods {
 
   static const create = 'event.create';
   static const search = 'event.search';
+  static const complete = 'event.complete';
+  static const reopen = 'event.reopen';
 }
 
 class MethodChannelEventAdapter implements EventNativeGateway {
@@ -52,6 +57,28 @@ class MethodChannelEventAdapter implements EventNativeGateway {
       method: NativeEventMethods.search,
       arguments: request.toJson(),
       parseData: EventMapper.eventListResponseFromNativeData,
+    );
+  }
+
+  @override
+  Future<NativeInvocation<EventOccurrenceStateResponseDto>> completeEvent(
+    CompleteEventRequestDto request,
+  ) {
+    return _invoke<EventOccurrenceStateResponseDto>(
+      method: NativeEventMethods.complete,
+      arguments: request.toJson(),
+      parseData: EventMapper.eventOccurrenceStateFromNativeData,
+    );
+  }
+
+  @override
+  Future<NativeInvocation<EventOccurrenceStateResponseDto>> reopenEvent(
+    ReopenEventRequestDto request,
+  ) {
+    return _invoke<EventOccurrenceStateResponseDto>(
+      method: NativeEventMethods.reopen,
+      arguments: request.toJson(),
+      parseData: EventMapper.eventOccurrenceStateFromNativeData,
     );
   }
 

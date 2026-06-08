@@ -1,6 +1,9 @@
 import '../native_contract/event/create_event_request_dto.dart';
+import '../native_contract/event/complete_event_request_dto.dart';
 import '../native_contract/event/event_list_response_dto.dart';
+import '../native_contract/event/event_occurrence_state_response_dto.dart';
 import '../native_contract/event/event_response_dto.dart';
+import '../native_contract/event/reopen_event_request_dto.dart';
 import '../native_contract/event/search_event_request_dto.dart';
 import '../native_contract/shared/native_invocation.dart';
 
@@ -11,5 +14,13 @@ abstract interface class EventNativeGateway {
 
   Future<NativeInvocation<EventListResponseDto>> readEvents(
     SearchEventRequestDto request,
+  );
+
+  Future<NativeInvocation<EventOccurrenceStateResponseDto>> completeEvent(
+    CompleteEventRequestDto request,
+  );
+
+  Future<NativeInvocation<EventOccurrenceStateResponseDto>> reopenEvent(
+    ReopenEventRequestDto request,
   );
 }

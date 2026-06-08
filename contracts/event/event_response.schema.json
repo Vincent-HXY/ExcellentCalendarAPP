@@ -13,6 +13,7 @@
     "end_at",
     "is_all_day",
     "has_recurrence",
+    "status",
     "source",
     "created_at",
     "updated_at"
@@ -45,6 +46,23 @@
     },
     "has_recurrence": {
       "type": "boolean"
+    },
+    "status": {
+      "type": "string",
+      "default": "active",
+      "enum": [
+        "active",
+        "completed",
+        "cancelled",
+        "archived"
+      ]
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
     },
     "recurrence_id": {
       "type": [
