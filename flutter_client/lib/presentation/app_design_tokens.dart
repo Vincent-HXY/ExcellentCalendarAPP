@@ -10,6 +10,12 @@ abstract final class AppMotion {
   static const routeEnter = Duration(milliseconds: 280);
   static const routeExit = Duration(milliseconds: 220);
   static const fabPostReleasePause = Duration(milliseconds: 40);
+  static const pickerSheet = Duration(milliseconds: 300);
+  static const pickerMonth = Duration(milliseconds: 280);
+  static const pickerPanel = Duration(milliseconds: 320);
+  static const pickerYearMonthDayPanel = Duration(milliseconds: 300);
+  static const pickerDaySelection = Duration(milliseconds: 180);
+  static const pickerAutoStepPause = Duration(milliseconds: 100);
 
   static const standard = Curves.easeInOutCubic;
   static const enter = Curves.easeOutCubic;

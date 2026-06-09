@@ -1,5 +1,3 @@
-// 文件作用：手动创建日程的表单组合，串联标题、时间、提醒、地点、分类和备注控件。
-// 设计边界：这里只组织控件与回调，不计算提醒时间、重复规则或分类推荐。
 import 'package:flutter/material.dart';
 
 import '../new_schedule_design_tokens.dart';
@@ -22,37 +20,36 @@ class ManualScheduleForm extends StatelessWidget {
     required this.onAllDayChanged,
     required this.onRingingReminderChanged,
     required this.onMoreSettingsToggle,
+    required this.onStartTap,
+    required this.onStartTimeTap,
+    required this.onStartDateTap,
+    required this.onEndTap,
+    required this.onEndTimeTap,
+    required this.onEndDateTap,
     required this.onTodoTap,
     super.key,
   });
 
-  // 数据块作用：标题输入控制器，由页面持有以参与提交和按钮状态判断。
   final TextEditingController titleController;
-  // 数据块作用：备注输入控制器，由页面持有以参与提交。
   final TextEditingController noteController;
-  // 数据块作用：默认开始时间，由页面状态持有并参与提交。
   final DateTime startAt;
-  // 数据块作用：默认结束时间，由页面状态持有并参与提交。
   final DateTime endAt;
-  // 数据块作用：全天开关状态。
   final bool isAllDay;
-  // 数据块作用：响铃提醒开关状态。
   final bool isRingingReminderEnabled;
-  // 数据块作用：更多设置是否展开。
   final bool isMoreSettingsExpanded;
-  // 数据块作用：全天开关变化回调。
   final ValueChanged<bool> onAllDayChanged;
-  // 数据块作用：响铃提醒开关变化回调。
   final ValueChanged<bool> onRingingReminderChanged;
-  // 数据块作用：更多设置标题点击回调。
   final VoidCallback onMoreSettingsToggle;
-  // 数据块作用：未实现功能入口的临时提示回调。
+  final VoidCallback onStartTap;
+  final VoidCallback onStartTimeTap;
+  final VoidCallback onStartDateTap;
+  final VoidCallback onEndTap;
+  final VoidCallback onEndTimeTap;
+  final VoidCallback onEndDateTap;
   final ValueChanged<String> onTodoTap;
 
   @override
   Widget build(BuildContext context) {
-    // 函数作用：组合手动创建日程所需的所有表单卡片。
-    // 关键布局：更多设置用 AnimatedSize 折叠，内部控件目前多为功能入口占位。
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -66,8 +63,12 @@ class ManualScheduleForm extends StatelessWidget {
           endAt: endAt,
           isAllDay: isAllDay,
           onAllDayChanged: onAllDayChanged,
-          onStartTap: () => onTodoTap('开始时间选择功能后续实现'),
-          onEndTap: () => onTodoTap('结束时间选择功能后续实现'),
+          onStartTap: onStartTap,
+          onStartTimeTap: onStartTimeTap,
+          onStartDateTap: onStartDateTap,
+          onEndTap: onEndTap,
+          onEndTimeTap: onEndTimeTap,
+          onEndDateTap: onEndDateTap,
           onTimezoneTap: () => onTodoTap('时区选择功能后续实现'),
         ),
         const SizedBox(height: 8),

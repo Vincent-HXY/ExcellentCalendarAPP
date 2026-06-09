@@ -6,6 +6,7 @@ import '../shared/native_result_dialog.dart';
 import 'components/create_mode_segmented_control.dart';
 import 'components/manual_schedule_form.dart';
 import 'components/new_schedule_top_bar.dart';
+import 'date_time_picker/schedule_date_time_picker.dart';
 import 'new_schedule_design_tokens.dart';
 import 'schedule_submit_controller.dart';
 
@@ -31,13 +32,17 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   bool _isMoreSettingsExpanded = true;
   bool _isSubmitting = false;
 
-  late final DateTime _startAt = _nextDefaultStartAt();
-  late final DateTime _endAt = _startAt.add(const Duration(hours: 1));
+  late DateTime _startAt;
+  late DateTime _endAt;
+  static const _timezoneLabel = 'GMT+08:00 北京';
+  static const _timezoneId = 'Asia/Shanghai';
 
   @override
   void initState() {
     super.initState();
     _submitController = ScheduleSubmitController(widget.createUseCase);
+    _startAt = _nextDefaultStartAt();
+    _endAt = _startAt.add(const Duration(hours: 1));
     _titleController.addListener(_handleTitleChanged);
   }
 
@@ -76,6 +81,16 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
       _isSubmitting = true;
     });
 
+    if (_endAt.isBefore(_startAt)) {
+      setState(() {
+        _isSubmitting = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('结束时间不能早于开始时间')));
+      return;
+    }
+
     final note = _noteController.text.trim();
     final request = CreateEventRequestDto(
       title: title,
@@ -85,7 +100,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
       isAllDay: _isAllDay,
       categoryId: '1',
       importance: 'unimportant_noturgent',
-      timezone: 'Asia/Shanghai',
+      timezone: _timezoneId,
       source: 'manual',
       reminders: const [],
     );
@@ -128,6 +143,38 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _pickStartDateTime(PickerInitialStep initialStep) async {
+    final result = await showScheduleDateTimePicker(
+      context: context,
+      initialDateTime: _startAt,
+      timezone: _timezoneLabel,
+      initialStep: initialStep,
+      target: PickerTarget.start,
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _startAt = result.localDateTime;
+    });
+  }
+
+  Future<void> _pickEndDateTime(PickerInitialStep initialStep) async {
+    final result = await showScheduleDateTimePicker(
+      context: context,
+      initialDateTime: _endAt,
+      timezone: _timezoneLabel,
+      initialStep: initialStep,
+      target: PickerTarget.end,
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _endAt = result.localDateTime;
+    });
   }
 
   @override
@@ -187,6 +234,18 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
                             _isMoreSettingsExpanded = !_isMoreSettingsExpanded;
                           });
                         },
+                        onStartTap: () =>
+                            _pickStartDateTime(PickerInitialStep.calendar),
+                        onStartTimeTap: () =>
+                            _pickStartDateTime(PickerInitialStep.time),
+                        onStartDateTap: () =>
+                            _pickStartDateTime(PickerInitialStep.calendar),
+                        onEndTap: () =>
+                            _pickEndDateTime(PickerInitialStep.calendar),
+                        onEndTimeTap: () =>
+                            _pickEndDateTime(PickerInitialStep.time),
+                        onEndDateTap: () =>
+                            _pickEndDateTime(PickerInitialStep.calendar),
                         onTodoTap: _showTodo,
                       )
                     else

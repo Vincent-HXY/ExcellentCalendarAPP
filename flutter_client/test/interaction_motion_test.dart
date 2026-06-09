@@ -43,28 +43,6 @@ void main() {
   testWidgets('task group card expands and collapses from the header', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: TaskGroupCard(
-            title: 'Group',
-            tasks: const [
-              InboxTaskViewData(
-                id: '1',
-                title: 'Visible task',
-                importance: TaskImportance.unimportantNotUrgent,
-                isCompleted: false,
-              ),
-            ],
-            isExpanded: true,
-            onHeaderTap: () {},
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('Visible task'), findsOneWidget);
-
     var isExpanded = true;
     await tester.pumpWidget(
       MaterialApp(
@@ -94,6 +72,7 @@ void main() {
       ),
     );
 
+    expect(find.text('Visible task'), findsOneWidget);
     await tester.tap(find.text('Group'));
     await tester.pumpAndSettle();
     expect(find.text('Visible task'), findsNothing);

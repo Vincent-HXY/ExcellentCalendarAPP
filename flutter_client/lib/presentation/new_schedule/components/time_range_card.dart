@@ -1,5 +1,3 @@
-// 文件作用：新建日程表单的时间范围卡片，展示全天开关、开始/结束时间和时区入口。
-// 设计边界：只展示时间字段，时间合法性和重复规则计算应由 Application/Core 处理。
 import 'package:flutter/material.dart';
 
 import '../new_schedule_design_tokens.dart';
@@ -13,30 +11,29 @@ class TimeRangeCard extends StatelessWidget {
     required this.isAllDay,
     required this.onAllDayChanged,
     required this.onStartTap,
+    required this.onStartTimeTap,
+    required this.onStartDateTap,
     required this.onEndTap,
+    required this.onEndTimeTap,
+    required this.onEndDateTap,
     required this.onTimezoneTap,
     super.key,
   });
 
-  // 数据块作用：页面状态中的开始时间，用于展示并与提交数据保持一致。
   final DateTime startAt;
-  // 数据块作用：页面状态中的结束时间，用于展示并与提交数据保持一致。
   final DateTime endAt;
-  // 数据块作用：全天开关状态。
   final bool isAllDay;
-  // 数据块作用：全天开关变化回调。
   final ValueChanged<bool> onAllDayChanged;
-  // 数据块作用：点击开始时间块时触发的父级回调。
   final VoidCallback onStartTap;
-  // 数据块作用：点击结束时间块时触发的父级回调。
+  final VoidCallback onStartTimeTap;
+  final VoidCallback onStartDateTap;
   final VoidCallback onEndTap;
-  // 数据块作用：点击时区行时触发的父级回调。
+  final VoidCallback onEndTimeTap;
+  final VoidCallback onEndDateTap;
   final VoidCallback onTimezoneTap;
 
   @override
   Widget build(BuildContext context) {
-    // 函数作用：绘制时间范围区域，包括全天开关、开始结束时间和时区行。
-    // 关键数据：时间和日期来自页面状态；时区行保留面向用户的 GMT 显示文案。
     return FormSectionCard(
       child: Column(
         children: [
@@ -63,6 +60,8 @@ class TimeRangeCard extends StatelessWidget {
                     time: _formatTime(startAt),
                     date: _formatDate(startAt),
                     onTap: onStartTap,
+                    onTimeTap: onStartTimeTap,
+                    onDateTap: onStartDateTap,
                   ),
                 ),
                 const SizedBox(
@@ -79,6 +78,8 @@ class TimeRangeCard extends StatelessWidget {
                     time: _formatTime(endAt),
                     date: _formatDate(endAt),
                     onTap: onEndTap,
+                    onTimeTap: onEndTimeTap,
+                    onDateTap: onEndDateTap,
                   ),
                 ),
               ],
@@ -119,22 +120,21 @@ class _TimeBlock extends StatelessWidget {
     required this.time,
     required this.date,
     required this.onTap,
+    required this.onTimeTap,
+    required this.onDateTap,
   });
 
-  // 数据块作用：时间块上方的小标题，例如开始或结束。
   final String label;
-  // 数据块作用：时间文本，例如 08:00。
   final String time;
-  // 数据块作用：日期文本，例如 2026/06/03。
   final String date;
-  // 数据块作用：点击时间块时触发的父级回调。
   final VoidCallback onTap;
+  final VoidCallback onTimeTap;
+  final VoidCallback onDateTap;
 
   @override
   Widget build(BuildContext context) {
-    // 函数作用：绘制单个开始/结束时间块。
-    // 关键布局：每个时间块固定文本层级，后续接入选择器时保持点击区域不变。
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -144,9 +144,17 @@ class _TimeBlock extends StatelessWidget {
           children: [
             Text(label, style: NewScheduleTextStyles.timeLabel),
             const SizedBox(height: 10),
-            Text(time, style: NewScheduleTextStyles.timeValue),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTimeTap,
+              child: Text(time, style: NewScheduleTextStyles.timeValue),
+            ),
             const SizedBox(height: 8),
-            Text(date, style: NewScheduleTextStyles.dateValue),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onDateTap,
+              child: Text(date, style: NewScheduleTextStyles.dateValue),
+            ),
           ],
         ),
       ),
