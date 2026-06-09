@@ -5,6 +5,7 @@ import com.excellentcalendar.excellent_calendar.bridge.native.JniNativeEventBrid
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     private var nativeMethodChannelHandler: NativeMethodChannelHandler? = null
@@ -12,9 +13,9 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        val handler = NativeMethodChannelHandler(
-            nativeEventBridge = JniNativeEventBridge(),
-        )
+        val storageDirectory = File(applicationContext.filesDir, "local_storage/test_storage_json")
+        val nativeBridge = JniNativeEventBridge(storageDirectory = storageDirectory.absolutePath)
+        val handler = NativeMethodChannelHandler(nativeEventBridge = nativeBridge)
         nativeMethodChannelHandler = handler
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

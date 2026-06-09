@@ -1,5 +1,10 @@
 package com.excellentcalendar.excellent_calendar.bridge.native
 
+import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
+import com.excellentcalendar.excellent_calendar.bridge.contract.NativeContractViolation
+import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
+import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
+
 class NativeBridgeUnavailableException(
     message: String,
     cause: Throwable? = null,
@@ -10,6 +15,7 @@ fun interface NativeLibraryLoader {
 }
 
 class JniNativeEventBridge(
+    private val storageDirectory: String? = null,
     private val libraryLoader: NativeLibraryLoader = NativeLibraryLoader {
         System.loadLibrary(NativeLibraryName)
     },
@@ -20,8 +26,15 @@ class JniNativeEventBridge(
     @Volatile
     private var loadFailure: Throwable? = null
 
+    @Volatile
+    private var storageInitAttempted = false
+
+    @Volatile
+    private var storageInitFailureJson: String? = null
+
     override fun createEvent(requestJson: String): String {
         ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
         return try {
             nativeCreateEvent(requestJson)
         } catch (error: UnsatisfiedLinkError) {
@@ -31,6 +44,7 @@ class JniNativeEventBridge(
 
     override fun searchEvents(requestJson: String): String {
         ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
         return try {
             nativeSearchEvents(requestJson)
         } catch (error: UnsatisfiedLinkError) {
@@ -58,6 +72,8 @@ class JniNativeEventBridge(
 
     external fun nativeCreateEvent(requestJson: String): String
 
+    external fun nativeInitializeStorage(storageDirectory: String): String
+
     external fun nativeSearchEvents(requestJson: String): String
 
     external fun nativeCompleteEvent(requestJson: String): String
@@ -83,6 +99,39 @@ class JniNativeEventBridge(
         val failure = loadFailure
         if (failure != null) {
             throw NativeBridgeUnavailableException("Native event library is unavailable.", failure)
+        }
+    }
+
+    private fun ensureStorageInitialized(): String? {
+        val directory = storageDirectory ?: return null
+        if (!storageInitAttempted) {
+            synchronized(this) {
+                if (!storageInitAttempted) {
+                    storageInitFailureJson = initializeStorage(directory)
+                    storageInitAttempted = true
+                }
+            }
+        }
+        return storageInitFailureJson
+    }
+
+    private fun initializeStorage(directory: String): String? {
+        val initJson = try {
+            nativeInitializeStorage(directory)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeInitializeStorage is unavailable.", error)
+        }
+        return try {
+            val parsed = NativeResultContract.fromJson(initJson) { }
+            if (parsed.ok) null else initJson
+        } catch (error: NativeContractViolation) {
+            NativeContractJsonCodec.encodeObject(
+                NativeResultContract.failure(
+                    code = NativeErrorCodes.ContractValidationFailed,
+                    message = error.message ?: "Native storage initialization returned malformed NativeResult.",
+                    details = linkedMapOf("field" to error.field),
+                ).toMap(),
+            )
         }
     }
 

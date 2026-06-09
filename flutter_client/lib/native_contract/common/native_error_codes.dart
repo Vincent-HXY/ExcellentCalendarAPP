@@ -4,6 +4,11 @@ class NativeErrorCodes {
   static const nativeInternalError = 'NATIVE_INTERNAL_ERROR';
   static const contractValidationFailed = 'CONTRACT_VALIDATION_FAILED';
   static const contractVersionUnsupported = 'CONTRACT_VERSION_UNSUPPORTED';
+  static const featureNotImplemented = 'FEATURE_NOT_IMPLEMENTED';
+  static const storageNotInitialized = 'STORAGE_NOT_INITIALIZED';
+  static const storagePathInvalid = 'STORAGE_PATH_INVALID';
+  static const storageIoError = 'STORAGE_IO_ERROR';
+  static const storageDataCorrupted = 'STORAGE_DATA_CORRUPTED';
   static const eventTitleEmpty = 'EVENT_TITLE_EMPTY';
   static const eventTimeInvalid = 'EVENT_TIME_INVALID';
   static const eventNotFound = 'EVENT_NOT_FOUND';
@@ -34,6 +39,11 @@ class NativeErrorCodes {
     nativeInternalError,
     contractValidationFailed,
     contractVersionUnsupported,
+    featureNotImplemented,
+    storageNotInitialized,
+    storagePathInvalid,
+    storageIoError,
+    storageDataCorrupted,
     eventTitleEmpty,
     eventTimeInvalid,
     eventNotFound,

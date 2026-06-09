@@ -16,6 +16,31 @@ errors:
     message: "Contract version is unsupported"
     retryable: false
 
+  FEATURE_NOT_IMPLEMENTED:
+    module: common
+    message: "Requested feature is not implemented in this phase"
+    retryable: false
+
+  STORAGE_NOT_INITIALIZED:
+    module: storage
+    message: "Native storage has not been initialized"
+    retryable: false
+
+  STORAGE_PATH_INVALID:
+    module: storage
+    message: "Storage path is invalid or not writable"
+    retryable: false
+
+  STORAGE_IO_ERROR:
+    module: storage
+    message: "Storage input/output operation failed"
+    retryable: true
+
+  STORAGE_DATA_CORRUPTED:
+    module: storage
+    message: "Storage data is corrupted"
+    retryable: false
+
   EVENT_TITLE_EMPTY:
     module: event
     message: "Event title cannot be empty"

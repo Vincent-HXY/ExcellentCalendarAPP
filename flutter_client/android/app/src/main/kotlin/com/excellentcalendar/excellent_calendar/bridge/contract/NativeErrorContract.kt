@@ -4,6 +4,11 @@ object NativeErrorCodes {
     const val NativeInternalError = "NATIVE_INTERNAL_ERROR"
     const val ContractValidationFailed = "CONTRACT_VALIDATION_FAILED"
     const val ContractVersionUnsupported = "CONTRACT_VERSION_UNSUPPORTED"
+    const val FeatureNotImplemented = "FEATURE_NOT_IMPLEMENTED"
+    const val StorageNotInitialized = "STORAGE_NOT_INITIALIZED"
+    const val StoragePathInvalid = "STORAGE_PATH_INVALID"
+    const val StorageIoError = "STORAGE_IO_ERROR"
+    const val StorageDataCorrupted = "STORAGE_DATA_CORRUPTED"
     const val EventTitleEmpty = "EVENT_TITLE_EMPTY"
     const val EventTimeInvalid = "EVENT_TIME_INVALID"
     const val EventNotFound = "EVENT_NOT_FOUND"
@@ -34,6 +39,11 @@ object NativeErrorCodes {
         NativeInternalError,
         ContractValidationFailed,
         ContractVersionUnsupported,
+        FeatureNotImplemented,
+        StorageNotInitialized,
+        StoragePathInvalid,
+        StorageIoError,
+        StorageDataCorrupted,
         EventTitleEmpty,
         EventTimeInvalid,
         EventNotFound,
