@@ -1,5 +1,11 @@
 package com.excellentcalendar.excellent_calendar.bridge.contract
 
+/**
+ * native 层允许返回的错误码全集。
+ *
+ * 用常量集中管理错误码可以避免各层手写字符串时拼错，也方便 Dart 根据 code 做用户提示、
+ * 重试策略或埋点统计。
+ */
 object NativeErrorCodes {
     const val NativeInternalError = "NATIVE_INTERNAL_ERROR"
     const val ContractValidationFailed = "CONTRACT_VALIDATION_FAILED"
@@ -35,6 +41,7 @@ object NativeErrorCodes {
     const val PermissionDenied = "PERMISSION_DENIED"
     const val AlarmScheduleFailed = "ALARM_SCHEDULE_FAILED"
 
+    /** 用于校验 native 返回的错误码是否是协议中声明过的值。 */
     val All = setOf(
         NativeInternalError,
         ContractValidationFailed,
@@ -72,12 +79,22 @@ object NativeErrorCodes {
     )
 }
 
+/**
+ * NativeResult 中的错误对象。
+ *
+ * 字段意义：
+ * - `code`：机器可读错误码，适合分支判断。
+ * - `message`：人类可读说明，适合日志或调试。
+ * - `details`：补充上下文，例如出错字段、操作名。
+ * - `retryable`：调用方是否可以稍后重试。
+ */
 data class NativeErrorContract(
     val code: String,
     val message: String,
     val details: Map<String, Any?>?,
     val retryable: Boolean,
 ) {
+    /** 转成 MethodChannel 可返回的 Map。 */
     fun toMap(): Map<String, Any?> = linkedMapOf(
         "code" to code,
         "message" to message,
@@ -86,6 +103,7 @@ data class NativeErrorContract(
     )
 
     companion object {
+        /** 从 native 返回的 Map 构造错误对象，并校验字段类型和值域。 */
         fun fromMap(map: Map<String, Any?>): NativeErrorContract {
             val code = map["code"]
             val message = map["message"]
@@ -108,6 +126,7 @@ data class NativeErrorContract(
                 throw NativeContractViolation("NativeError.retryable must be boolean.", "error.retryable")
             }
 
+            // 泛型类型在 JVM 运行时会被擦除，因此 Map<String, Any?> 需要在边界处显式 suppress。
             @Suppress("UNCHECKED_CAST")
             return NativeErrorContract(
                 code = code,

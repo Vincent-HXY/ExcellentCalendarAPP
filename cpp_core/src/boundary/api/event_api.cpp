@@ -23,15 +23,23 @@
 namespace excellent_calendar::boundary::api {
 namespace {
 
+/**
+ * native API 的进程级运行状态。
+ *
+ * Android 加载 native so 后，这些静态对象会在进程中长期存在。initialize_storage
+ * 创建 repository/service，后续 create/search 复用它们。
+ */
 struct RuntimeState {
   std::shared_ptr<storage::json::JsonEventRepository> repository;
   std::shared_ptr<application::EventService> service;
   std::string storage_directory;
 };
 
+// 全局状态会被不同 MethodChannel 调用访问，因此用 mutex 保护读写。
 std::mutex g_state_mutex;
 RuntimeState g_state;
 
+/** 创建合约错误，field 可选。 */
 common::Error contract_error(std::string message, std::string field = "") {
   std::map<std::string, std::string> details;
   if (!field.empty()) {
@@ -40,6 +48,7 @@ common::Error contract_error(std::string message, std::string field = "") {
   return common::make_error("CONTRACT_VALIDATION_FAILED", std::move(message), std::move(details));
 }
 
+/** storage 尚未初始化时返回的错误。 */
 common::Error not_initialized_error() {
   return common::make_error(
       "STORAGE_NOT_INITIALIZED",
@@ -47,6 +56,7 @@ common::Error not_initialized_error() {
       {{"operation", "event"}});
 }
 
+/** 当前阶段未实现的能力统一返回 FEATURE_NOT_IMPLEMENTED。 */
 common::Error feature_not_implemented(std::string feature) {
   return common::make_error(
       "FEATURE_NOT_IMPLEMENTED",
@@ -54,6 +64,7 @@ common::Error feature_not_implemented(std::string feature) {
       {{"feature", std::move(feature)}});
 }
 
+/** 最外层异常兜底时使用的内部错误。 */
 common::Error internal_error(std::string reason) {
   return common::make_error(
       "NATIVE_INTERNAL_ERROR",
@@ -61,6 +72,7 @@ common::Error internal_error(std::string reason) {
       {{"reason", std::move(reason)}});
 }
 
+/** 解析请求 JSON，并要求顶层一定是 object。 */
 common::Result<picojson::object> parse_json_object(std::string_view request_json) {
   picojson::value value;
   const std::string error = picojson::parse(value, std::string(request_json));
@@ -73,6 +85,7 @@ common::Result<picojson::object> parse_json_object(std::string_view request_json
   return common::Result<picojson::object>::success(value.get<picojson::object>());
 }
 
+/** 安全获取 object 字段；不存在时返回 nullptr。 */
 const picojson::value* field(const picojson::object& object, const std::string& key) {
   const auto found = object.find(key);
   if (found == object.end()) {
@@ -81,6 +94,7 @@ const picojson::value* field(const picojson::object& object, const std::string& 
   return &found->second;
 }
 
+/** 检查是否包含白名单以外的字段。unknown 返回第一个发现的未知字段名。 */
 bool has_unknown_field(const picojson::object& object, const std::set<std::string>& allowed, std::string& unknown) {
   for (const auto& [key, _] : object) {
     if (allowed.find(key) == allowed.end()) {
@@ -91,6 +105,7 @@ bool has_unknown_field(const picojson::object& object, const std::set<std::strin
   return false;
 }
 
+/** 读取必填字符串字段。Result 失败时包含字段路径，便于 Dart 展示/日志定位。 */
 common::Result<std::string> require_string(const picojson::object& object,
                                            const std::string& key,
                                            const std::string& parent,
@@ -106,6 +121,7 @@ common::Result<std::string> require_string(const picojson::object& object,
   return common::Result<std::string>::success(value->get<std::string>());
 }
 
+/** 读取可选字符串字段：字段缺失或 JSON null 都映射为 std::nullopt。 */
 common::Result<std::optional<std::string>> optional_string(const picojson::object& object,
                                                            const std::string& key,
                                                            const std::string& parent) {
@@ -120,6 +136,7 @@ common::Result<std::optional<std::string>> optional_string(const picojson::objec
   return common::Result<std::optional<std::string>>::success(value->get<std::string>());
 }
 
+/** 读取必填 bool 字段。 */
 common::Result<bool> require_bool(const picojson::object& object,
                                   const std::string& key,
                                   const std::string& parent) {
@@ -133,6 +150,7 @@ common::Result<bool> require_bool(const picojson::object& object,
   return common::Result<bool>::success(value->get<bool>());
 }
 
+/** 读取可选 bool 字段。 */
 common::Result<std::optional<bool>> optional_bool(const picojson::object& object,
                                                   const std::string& key,
                                                   const std::string& parent) {
@@ -147,10 +165,12 @@ common::Result<std::optional<bool>> optional_bool(const picojson::object& object
   return common::Result<std::optional<bool>>::success(value->get<bool>());
 }
 
+/** picojson 把 JSON number 表示为 double，所以需要额外判断它是不是整数。 */
 bool is_integer(double value) {
   return std::floor(value) == value;
 }
 
+/** 读取可选整数。JSON 中是 double，校验为整数后再转 int。 */
 common::Result<std::optional<int>> optional_int(const picojson::object& object,
                                                 const std::string& key,
                                                 const std::string& parent) {
@@ -165,6 +185,7 @@ common::Result<std::optional<int>> optional_int(const picojson::object& object,
   return common::Result<std::optional<int>>::success(static_cast<int>(value->get<double>()));
 }
 
+/** 读取可选字符串数组，可选地校验每一项是否在 allowed 集合中。 */
 common::Result<std::vector<std::string>> optional_string_array(const picojson::object& object,
                                                                const std::string& key,
                                                                const std::string& parent,
@@ -195,6 +216,7 @@ common::Result<std::vector<std::string>> optional_string_array(const picojson::o
   return common::Result<std::vector<std::string>>::success(std::move(result));
 }
 
+/** 把 CreateEventRequest JSON 解析成 application 层命令对象。 */
 common::Result<application::CreateEventCommand> parse_create_event_request(std::string_view request_json) {
   auto parsed = parse_json_object(request_json);
   if (!parsed.ok()) {
@@ -211,6 +233,7 @@ common::Result<application::CreateEventCommand> parse_create_event_request(std::
         contract_error("CreateEventRequest contains an unknown field.", "CreateEventRequest." + unknown));
   }
 
+  // 先读取必填字段，任何一步失败都立即返回对应错误。
   auto title = require_string(object, "title", "CreateEventRequest", false);
   if (!title.ok()) return common::Result<application::CreateEventCommand>::failure(title.error());
   auto start_at = require_string(object, "start_at", "CreateEventRequest", true);
@@ -235,6 +258,7 @@ common::Result<application::CreateEventCommand> parse_create_event_request(std::
         contract_error("CreateEventRequest.source has an unsupported enum value.", "CreateEventRequest.source"));
   }
 
+  // 再读取可选字段。optional<T> 让“未传/null”和“传了字符串”都能明确表达。
   auto content = optional_string(object, "content", "CreateEventRequest");
   if (!content.ok()) return common::Result<application::CreateEventCommand>::failure(content.error());
   auto category_id = optional_string(object, "category_id", "CreateEventRequest");
@@ -267,6 +291,7 @@ common::Result<application::CreateEventCommand> parse_create_event_request(std::
     }
   }
 
+  // 最后组装 application 层命令。std::move 避免复制整个 command。
   application::CreateEventCommand command;
   command.title = title.value();
   command.content = content.value();
@@ -281,6 +306,7 @@ common::Result<application::CreateEventCommand> parse_create_event_request(std::
   return common::Result<application::CreateEventCommand>::success(std::move(command));
 }
 
+/** 把 SearchEventRequest JSON 解析成 application 层查询对象。 */
 common::Result<application::EventQuery> parse_search_event_request(std::string_view request_json) {
   auto parsed = parse_json_object(request_json);
   if (!parsed.ok()) {
@@ -298,6 +324,7 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   }
 
   application::EventQuery query;
+  // 顶层过滤字段大多是可选项，未传时保持 EventQuery 的默认值。
   auto keyword = optional_string(object, "keyword", "SearchEventRequest");
   if (!keyword.ok()) return common::Result<application::EventQuery>::failure(keyword.error());
   auto start_at_from = optional_string(object, "start_at_from", "SearchEventRequest");
@@ -314,6 +341,7 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   static const std::set<std::string> importance_values{
       "unimportant_noturgent", "important_noturgent", "unimportant_urgent", "important_urgent",
   };
+  // 数组字段用 vector<string> 表示；空 vector 意味着不按该字段过滤。
   static const std::set<std::string> source_values{"manual", "ai_extraction", "sync", "import", "wechat"};
   auto category_ids = optional_string_array(object, "category_ids", "SearchEventRequest");
   if (!category_ids.ok()) return common::Result<application::EventQuery>::failure(category_ids.error());
@@ -332,6 +360,7 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   query.importance = importance.value();
   query.source = source.value();
 
+  // 顶层 sort_by/sort_direction 优先级高于 pagination 内部同名字段。
   auto sort_by = optional_string(object, "sort_by", "SearchEventRequest");
   if (!sort_by.ok()) return common::Result<application::EventQuery>::failure(sort_by.error());
   auto sort_direction = optional_string(object, "sort_direction", "SearchEventRequest");
@@ -373,6 +402,7 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
     auto cursor = optional_string(pagination, "cursor", "SearchEventRequest.pagination");
     if (!cursor.ok()) return common::Result<application::EventQuery>::failure(cursor.error());
     if (cursor.value().has_value()) {
+      // 当前阶段只支持 page/page_size，cursor 字段保留给未来扩展。
       return common::Result<application::EventQuery>::failure(
           common::make_error("SEARCH_QUERY_INVALID", "Cursor pagination is not implemented in this phase",
                              {{"field", "pagination.cursor"}}));
@@ -401,17 +431,20 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   return common::Result<application::EventQuery>::success(std::move(query));
 }
 
+/** 线程安全地取得当前 service。返回 shared_ptr 副本，调用期间对象不会被释放。 */
 std::shared_ptr<application::EventService> current_service() {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   return g_state.service;
 }
 
+/** 把 common::Error 包成 NativeResult JSON。 */
 std::string failure_response(const common::Error& error, const std::string& request_id) {
   return contract::native_failure_json(error, request_id);
 }
 
 }  // namespace
 
+/** 初始化 JSON 仓库和 EventService，并保存到全局运行状态。 */
 std::string initialize_storage(std::string_view storage_directory) {
   const auto request_id = common::generate_uuid_v4();
   try {
@@ -426,6 +459,7 @@ std::string initialize_storage(std::string_view storage_directory) {
         common::utc_now_iso8601,
         common::generate_uuid_v4);
     {
+      // 更新全局状态时加锁，避免其他线程读到半初始化对象。
       std::lock_guard<std::mutex> lock(g_state_mutex);
       g_state.repository = repository;
       g_state.service = service;
@@ -437,12 +471,14 @@ std::string initialize_storage(std::string_view storage_directory) {
     data["storage_version"] = picojson::value(1.0);
     return contract::native_success_json(picojson::value(std::move(data)), request_id);
   } catch (const std::exception& error) {
+    // API 边界兜底捕获异常，保证 JNI/Kotlin 收到的是 JSON，而不是 C++ 异常穿透。
     return failure_response(internal_error(error.what()), request_id);
   } catch (...) {
     return failure_response(internal_error("unknown exception"), request_id);
   }
 }
 
+/** native 创建事件入口。 */
 std::string create_event(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
   try {
@@ -468,6 +504,7 @@ std::string create_event(std::string_view request_json) {
   }
 }
 
+/** native 搜索事件入口。 */
 std::string search_events(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
   try {
@@ -493,11 +530,13 @@ std::string search_events(std::string_view request_json) {
   }
 }
 
+/** 当前阶段未实现，保留 API 形状以便 Dart/Kotlin 先接通完整链路。 */
 std::string complete_event(std::string_view /*request_json*/) {
   const auto request_id = common::generate_uuid_v4();
   return failure_response(feature_not_implemented("event.complete"), request_id);
 }
 
+/** 当前阶段未实现，保留 API 形状以便 Dart/Kotlin 先接通完整链路。 */
 std::string reopen_event(std::string_view /*request_json*/) {
   const auto request_id = common::generate_uuid_v4();
   return failure_response(feature_not_implemented("event.reopen"), request_id);

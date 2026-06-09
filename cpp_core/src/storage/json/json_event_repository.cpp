@@ -23,6 +23,9 @@
 namespace excellent_calendar::storage::json {
 namespace {
 
+// 本文件匿名 namespace 中的工具函数只服务 JSON 仓库实现，不暴露给其他模块。
+
+/** 存储路径不可用，例如路径为空、不是目录或不可写。 */
 common::Error storage_path_invalid(std::string reason) {
   return common::make_error(
       "STORAGE_PATH_INVALID",
@@ -30,6 +33,7 @@ common::Error storage_path_invalid(std::string reason) {
       {{"reason", std::move(reason)}});
 }
 
+/** 文件读写类错误。retryable=true 表示可能是临时 I/O 问题，调用方稍后可重试。 */
 common::Error storage_io_error(std::string operation, std::string reason) {
   return common::make_error(
       "STORAGE_IO_ERROR",
@@ -38,6 +42,7 @@ common::Error storage_io_error(std::string operation, std::string reason) {
       true);
 }
 
+/** 存储文件内容格式不符合预期，通常表示 events.json 被破坏或版本不兼容。 */
 common::Error storage_corrupted(std::string reason, std::string field = "") {
   std::map<std::string, std::string> details{{"reason", std::move(reason)}};
   if (!field.empty()) {
@@ -49,10 +54,12 @@ common::Error storage_corrupted(std::string reason, std::string field = "") {
       std::move(details));
 }
 
+/** picojson 的 number 是 double；这里判断 double 是否实际表示整数。 */
 bool is_integer_number(double value) {
   return std::floor(value) == value;
 }
 
+/** 从 JSON object 中取字段，不存在返回 nullptr，避免直接下标访问产生默认值。 */
 const picojson::value* object_field(const picojson::object& object, const std::string& key) {
   const auto found = object.find(key);
   if (found == object.end()) {
@@ -61,6 +68,7 @@ const picojson::value* object_field(const picojson::object& object, const std::s
   return &found->second;
 }
 
+/** 读取必填非空字符串字段。 */
 common::Result<std::string> read_required_string(const picojson::object& object,
                                                  const std::string& key,
                                                  const std::string& parent) {
@@ -72,6 +80,7 @@ common::Result<std::string> read_required_string(const picojson::object& object,
   return common::Result<std::string>::success(value->get<std::string>());
 }
 
+/** 读取可选字符串字段；缺失/null 都映射为 std::nullopt。 */
 common::Result<std::optional<std::string>> read_optional_string(const picojson::object& object,
                                                                 const std::string& key,
                                                                 const std::string& parent) {
@@ -86,6 +95,7 @@ common::Result<std::optional<std::string>> read_optional_string(const picojson::
   return common::Result<std::optional<std::string>>::success(value->get<std::string>());
 }
 
+/** 读取必填布尔字段。 */
 common::Result<bool> read_required_bool(const picojson::object& object,
                                         const std::string& key,
                                         const std::string& parent) {
@@ -97,6 +107,12 @@ common::Result<bool> read_required_bool(const picojson::object& object,
   return common::Result<bool>::success(value->get<bool>());
 }
 
+/**
+ * 把 events.json 中的一条记录解析成 domain::Event。
+ *
+ * 这里不仅检查 JSON 类型，还会校验时间格式、状态、来源、importance 等值域。
+ * 这样损坏数据不会悄悄进入业务层。
+ */
 common::Result<domain::Event> parse_event_record(const picojson::value& value, std::size_t index) {
   const std::string parent = "events[" + std::to_string(index) + "]";
   if (!value.is<picojson::object>()) {
@@ -106,6 +122,7 @@ common::Result<domain::Event> parse_event_record(const picojson::value& value, s
 
   domain::Event event;
 
+  // required 字段读取失败就立即返回错误；这种早返回写法能保持后续逻辑只处理有效数据。
   auto id = read_required_string(object, "id", parent);
   if (!id.ok()) return common::Result<domain::Event>::failure(id.error());
   auto title = read_required_string(object, "title", parent);
@@ -132,6 +149,7 @@ common::Result<domain::Event> parse_event_record(const picojson::value& value, s
   event.created_at = created_at.value();
   event.updated_at = updated_at.value();
 
+  // optional 字段使用 optional<string>，JSON null 和字段缺失都会变成 std::nullopt。
   auto content = read_optional_string(object, "content", parent);
   if (!content.ok()) return common::Result<domain::Event>::failure(content.error());
   auto completed_at = read_optional_string(object, "completed_at", parent);
@@ -164,6 +182,7 @@ common::Result<domain::Event> parse_event_record(const picojson::value& value, s
   event.is_all_day = is_all_day.value();
   event.has_recurrence = has_recurrence.value();
 
+  // 读取完成后做业务值域校验。
   if (!common::is_iso8601_utc_datetime(event.start_at)) {
     return common::Result<domain::Event>::failure(storage_corrupted("stored start_at is invalid", parent + ".start_at"));
   }
@@ -184,6 +203,7 @@ common::Result<domain::Event> parse_event_record(const picojson::value& value, s
   return common::Result<domain::Event>::success(std::move(event));
 }
 
+/** 把 optional<string> 转为 picojson value；无值时生成 JSON null。 */
 picojson::value optional_string_to_json(const std::optional<std::string>& value) {
   if (!value.has_value()) {
     return picojson::value();
@@ -191,6 +211,7 @@ picojson::value optional_string_to_json(const std::optional<std::string>& value)
   return picojson::value(*value);
 }
 
+/** 把领域 Event 转为存储文件中的 JSON object。 */
 picojson::value event_to_storage_json(const domain::Event& event) {
   picojson::object object;
   object["id"] = picojson::value(event.id);
@@ -214,6 +235,12 @@ picojson::value event_to_storage_json(const domain::Event& event) {
   return picojson::value(object);
 }
 
+/**
+ * 原子替换文件。
+ *
+ * 保存时先写 `events.json.tmp`，写完后再替换正式文件。这样即使进程中途崩溃，
+ * 也尽量避免正式文件只写了一半。Windows 和 POSIX 的替换 API 不同，所以分平台实现。
+ */
 common::Result<common::Unit> replace_file_atomically(const std::filesystem::path& source,
                                                      const std::filesystem::path& target) {
 #if defined(_WIN32)
@@ -238,10 +265,13 @@ common::Result<common::Unit> replace_file_atomically(const std::filesystem::path
 
 }  // namespace
 
+/** 保存存储目录路径，实际目录创建放在 initialize()。 */
 JsonEventRepository::JsonEventRepository(std::filesystem::path storage_directory)
     : storage_directory_(std::move(storage_directory)) {}
 
+/** 初始化目录并做一次写入探测，确认路径可用。 */
 common::Result<common::Unit> JsonEventRepository::initialize() {
+  // lock_guard 是 RAII 锁：构造时加锁，离开作用域自动解锁，即使中途 return 也安全。
   std::lock_guard<std::mutex> lock(mutex_);
 
   if (storage_directory_.empty()) {
@@ -259,6 +289,7 @@ common::Result<common::Unit> JsonEventRepository::initialize() {
     return common::Result<common::Unit>::failure(storage_path_invalid("path is not a directory"));
   }
 
+  // 创建一个临时探测文件，确认目录不仅存在，而且真的可写。
   const auto probe_path = storage_directory_ / ".write_probe.tmp";
   {
     std::ofstream probe(probe_path, std::ios::binary | std::ios::trunc);
@@ -272,11 +303,13 @@ common::Result<common::Unit> JsonEventRepository::initialize() {
     }
   }
   std::error_code remove_error;
+  // 探测文件删除失败不影响初始化结果；后续写正式文件时还会再次检查 I/O。
   std::filesystem::remove(probe_path, remove_error);
 
   return common::Result<common::Unit>::success(common::Unit{});
 }
 
+/** 创建事件：加载全量事件 -> 追加 -> 保存全量事件。 */
 common::Result<domain::Event> JsonEventRepository::create(const domain::Event& event) {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -294,14 +327,17 @@ common::Result<domain::Event> JsonEventRepository::create(const domain::Event& e
   return common::Result<domain::Event>::success(event);
 }
 
+/** 读取所有事件。mutex 保证不会和 create/save 同时读写同一个文件。 */
 common::Result<std::vector<domain::Event>> JsonEventRepository::find_all() {
   std::lock_guard<std::mutex> lock(mutex_);
   return load_events_locked();
 }
 
+/** 在已持有 mutex_ 的前提下读取 events.json。 */
 common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_locked() {
   const auto path = events_file();
   std::error_code exists_error;
+  // 文件不存在表示还没有事件，不算错误。
   if (!std::filesystem::exists(path, exists_error)) {
     return common::Result<std::vector<domain::Event>>::success({});
   }
@@ -309,6 +345,7 @@ common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_lock
     return common::Result<std::vector<domain::Event>>::failure(storage_io_error("exists", exists_error.message()));
   }
 
+  // 先完整读入字符串，再交给 picojson 解析。
   std::ifstream input(path, std::ios::binary);
   if (!input.is_open()) {
     return common::Result<std::vector<domain::Event>>::failure(storage_io_error("read", "events.json cannot be opened"));
@@ -330,6 +367,7 @@ common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_lock
   }
   const auto& object = root.get<picojson::object>();
   const auto* version = object_field(object, "storage_version");
+  // storage_version 用于未来升级文件格式；当前只接受版本 1。
   if (version == nullptr || !version->is<double>() || !is_integer_number(version->get<double>()) ||
       static_cast<int>(version->get<double>()) != 1) {
     return common::Result<std::vector<domain::Event>>::failure(
@@ -343,6 +381,7 @@ common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_lock
   std::vector<domain::Event> events;
   const auto& array = events_value->get<picojson::array>();
   events.reserve(array.size());
+  // 逐条解析，任何一条损坏都会让整个读取失败，避免返回半可信数据。
   for (std::size_t index = 0; index < array.size(); ++index) {
     auto parsed = parse_event_record(array[index], index);
     if (!parsed.ok()) {
@@ -354,6 +393,7 @@ common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_lock
   return common::Result<std::vector<domain::Event>>::success(std::move(events));
 }
 
+/** 在已持有 mutex_ 的前提下保存 events.json。 */
 common::Result<common::Unit> JsonEventRepository::save_events_locked(const std::vector<domain::Event>& events) {
   std::error_code create_error;
   std::filesystem::create_directories(storage_directory_, create_error);
@@ -361,6 +401,7 @@ common::Result<common::Unit> JsonEventRepository::save_events_locked(const std::
     return common::Result<common::Unit>::failure(storage_io_error("create_directories", create_error.message()));
   }
 
+  // 组装根对象：版本号 + 事件数组。
   picojson::array event_array;
   event_array.reserve(events.size());
   for (const auto& event : events) {
@@ -373,6 +414,7 @@ common::Result<common::Unit> JsonEventRepository::save_events_locked(const std::
 
   const auto tmp_path = events_file().string() + ".tmp";
   {
+    // 先写临时文件并 flush，确认写入成功后再替换正式文件。
     std::ofstream output(tmp_path, std::ios::binary | std::ios::trunc);
     if (!output.is_open()) {
       return common::Result<common::Unit>::failure(storage_io_error("write_tmp", "events.json.tmp cannot be opened"));
@@ -387,12 +429,14 @@ common::Result<common::Unit> JsonEventRepository::save_events_locked(const std::
   auto replaced = replace_file_atomically(tmp_path, events_file());
   if (!replaced.ok()) {
     std::error_code remove_error;
+    // 替换失败时清理临时文件；清理失败不覆盖原始错误。
     std::filesystem::remove(tmp_path, remove_error);
     return replaced;
   }
   return common::Result<common::Unit>::success(common::Unit{});
 }
 
+/** events.json 的完整路径。 */
 std::filesystem::path JsonEventRepository::events_file() const {
   return storage_directory_ / "events.json";
 }

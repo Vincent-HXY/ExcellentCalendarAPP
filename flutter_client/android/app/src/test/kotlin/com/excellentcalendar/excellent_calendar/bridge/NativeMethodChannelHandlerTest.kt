@@ -16,6 +16,12 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * NativeMethodChannelHandler 的单元测试。
+ *
+ * 这些测试不加载真实 C++ 动态库，而是用 FakeNativeEventBridge 模拟 native 返回。
+ * 这样可以专注验证 Kotlin 层：请求校验、JSON 转换、响应合约校验、错误包装和回调行为。
+ */
 class NativeMethodChannelHandlerTest {
     @Test
     fun createEventSuccessForwardsSnakeCaseJsonAndNativeResult() {
@@ -447,6 +453,12 @@ class NativeMethodChannelHandlerTest {
         )
     }
 
+    /**
+     * 假 native bridge。
+     *
+     * 它记录 Kotlin 发给 native 的 JSON，并返回测试预设的 NativeResult JSON。
+     * 这是一种常见测试手法：用 fake 隔离外部依赖，让单元测试稳定、快速。
+     */
     private class FakeNativeEventBridge(
         private val createResponseJson: String = NativeContractJsonCodec.encodeObject(
             linkedMapOf(
@@ -568,6 +580,12 @@ class NativeMethodChannelHandlerTest {
         }
     }
 
+    /**
+     * 记录 MethodChannel.Result 回调情况。
+     *
+     * Flutter 的真实 result 会把数据送回 Dart；测试里只需要记录 success/error/notImplemented
+     * 哪个被调用，以及 success 的值是什么。
+     */
     private class RecordingResult : MethodChannel.Result {
         var successValue: Any? = null
             private set

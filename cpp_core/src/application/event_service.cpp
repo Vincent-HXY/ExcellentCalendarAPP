@@ -12,6 +12,9 @@
 namespace excellent_calendar::application {
 namespace {
 
+// 匿名 namespace 中的函数只在本 .cpp 文件可见，避免和其他文件同名函数冲突。
+
+/** 创建“标题为空”的业务错误。 */
 common::Error event_title_empty() {
   return common::make_error(
       "EVENT_TITLE_EMPTY",
@@ -19,6 +22,7 @@ common::Error event_title_empty() {
       {{"field", "title"}});
 }
 
+/** 创建“时间非法”的业务错误，field 指出 start_at 或 end_at。 */
 common::Error event_time_invalid(std::string field = "start_at") {
   return common::make_error(
       "EVENT_TIME_INVALID",
@@ -26,6 +30,7 @@ common::Error event_time_invalid(std::string field = "start_at") {
       {{"field", std::move(field)}});
 }
 
+/** 创建合约校验错误。虽然 Kotlin 已校验一次，C++ 仍会做防御性校验。 */
 common::Error contract_validation_failed(std::string field, std::string message) {
   return common::make_error(
       "CONTRACT_VALIDATION_FAILED",
@@ -33,10 +38,12 @@ common::Error contract_validation_failed(std::string field, std::string message)
       {{"field", std::move(field)}});
 }
 
+/** vector 的简单包含判断。项目当前数据量小，线性查找足够直观。 */
 bool vector_contains(const std::vector<std::string>& values, const std::string& value) {
   return std::find(values.begin(), values.end(), value) != values.end();
 }
 
+/** 关键字搜索：标题、内容、地点任一字段包含 keyword 即匹配。 */
 bool matches_keyword(const domain::Event& event, const std::string& keyword) {
   if (keyword.empty()) {
     return true;
@@ -52,6 +59,7 @@ bool matches_keyword(const domain::Event& event, const std::string& keyword) {
          common::contains_case_insensitive_ascii(*event.location, keyword);
 }
 
+/** 地点搜索：事件没有 location 时不匹配。 */
 bool matches_location(const domain::Event& event, const std::string& location) {
   if (!event.location.has_value()) {
     return false;
@@ -59,10 +67,12 @@ bool matches_location(const domain::Event& event, const std::string& location) {
   return common::contains_case_insensitive_ascii(*event.location, location);
 }
 
+/** 把事件时间字符串转成可比较的 epoch 秒。 */
 std::optional<std::int64_t> event_time(const std::string& value) {
   return common::parse_iso8601_utc_epoch_seconds(value);
 }
 
+/** 比较 optional<string>，没有值时按空字符串处理。 */
 int compare_optional_string(const std::optional<std::string>& left,
                             const std::optional<std::string>& right) {
   const std::string left_value = left.value_or("");
@@ -76,6 +86,7 @@ int compare_optional_string(const std::optional<std::string>& left,
   return 0;
 }
 
+/** 根据 sort_by 选择不同字段比较两个事件。返回负数/0/正数表示 left 小于/等于/大于 right。 */
 int compare_events_by(const domain::Event& left, const domain::Event& right, const std::string& sort_by) {
   if (sort_by == "created_at") {
     return left.created_at.compare(right.created_at);
@@ -92,6 +103,7 @@ int compare_events_by(const domain::Event& left, const domain::Event& right, con
   return left.start_at.compare(right.start_at);
 }
 
+/** sort_by 白名单。 */
 bool is_supported_sort_by(const std::string& value) {
   return value == "start_at" ||
          value == "created_at" ||
@@ -110,12 +122,15 @@ EventService::EventService(
       clock_(std::move(clock)),
       id_generator_(std::move(id_generator)) {}
 
+/** 创建事件的业务主流程：校验 -> 组装领域对象 -> 保存。 */
 common::Result<domain::Event> EventService::create_event(const CreateEventCommand& command) {
+  // trim 后再判断空标题，避免 "   " 这种标题通过校验。
   const auto title = common::trim_ascii(command.title);
   if (title.empty()) {
     return common::Result<domain::Event>::failure(event_title_empty());
   }
 
+  // 时间先解析成 epoch 秒，比较大小比直接比较字符串更可靠。
   const auto start_time = common::parse_iso8601_utc_epoch_seconds(command.start_at);
   const auto end_time = common::parse_iso8601_utc_epoch_seconds(command.end_at);
   if (!start_time.has_value()) {
@@ -128,6 +143,7 @@ common::Result<domain::Event> EventService::create_event(const CreateEventComman
     return common::Result<domain::Event>::failure(event_time_invalid("start_at"));
   }
 
+  // 枚举类字段在 C++ 再校验一次，保证即使绕过 Kotlin 也不会写入非法值。
   if (command.importance.has_value() && !domain::is_valid_importance(*command.importance)) {
     return common::Result<domain::Event>::failure(
         contract_validation_failed("importance", "CreateEventRequest.importance has an unsupported enum value."));
@@ -137,6 +153,7 @@ common::Result<domain::Event> EventService::create_event(const CreateEventComman
         contract_validation_failed("source", "CreateEventRequest.source has an unsupported enum value."));
   }
 
+  // clock_ 和 id_generator_ 是注入函数：生产环境用真实时间/UUID，测试可以替换为固定值。
   const auto now = clock_();
   domain::Event event;
   event.id = id_generator_();
@@ -158,10 +175,13 @@ common::Result<domain::Event> EventService::create_event(const CreateEventComman
   event.updated_at = now;
   event.deleted_at = std::nullopt;
 
+  // repository 返回 Result；service 不吞掉存储错误，而是继续往上层传递。
   return repository_->create(event);
 }
 
+/** 搜索事件：校验查询参数，读取所有事件，过滤，排序，分页。 */
 common::Result<EventSearchResult> EventService::search_events(const EventQuery& query) {
+  // 先校验排序和分页参数，避免后续出现越界或未定义排序行为。
   if (!is_supported_sort_by(query.sort_by)) {
     return common::Result<EventSearchResult>::failure(
         common::make_error("SEARCH_QUERY_INVALID", "Search sort_by is invalid", {{"field", "sort_by"}}));
@@ -175,6 +195,7 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
         common::make_error("SEARCH_QUERY_INVALID", "Search pagination is invalid", {{"field", "pagination"}}));
   }
 
+  // 时间范围过滤需要把请求里的字符串解析成可比较的数值。
   std::optional<std::int64_t> from_time;
   std::optional<std::int64_t> to_time;
   if (query.start_at_from.has_value()) {
@@ -196,6 +217,7 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
         common::make_error("SEARCH_QUERY_INVALID", "Search time range is invalid", {{"field", "start_at_from"}}));
   }
 
+  // 读取仓库。当前 JSON 仓库一次加载所有事件，业务过滤在内存中完成。
   auto repository_result = repository_->find_all();
   if (!repository_result.ok()) {
     return common::Result<EventSearchResult>::failure(repository_result.error());
@@ -203,12 +225,14 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
 
   std::vector<domain::Event> filtered;
   for (const auto& event : repository_result.value()) {
+    // include_deleted=false 时过滤掉软删除事件。
     if (!query.include_deleted && event.deleted_at.has_value()) {
       continue;
     }
     if (query.keyword.has_value() && !matches_keyword(event, *query.keyword)) {
       continue;
     }
+    // 如果已存储的数据本身时间坏了，说明文件损坏，应返回 STORAGE_DATA_CORRUPTED。
     const auto start = event_time(event.start_at);
     if (!start.has_value()) {
       return common::Result<EventSearchResult>::failure(
@@ -242,6 +266,7 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
     filtered.push_back(event);
   }
 
+  // stable_sort 保持“比较相等”的元素原相对顺序，分页结果更稳定。
   std::stable_sort(filtered.begin(), filtered.end(), [&](const domain::Event& left, const domain::Event& right) {
     const int comparison = compare_events_by(left, right, query.sort_by);
     if (comparison == 0) {
@@ -253,6 +278,7 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
   const int total = static_cast<int>(filtered.size());
   const int page = query.pagination.page;
   const int page_size = query.pagination.page_size;
+  // page 从 1 开始，因此 offset = (page - 1) * page_size。
   const int offset = (page - 1) * page_size;
 
   EventSearchResult result;
@@ -264,6 +290,7 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
 
   if (offset < total) {
     const int end = std::min(offset + page_size, total);
+    // assign 从 filtered 中截取当前页范围。
     result.items.assign(filtered.begin() + offset, filtered.begin() + end);
   }
   return common::Result<EventSearchResult>::success(std::move(result));

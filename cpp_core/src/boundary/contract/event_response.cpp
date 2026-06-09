@@ -3,6 +3,7 @@
 namespace excellent_calendar::boundary::contract {
 namespace {
 
+/** optional<string> 到 JSON 的转换：无值时返回 JSON null。 */
 picojson::value optional_string_to_json(const std::optional<std::string>& value) {
   if (!value.has_value()) {
     return picojson::value();
@@ -12,6 +13,7 @@ picojson::value optional_string_to_json(const std::optional<std::string>& value)
 
 }  // namespace
 
+/** 把 domain::Event 映射为 EventResponse JSON。字段名必须和 Kotlin/Dart 合约保持一致。 */
 picojson::value event_response_to_json(const domain::Event& event) {
   picojson::object object;
   object["id"] = picojson::value(event.id);

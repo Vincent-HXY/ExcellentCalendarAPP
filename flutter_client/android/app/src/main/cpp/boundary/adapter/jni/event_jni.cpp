@@ -11,6 +11,12 @@
 
 namespace {
 
+/**
+ * 把 Java/Kotlin 的 jstring 转成 C++ std::string。
+ *
+ * GetStringUTFChars 可能因为内存不足返回 nullptr，所以这里做空指针保护。
+ * 取到 chars 后必须调用 ReleaseStringUTFChars，否则 JVM 资源可能泄漏。
+ */
 std::string from_jstring(JNIEnv* env, jstring value) {
   if (value == nullptr) {
     return {};
@@ -24,10 +30,12 @@ std::string from_jstring(JNIEnv* env, jstring value) {
   return result;
 }
 
+/** 把 C++ std::string 转回 Java/Kotlin jstring。 */
 jstring to_jstring(JNIEnv* env, const std::string& value) {
   return env->NewStringUTF(value.c_str());
 }
 
+/** JNI 层兜底错误：即使 C++ 抛异常，也返回符合 NativeResult 合约的 JSON。 */
 jstring internal_error_result(JNIEnv* env, const char* reason) {
   const auto request_id = excellent_calendar::common::generate_uuid_v4();
   return to_jstring(
@@ -40,6 +48,12 @@ jstring internal_error_result(JNIEnv* env, const char* reason) {
           request_id));
 }
 
+/**
+ * JNI 方法的通用调用模板。
+ *
+ * function 是 C++ boundary API 函数指针，签名为 `std::string(std::string_view)`。
+ * 这里统一做字符串转换和异常捕获，下面每个 JNI 导出函数就非常薄。
+ */
 jstring call_boundary(JNIEnv* env, jstring input, std::string (*function)(std::string_view)) {
   try {
     return to_jstring(env, function(from_jstring(env, input)));
@@ -52,6 +66,7 @@ jstring call_boundary(JNIEnv* env, jstring input, std::string (*function)(std::s
 
 }  // namespace
 
+// extern "C" 禁止 C++ 名字改编；JNIEXPORT/JNICALL 是 JNI 要求的导出宏和调用约定。
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeInitializeStorage(
     JNIEnv* env,

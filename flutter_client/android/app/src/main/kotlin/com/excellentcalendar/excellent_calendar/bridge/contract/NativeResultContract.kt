@@ -2,13 +2,28 @@ package com.excellentcalendar.excellent_calendar.bridge.contract
 
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 
+/**
+ * native 层统一返回格式。
+ *
+ * 所有 C++ 调用都返回同一种外壳：
+ * - `ok=true`：`data` 有值，`error` 必须为 null。
+ * - `ok=false`：`data` 必须为 null，`error` 描述失败原因。
+ *
+ * 这种 Result 外壳能让 Dart 侧不必分别处理“抛异常、返回 null、返回错误码”等多种失败方式。
+ */
 data class NativeResultContract(
+    /** 是否成功。 */
     val ok: Boolean,
+    /** 成功时的业务数据；失败时必须为 null。 */
     val data: Any?,
+    /** 失败时的错误对象；成功时必须为 null。 */
     val error: NativeErrorContract?,
+    /** 合约版本，方便以后升级 JSON 协议时做兼容判断。 */
     val contractVersion: Int?,
+    /** 单次请求 id，便于日志串联 Dart/Kotlin/C++ 的一次调用。 */
     val requestId: String?,
 ) {
+    /** 转成 MethodChannel 可以直接返回给 Dart 的 Map。 */
     fun toMap(): Map<String, Any?> = linkedMapOf(
         "ok" to ok,
         "data" to data,
@@ -18,8 +33,15 @@ data class NativeResultContract(
     )
 
     companion object {
+        /** 当前 Kotlin 层支持的 native 合约版本。 */
         const val ContractVersion = 1
 
+        /**
+         * 从 C++ 返回的 JSON 字符串解析 NativeResult。
+         *
+         * `dataValidator` 由调用方传入，因为不同 native 方法的 data 结构不同：
+         * 创建事件要校验 EventResponse，搜索事件要校验 EventListResponse。
+         */
         fun fromJson(
             json: String,
             dataValidator: (Any?) -> Unit,
@@ -32,6 +54,7 @@ data class NativeResultContract(
             return fromMap(map, dataValidator)
         }
 
+        /** 从 Map 构造并严格校验 NativeResult。 */
         fun fromMap(
             map: Map<String, Any?>,
             dataValidator: (Any?) -> Unit,
@@ -59,6 +82,7 @@ data class NativeResultContract(
                 throw NativeContractViolation("NativeResult.request_id must be string or null.", "request_id")
             }
 
+            // ok=true 与 ok=false 的字段约束不同，所以分支校验能尽早发现 native 响应畸形。
             return if (ok) {
                 if (rawError != null) {
                     throw NativeContractViolation("NativeResult.error must be null when ok=true.", "error")
@@ -90,6 +114,7 @@ data class NativeResultContract(
             }
         }
 
+        /** 创建一个失败 NativeResult，供 Kotlin 层在捕获异常/校验失败时使用。 */
         fun failure(
             code: String,
             message: String,

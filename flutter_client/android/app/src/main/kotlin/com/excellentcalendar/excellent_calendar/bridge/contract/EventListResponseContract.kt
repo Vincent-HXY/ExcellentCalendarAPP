@@ -1,6 +1,14 @@
 package com.excellentcalendar.excellent_calendar.bridge.contract
 
+/**
+ * 事件列表响应合约。
+ *
+ * 搜索接口返回的 data 应包含：
+ * - `items`：事件数组，每一项都必须符合 EventResponse。
+ * - `pagination`：分页信息。
+ */
 object EventListResponseContract {
+    /** 校验搜索响应 data 的整体结构。 */
     fun validate(data: Any?) {
         if (data !is Map<*, *>) {
             throw NativeContractViolation("EventListResponse data must be an object.", "data")
@@ -32,6 +40,7 @@ object EventListResponseContract {
         validatePagination(pagination as Map<String, Any?>)
     }
 
+    /** 校验分页对象。 */
     private fun validatePagination(map: Map<String, Any?>) {
         val parent = "EventListResponse.pagination"
         ContractValidators.rejectUnknownFields(

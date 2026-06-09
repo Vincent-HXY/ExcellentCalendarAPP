@@ -4,13 +4,16 @@
 
 namespace excellent_calendar::boundary::contract {
 
+/** 把搜索结果映射为 EventListResponse JSON。 */
 picojson::value event_list_response_to_json(const application::EventSearchResult& result) {
   picojson::array items;
   items.reserve(result.items.size());
+  // 复用单个事件的转换逻辑，避免列表接口和创建接口字段不一致。
   for (const auto& event : result.items) {
     items.push_back(event_response_to_json(event));
   }
 
+  // picojson 使用 double 表示 JSON number，因此整数写出时需要 static_cast<double>。
   picojson::object pagination;
   pagination["total"] = picojson::value(static_cast<double>(result.pagination.total));
   pagination["page"] = picojson::value(static_cast<double>(result.pagination.page));
