@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../application/event/create_event_use_case.dart';
 import '../../application/event/read_events_use_case.dart';
 import '../../native_contract/event/event_response_dto.dart';
+import '../app_design_tokens.dart';
 import '../new_schedule/new_schedule_page.dart';
 import '../shared/native_result_dialog.dart';
 import 'components/add_task_button.dart';
@@ -104,16 +105,16 @@ class _InboxPageState extends State<InboxPage> {
   Future<void> _openNewSchedulePage() async {
     final didCreate = await Navigator.of(context).push<bool>(
       PageRouteBuilder<bool>(
-        transitionDuration: const Duration(milliseconds: 280),
-        reverseTransitionDuration: const Duration(milliseconds: 220),
+        transitionDuration: AppMotion.routeEnter,
+        reverseTransitionDuration: AppMotion.routeExit,
         pageBuilder: (context, animation, secondaryAnimation) {
           return NewSchedulePage(createUseCase: widget.createEventUseCase);
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final curvedAnimation = CurvedAnimation(
             parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInOutCubic,
+            curve: AppMotion.enter,
+            reverseCurve: AppMotion.standard,
           );
 
           return FadeTransition(

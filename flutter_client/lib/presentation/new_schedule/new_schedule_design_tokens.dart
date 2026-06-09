@@ -2,6 +2,7 @@
 // 设计边界：复用 Inbox 的基础色，保证两个页面视觉一致，不放表单业务规则。
 import 'package:flutter/material.dart';
 
+import '../app_design_tokens.dart';
 import '../inbox/inbox_design_tokens.dart';
 
 class NewScheduleColors {
@@ -38,7 +39,7 @@ class NewScheduleSizes {
   // 数据块作用：新建页固定尺寸集合，控制顶部栏、分段控件、行高和输入区域高度。
   // 关键布局：输入框、时间卡和行高决定表单密度，移动端小屏需重点回归。
   static const topBarHeight = 58.0;
-  static const cardRadius = 26.0;
+  static const cardRadius = AppRadius.formCard;
   static const segmentedHeight = 44.0;
   static const rowHeight = 54.0;
   static const titleInputHeight = 118.0;

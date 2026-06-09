@@ -2,6 +2,7 @@
 // 设计边界：当前分组是 UI 临时逻辑，真实“今日任务”分组应由 Application/Query 产出。
 import 'package:flutter/material.dart';
 
+import '../../app_design_tokens.dart';
 import '../inbox_design_tokens.dart';
 import '../models/inbox_task_view_data.dart';
 import 'task_list_item.dart';
@@ -102,6 +103,17 @@ class TaskGroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // 函数作用：绘制一个任务分组卡片，包括标题栏、数量、箭头和任务行列表。
     // 关键布局：圆角卡片承载一个分组；折叠状态由父组件维护，便于未来迁移到 state_management。
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final sectionExpandDuration = disableAnimations
+        ? Duration.zero
+        : AppMotion.sectionExpand;
+    final sectionCollapseDuration = disableAnimations
+        ? Duration.zero
+        : AppMotion.sectionCollapse;
+    final arrowDuration = disableAnimations
+        ? Duration.zero
+        : AppMotion.arrowRotation;
+
     return Container(
       decoration: BoxDecoration(
         color: InboxColors.surface,
@@ -111,7 +123,8 @@ class TaskGroupCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          InkWell(
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: onHeaderTap,
             child: SizedBox(
               height: InboxSizes.groupHeaderHeight,
@@ -133,7 +146,8 @@ class TaskGroupCard extends StatelessWidget {
                     const SizedBox(width: InboxSpacing.groupHeaderGap),
                     AnimatedRotation(
                       turns: isExpanded ? 0.25 : 0,
-                      duration: const Duration(milliseconds: 160),
+                      duration: arrowDuration,
+                      curve: AppMotion.standard,
                       child: const Icon(
                         Icons.chevron_right_rounded,
                         color: InboxColors.mutedText,
@@ -146,25 +160,29 @@ class TaskGroupCard extends StatelessWidget {
             ),
           ),
           AnimatedSize(
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOut,
-            child: isExpanded
-                ? Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: InboxSpacing.cardVerticalPadding,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (var index = 0; index < tasks.length; index++)
-                          TaskListItem(
-                            task: tasks[index],
-                            showDivider: index != tasks.length - 1,
-                          ),
-                      ],
-                    ),
-                  )
-                : const SizedBox.shrink(),
+            duration: sectionExpandDuration,
+            reverseDuration: sectionCollapseDuration,
+            curve: AppMotion.standard,
+            alignment: Alignment.topCenter,
+            child: ClipRect(
+              child: isExpanded
+                  ? Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: InboxSpacing.cardVerticalPadding,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (var index = 0; index < tasks.length; index++)
+                            TaskListItem(
+                              task: tasks[index],
+                              showDivider: index != tasks.length - 1,
+                            ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ),
         ],
       ),

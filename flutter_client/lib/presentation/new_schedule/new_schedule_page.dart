@@ -9,7 +9,7 @@ import 'components/new_schedule_top_bar.dart';
 import 'new_schedule_design_tokens.dart';
 import 'schedule_submit_controller.dart';
 
-enum CreateScheduleMode { manual, recognition }
+enum CreateScheduleMode { manual, aiRecognition }
 
 class NewSchedulePage extends StatefulWidget {
   const NewSchedulePage({required this.createUseCase, super.key});

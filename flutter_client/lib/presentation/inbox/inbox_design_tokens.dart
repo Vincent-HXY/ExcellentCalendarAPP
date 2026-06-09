@@ -2,6 +2,8 @@
 // 设计边界：这里只放视觉 token，不放业务状态或任务分组逻辑。
 import 'package:flutter/material.dart';
 
+import '../app_design_tokens.dart';
+
 class InboxColors {
   const InboxColors._();
 
@@ -44,9 +46,9 @@ class InboxSizes {
   static const topBarHeight = 62.0;
   static const topBarIconButton = 36.0;
   static const topBarIcon = 25.0;
-  static const groupHeaderHeight = 42.0;
+  static const groupHeaderHeight = 48.0;
   static const rowHeight = 44.0;
-  static const cardRadius = 26.0;
+  static const cardRadius = AppRadius.sectionCard;
   static const checkbox = 22.0;
   static const checkboxBorder = 2.0;
   static const checkIcon = 15.0;
