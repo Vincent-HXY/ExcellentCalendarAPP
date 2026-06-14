@@ -81,6 +81,11 @@ errors:
     message: "Reminder target does not exist"
     retryable: false
 
+  REMINDER_NOT_FOUND:
+    module: reminder
+    message: "Reminder not found"
+    retryable: false
+
   REMINDER_METHOD_INVALID:
     module: reminder
     message: "Reminder method is invalid"
@@ -164,4 +169,9 @@ errors:
   ALARM_SCHEDULE_FAILED:
     module: android
     message: "Failed to schedule alarm"
+    retryable: true
+
+  ALARM_CANCEL_FAILED:
+    module: android
+    message: "Failed to cancel alarm"
     retryable: true

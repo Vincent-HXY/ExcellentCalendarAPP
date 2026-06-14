@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/cancel_reminder_request.schema.json",
+  "title": "CancelReminderRequest",
+  "description": "Request payload for cancelling a reminder task. Business deletion of a reminder means cancelling Android scheduling first, then setting status=cancelled, is_enabled=false, and deleted_at while keeping the storage record.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

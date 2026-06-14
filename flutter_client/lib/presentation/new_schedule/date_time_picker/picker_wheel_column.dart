@@ -85,9 +85,7 @@ class _PickerWheelColumnState extends State<PickerWheelColumn> {
   void _handleSelectedItemChanged(int rawIndex) {
     final value = _normalize(rawIndex);
     if (value != _selectedValue) {
-      setState(() {
-        _selectedValue = value;
-      });
+      _selectedValue = value;
     }
     widget.onSelectedItemChanged(value);
   }
@@ -100,31 +98,14 @@ class _PickerWheelColumnState extends State<PickerWheelColumn> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          const Positioned(
-            left: 0,
-            right: 0,
-            top: (PickerSizes.wheelHeight - PickerSizes.wheelItemExtent) / 2,
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: PickerColors.divider,
-            ),
-          ),
-          const Positioned(
-            left: 0,
-            right: 0,
-            bottom: (PickerSizes.wheelHeight - PickerSizes.wheelItemExtent) / 2,
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: PickerColors.divider,
-            ),
-          ),
           ListWheelScrollView.useDelegate(
             controller: _controller,
             itemExtent: PickerSizes.wheelItemExtent,
-            diameterRatio: 1.6,
-            overAndUnderCenterOpacity: 0.56,
+            useMagnifier: true,
+            magnification: PickerSizes.wheelMagnification,
+            diameterRatio: PickerSizes.wheelDiameterRatio,
+            overAndUnderCenterOpacity: PickerSizes.wheelOverAndUnderOpacity,
+            squeeze: PickerSizes.wheelSqueeze,
             physics: const FixedExtentScrollPhysics(),
             onSelectedItemChanged: _handleSelectedItemChanged,
             childDelegate: widget.looping
@@ -141,6 +122,27 @@ class _PickerWheelColumnState extends State<PickerWheelColumn> {
                     },
                   ),
           ),
+          IgnorePointer(
+            child: SizedBox(
+              height:
+                  PickerSizes.wheelItemExtent * PickerSizes.wheelMagnification,
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Divider(
+                    height: 1,
+                    thickness: PickerSizes.wheelSelectionLineThickness,
+                    color: PickerColors.divider,
+                  ),
+                  Divider(
+                    height: 1,
+                    thickness: PickerSizes.wheelSelectionLineThickness,
+                    color: PickerColors.divider,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -148,7 +150,6 @@ class _PickerWheelColumnState extends State<PickerWheelColumn> {
 
   Widget _buildItem(int index) {
     final value = _normalize(index);
-    final isSelected = value == _selectedValue;
     return Center(
       child: FittedBox(
         fit: BoxFit.scaleDown,
@@ -156,9 +157,7 @@ class _PickerWheelColumnState extends State<PickerWheelColumn> {
           widget.labelBuilder(value),
           maxLines: 1,
           softWrap: false,
-          style: isSelected
-              ? PickerTextStyles.wheelSelected
-              : PickerTextStyles.wheelUnselected,
+          style: PickerTextStyles.wheelItem,
         ),
       ),
     );

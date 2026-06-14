@@ -17,6 +17,7 @@ class NativeErrorCodes {
   static const recurrenceTargetInvalid = 'RECURRENCE_TARGET_INVALID';
   static const reminderTimeInvalid = 'REMINDER_TIME_INVALID';
   static const reminderTargetNotFound = 'REMINDER_TARGET_NOT_FOUND';
+  static const reminderNotFound = 'REMINDER_NOT_FOUND';
   static const reminderMethodInvalid = 'REMINDER_METHOD_INVALID';
   static const notificationDeliveryFailed = 'NOTIFICATION_DELIVERY_FAILED';
   static const habitTitleEmpty = 'HABIT_TITLE_EMPTY';
@@ -34,6 +35,7 @@ class NativeErrorCodes {
   static const userSettingsInvalid = 'USER_SETTINGS_INVALID';
   static const permissionDenied = 'PERMISSION_DENIED';
   static const alarmScheduleFailed = 'ALARM_SCHEDULE_FAILED';
+  static const alarmCancelFailed = 'ALARM_CANCEL_FAILED';
 
   static const values = {
     nativeInternalError,
@@ -52,6 +54,7 @@ class NativeErrorCodes {
     recurrenceTargetInvalid,
     reminderTimeInvalid,
     reminderTargetNotFound,
+    reminderNotFound,
     reminderMethodInvalid,
     notificationDeliveryFailed,
     habitTitleEmpty,
@@ -69,5 +72,6 @@ class NativeErrorCodes {
     userSettingsInvalid,
     permissionDenied,
     alarmScheduleFailed,
+    alarmCancelFailed,
   };
 }

@@ -23,6 +23,7 @@ object NativeErrorCodes {
     const val RecurrenceTargetInvalid = "RECURRENCE_TARGET_INVALID"
     const val ReminderTimeInvalid = "REMINDER_TIME_INVALID"
     const val ReminderTargetNotFound = "REMINDER_TARGET_NOT_FOUND"
+    const val ReminderNotFound = "REMINDER_NOT_FOUND"
     const val ReminderMethodInvalid = "REMINDER_METHOD_INVALID"
     const val NotificationDeliveryFailed = "NOTIFICATION_DELIVERY_FAILED"
     const val HabitTitleEmpty = "HABIT_TITLE_EMPTY"
@@ -40,6 +41,7 @@ object NativeErrorCodes {
     const val UserSettingsInvalid = "USER_SETTINGS_INVALID"
     const val PermissionDenied = "PERMISSION_DENIED"
     const val AlarmScheduleFailed = "ALARM_SCHEDULE_FAILED"
+    const val AlarmCancelFailed = "ALARM_CANCEL_FAILED"
 
     /** 用于校验 native 返回的错误码是否是协议中声明过的值。 */
     val All = setOf(
@@ -59,6 +61,7 @@ object NativeErrorCodes {
         RecurrenceTargetInvalid,
         ReminderTimeInvalid,
         ReminderTargetNotFound,
+        ReminderNotFound,
         ReminderMethodInvalid,
         NotificationDeliveryFailed,
         HabitTitleEmpty,
@@ -76,6 +79,7 @@ object NativeErrorCodes {
         UserSettingsInvalid,
         PermissionDenied,
         AlarmScheduleFailed,
+        AlarmCancelFailed,
     )
 }
 

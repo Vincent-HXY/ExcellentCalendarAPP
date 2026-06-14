@@ -58,6 +58,30 @@ methods:
       data: reminder/reminder_response.schema.json
     event_stream: false
 
+  reminder.update:
+    module: reminder
+    request: reminder/update_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+    event_stream: false
+
+  reminder.cancel:
+    module: reminder
+    request: reminder/cancel_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+    event_stream: false
+
+  reminder.list:
+    module: reminder
+    request: reminder/list_reminders_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_list_response.schema.json
+    event_stream: false
+
   notification.list:
     module: notification
     request: common/pagination_request.schema.json

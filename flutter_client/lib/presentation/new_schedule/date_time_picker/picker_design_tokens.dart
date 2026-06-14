@@ -34,8 +34,13 @@ class PickerSizes {
   static const capsuleHorizontalPadding = 18.0;
   static const dayCellExtent = 42.0;
   static const dayCircle = 38.0;
-  static const wheelItemExtent = 52.0;
-  static const wheelHeight = 186.0;
+  static const wheelItemExtent = 64.0;
+  static const wheelHeight = 220.0;
+  static const wheelMagnification = 1.18;
+  static const wheelOverAndUnderOpacity = 0.24;
+  static const wheelDiameterRatio = 2.5;
+  static const wheelSqueeze = 1.0;
+  static const wheelSelectionLineThickness = 0.75;
   static const bottomActionHeight = 56.0;
 }
 
@@ -84,17 +89,10 @@ class PickerTextStyles {
     height: 1,
   );
 
-  static const wheelSelected = TextStyle(
+  static const wheelItem = TextStyle(
     color: PickerColors.textPrimary,
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: FontWeight.w500,
-    height: 1,
-  );
-
-  static const wheelUnselected = TextStyle(
-    color: PickerColors.textDisabled,
-    fontSize: 20,
-    fontWeight: FontWeight.w400,
     height: 1,
   );
 

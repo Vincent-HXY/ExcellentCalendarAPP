@@ -1,4 +1,5 @@
 import 'package:excellent_calendar/presentation/new_schedule/date_time_picker/picker_date_math.dart';
+import 'package:excellent_calendar/presentation/new_schedule/date_time_picker/picker_design_tokens.dart';
 import 'package:excellent_calendar/presentation/new_schedule/date_time_picker/schedule_date_time_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +31,34 @@ void main() {
     expect(find.text('00'), findsWidgets);
     expect(find.text('23'), findsWidgets);
     expect(find.text('59'), findsWidgets);
+  });
+
+  testWidgets('time wheels use the native continuous magnifier', (
+    tester,
+  ) async {
+    await _pumpPickerHost(
+      tester,
+      initial: DateTime(2026, 6, 9, 14, 30),
+      initialStep: PickerInitialStep.time,
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    final wheels = tester.widgetList<ListWheelScrollView>(
+      find.byType(ListWheelScrollView),
+    );
+
+    expect(wheels, hasLength(2));
+    for (final wheel in wheels) {
+      expect(wheel.useMagnifier, isTrue);
+      expect(wheel.magnification, PickerSizes.wheelMagnification);
+      expect(
+        wheel.overAndUnderCenterOpacity,
+        PickerSizes.wheelOverAndUnderOpacity,
+      );
+      expect(wheel.itemExtent, PickerSizes.wheelItemExtent);
+      expect(wheel.physics, isA<FixedExtentScrollPhysics>());
+    }
   });
 
   testWidgets(
