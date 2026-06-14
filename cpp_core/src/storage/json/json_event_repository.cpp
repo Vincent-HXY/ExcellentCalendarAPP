@@ -1,10 +1,6 @@
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
 
 #include <cmath>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <system_error>
 
 #include <picojson/picojson.h>
 
@@ -13,45 +9,14 @@
 #include "excellent_calendar/domain/event_status.hpp"
 #include "excellent_calendar/domain/importance.hpp"
 
-#if defined(_WIN32)
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-#endif
-
 namespace excellent_calendar::storage::json {
 namespace {
 
 // 本文件匿名 namespace 中的工具函数只服务 JSON 仓库实现，不暴露给其他模块。
 
-/** 存储路径不可用，例如路径为空、不是目录或不可写。 */
-common::Error storage_path_invalid(std::string reason) {
-  return common::make_error(
-      "STORAGE_PATH_INVALID",
-      "Storage path is invalid or not writable",
-      {{"reason", std::move(reason)}});
-}
-
-/** 文件读写类错误。retryable=true 表示可能是临时 I/O 问题，调用方稍后可重试。 */
-common::Error storage_io_error(std::string operation, std::string reason) {
-  return common::make_error(
-      "STORAGE_IO_ERROR",
-      "Storage input/output operation failed",
-      {{"operation", std::move(operation)}, {"reason", std::move(reason)}},
-      true);
-}
-
 /** 存储文件内容格式不符合预期，通常表示 events.json 被破坏或版本不兼容。 */
 common::Error storage_corrupted(std::string reason, std::string field = "") {
-  std::map<std::string, std::string> details{{"reason", std::move(reason)}};
-  if (!field.empty()) {
-    details["field"] = std::move(field);
-  }
-  return common::make_error(
-      "STORAGE_DATA_CORRUPTED",
-      "Storage data is corrupted",
-      std::move(details));
+  return storage_data_corrupted(std::move(reason), std::move(field));
 }
 
 /** picojson 的 number 是 double；这里判断 double 是否实际表示整数。 */
@@ -235,78 +200,17 @@ picojson::value event_to_storage_json(const domain::Event& event) {
   return picojson::value(object);
 }
 
-/**
- * 原子替换文件。
- *
- * 保存时先写 `events.json.tmp`，写完后再替换正式文件。这样即使进程中途崩溃，
- * 也尽量避免正式文件只写了一半。Windows 和 POSIX 的替换 API 不同，所以分平台实现。
- */
-common::Result<common::Unit> replace_file_atomically(const std::filesystem::path& source,
-                                                     const std::filesystem::path& target) {
-#if defined(_WIN32)
-  const auto source_string = source.string();
-  const auto target_string = target.string();
-  if (!MoveFileExA(
-          source_string.c_str(),
-          target_string.c_str(),
-          MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
-    return common::Result<common::Unit>::failure(
-        storage_io_error("rename", "MoveFileEx failed with code " + std::to_string(GetLastError())));
-  }
-#else
-  std::error_code rename_error;
-  std::filesystem::rename(source, target, rename_error);
-  if (rename_error) {
-    return common::Result<common::Unit>::failure(storage_io_error("rename", rename_error.message()));
-  }
-#endif
-  return common::Result<common::Unit>::success(common::Unit{});
-}
-
 }  // namespace
 
 /** 保存存储目录路径，实际目录创建放在 initialize()。 */
 JsonEventRepository::JsonEventRepository(std::filesystem::path storage_directory)
-    : storage_directory_(std::move(storage_directory)) {}
+    : store_(std::move(storage_directory)) {}
 
 /** 初始化目录并做一次写入探测，确认路径可用。 */
 common::Result<common::Unit> JsonEventRepository::initialize() {
   // lock_guard 是 RAII 锁：构造时加锁，离开作用域自动解锁，即使中途 return 也安全。
   std::lock_guard<std::mutex> lock(mutex_);
-
-  if (storage_directory_.empty()) {
-    return common::Result<common::Unit>::failure(storage_path_invalid("path is empty"));
-  }
-
-  std::error_code create_error;
-  std::filesystem::create_directories(storage_directory_, create_error);
-  if (create_error) {
-    return common::Result<common::Unit>::failure(storage_path_invalid(create_error.message()));
-  }
-
-  std::error_code status_error;
-  if (!std::filesystem::is_directory(storage_directory_, status_error) || status_error) {
-    return common::Result<common::Unit>::failure(storage_path_invalid("path is not a directory"));
-  }
-
-  // 创建一个临时探测文件，确认目录不仅存在，而且真的可写。
-  const auto probe_path = storage_directory_ / ".write_probe.tmp";
-  {
-    std::ofstream probe(probe_path, std::ios::binary | std::ios::trunc);
-    if (!probe.is_open()) {
-      return common::Result<common::Unit>::failure(storage_path_invalid("probe file cannot be opened"));
-    }
-    probe << "ok";
-    probe.flush();
-    if (!probe.good()) {
-      return common::Result<common::Unit>::failure(storage_path_invalid("probe file cannot be written"));
-    }
-  }
-  std::error_code remove_error;
-  // 探测文件删除失败不影响初始化结果；后续写正式文件时还会再次检查 I/O。
-  std::filesystem::remove(probe_path, remove_error);
-
-  return common::Result<common::Unit>::success(common::Unit{});
+  return store_.initialize();
 }
 
 /** 创建事件：加载全量事件 -> 追加 -> 保存全量事件。 */
@@ -327,6 +231,22 @@ common::Result<domain::Event> JsonEventRepository::create(const domain::Event& e
   return common::Result<domain::Event>::success(event);
 }
 
+/** 按 id 查找事件。 */
+common::Result<std::optional<domain::Event>> JsonEventRepository::find_by_id(std::string_view id) {
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  auto loaded = load_events_locked();
+  if (!loaded.ok()) {
+    return common::Result<std::optional<domain::Event>>::failure(loaded.error());
+  }
+  for (const auto& event : loaded.value()) {
+    if (event.id == std::string(id)) {
+      return common::Result<std::optional<domain::Event>>::success(event);
+    }
+  }
+  return common::Result<std::optional<domain::Event>>::success(std::nullopt);
+}
+
 /** 读取所有事件。mutex 保证不会和 create/save 同时读写同一个文件。 */
 common::Result<std::vector<domain::Event>> JsonEventRepository::find_all() {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -335,33 +255,15 @@ common::Result<std::vector<domain::Event>> JsonEventRepository::find_all() {
 
 /** 在已持有 mutex_ 的前提下读取 events.json。 */
 common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_locked() {
-  const auto path = events_file();
-  std::error_code exists_error;
-  // 文件不存在表示还没有事件，不算错误。
-  if (!std::filesystem::exists(path, exists_error)) {
+  auto loaded = store_.read_json_file("events.json");
+  if (!loaded.ok()) {
+    return common::Result<std::vector<domain::Event>>::failure(loaded.error());
+  }
+  if (!loaded.value().has_value()) {
     return common::Result<std::vector<domain::Event>>::success({});
   }
-  if (exists_error) {
-    return common::Result<std::vector<domain::Event>>::failure(storage_io_error("exists", exists_error.message()));
-  }
 
-  // 先完整读入字符串，再交给 picojson 解析。
-  std::ifstream input(path, std::ios::binary);
-  if (!input.is_open()) {
-    return common::Result<std::vector<domain::Event>>::failure(storage_io_error("read", "events.json cannot be opened"));
-  }
-  std::stringstream buffer;
-  buffer << input.rdbuf();
-  if (input.bad()) {
-    return common::Result<std::vector<domain::Event>>::failure(storage_io_error("read", "events.json read failed"));
-  }
-
-  picojson::value root;
-  const std::string parse_error = picojson::parse(root, buffer.str());
-  if (!parse_error.empty()) {
-    std::cerr << "ExcellentCalendar storage parse error: " << parse_error << '\n';
-    return common::Result<std::vector<domain::Event>>::failure(storage_corrupted(parse_error));
-  }
+  const auto& root = *loaded.value();
   if (!root.is<picojson::object>()) {
     return common::Result<std::vector<domain::Event>>::failure(storage_corrupted("root must be object"));
   }
@@ -385,7 +287,6 @@ common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_lock
   for (std::size_t index = 0; index < array.size(); ++index) {
     auto parsed = parse_event_record(array[index], index);
     if (!parsed.ok()) {
-      std::cerr << "ExcellentCalendar storage record error: " << parsed.error().message << '\n';
       return common::Result<std::vector<domain::Event>>::failure(parsed.error());
     }
     events.push_back(std::move(parsed.value()));
@@ -395,12 +296,6 @@ common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_lock
 
 /** 在已持有 mutex_ 的前提下保存 events.json。 */
 common::Result<common::Unit> JsonEventRepository::save_events_locked(const std::vector<domain::Event>& events) {
-  std::error_code create_error;
-  std::filesystem::create_directories(storage_directory_, create_error);
-  if (create_error) {
-    return common::Result<common::Unit>::failure(storage_io_error("create_directories", create_error.message()));
-  }
-
   // 组装根对象：版本号 + 事件数组。
   picojson::array event_array;
   event_array.reserve(events.size());
@@ -412,33 +307,7 @@ common::Result<common::Unit> JsonEventRepository::save_events_locked(const std::
   root["storage_version"] = picojson::value(1.0);
   root["events"] = picojson::value(event_array);
 
-  const auto tmp_path = events_file().string() + ".tmp";
-  {
-    // 先写临时文件并 flush，确认写入成功后再替换正式文件。
-    std::ofstream output(tmp_path, std::ios::binary | std::ios::trunc);
-    if (!output.is_open()) {
-      return common::Result<common::Unit>::failure(storage_io_error("write_tmp", "events.json.tmp cannot be opened"));
-    }
-    output << picojson::value(root).serialize();
-    output.flush();
-    if (!output.good()) {
-      return common::Result<common::Unit>::failure(storage_io_error("write_tmp", "events.json.tmp write failed"));
-    }
-  }
-
-  auto replaced = replace_file_atomically(tmp_path, events_file());
-  if (!replaced.ok()) {
-    std::error_code remove_error;
-    // 替换失败时清理临时文件；清理失败不覆盖原始错误。
-    std::filesystem::remove(tmp_path, remove_error);
-    return replaced;
-  }
-  return common::Result<common::Unit>::success(common::Unit{});
-}
-
-/** events.json 的完整路径。 */
-std::filesystem::path JsonEventRepository::events_file() const {
-  return storage_directory_ / "events.json";
+  return store_.write_json_file("events.json", picojson::value(root));
 }
 
 }  // namespace excellent_calendar::storage::json

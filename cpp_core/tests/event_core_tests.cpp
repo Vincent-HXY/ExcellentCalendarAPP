@@ -194,6 +194,15 @@ class MemoryRepository final : public EventRepository {
     return Result<Event>::success(event);
   }
 
+  Result<std::optional<Event>> find_by_id(std::string_view id) override {
+    for (const auto& event : events) {
+      if (event.id == std::string(id)) {
+        return Result<std::optional<Event>>::success(event);
+      }
+    }
+    return Result<std::optional<Event>>::success(std::nullopt);
+  }
+
   Result<std::vector<Event>> find_all() override {
     return Result<std::vector<Event>>::success(events);
   }
@@ -205,6 +214,11 @@ class FailingRepository final : public EventRepository {
  public:
   Result<Event> create(const Event& /*event*/) override {
     return Result<Event>::failure(
+        excellent_calendar::common::make_error("STORAGE_IO_ERROR", "Storage input/output operation failed"));
+  }
+
+  Result<std::optional<Event>> find_by_id(std::string_view /*id*/) override {
+    return Result<std::optional<Event>>::failure(
         excellent_calendar::common::make_error("STORAGE_IO_ERROR", "Storage input/output operation failed"));
   }
 

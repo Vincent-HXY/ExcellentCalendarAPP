@@ -16,4 +16,7 @@ std::optional<std::int64_t> parse_iso8601_utc_epoch_seconds(std::string_view val
 /** 只校验字符串是否是本项目接受的 UTC ISO 8601 时间格式。 */
 bool is_iso8601_utc_datetime(std::string_view value);
 
+/** 把 Unix epoch 秒格式化成本项目统一的 UTC ISO 8601 时间。 */
+std::string format_epoch_seconds_utc_iso8601(std::int64_t epoch_seconds);
+
 }  // namespace excellent_calendar::common

@@ -1,43 +1,24 @@
 #include "excellent_calendar/boundary/api/event_api.hpp"
 
 #include <cmath>
-#include <memory>
-#include <mutex>
 #include <set>
 #include <vector>
 
 #include <picojson/picojson.h>
 
 #include "excellent_calendar/application/event_service.hpp"
+#include "excellent_calendar/boundary/api/native_runtime.hpp"
 #include "excellent_calendar/boundary/contract/event_list_response.hpp"
 #include "excellent_calendar/boundary/contract/event_response.hpp"
 #include "excellent_calendar/boundary/contract/native_result.hpp"
-#include "excellent_calendar/common/clock.hpp"
 #include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/common/result.hpp"
 #include "excellent_calendar/domain/data_source.hpp"
 #include "excellent_calendar/domain/importance.hpp"
-#include "excellent_calendar/storage/json/json_event_repository.hpp"
 
 namespace excellent_calendar::boundary::api {
 namespace {
-
-/**
- * native API 的进程级运行状态。
- *
- * Android 加载 native so 后，这些静态对象会在进程中长期存在。initialize_storage
- * 创建 repository/service，后续 create/search 复用它们。
- */
-struct RuntimeState {
-  std::shared_ptr<storage::json::JsonEventRepository> repository;
-  std::shared_ptr<application::EventService> service;
-  std::string storage_directory;
-};
-
-// 全局状态会被不同 MethodChannel 调用访问，因此用 mutex 保护读写。
-std::mutex g_state_mutex;
-RuntimeState g_state;
 
 /** 创建合约错误，field 可选。 */
 common::Error contract_error(std::string message, std::string field = "") {
@@ -46,14 +27,6 @@ common::Error contract_error(std::string message, std::string field = "") {
     details["field"] = std::move(field);
   }
   return common::make_error("CONTRACT_VALIDATION_FAILED", std::move(message), std::move(details));
-}
-
-/** storage 尚未初始化时返回的错误。 */
-common::Error not_initialized_error() {
-  return common::make_error(
-      "STORAGE_NOT_INITIALIZED",
-      "Native storage has not been initialized",
-      {{"operation", "event"}});
 }
 
 /** 当前阶段未实现的能力统一返回 FEATURE_NOT_IMPLEMENTED。 */
@@ -286,7 +259,7 @@ common::Result<application::CreateEventCommand> parse_create_event_request(std::
           contract_error("CreateEventRequest.reminders must be an array.", "CreateEventRequest.reminders"));
     }
     if (!reminders->get<picojson::array>().empty()) {
-      // TODO(reminder): persist Reminder records through ReminderRepository.
+      // Embedded Event reminders are outside this phase; create Reminder through reminder.create.
       return common::Result<application::CreateEventCommand>::failure(feature_not_implemented("reminders"));
     }
   }
@@ -431,12 +404,6 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   return common::Result<application::EventQuery>::success(std::move(query));
 }
 
-/** 线程安全地取得当前 service。返回 shared_ptr 副本，调用期间对象不会被释放。 */
-std::shared_ptr<application::EventService> current_service() {
-  std::lock_guard<std::mutex> lock(g_state_mutex);
-  return g_state.service;
-}
-
 /** 把 common::Error 包成 NativeResult JSON。 */
 std::string failure_response(const common::Error& error, const std::string& request_id) {
   return contract::native_failure_json(error, request_id);
@@ -448,22 +415,9 @@ std::string failure_response(const common::Error& error, const std::string& requ
 std::string initialize_storage(std::string_view storage_directory) {
   const auto request_id = common::generate_uuid_v4();
   try {
-    auto repository = std::make_shared<storage::json::JsonEventRepository>(std::filesystem::path(std::string(storage_directory)));
-    auto initialized = repository->initialize();
+    auto initialized = initialize_runtime(storage_directory);
     if (!initialized.ok()) {
       return failure_response(initialized.error(), request_id);
-    }
-
-    auto service = std::make_shared<application::EventService>(
-        repository,
-        common::utc_now_iso8601,
-        common::generate_uuid_v4);
-    {
-      // 更新全局状态时加锁，避免其他线程读到半初始化对象。
-      std::lock_guard<std::mutex> lock(g_state_mutex);
-      g_state.repository = repository;
-      g_state.service = service;
-      g_state.storage_directory = std::string(storage_directory);
     }
 
     picojson::object data;
@@ -487,9 +441,9 @@ std::string create_event(std::string_view request_json) {
       return failure_response(parsed.error(), request_id);
     }
 
-    const auto service = current_service();
+    const auto service = current_event_service();
     if (!service) {
-      return failure_response(not_initialized_error(), request_id);
+      return failure_response(storage_not_initialized_error("event"), request_id);
     }
 
     auto created = service->create_event(parsed.value());
@@ -513,9 +467,9 @@ std::string search_events(std::string_view request_json) {
       return failure_response(parsed.error(), request_id);
     }
 
-    const auto service = current_service();
+    const auto service = current_event_service();
     if (!service) {
-      return failure_response(not_initialized_error(), request_id);
+      return failure_response(storage_not_initialized_error("event"), request_id);
     }
 
     auto result = service->search_events(parsed.value());

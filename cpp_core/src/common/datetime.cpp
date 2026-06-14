@@ -1,6 +1,10 @@
 #include "excellent_calendar/common/datetime.hpp"
 
+#include <chrono>
 #include <cctype>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 namespace excellent_calendar::common {
@@ -117,6 +121,22 @@ std::optional<std::int64_t> parse_iso8601_utc_epoch_seconds(std::string_view val
 /** 是否能成功解析为项目接受的 UTC ISO 8601 时间。 */
 bool is_iso8601_utc_datetime(std::string_view value) {
   return parse_iso8601_utc_epoch_seconds(value).has_value();
+}
+
+/** 把 epoch 秒格式化为 UTC ISO 8601。 */
+std::string format_epoch_seconds_utc_iso8601(std::int64_t epoch_seconds) {
+  const auto time = static_cast<std::time_t>(epoch_seconds);
+
+  std::tm utc{};
+#if defined(_WIN32)
+  gmtime_s(&utc, &time);
+#else
+  gmtime_r(&time, &utc);
+#endif
+
+  std::ostringstream output;
+  output << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
+  return output.str();
 }
 
 }  // namespace excellent_calendar::common

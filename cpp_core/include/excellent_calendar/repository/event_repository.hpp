@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include <string_view>
 #include <vector>
 
 #include "excellent_calendar/common/result.hpp"
@@ -20,6 +22,9 @@ class EventRepository {
 
   /** 保存一个事件并返回保存后的事件。 */
   virtual common::Result<domain::Event> create(const domain::Event& event) = 0;
+
+  /** 按 id 查找事件；返回 nullopt 表示没有对应记录。 */
+  virtual common::Result<std::optional<domain::Event>> find_by_id(std::string_view id) = 0;
 
   /** 读取所有事件；过滤和分页由 EventService 处理。 */
   virtual common::Result<std::vector<domain::Event>> find_all() = 0;
