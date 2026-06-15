@@ -20,4 +20,14 @@ interface NativeEventBridge {
 
     /** 将已完成的事件实例重新打开。当前 C++ 阶段可能返回 FEATURE_NOT_IMPLEMENTED。 */
     fun reopenEvent(requestJson: String): String
+
+    fun createReminder(requestJson: String): String
+
+    fun cancelReminder(requestJson: String): String
+
+    fun listReminders(requestJson: String): String
+
+    fun markReminderScheduled(reminderId: String): String
+
+    fun markReminderFailed(reminderId: String, failureReason: String): String
 }

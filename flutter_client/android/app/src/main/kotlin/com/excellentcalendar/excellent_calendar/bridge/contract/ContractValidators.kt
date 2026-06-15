@@ -18,6 +18,7 @@ internal object ContractEnums {
     val CreateEventSource = setOf("manual", "ai_extraction", "sync", "import", "wechat")
     val ReminderSource = setOf("manual", "auto", "ai_extraction", "sync", "import", "wechat")
     val ReminderMethods = setOf("ring", "popup", "wechat")
+    val ReminderStatus = setOf("pending", "scheduled", "sent", "failed", "cancelled")
     val RecurrenceFrequency = setOf("daily", "weekly", "monthly", "yearly", "custom")
     val SortDirection = setOf("asc", "desc")
     val EventSortBy = setOf("start_at", "created_at", "updated_at", "importance", "title")

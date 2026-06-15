@@ -1,7 +1,9 @@
 package com.excellentcalendar.excellent_calendar
 
+import com.excellentcalendar.excellent_calendar.android.alarm.AlarmManagerReminderScheduler
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
 import com.excellentcalendar.excellent_calendar.bridge.native.JniNativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -40,7 +42,21 @@ class MainActivity : FlutterActivity() {
         // 普通用户和其他 app 不能直接访问，适合保存本地业务数据。
         val storageDirectory = File(applicationContext.filesDir, "local_storage/test_storage_json")
         val nativeBridge = JniNativeEventBridge(storageDirectory = storageDirectory.absolutePath)
-        val handler = NativeMethodChannelHandler(nativeEventBridge = nativeBridge)
+        val reminderScheduler = AlarmManagerReminderScheduler(applicationContext)
+        val reminderOrchestrator = ReminderNativeOrchestrator(
+            nativeBridge = nativeBridge,
+            scheduler = reminderScheduler,
+            logger = { operation, reminderId, message ->
+                android.util.Log.d(
+                    NativeMethodChannelHandler.LogTag,
+                    "operation=$operation reminder_id=${reminderId ?: "null"} $message",
+                )
+            },
+        )
+        val handler = NativeMethodChannelHandler(
+            nativeEventBridge = nativeBridge,
+            reminderOrchestrator = reminderOrchestrator,
+        )
         nativeMethodChannelHandler = handler
         // MethodChannel 是 Flutter 的“方法调用通道”：
         // Dart 侧用同一个 ChannelName 发起调用，Kotlin 侧通过 handler 接收并返回结果。

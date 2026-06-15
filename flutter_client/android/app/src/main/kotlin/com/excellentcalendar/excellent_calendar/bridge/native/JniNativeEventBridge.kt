@@ -107,6 +107,56 @@ class JniNativeEventBridge(
         }
     }
 
+    override fun createReminder(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeCreateReminder(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeCreateReminder is unavailable.", error)
+        }
+    }
+
+    override fun cancelReminder(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeCancelReminder(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeCancelReminder is unavailable.", error)
+        }
+    }
+
+    override fun listReminders(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeListReminders(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeListReminders is unavailable.", error)
+        }
+    }
+
+    override fun markReminderScheduled(reminderId: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeMarkReminderScheduled(reminderId)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeMarkReminderScheduled is unavailable.", error)
+        }
+    }
+
+    override fun markReminderFailed(reminderId: String, failureReason: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeMarkReminderFailed(reminderId, failureReason)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeMarkReminderFailed is unavailable.", error)
+        }
+    }
+
     /**
      * `external` 表示函数体不在 Kotlin 中，而是在 JNI/C++ 中实现。
      *
@@ -122,6 +172,16 @@ class JniNativeEventBridge(
     external fun nativeCompleteEvent(requestJson: String): String
 
     external fun nativeReopenEvent(requestJson: String): String
+
+    external fun nativeCreateReminder(requestJson: String): String
+
+    external fun nativeCancelReminder(requestJson: String): String
+
+    external fun nativeListReminders(requestJson: String): String
+
+    external fun nativeMarkReminderScheduled(reminderId: String): String
+
+    external fun nativeMarkReminderFailed(reminderId: String, failureReason: String): String
 
     /** 加载 native 动态库。成功或失败都会被缓存，避免重复加载。 */
     private fun ensureLibraryLoaded() {

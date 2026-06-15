@@ -537,6 +537,31 @@ class NativeMethodChannelHandlerTest {
             return reopenResponseJson
         }
 
+        override fun createReminder(requestJson: String): String {
+            return NativeContractJsonCodec.encodeObject(
+                linkedMapOf(
+                    "ok" to false,
+                    "data" to null,
+                    "error" to linkedMapOf(
+                        "code" to NativeErrorCodes.FeatureNotImplemented,
+                        "message" to "Reminder fake is not configured in this test.",
+                        "details" to null,
+                        "retryable" to false,
+                    ),
+                    "contract_version" to 1,
+                    "request_id" to "default",
+                ),
+            )
+        }
+
+        override fun cancelReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun listReminders(requestJson: String): String = createReminder(requestJson)
+
+        override fun markReminderScheduled(reminderId: String): String = createReminder(reminderId)
+
+        override fun markReminderFailed(reminderId: String, failureReason: String): String = createReminder(reminderId)
+
         companion object {
             private fun eventResponseStatic(): Map<String, Any?> {
                 return linkedMapOf(

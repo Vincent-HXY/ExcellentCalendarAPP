@@ -4,7 +4,9 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.excellentcalendar.excellent_calendar.bridge.contract.CompleteEventRequestContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.CancelReminderRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.CreateEventRequestContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.CreateReminderRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.EventListResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.EventOccurrenceStateResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.EventResponseContract
@@ -15,6 +17,7 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.ReopenEventReque
 import com.excellentcalendar.excellent_calendar.bridge.contract.SearchEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeBridgeUnavailableException
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executor
@@ -68,6 +71,7 @@ class AndroidNativeBridgeLogger : NativeBridgeLogger {
  */
 class NativeMethodChannelHandler(
     private val nativeEventBridge: NativeEventBridge,
+    private val reminderOrchestrator: ReminderNativeOrchestrator? = null,
     /**
      * native 调用放到后台 executor 中执行，避免阻塞 Android 主线程。
      *
@@ -85,6 +89,8 @@ class NativeMethodChannelHandler(
             MethodEventSearch -> handleSearchEvents(call, completion)
             MethodEventComplete -> handleCompleteEvent(call, completion)
             MethodEventReopen -> handleReopenEvent(call, completion)
+            MethodReminderCreate -> handleCreateReminder(call, completion)
+            MethodReminderCancel -> handleCancelReminder(call, completion)
             else -> completion.notImplemented()
         }
     }
@@ -148,6 +154,30 @@ class NativeMethodChannelHandler(
         }
     }
 
+    private fun handleCreateReminder(call: MethodCall, completion: SingleCompletion) {
+        val request = try {
+            CreateReminderRequestContract.fromMethodArguments(call.arguments)
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            return
+        }
+        executeReminder(call.method, completion) {
+            requireReminderOrchestrator(call.method).createReminder(request.toJson())
+        }
+    }
+
+    private fun handleCancelReminder(call: MethodCall, completion: SingleCompletion) {
+        val request = try {
+            CancelReminderRequestContract.fromMethodArguments(call.arguments)
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            return
+        }
+        executeReminder(call.method, completion) {
+            requireReminderOrchestrator(call.method).cancelReminder(request.toJson(), request.id)
+        }
+    }
+
     /**
      * 执行一次 native 调用的通用模板。
      *
@@ -176,6 +206,34 @@ class NativeMethodChannelHandler(
             logger.log(method, nativeResult.requestId, "completed ok=${nativeResult.ok}")
             completion.success(nativeResult.toMap())
         }
+    }
+
+    private fun executeReminder(
+        method: String,
+        completion: SingleCompletion,
+        operation: () -> NativeResultContract,
+    ) {
+        executor.execute {
+            val nativeResult = try {
+                operation()
+            } catch (error: NativeContractViolation) {
+                contractFailure(method, error)
+            } catch (error: NativeBridgeUnavailableException) {
+                nativeUnavailableFailure(method, error)
+            } catch (error: UnsatisfiedLinkError) {
+                nativeUnavailableFailure(method, error)
+            } catch (error: Throwable) {
+                nativeInternalFailure(method, error)
+            }
+            logger.log(method, nativeResult.requestId, "completed ok=${nativeResult.ok}")
+            completion.success(nativeResult.toMap())
+        }
+    }
+
+    private fun requireReminderOrchestrator(method: String): ReminderNativeOrchestrator {
+        return reminderOrchestrator ?: throw NativeBridgeUnavailableException(
+            "Reminder orchestration is not configured for $method.",
+        )
     }
 
     /** 把 Kotlin 侧或 native 响应侧的合约错误转换成统一 NativeResult。 */
@@ -252,6 +310,8 @@ class NativeMethodChannelHandler(
         const val MethodEventSearch = "event.search"
         const val MethodEventComplete = "event.complete"
         const val MethodEventReopen = "event.reopen"
+        const val MethodReminderCreate = "reminder.create"
+        const val MethodReminderCancel = "reminder.cancel"
         const val LogTag = "ExcellentCalendarNative"
     }
 }
