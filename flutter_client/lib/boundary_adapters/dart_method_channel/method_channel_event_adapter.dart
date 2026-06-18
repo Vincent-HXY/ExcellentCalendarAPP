@@ -1,8 +1,6 @@
 import 'package:flutter/services.dart';
 
 import '../../gateway_interfaces/event_native_gateway.dart';
-import '../../native_contract/common/native_error_codes.dart';
-import '../../native_contract/common/native_result_dto.dart';
 import '../../native_contract/event/complete_event_request_dto.dart';
 import '../../native_contract/event/create_event_request_dto.dart';
 import '../../native_contract/event/event_list_response_dto.dart';
@@ -12,37 +10,23 @@ import '../../native_contract/event/event_response_dto.dart';
 import '../../native_contract/event/reopen_event_request_dto.dart';
 import '../../native_contract/event/search_event_request_dto.dart';
 import '../../native_contract/shared/native_invocation.dart';
-import '../../native_contract/shared/native_json_normalizer.dart';
-
-class NativeMethodChannelNames {
-  const NativeMethodChannelNames._();
-
-  static const native = 'excellent_calendar/native';
-}
-
-class NativeEventMethods {
-  const NativeEventMethods._();
-
-  static const create = 'event.create';
-  static const search = 'event.search';
-  static const complete = 'event.complete';
-  static const reopen = 'event.reopen';
-}
+import 'native_method_channel_contract.dart';
+import 'native_method_channel_invoker.dart';
 
 class MethodChannelEventAdapter implements EventNativeGateway {
   MethodChannelEventAdapter({
     MethodChannel channel = const MethodChannel(
       NativeMethodChannelNames.native,
     ),
-  }) : _channel = channel;
+  }) : _invoker = NativeMethodChannelInvoker(channel);
 
-  final MethodChannel _channel;
+  final NativeMethodChannelInvoker _invoker;
 
   @override
   Future<NativeInvocation<EventResponseDto>> createEvent(
     CreateEventRequestDto request,
   ) {
-    return _invoke<EventResponseDto>(
+    return _invoker.invoke<EventResponseDto>(
       method: NativeEventMethods.create,
       arguments: request.toJson(),
       parseData: EventMapper.eventResponseFromNativeData,
@@ -53,7 +37,7 @@ class MethodChannelEventAdapter implements EventNativeGateway {
   Future<NativeInvocation<EventListResponseDto>> readEvents(
     SearchEventRequestDto request,
   ) {
-    return _invoke<EventListResponseDto>(
+    return _invoker.invoke<EventListResponseDto>(
       method: NativeEventMethods.search,
       arguments: request.toJson(),
       parseData: EventMapper.eventListResponseFromNativeData,
@@ -64,7 +48,7 @@ class MethodChannelEventAdapter implements EventNativeGateway {
   Future<NativeInvocation<EventOccurrenceStateResponseDto>> completeEvent(
     CompleteEventRequestDto request,
   ) {
-    return _invoke<EventOccurrenceStateResponseDto>(
+    return _invoker.invoke<EventOccurrenceStateResponseDto>(
       method: NativeEventMethods.complete,
       arguments: request.toJson(),
       parseData: EventMapper.eventOccurrenceStateFromNativeData,
@@ -75,72 +59,10 @@ class MethodChannelEventAdapter implements EventNativeGateway {
   Future<NativeInvocation<EventOccurrenceStateResponseDto>> reopenEvent(
     ReopenEventRequestDto request,
   ) {
-    return _invoke<EventOccurrenceStateResponseDto>(
+    return _invoker.invoke<EventOccurrenceStateResponseDto>(
       method: NativeEventMethods.reopen,
       arguments: request.toJson(),
       parseData: EventMapper.eventOccurrenceStateFromNativeData,
-    );
-  }
-
-  Future<NativeInvocation<T>> _invoke<T>({
-    required String method,
-    required Map<String, dynamic> arguments,
-    required T Function(Object? rawData) parseData,
-  }) async {
-    try {
-      final raw = await _channel.invokeMethod<Object?>(method, arguments);
-      final rawResponse = NativeJsonNormalizer.normalizeMap(raw);
-      final result = NativeResultDto<T>.fromJson(rawResponse, parseData);
-      return NativeInvocation<T>(
-        rawResponse: rawResponse,
-        result: result,
-        isNativeResult: true,
-      );
-    } on PlatformException catch (error) {
-      return _localChannelFailure<T>(
-        code: NativeErrorCodes.nativeInternalError,
-        message: error.message ?? 'MethodChannel PlatformException',
-        details: {
-          'platform_code': error.code,
-          'platform_details': error.details?.toString(),
-        },
-      );
-    } on MissingPluginException catch (error) {
-      return _localChannelFailure<T>(
-        code: NativeErrorCodes.nativeInternalError,
-        message: error.message ?? 'MethodChannel plugin is not registered',
-      );
-    } on FormatException catch (error) {
-      return _localChannelFailure<T>(
-        code: NativeErrorCodes.contractValidationFailed,
-        message: error.message,
-      );
-    }
-  }
-
-  NativeInvocation<T> _localChannelFailure<T>({
-    required String code,
-    required String message,
-    Map<String, dynamic>? details,
-  }) {
-    final rawResponse = <String, dynamic>{
-      'flutter_diagnostic': true,
-      'native_result_available': false,
-      'error': {
-        'code': code,
-        'message': message,
-        'details': details,
-        'retryable': false,
-      },
-    };
-    return NativeInvocation<T>(
-      rawResponse: rawResponse,
-      result: NativeResultDto.localFailure<T>(
-        code: code,
-        message: message,
-        details: details,
-      ),
-      isNativeResult: false,
     );
   }
 }
