@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../new_schedule_design_tokens.dart';
+import 'app_switch.dart';
 import 'form_row_item.dart';
 import 'form_section_card.dart';
 
@@ -41,12 +42,9 @@ class TimeRangeCard extends StatelessWidget {
             label: '全天',
             showChevron: false,
             showDivider: true,
-            trailing: Switch(
+            trailing: AppSwitch(
               value: isAllDay,
-              activeThumbColor: NewScheduleColors.surface,
-              activeTrackColor: NewScheduleColors.accent,
-              inactiveThumbColor: NewScheduleColors.surface,
-              inactiveTrackColor: NewScheduleColors.switchOff,
+              semanticLabel: '全天',
               onChanged: onAllDayChanged,
             ),
           ),

@@ -85,15 +85,19 @@ Future<ScheduleDateTimeSelection?> showScheduleDateTimePicker({
       reverseCurve: AppMotion.standard,
     ),
     builder: (context) {
-      return ScheduleDateTimePickerSheet(
-        initialDateTime: initialDateTime,
-        timezone: timezone,
-        target: target,
-        initialStep: switch (initialStep) {
-          PickerInitialStep.calendar => DateTimePickerStep.calendar,
-          PickerInitialStep.time => DateTimePickerStep.time,
-          PickerInitialStep.yearMonthDay => DateTimePickerStep.yearMonthDay,
-        },
+      final viewInsets = MediaQuery.viewInsetsOf(context);
+      return Padding(
+        padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + viewInsets.bottom),
+        child: ScheduleDateTimePickerSheet(
+          initialDateTime: initialDateTime,
+          timezone: timezone,
+          target: target,
+          initialStep: switch (initialStep) {
+            PickerInitialStep.calendar => DateTimePickerStep.calendar,
+            PickerInitialStep.time => DateTimePickerStep.time,
+            PickerInitialStep.yearMonthDay => DateTimePickerStep.yearMonthDay,
+          },
+        ),
       );
     },
   );

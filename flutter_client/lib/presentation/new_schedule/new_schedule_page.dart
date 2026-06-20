@@ -7,8 +7,11 @@ import 'components/create_mode_segmented_control.dart';
 import 'components/manual_schedule_form.dart';
 import 'components/new_schedule_top_bar.dart';
 import 'date_time_picker/schedule_date_time_picker.dart';
+import 'new_schedule_draft.dart';
 import 'new_schedule_design_tokens.dart';
 import 'schedule_submit_controller.dart';
+import 'selection/recurrence_selection_sheet.dart';
+import 'selection/reminder_selection_sheet.dart';
 
 enum CreateScheduleMode { manual, aiRecognition }
 
@@ -25,12 +28,16 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   late final ScheduleSubmitController _submitController;
   final _titleController = TextEditingController();
   final _noteController = TextEditingController();
+  final _locationController = TextEditingController();
 
   CreateScheduleMode _mode = CreateScheduleMode.manual;
   bool _isAllDay = false;
   bool _isRingingReminderEnabled = false;
   bool _isMoreSettingsExpanded = true;
   bool _isSubmitting = false;
+  RecurrencePreset _recurrencePreset = RecurrencePreset.once;
+  Set<ReminderPreset> _reminderPresets = {ReminderPreset.minutes15};
+  int? _customReminderAdvanceMinutes;
 
   late DateTime _startAt;
   late DateTime _endAt;
@@ -51,6 +58,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     _titleController.removeListener(_handleTitleChanged);
     _titleController.dispose();
     _noteController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -92,6 +100,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     }
 
     final note = _noteController.text.trim();
+    final location = _locationController.text.trim();
     final request = CreateEventRequestDto(
       title: title,
       content: note.isEmpty ? null : note,
@@ -100,9 +109,18 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
       isAllDay: _isAllDay,
       categoryId: '1',
       importance: 'unimportant_noturgent',
+      location: location.isEmpty ? null : location,
       timezone: _timezoneId,
       source: 'manual',
-      reminders: const [],
+      recurrence: _recurrencePreset.toDto(
+        startAt: _startAt,
+        timezone: _timezoneId,
+      ),
+      reminders: buildReminderDraftDtos(
+        presets: _reminderPresets,
+        customAdvanceMinutes: _customReminderAdvanceMinutes,
+        isRingingEnabled: _isRingingReminderEnabled,
+      ),
     );
 
     final invocation = await _submitController.submit(request);
@@ -177,6 +195,36 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     });
   }
 
+  Future<void> _pickRecurrence() async {
+    final result = await showRecurrenceSelectionSheet(
+      context: context,
+      initialValue: _recurrencePreset,
+      onCustomUnsupported: () => _showTodo('自定义重复规则后续实现'),
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _recurrencePreset = result;
+    });
+  }
+
+  Future<void> _pickReminders() async {
+    final result = await showReminderSelectionSheet(
+      context: context,
+      initialPresets: _reminderPresets,
+      initialCustomAdvanceMinutes: _customReminderAdvanceMinutes,
+      onRemainingTenPercentUnsupported: () => _showTodo('剩余 10% 提醒后续实现'),
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _reminderPresets = result.presets;
+      _customReminderAdvanceMinutes = result.customAdvanceMinutes;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,11 +262,17 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
                       ManualScheduleForm(
                         titleController: _titleController,
                         noteController: _noteController,
+                        locationController: _locationController,
                         startAt: _startAt,
                         endAt: _endAt,
                         isAllDay: _isAllDay,
                         isRingingReminderEnabled: _isRingingReminderEnabled,
                         isMoreSettingsExpanded: _isMoreSettingsExpanded,
+                        recurrenceLabel: _recurrencePreset.label,
+                        reminderSummary: reminderSummary(
+                          presets: _reminderPresets,
+                          customAdvanceMinutes: _customReminderAdvanceMinutes,
+                        ),
                         onAllDayChanged: (value) {
                           setState(() {
                             _isAllDay = value;
@@ -246,6 +300,9 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
                             _pickEndDateTime(PickerInitialStep.time),
                         onEndDateTap: () =>
                             _pickEndDateTime(PickerInitialStep.calendar),
+                        onRecurrenceTap: _pickRecurrence,
+                        onReminderTap: _pickReminders,
+                        onLocationMapTap: () => _showTodo('地图选择功能后续实现'),
                         onTodoTap: _showTodo,
                       )
                     else

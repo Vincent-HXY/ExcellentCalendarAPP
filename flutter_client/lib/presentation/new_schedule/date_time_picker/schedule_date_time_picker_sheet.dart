@@ -122,14 +122,14 @@ class _ScheduleDateTimePickerSheetState
     final disableAnimations = media.disableAnimations;
     final screenHeight = media.size.height;
     final heightFactor = switch (_step) {
-      DateTimePickerStep.calendar => 0.82,
+      DateTimePickerStep.calendar => 0.78,
       DateTimePickerStep.time => 0.55,
       DateTimePickerStep.yearMonthDay => 0.55,
     };
-    final minHeight = screenHeight < 700 ? screenHeight * 0.72 : 430.0;
+    final minHeight = screenHeight < 700 ? screenHeight * 0.66 : 430.0;
     final targetHeight = (screenHeight * heightFactor).clamp(
       minHeight,
-      screenHeight * 0.86,
+      screenHeight * 0.78,
     );
 
     return AnimatedContainer(

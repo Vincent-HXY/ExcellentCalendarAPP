@@ -12,11 +12,14 @@ class ManualScheduleForm extends StatelessWidget {
   const ManualScheduleForm({
     required this.titleController,
     required this.noteController,
+    required this.locationController,
     required this.startAt,
     required this.endAt,
     required this.isAllDay,
     required this.isRingingReminderEnabled,
     required this.isMoreSettingsExpanded,
+    required this.recurrenceLabel,
+    required this.reminderSummary,
     required this.onAllDayChanged,
     required this.onRingingReminderChanged,
     required this.onMoreSettingsToggle,
@@ -26,17 +29,23 @@ class ManualScheduleForm extends StatelessWidget {
     required this.onEndTap,
     required this.onEndTimeTap,
     required this.onEndDateTap,
+    required this.onRecurrenceTap,
+    required this.onReminderTap,
+    required this.onLocationMapTap,
     required this.onTodoTap,
     super.key,
   });
 
   final TextEditingController titleController;
   final TextEditingController noteController;
+  final TextEditingController locationController;
   final DateTime startAt;
   final DateTime endAt;
   final bool isAllDay;
   final bool isRingingReminderEnabled;
   final bool isMoreSettingsExpanded;
+  final String recurrenceLabel;
+  final String reminderSummary;
   final ValueChanged<bool> onAllDayChanged;
   final ValueChanged<bool> onRingingReminderChanged;
   final VoidCallback onMoreSettingsToggle;
@@ -46,6 +55,9 @@ class ManualScheduleForm extends StatelessWidget {
   final VoidCallback onEndTap;
   final VoidCallback onEndTimeTap;
   final VoidCallback onEndDateTap;
+  final VoidCallback onRecurrenceTap;
+  final VoidCallback onReminderTap;
+  final VoidCallback onLocationMapTap;
   final ValueChanged<String> onTodoTap;
 
   @override
@@ -86,27 +98,22 @@ class ManualScheduleForm extends StatelessWidget {
                     FormSectionCard(
                       child: FormRowItem(
                         label: '重复',
-                        value: '仅一次',
-                        onTap: () => onTodoTap('重复规则功能后续实现'),
+                        value: recurrenceLabel,
+                        onTap: onRecurrenceTap,
                       ),
                     ),
                     const SizedBox(height: NewScheduleSpacing.sectionGap),
                     ReminderCard(
+                      reminderSummary: reminderSummary,
                       isRingingReminderEnabled: isRingingReminderEnabled,
-                      onReminderTap: () => onTodoTap('提醒时间选择功能后续实现'),
+                      onReminderTap: onReminderTap,
                       onRingingReminderChanged: onRingingReminderChanged,
                     ),
                     const SizedBox(height: NewScheduleSpacing.sectionGap),
                     FormSectionCard(
-                      child: FormRowItem(
-                        label: '地点',
-                        showChevron: false,
-                        trailing: const Icon(
-                          Icons.location_on_outlined,
-                          color: NewScheduleColors.body,
-                          size: 28,
-                        ),
-                        onTap: () => onTodoTap('地点选择功能后续实现'),
+                      child: _LocationInputRow(
+                        controller: locationController,
+                        onMapTap: onLocationMapTap,
                       ),
                     ),
                     const SizedBox(height: NewScheduleSpacing.sectionGap),
@@ -144,6 +151,59 @@ class ManualScheduleForm extends StatelessWidget {
               : const SizedBox.shrink(),
         ),
       ],
+    );
+  }
+}
+
+class _LocationInputRow extends StatelessWidget {
+  const _LocationInputRow({required this.controller, required this.onMapTap});
+
+  final TextEditingController controller;
+  final VoidCallback onMapTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: NewScheduleSizes.rowHeight,
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: NewScheduleSpacing.rowHorizontal,
+          right: 14,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                maxLines: 1,
+                textInputAction: TextInputAction.done,
+                style: NewScheduleTextStyles.rowLabel.copyWith(
+                  fontWeight: FontWeight.w400,
+                ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: '地点',
+                  hintStyle: NewScheduleTextStyles.rowValue,
+                  isCollapsed: true,
+                ),
+              ),
+            ),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onMapTap,
+              child: const SizedBox(
+                width: 48,
+                height: 48,
+                child: Icon(
+                  Icons.location_on_outlined,
+                  color: NewScheduleColors.body,
+                  size: 27,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
