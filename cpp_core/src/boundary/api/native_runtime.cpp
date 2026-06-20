@@ -6,6 +6,7 @@
 #include "excellent_calendar/common/clock.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
+#include "excellent_calendar/storage/json/json_event_reminder_transaction.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
 
 namespace excellent_calendar::boundary::api {
@@ -14,6 +15,8 @@ namespace {
 struct RuntimeState {
   std::shared_ptr<storage::json::JsonEventRepository> event_repository;
   std::shared_ptr<application::EventService> event_service;
+  std::shared_ptr<storage::json::JsonEventReminderTransaction> event_reminder_transaction;
+  std::shared_ptr<application::CreateEventWorkflowService> create_event_workflow_service;
   std::shared_ptr<storage::json::JsonReminderRepository> reminder_repository;
   std::shared_ptr<application::ReminderService> reminder_service;
   std::string storage_directory;
@@ -29,6 +32,12 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
 
   auto event_repository = std::make_shared<storage::json::JsonEventRepository>(
       std::filesystem::path(directory));
+  auto event_reminder_transaction =
+      std::make_shared<storage::json::JsonEventReminderTransaction>(std::filesystem::path(directory));
+  auto transaction_initialized = event_reminder_transaction->initialize();
+  if (!transaction_initialized.ok()) {
+    return common::Result<common::Unit>::failure(transaction_initialized.error());
+  }
   auto event_initialized = event_repository->initialize();
   if (!event_initialized.ok()) {
     return common::Result<common::Unit>::failure(event_initialized.error());
@@ -50,11 +59,17 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
       event_repository,
       common::utc_now_iso8601,
       common::generate_uuid_v4);
+  auto create_event_workflow_service = std::make_shared<application::CreateEventWorkflowService>(
+      event_service,
+      reminder_service,
+      event_reminder_transaction);
 
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     g_state.event_repository = std::move(event_repository);
     g_state.event_service = std::move(event_service);
+    g_state.event_reminder_transaction = std::move(event_reminder_transaction);
+    g_state.create_event_workflow_service = std::move(create_event_workflow_service);
     g_state.reminder_repository = std::move(reminder_repository);
     g_state.reminder_service = std::move(reminder_service);
     g_state.storage_directory = directory;
@@ -66,6 +81,11 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
 std::shared_ptr<application::EventService> current_event_service() {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   return g_state.event_service;
+}
+
+std::shared_ptr<application::CreateEventWorkflowService> current_create_event_workflow_service() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.create_event_workflow_service;
 }
 
 std::shared_ptr<application::ReminderService> current_reminder_service() {

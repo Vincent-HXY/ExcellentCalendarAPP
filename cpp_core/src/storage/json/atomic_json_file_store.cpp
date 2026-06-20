@@ -1,6 +1,9 @@
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
 
 #include <fstream>
+#include <map>
+#include <memory>
+#include <mutex>
 #include <sstream>
 #include <system_error>
 
@@ -13,6 +16,24 @@
 
 namespace excellent_calendar::storage::json {
 namespace {
+
+std::shared_ptr<std::recursive_mutex> mutex_for_directory(const std::filesystem::path& directory) {
+  static std::mutex registry_mutex;
+  static std::map<std::string, std::weak_ptr<std::recursive_mutex>> registry;
+
+  std::error_code absolute_error;
+  auto normalized = std::filesystem::absolute(directory, absolute_error).lexically_normal();
+  const auto key = (absolute_error ? directory.lexically_normal() : normalized).generic_string();
+
+  std::lock_guard<std::mutex> lock(registry_mutex);
+  auto& weak = registry[key];
+  auto shared = weak.lock();
+  if (!shared) {
+    shared = std::make_shared<std::recursive_mutex>();
+    weak = shared;
+  }
+  return shared;
+}
 
 common::Error storage_path_invalid(std::string reason) {
   return common::make_error(
@@ -65,9 +86,11 @@ common::Error storage_data_corrupted(std::string reason, std::string field) {
 }
 
 AtomicJsonFileStore::AtomicJsonFileStore(std::filesystem::path storage_directory)
-    : storage_directory_(std::move(storage_directory)) {}
+    : storage_directory_(std::move(storage_directory)),
+      directory_mutex_(mutex_for_directory(storage_directory_)) {}
 
 common::Result<common::Unit> AtomicJsonFileStore::initialize() const {
+  auto lock = acquire_directory_lock();
   if (storage_directory_.empty()) {
     return common::Result<common::Unit>::failure(storage_path_invalid("path is empty"));
   }
@@ -103,6 +126,7 @@ common::Result<common::Unit> AtomicJsonFileStore::initialize() const {
 
 common::Result<std::optional<picojson::value>> AtomicJsonFileStore::read_json_file(
     const std::string& file_name) const {
+  auto lock = acquire_directory_lock();
   const auto path = file_path(file_name);
   std::error_code exists_error;
   if (!std::filesystem::exists(path, exists_error)) {
@@ -135,6 +159,7 @@ common::Result<std::optional<picojson::value>> AtomicJsonFileStore::read_json_fi
 
 common::Result<common::Unit> AtomicJsonFileStore::write_json_file(const std::string& file_name,
                                                                   const picojson::value& root) const {
+  auto lock = acquire_directory_lock();
   std::error_code create_error;
   std::filesystem::create_directories(storage_directory_, create_error);
   if (create_error) {
@@ -162,6 +187,30 @@ common::Result<common::Unit> AtomicJsonFileStore::write_json_file(const std::str
     return replaced;
   }
   return common::Result<common::Unit>::success(common::Unit{});
+}
+
+common::Result<common::Unit> AtomicJsonFileStore::remove_file(const std::string& file_name) const {
+  auto lock = acquire_directory_lock();
+  const auto path = file_path(file_name);
+  std::error_code exists_error;
+  const bool exists = std::filesystem::exists(path, exists_error);
+  if (exists_error) {
+    return common::Result<common::Unit>::failure(storage_io_error("exists", exists_error.message()));
+  }
+  if (!exists) {
+    return common::Result<common::Unit>::success(common::Unit{});
+  }
+
+  std::error_code remove_error;
+  std::filesystem::remove(path, remove_error);
+  if (remove_error) {
+    return common::Result<common::Unit>::failure(storage_io_error("remove", remove_error.message()));
+  }
+  return common::Result<common::Unit>::success(common::Unit{});
+}
+
+AtomicJsonFileStore::DirectoryLock AtomicJsonFileStore::acquire_directory_lock() const {
+  return DirectoryLock(*directory_mutex_);
 }
 
 std::filesystem::path AtomicJsonFileStore::file_path(const std::string& file_name) const {

@@ -12,16 +12,25 @@
 #include <picojson/picojson.h>
 
 #include "excellent_calendar/application/event_service.hpp"
+#include "excellent_calendar/application/create_event_workflow_service.hpp"
+#include "excellent_calendar/application/reminder_service.hpp"
 #include "excellent_calendar/boundary/api/event_api.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/repository/event_repository.hpp"
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
+#include "excellent_calendar/storage/json/json_event_reminder_transaction.hpp"
+#include "excellent_calendar/storage/json/json_reminder_repository.hpp"
+#include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
 
 namespace {
 
 using excellent_calendar::application::CreateEventCommand;
+using excellent_calendar::application::CreateEventWorkflowCommand;
+using excellent_calendar::application::CreateEventWorkflowService;
 using excellent_calendar::application::EventQuery;
 using excellent_calendar::application::EventService;
+using excellent_calendar::application::ReminderDraftCommand;
+using excellent_calendar::application::ReminderService;
 using excellent_calendar::common::Error;
 using excellent_calendar::common::Result;
 using excellent_calendar::domain::Event;
@@ -128,6 +137,19 @@ std::string create_request(
   object["recurrence"] = picojson::value();
   object["reminders"] = picojson::value(picojson::array{});
   return encode(object);
+}
+
+picojson::object reminder_draft(int advance_minutes = 15) {
+  picojson::object draft;
+  draft["target_type"] = picojson::value("event");
+  draft["target_id"] = picojson::value();
+  draft["remind_at"] = picojson::value();
+  draft["advance_minutes"] = picojson::value(static_cast<double>(advance_minutes));
+  draft["methods"] = picojson::value(picojson::array{picojson::value("popup")});
+  draft["message"] = picojson::value("Event reminder");
+  draft["is_enabled"] = picojson::value(true);
+  draft["source"] = picojson::value("manual");
+  return draft;
 }
 
 std::string search_request(
@@ -297,6 +319,127 @@ void repository_tests() {
   cleanup();
 }
 
+void embedded_reminder_boundary_tests() {
+  const auto dir = make_temp_dir("embedded_reminder");
+  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+
+  expect_ok(excellent_calendar::boundary::api::initialize_storage(dir.string()));
+  auto request = decode_object(
+      create_request("Reminder Event", "2026-06-08T01:00:00Z", "2026-06-08T02:00:00Z"));
+  auto draft = reminder_draft();
+  draft["target_id"] = picojson::value("client-supplied-id");
+  request["reminders"] = picojson::value(
+      picojson::array{picojson::value(std::move(draft))});
+  const auto response = decode_object(excellent_calendar::boundary::api::create_event(encode(request)));
+  require(bool_field(response, "ok"), "event with reminder should be created");
+  const auto event_id = string_field(object_field(response, "data"), "id");
+
+  excellent_calendar::storage::json::JsonEventRepository event_repository(dir);
+  excellent_calendar::storage::json::JsonReminderRepository reminder_repository(dir);
+  require(event_repository.initialize().ok(), "event repository should initialize");
+  require(reminder_repository.initialize().ok(), "reminder repository should initialize");
+  const auto events = event_repository.find_all();
+  const auto reminders = reminder_repository.find_all();
+  require(events.ok() && events.value().size() == 1, "workflow should persist one Event");
+  require(reminders.ok() && reminders.value().size() == 1, "workflow should persist one Reminder");
+  require(reminders.value()[0].target_id == event_id, "Reminder should target the generated Event id");
+  require(reminders.value()[0].status == "pending", "embedded Reminder should start pending");
+  require(!std::filesystem::exists(dir / "event_reminder_transaction.json"),
+          "committed workflow should remove its transaction journal");
+
+  cleanup();
+}
+
+void workflow_rollback_tests() {
+  const auto dir = make_temp_dir("workflow_rollback");
+  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+
+  auto event_repository =
+      std::make_shared<excellent_calendar::storage::json::JsonEventRepository>(dir);
+  auto reminder_repository =
+      std::make_shared<excellent_calendar::storage::json::JsonReminderRepository>(dir);
+  auto transaction =
+      std::make_shared<excellent_calendar::storage::json::JsonEventReminderTransaction>(dir);
+  require(transaction->initialize().ok(), "transaction should initialize");
+  require(event_repository->initialize().ok(), "event repository should initialize");
+  require(reminder_repository->initialize().ok(), "reminder repository should initialize");
+
+  auto ids = std::make_shared<std::vector<std::string>>(
+      std::initializer_list<std::string>{"event-id", "duplicate-reminder-id", "duplicate-reminder-id"});
+  auto id_index = std::make_shared<std::size_t>(0);
+  auto id_generator = [ids, id_index] {
+    const auto index = (*id_index)++;
+    return ids->at(index);
+  };
+  auto event_service = std::make_shared<EventService>(
+      event_repository,
+      [] { return std::string("2026-06-08T00:00:00Z"); },
+      id_generator);
+  auto reminder_service = std::make_shared<ReminderService>(
+      reminder_repository,
+      event_repository,
+      [] { return std::string("2026-06-08T00:00:00Z"); },
+      id_generator);
+  CreateEventWorkflowService workflow(event_service, reminder_service, transaction);
+
+  CreateEventWorkflowCommand command;
+  command.event.title = "Atomic workflow";
+  command.event.start_at = "2026-06-08T01:00:00Z";
+  command.event.end_at = "2026-06-08T02:00:00Z";
+  command.event.is_all_day = false;
+  command.event.source = "manual";
+  ReminderDraftCommand draft;
+  draft.target_type = "event";
+  draft.advance_minutes = 15;
+  draft.methods = {"popup"};
+  draft.is_enabled = true;
+  draft.source = "manual";
+  command.reminders = {draft, draft};
+
+  const auto result = workflow.create_event(command);
+  require(!result.ok(), "second duplicate Reminder should fail the workflow");
+  require(event_repository->find_all().ok() && event_repository->find_all().value().empty(),
+          "failed workflow should roll back Event");
+  require(reminder_repository->find_all().ok() && reminder_repository->find_all().value().empty(),
+          "failed workflow should roll back every Reminder");
+  require(!std::filesystem::exists(dir / "event_reminder_transaction.json"),
+          "completed rollback should remove its transaction journal");
+
+  cleanup();
+}
+
+void transaction_recovery_tests() {
+  const auto dir = make_temp_dir("transaction_recovery");
+  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+
+  excellent_calendar::storage::json::AtomicJsonFileStore store(dir);
+  require(store.initialize().ok(), "file store should initialize");
+  picojson::object journal;
+  journal["storage_version"] = picojson::value(1.0);
+  journal["events_exists"] = picojson::value(false);
+  journal["events"] = picojson::value();
+  journal["reminders_exists"] = picojson::value(false);
+  journal["reminders"] = picojson::value();
+  require(store.write_json_file("event_reminder_transaction.json", picojson::value(journal)).ok(),
+          "transaction preimage should be journaled");
+
+  excellent_calendar::storage::json::JsonEventRepository event_repository(dir);
+  require(event_repository.initialize().ok(), "event repository should initialize");
+  require(event_repository.create(
+              event_record("uncommitted-event", "Interrupted", "2026-06-08T01:00:00Z", "2026-06-08T02:00:00Z"))
+              .ok(),
+          "uncommitted Event should be written for recovery test");
+
+  excellent_calendar::storage::json::JsonEventReminderTransaction recovered(dir);
+  require(recovered.initialize().ok(), "transaction initialization should recover unfinished work");
+  require(!std::filesystem::exists(dir / "events.json"), "recovery should remove uncommitted Event data");
+  require(!std::filesystem::exists(dir / "reminders.json"), "recovery should preserve absent Reminder data");
+  require(!std::filesystem::exists(dir / "event_reminder_transaction.json"),
+          "recovery should remove the completed journal");
+
+  cleanup();
+}
+
 void boundary_and_search_tests() {
   const auto dir = make_temp_dir("boundary");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -333,7 +476,7 @@ void boundary_and_search_tests() {
 
   auto reminder_request = decode_object(create_request("Reminder", "2026-06-08T01:00:00Z", "2026-06-08T02:00:00Z"));
   reminder_request["reminders"] = picojson::value(picojson::array{picojson::value(picojson::object{})});
-  expect_error(excellent_calendar::boundary::api::create_event(encode(reminder_request)), "FEATURE_NOT_IMPLEMENTED");
+  expect_error(excellent_calendar::boundary::api::create_event(encode(reminder_request)), "CONTRACT_VALIDATION_FAILED");
 
   expect_ok(
       excellent_calendar::boundary::api::create_event(
@@ -475,6 +618,9 @@ int main() {
   try {
     service_tests();
     repository_tests();
+    embedded_reminder_boundary_tests();
+    workflow_rollback_tests();
+    transaction_recovery_tests();
     boundary_and_search_tests();
     soft_delete_and_corruption_tests();
     concurrency_tests();

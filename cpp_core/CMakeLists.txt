@@ -6,6 +6,7 @@ add_library(
     excellent_calendar_core
     STATIC
     src/application/event_service.cpp
+    src/application/create_event_workflow_service.cpp
     src/application/reminder_service.cpp
     src/boundary/api/event_api.cpp
     src/boundary/api/native_runtime.cpp
@@ -25,6 +26,7 @@ add_library(
     src/domain/reminder.cpp
     src/storage/json/atomic_json_file_store.cpp
     src/storage/json/json_event_repository.cpp
+    src/storage/json/json_event_reminder_transaction.cpp
     src/storage/json/json_reminder_repository.cpp
 )
 

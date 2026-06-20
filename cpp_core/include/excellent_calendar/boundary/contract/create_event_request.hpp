@@ -2,6 +2,9 @@
 
 #include <optional>
 #include <string>
+#include <vector>
+
+#include "excellent_calendar/boundary/contract/reminder_draft_request.hpp"
 
 namespace excellent_calendar::boundary::contract {
 
@@ -22,6 +25,7 @@ struct CreateEventRequest {
   std::optional<std::string> location;
   std::optional<std::string> timezone;
   std::string source;
+  std::vector<ReminderDraftRequest> reminders;
 };
 
 }  // namespace excellent_calendar::boundary::contract

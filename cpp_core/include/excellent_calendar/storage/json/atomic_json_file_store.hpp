@@ -1,6 +1,8 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 
@@ -19,6 +21,8 @@ namespace excellent_calendar::storage::json {
  */
 class AtomicJsonFileStore {
  public:
+  using DirectoryLock = std::unique_lock<std::recursive_mutex>;
+
   explicit AtomicJsonFileStore(std::filesystem::path storage_directory);
 
   common::Result<common::Unit> initialize() const;
@@ -28,12 +32,17 @@ class AtomicJsonFileStore {
   common::Result<common::Unit> write_json_file(const std::string& file_name,
                                                const picojson::value& root) const;
 
+  common::Result<common::Unit> remove_file(const std::string& file_name) const;
+
+  DirectoryLock acquire_directory_lock() const;
+
   const std::filesystem::path& storage_directory() const { return storage_directory_; }
 
  private:
   std::filesystem::path file_path(const std::string& file_name) const;
 
   std::filesystem::path storage_directory_;
+  std::shared_ptr<std::recursive_mutex> directory_mutex_;
 };
 
 common::Error storage_data_corrupted(std::string reason, std::string field = "");

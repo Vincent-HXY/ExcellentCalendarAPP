@@ -269,11 +269,13 @@ JsonReminderRepository::JsonReminderRepository(std::filesystem::path storage_dir
     : store_(std::move(storage_directory)) {}
 
 common::Result<common::Unit> JsonReminderRepository::initialize() {
+  auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   return store_.initialize();
 }
 
 common::Result<domain::Reminder> JsonReminderRepository::create(const domain::Reminder& reminder) {
+  auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
   auto loaded = load_reminders_locked();
@@ -297,6 +299,7 @@ common::Result<domain::Reminder> JsonReminderRepository::create(const domain::Re
 }
 
 common::Result<std::optional<domain::Reminder>> JsonReminderRepository::find_by_id(std::string_view id) {
+  auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
   auto loaded = load_reminders_locked();
@@ -312,6 +315,7 @@ common::Result<std::optional<domain::Reminder>> JsonReminderRepository::find_by_
 }
 
 common::Result<domain::Reminder> JsonReminderRepository::update(const domain::Reminder& reminder) {
+  auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
   auto loaded = load_reminders_locked();
@@ -339,6 +343,7 @@ common::Result<domain::Reminder> JsonReminderRepository::update(const domain::Re
 }
 
 common::Result<std::vector<domain::Reminder>> JsonReminderRepository::find_all() {
+  auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   return load_reminders_locked();
 }

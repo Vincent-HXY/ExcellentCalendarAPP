@@ -1,13 +1,16 @@
 #include "excellent_calendar/boundary/api/event_api.hpp"
 
 #include <cmath>
+#include <limits>
 #include <set>
 #include <vector>
 
 #include <picojson/picojson.h>
 
 #include "excellent_calendar/application/event_service.hpp"
+#include "excellent_calendar/application/create_event_workflow_service.hpp"
 #include "excellent_calendar/boundary/api/native_runtime.hpp"
+#include "excellent_calendar/boundary/contract/create_event_request.hpp"
 #include "excellent_calendar/boundary/contract/event_list_response.hpp"
 #include "excellent_calendar/boundary/contract/event_response.hpp"
 #include "excellent_calendar/boundary/contract/native_result.hpp"
@@ -16,6 +19,7 @@
 #include "excellent_calendar/common/result.hpp"
 #include "excellent_calendar/domain/data_source.hpp"
 #include "excellent_calendar/domain/importance.hpp"
+#include "excellent_calendar/domain/reminder.hpp"
 
 namespace excellent_calendar::boundary::api {
 namespace {
@@ -151,7 +155,9 @@ common::Result<std::optional<int>> optional_int(const picojson::object& object,
   if (value == nullptr || value->is<picojson::null>()) {
     return common::Result<std::optional<int>>::success(std::nullopt);
   }
-  if (!value->is<double>() || !is_integer(value->get<double>())) {
+  if (!value->is<double>() || !is_integer(value->get<double>()) ||
+      value->get<double>() < static_cast<double>(std::numeric_limits<int>::min()) ||
+      value->get<double>() > static_cast<double>(std::numeric_limits<int>::max())) {
     return common::Result<std::optional<int>>::failure(
         contract_error(parent + "." + key + " must be integer or null.", parent + "." + key));
   }
@@ -190,10 +196,100 @@ common::Result<std::vector<std::string>> optional_string_array(const picojson::o
 }
 
 /** 把 CreateEventRequest JSON 解析成 application 层命令对象。 */
-common::Result<application::CreateEventCommand> parse_create_event_request(std::string_view request_json) {
+common::Result<contract::ReminderDraftRequest> parse_reminder_draft(
+    const picojson::value& value,
+    std::size_t index) {
+  const auto parent = "CreateEventRequest.reminders[" + std::to_string(index) + "]";
+  if (!value.is<picojson::object>()) {
+    return common::Result<contract::ReminderDraftRequest>::failure(
+        contract_error(parent + " must be an object.", parent));
+  }
+  const auto& object = value.get<picojson::object>();
+  static const std::set<std::string> allowed{
+      "target_type", "target_id", "remind_at", "advance_minutes",
+      "methods", "message", "is_enabled", "source",
+  };
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<contract::ReminderDraftRequest>::failure(
+        contract_error(parent + " contains an unknown field.", parent + "." + unknown));
+  }
+
+  auto target_type = require_string(object, "target_type", parent, true);
+  if (!target_type.ok()) return common::Result<contract::ReminderDraftRequest>::failure(target_type.error());
+  if (target_type.value() != "event" && target_type.value() != "anniversary") {
+    return common::Result<contract::ReminderDraftRequest>::failure(
+        contract_error(parent + ".target_type has an unsupported enum value.", parent + ".target_type"));
+  }
+  auto target_id = optional_string(object, "target_id", parent);
+  if (!target_id.ok()) return common::Result<contract::ReminderDraftRequest>::failure(target_id.error());
+  auto remind_at = optional_string(object, "remind_at", parent);
+  if (!remind_at.ok()) return common::Result<contract::ReminderDraftRequest>::failure(remind_at.error());
+  if (remind_at.value().has_value() && !common::is_iso8601_utc_datetime(*remind_at.value())) {
+    return common::Result<contract::ReminderDraftRequest>::failure(
+        contract_error(parent + ".remind_at must be ISO 8601 UTC date-time.", parent + ".remind_at"));
+  }
+  auto advance_minutes = optional_int(object, "advance_minutes", parent);
+  if (!advance_minutes.ok()) {
+    return common::Result<contract::ReminderDraftRequest>::failure(advance_minutes.error());
+  }
+  if (advance_minutes.value().has_value() && *advance_minutes.value() < 0) {
+    return common::Result<contract::ReminderDraftRequest>::failure(
+        contract_error(parent + ".advance_minutes must be non-negative.", parent + ".advance_minutes"));
+  }
+  if (!remind_at.value().has_value() && !advance_minutes.value().has_value()) {
+    return common::Result<contract::ReminderDraftRequest>::failure(
+        contract_error(parent + " requires remind_at or advance_minutes.", parent));
+  }
+
+  const auto* methods_value = field(object, "methods");
+  if (methods_value == nullptr || !methods_value->is<picojson::array>() ||
+      methods_value->get<picojson::array>().empty()) {
+    return common::Result<contract::ReminderDraftRequest>::failure(
+        contract_error(parent + ".methods must be a non-empty array.", parent + ".methods"));
+  }
+  std::vector<std::string> methods;
+  std::set<std::string> seen_methods;
+  for (const auto& item : methods_value->get<picojson::array>()) {
+    if (!item.is<std::string>()) {
+      return common::Result<contract::ReminderDraftRequest>::failure(
+          contract_error(parent + ".methods items must be strings.", parent + ".methods"));
+    }
+    const auto& method = item.get<std::string>();
+    if (!domain::is_valid_reminder_method(method) || !seen_methods.insert(method).second) {
+      return common::Result<contract::ReminderDraftRequest>::failure(
+          contract_error(parent + ".methods contains an invalid or duplicate value.", parent + ".methods"));
+    }
+    methods.push_back(method);
+  }
+
+  auto message = optional_string(object, "message", parent);
+  if (!message.ok()) return common::Result<contract::ReminderDraftRequest>::failure(message.error());
+  auto is_enabled = require_bool(object, "is_enabled", parent);
+  if (!is_enabled.ok()) return common::Result<contract::ReminderDraftRequest>::failure(is_enabled.error());
+  auto source = require_string(object, "source", parent, true);
+  if (!source.ok()) return common::Result<contract::ReminderDraftRequest>::failure(source.error());
+  if (!domain::is_valid_reminder_source(source.value())) {
+    return common::Result<contract::ReminderDraftRequest>::failure(
+        contract_error(parent + ".source has an unsupported enum value.", parent + ".source"));
+  }
+
+  contract::ReminderDraftRequest draft;
+  draft.target_type = target_type.value();
+  draft.target_id = target_id.value();
+  draft.remind_at = remind_at.value();
+  draft.advance_minutes = advance_minutes.value();
+  draft.methods = std::move(methods);
+  draft.message = message.value();
+  draft.is_enabled = is_enabled.value();
+  draft.source = source.value();
+  return common::Result<contract::ReminderDraftRequest>::success(std::move(draft));
+}
+
+common::Result<application::CreateEventWorkflowCommand> parse_create_event_request(std::string_view request_json) {
   auto parsed = parse_json_object(request_json);
   if (!parsed.ok()) {
-    return common::Result<application::CreateEventCommand>::failure(parsed.error());
+    return common::Result<application::CreateEventWorkflowCommand>::failure(parsed.error());
   }
   const auto& object = parsed.value();
   static const std::set<std::string> allowed{
@@ -202,81 +298,100 @@ common::Result<application::CreateEventCommand> parse_create_event_request(std::
   };
   std::string unknown;
   if (has_unknown_field(object, allowed, unknown)) {
-    return common::Result<application::CreateEventCommand>::failure(
+    return common::Result<application::CreateEventWorkflowCommand>::failure(
         contract_error("CreateEventRequest contains an unknown field.", "CreateEventRequest." + unknown));
   }
 
   // 先读取必填字段，任何一步失败都立即返回对应错误。
   auto title = require_string(object, "title", "CreateEventRequest", false);
-  if (!title.ok()) return common::Result<application::CreateEventCommand>::failure(title.error());
+  if (!title.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(title.error());
   auto start_at = require_string(object, "start_at", "CreateEventRequest", true);
-  if (!start_at.ok()) return common::Result<application::CreateEventCommand>::failure(start_at.error());
+  if (!start_at.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(start_at.error());
   auto end_at = require_string(object, "end_at", "CreateEventRequest", true);
-  if (!end_at.ok()) return common::Result<application::CreateEventCommand>::failure(end_at.error());
+  if (!end_at.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(end_at.error());
   auto is_all_day = require_bool(object, "is_all_day", "CreateEventRequest");
-  if (!is_all_day.ok()) return common::Result<application::CreateEventCommand>::failure(is_all_day.error());
+  if (!is_all_day.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(is_all_day.error());
   auto source = require_string(object, "source", "CreateEventRequest", true);
-  if (!source.ok()) return common::Result<application::CreateEventCommand>::failure(source.error());
+  if (!source.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(source.error());
 
   if (!common::is_iso8601_utc_datetime(start_at.value())) {
-    return common::Result<application::CreateEventCommand>::failure(
+    return common::Result<application::CreateEventWorkflowCommand>::failure(
         contract_error("CreateEventRequest.start_at must be ISO 8601 UTC date-time.", "CreateEventRequest.start_at"));
   }
   if (!common::is_iso8601_utc_datetime(end_at.value())) {
-    return common::Result<application::CreateEventCommand>::failure(
+    return common::Result<application::CreateEventWorkflowCommand>::failure(
         contract_error("CreateEventRequest.end_at must be ISO 8601 UTC date-time.", "CreateEventRequest.end_at"));
   }
   if (!domain::is_valid_create_event_source(source.value())) {
-    return common::Result<application::CreateEventCommand>::failure(
+    return common::Result<application::CreateEventWorkflowCommand>::failure(
         contract_error("CreateEventRequest.source has an unsupported enum value.", "CreateEventRequest.source"));
   }
 
   // 再读取可选字段。optional<T> 让“未传/null”和“传了字符串”都能明确表达。
   auto content = optional_string(object, "content", "CreateEventRequest");
-  if (!content.ok()) return common::Result<application::CreateEventCommand>::failure(content.error());
+  if (!content.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(content.error());
   auto category_id = optional_string(object, "category_id", "CreateEventRequest");
-  if (!category_id.ok()) return common::Result<application::CreateEventCommand>::failure(category_id.error());
+  if (!category_id.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(category_id.error());
   auto importance = optional_string(object, "importance", "CreateEventRequest");
-  if (!importance.ok()) return common::Result<application::CreateEventCommand>::failure(importance.error());
+  if (!importance.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(importance.error());
   if (importance.value().has_value() && !domain::is_valid_importance(*importance.value())) {
-    return common::Result<application::CreateEventCommand>::failure(
+    return common::Result<application::CreateEventWorkflowCommand>::failure(
         contract_error("CreateEventRequest.importance has an unsupported enum value.", "CreateEventRequest.importance"));
   }
   auto location = optional_string(object, "location", "CreateEventRequest");
-  if (!location.ok()) return common::Result<application::CreateEventCommand>::failure(location.error());
+  if (!location.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(location.error());
   auto timezone = optional_string(object, "timezone", "CreateEventRequest");
-  if (!timezone.ok()) return common::Result<application::CreateEventCommand>::failure(timezone.error());
+  if (!timezone.ok()) return common::Result<application::CreateEventWorkflowCommand>::failure(timezone.error());
 
   const auto* recurrence = field(object, "recurrence");
   if (recurrence != nullptr && !recurrence->is<picojson::null>()) {
     // TODO(recurrence): persist Recurrence as an independent entity.
-    return common::Result<application::CreateEventCommand>::failure(feature_not_implemented("recurrence"));
+    return common::Result<application::CreateEventWorkflowCommand>::failure(feature_not_implemented("recurrence"));
   }
+  std::vector<contract::ReminderDraftRequest> reminder_drafts;
   const auto* reminders = field(object, "reminders");
   if (reminders != nullptr) {
     if (!reminders->is<picojson::array>()) {
-      return common::Result<application::CreateEventCommand>::failure(
+      return common::Result<application::CreateEventWorkflowCommand>::failure(
           contract_error("CreateEventRequest.reminders must be an array.", "CreateEventRequest.reminders"));
     }
-    if (!reminders->get<picojson::array>().empty()) {
-      // Embedded Event reminders are outside this phase; create Reminder through reminder.create.
-      return common::Result<application::CreateEventCommand>::failure(feature_not_implemented("reminders"));
+    const auto& array = reminders->get<picojson::array>();
+    reminder_drafts.reserve(array.size());
+    for (std::size_t index = 0; index < array.size(); ++index) {
+      auto draft = parse_reminder_draft(array[index], index);
+      if (!draft.ok()) {
+        return common::Result<application::CreateEventWorkflowCommand>::failure(draft.error());
+      }
+      reminder_drafts.push_back(std::move(draft.value()));
     }
   }
 
   // 最后组装 application 层命令。std::move 避免复制整个 command。
-  application::CreateEventCommand command;
-  command.title = title.value();
-  command.content = content.value();
-  command.start_at = start_at.value();
-  command.end_at = end_at.value();
-  command.is_all_day = is_all_day.value();
-  command.category_id = category_id.value();
-  command.importance = importance.value();
-  command.location = location.value();
-  command.timezone = timezone.value();
-  command.source = source.value();
-  return common::Result<application::CreateEventCommand>::success(std::move(command));
+  application::CreateEventWorkflowCommand command;
+  command.event.title = title.value();
+  command.event.content = content.value();
+  command.event.start_at = start_at.value();
+  command.event.end_at = end_at.value();
+  command.event.is_all_day = is_all_day.value();
+  command.event.category_id = category_id.value();
+  command.event.importance = importance.value();
+  command.event.location = location.value();
+  command.event.timezone = timezone.value();
+  command.event.source = source.value();
+  command.reminders.reserve(reminder_drafts.size());
+  for (const auto& request_draft : reminder_drafts) {
+    application::ReminderDraftCommand draft;
+    draft.target_type = request_draft.target_type;
+    draft.target_id = request_draft.target_id;
+    draft.remind_at = request_draft.remind_at;
+    draft.advance_minutes = request_draft.advance_minutes;
+    draft.methods = request_draft.methods;
+    draft.message = request_draft.message;
+    draft.is_enabled = request_draft.is_enabled;
+    draft.source = request_draft.source;
+    command.reminders.push_back(std::move(draft));
+  }
+  return common::Result<application::CreateEventWorkflowCommand>::success(std::move(command));
 }
 
 /** 把 SearchEventRequest JSON 解析成 application 层查询对象。 */
@@ -441,7 +556,7 @@ std::string create_event(std::string_view request_json) {
       return failure_response(parsed.error(), request_id);
     }
 
-    const auto service = current_event_service();
+    const auto service = current_create_event_workflow_service();
     if (!service) {
       return failure_response(storage_not_initialized_error("event"), request_id);
     }
