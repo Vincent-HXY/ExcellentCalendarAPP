@@ -6,30 +6,6 @@
 
 不要随手执行 `flutter upgrade`、升级 Android Studio、升级 Android SDK/NDK/CMake。确实需要升级时，先在 `test_environment/flutter_native_smoke` 跑完整验证，再同步更新本节。
 
-### 已验证通过的技术链路
-
-```text
-Flutter / Dart UI
-  -> MethodChannel
-  -> Kotlin MainActivity
-  -> JNI
-  -> C++ native library
-  -> Android debug APK
-  -> Android 真机运行
-```
-
-Smoke test 工程：
-
-```text
-test_environment/flutter_native_smoke
-```
-
-运行成功后，手机页面应显示：
-
-```text
-pong from C++ via Kotlin JNI
-```
-
 ### 统一版本
 
 | 工具 | 当前已验证版本 | 当前主开发机参考路径 / 说明 |
@@ -345,6 +321,7 @@ SQLite
 `contracts/` 不属于某一种具体语言，而是整个项目的跨语言数据协议源头。
 
 它的作用不是替代 Dart DTO、Kotlin data class、C++ struct 或数据库 schema，而是规定这些语言本土化实现必须共同遵守的协议。
+如果说，如果涉及到了跨语言的调用，也必须要在contracts里面有过声明，不可以直接调用。
 
 也就是说：
 

@@ -7,7 +7,6 @@ class CreateReminderCommand {
     required this.targetType,
     required this.targetId,
     required this.methods,
-    required this.isEnabled,
     required this.source,
     this.remindAt,
     this.advanceMinutes,
@@ -23,7 +22,6 @@ class CreateReminderCommand {
   final int? advanceMinutes;
   final Set<ReminderMethod> methods;
   final String? message;
-  final bool isEnabled;
   final ReminderSource source;
 
   String? validate() {
@@ -53,7 +51,6 @@ class CreateReminderCommand {
       advanceMinutes: advanceMinutes,
       methods: methods.toList(growable: false),
       message: message,
-      isEnabled: isEnabled,
       source: source,
     );
   }

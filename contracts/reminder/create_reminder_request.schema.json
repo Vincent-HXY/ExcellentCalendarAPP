@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/create_reminder_request.schema.json",
   "title": "CreateReminderRequest",
-  "description": "Request payload for independently creating a reminder. target_id is required because Reminder must be associated through target_type + target_id.",
+  "description": "Request payload for independently creating a new reminder. target_id is required because Reminder must be associated through target_type + target_id. New reminders must be enabled; existing reminders may later be updated or cancelled through dedicated reminder operations.",
   "x-contract-version": 1,
   "type": "object",
   "additionalProperties": false,
@@ -61,7 +61,8 @@
     },
     "is_enabled": {
       "type": "boolean",
-      "default": true
+      "const": true,
+      "description": "Must be true when creating a Reminder. A persisted Reminder may become false only through a later update or cancellation."
     },
     "source": {
       "type": "string",

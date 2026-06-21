@@ -144,7 +144,6 @@ List<ReminderDraftRequestDto> buildReminderDraftDtos({
         targetType: 'event',
         advanceMinutes: advanceMinutes,
         methods: methods,
-        isEnabled: true,
         source: 'manual',
       ),
     );

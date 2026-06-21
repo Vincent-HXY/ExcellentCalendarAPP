@@ -29,6 +29,7 @@
 10. `Reminder` 是未来要执行的提醒任务，`Notification` 是投递结果日志，二者不能混用。
 11. `Habit` 只描述习惯定义，`HabitCheckIn` 才是完成记录和统计来源。
 12. 独立创建 Reminder 必须使用 `CreateReminderRequest` 且包含 `target_id`；嵌入父对象创建流程时使用 `ReminderDraftRequest`。
+13. `CreateReminderRequest` 和 `ReminderDraftRequest` 只能创建 `is_enabled = true` 的新 Reminder。修改已有 Reminder 必须使用 `reminder.update`；后续更新或取消可以使持久化的 `is_enabled` 变为 `false`。
 
 ## Directory
 
@@ -58,6 +59,8 @@ contracts/
 ## Versioning
 
 当前协议版本为 `1`。JSON Schema 使用 Draft 2020-12，并通过 `x-contract-version` 标明协议版本。MethodChannel、错误码、枚举文件也必须保留顶层 `version`。
+
+在协议版本正式发布或被外部客户端依赖前，为使 Schema 与已确定的领域不变量保持一致而进行的修正，可以继续使用当前版本。协议一旦正式发布，收紧已有字段的合法取值范围也属于破坏性变更。
 
 破坏性变更包括：
 

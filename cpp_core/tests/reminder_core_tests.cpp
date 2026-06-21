@@ -15,6 +15,8 @@
 #include "excellent_calendar/application/reminder_service.hpp"
 #include "excellent_calendar/boundary/api/event_api.hpp"
 #include "excellent_calendar/boundary/api/reminder_api.hpp"
+#include "excellent_calendar/common/clock.hpp"
+#include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/domain/reminder.hpp"
 #include "excellent_calendar/repository/event_repository.hpp"
@@ -236,12 +238,19 @@ CreateReminderCommand create_command(std::string target_id = "event-1") {
   return command;
 }
 
+std::string future_utc(int seconds_from_now) {
+  const auto now = excellent_calendar::common::parse_iso8601_utc_epoch_seconds(
+      excellent_calendar::common::utc_now_iso8601());
+  require(now.has_value(), "test clock should produce valid UTC time");
+  return excellent_calendar::common::format_epoch_seconds_utc_iso8601(*now + seconds_from_now);
+}
+
 std::string create_event_request() {
   picojson::object object;
   object["title"] = picojson::value("Event for reminder");
   object["content"] = picojson::value();
-  object["start_at"] = picojson::value("2026-06-08T13:00:00Z");
-  object["end_at"] = picojson::value("2026-06-08T14:00:00Z");
+  object["start_at"] = picojson::value(future_utc(7200));
+  object["end_at"] = picojson::value(future_utc(10800));
   object["is_all_day"] = picojson::value(false);
   object["category_id"] = picojson::value();
   object["importance"] = picojson::value();
@@ -254,7 +263,7 @@ std::string create_event_request() {
 }
 
 std::string create_reminder_request(const std::string& event_id,
-                                    std::string remind_at = "2026-06-08T12:30:00Z",
+                                    std::string remind_at = "",
                                     std::string message = "中文提醒 ✅") {
   picojson::array methods;
   methods.push_back(picojson::value("popup"));
@@ -262,7 +271,8 @@ std::string create_reminder_request(const std::string& event_id,
   picojson::object object;
   object["target_type"] = picojson::value("event");
   object["target_id"] = picojson::value(event_id);
-  object["remind_at"] = picojson::value(std::move(remind_at));
+  object["remind_at"] = picojson::value(
+      remind_at.empty() ? future_utc(3600) : std::move(remind_at));
   object["advance_minutes"] = picojson::value(30.0);
   object["methods"] = picojson::value(std::move(methods));
   object["message"] = picojson::value(std::move(message));
@@ -333,6 +343,25 @@ void service_tests() {
   require(!bad_time_result.ok() && bad_time_result.error().code == "REMINDER_TIME_INVALID",
           "bad remind_at should be REMINDER_TIME_INVALID");
 
+  auto past_time = create_command();
+  past_time.remind_at = "2026-06-08T11:59:59Z";
+  auto past_time_result = service.create_reminder(past_time);
+  require(!past_time_result.ok() && past_time_result.error().code == "REMINDER_TIME_INVALID",
+          "past remind_at should be REMINDER_TIME_INVALID");
+  require(past_time_result.error().details.at("field") == "remind_at",
+          "past remind_at should identify the remind_at field");
+
+  auto current_time = create_command();
+  current_time.remind_at = "2026-06-08T12:00:00Z";
+  auto current_time_result = service.create_reminder(current_time);
+  require(!current_time_result.ok() && current_time_result.error().code == "REMINDER_TIME_INVALID",
+          "remind_at equal to now should be REMINDER_TIME_INVALID");
+
+  auto future_time = create_command();
+  future_time.remind_at = "2026-06-08T12:00:01Z";
+  auto future_time_result = service.create_reminder(future_time);
+  require(future_time_result.ok(), "remind_at one second after now should succeed");
+
   auto empty_methods = create_command();
   empty_methods.methods.clear();
   auto empty_methods_result = service.create_reminder(empty_methods);
@@ -351,6 +380,37 @@ void service_tests() {
   auto advanced = service.create_reminder(advance_only);
   require(advanced.ok() && advanced.value().remind_at == "2026-06-08T12:30:00Z",
           "advance_minutes should derive remind_at from target event start_at");
+
+  auto advance_equal_now = create_command();
+  advance_equal_now.remind_at = std::nullopt;
+  advance_equal_now.advance_minutes = 60;
+  auto advance_equal_result = service.create_reminder(advance_equal_now);
+  require(!advance_equal_result.ok() && advance_equal_result.error().code == "REMINDER_TIME_INVALID",
+          "advance_minutes deriving now should be REMINDER_TIME_INVALID");
+
+  auto advance_in_past = create_command();
+  advance_in_past.remind_at = std::nullopt;
+  advance_in_past.advance_minutes = 61;
+  auto advance_in_past_result = service.create_reminder(advance_in_past);
+  require(!advance_in_past_result.ok() && advance_in_past_result.error().code == "REMINDER_TIME_INVALID",
+          "advance_minutes deriving a past time should be REMINDER_TIME_INVALID");
+
+  auto advance_in_future = create_command();
+  advance_in_future.remind_at = std::nullopt;
+  advance_in_future.advance_minutes = 59;
+  auto advance_in_future_result = service.create_reminder(advance_in_future);
+  require(advance_in_future_result.ok() &&
+              advance_in_future_result.value().remind_at == "2026-06-08T12:01:00Z",
+          "advance_minutes deriving a future time should succeed");
+
+  ReminderService invalid_clock_service(
+      reminders,
+      events,
+      [] { return std::string("invalid-clock"); },
+      [&] { return "reminder-" + std::to_string(++sequence); });
+  auto invalid_clock_result = invalid_clock_service.create_reminder(create_command());
+  require(!invalid_clock_result.ok() && invalid_clock_result.error().code == "NATIVE_INTERNAL_ERROR",
+          "invalid injected clock should be NATIVE_INTERNAL_ERROR");
 
   auto unsupported = create_command();
   unsupported.target_type = "habit";
@@ -438,6 +498,10 @@ void boundary_create_and_status_tests() {
   expect_error(
       excellent_calendar::boundary::api::create_reminder(create_reminder_request(event_id, "bad-time")),
       "REMINDER_TIME_INVALID");
+  expect_error(
+      excellent_calendar::boundary::api::create_reminder(
+          create_reminder_request(event_id, future_utc(-60))),
+      "REMINDER_TIME_INVALID");
 
   const auto created_json = excellent_calendar::boundary::api::create_reminder(create_reminder_request(event_id));
   const auto reminder = data_object(created_json);
@@ -502,7 +566,7 @@ void concurrency_tests() {
     threads.emplace_back([event_id, index] {
       const auto message = "Concurrent reminder " + std::to_string(index);
       const auto result = excellent_calendar::boundary::api::create_reminder(
-          create_reminder_request(event_id, "2026-06-08T12:30:00Z", message));
+          create_reminder_request(event_id, future_utc(3600), message));
       expect_ok(result);
     });
   }

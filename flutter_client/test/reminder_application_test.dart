@@ -206,7 +206,6 @@ CreateReminderCommand _createCommand({String requestId = 'local-create-1'}) {
     targetId: 'event-1',
     remindAt: DateTime(2026, 6, 15, 10),
     methods: const {ReminderMethod.ring},
-    isEnabled: true,
     source: ReminderSource.manual,
   );
 }

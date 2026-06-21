@@ -31,7 +31,6 @@ void main() {
         targetId: 'event-1',
         remindAt: DateTime.utc(2026, 6, 15, 2),
         methods: const [ReminderMethod.popup],
-        isEnabled: true,
         source: ReminderSource.manual,
       ),
     );

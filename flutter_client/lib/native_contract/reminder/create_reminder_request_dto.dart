@@ -5,7 +5,6 @@ class CreateReminderRequestDto {
     required this.targetType,
     required this.targetId,
     required this.methods,
-    required this.isEnabled,
     required this.source,
     this.remindAt,
     this.advanceMinutes,
@@ -18,7 +17,6 @@ class CreateReminderRequestDto {
   final int? advanceMinutes;
   final List<ReminderMethod> methods;
   final String? message;
-  final bool isEnabled;
   final ReminderSource source;
 
   Map<String, dynamic> toJson() {
@@ -56,7 +54,7 @@ class CreateReminderRequestDto {
       'advance_minutes': advanceMinutes,
       'methods': methodValues,
       'message': message,
-      'is_enabled': isEnabled,
+      'is_enabled': true,
       'source': source.wireValue,
     };
   }

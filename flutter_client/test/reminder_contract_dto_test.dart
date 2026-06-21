@@ -1,5 +1,6 @@
 import 'package:excellent_calendar/native_contract/reminder/create_reminder_request_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/reminder_contract_enums.dart';
+import 'package:excellent_calendar/native_contract/reminder/reminder_draft_request_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/reminder_response_dto.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,7 +13,6 @@ void main() {
       targetId: 'event-1',
       remindAt: DateTime(2026, 6, 15, 10),
       methods: const [ReminderMethod.ring, ReminderMethod.wechat],
-      isEnabled: true,
       source: ReminderSource.manual,
     );
 
@@ -25,6 +25,7 @@ void main() {
       DateTime(2026, 6, 15, 10).toUtc().toIso8601String(),
     );
     expect(json['methods'], ['ring', 'wechat']);
+    expect(json['is_enabled'], isTrue);
     expect(json.containsKey('request_id'), isFalse);
   });
 
@@ -40,5 +41,16 @@ void main() {
     expect(response.status, ReminderStatus.failed);
     expect(response.failureReason, 'Alarm registration failed.');
     expect(response.methods, [ReminderMethod.ring, ReminderMethod.popup]);
+  });
+
+  test('embedded reminder draft is always created enabled', () {
+    const draft = ReminderDraftRequestDto(
+      targetType: 'event',
+      advanceMinutes: 15,
+      methods: ['popup'],
+      source: 'manual',
+    );
+
+    expect(draft.toJson()['is_enabled'], isTrue);
   });
 }

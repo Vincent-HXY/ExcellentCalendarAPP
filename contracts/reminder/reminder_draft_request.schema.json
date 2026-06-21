@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/reminder_draft_request.schema.json",
   "title": "ReminderDraftRequest",
-  "description": "Embedded reminder draft used while creating or updating a parent Event or Anniversary. target_id may be omitted or null because the parent entity may not have been persisted yet.",
+  "description": "Embedded reminder draft used to create a new Reminder while creating or updating a parent Event or Anniversary. It does not update an existing Reminder; use reminder.update for that operation. target_id may be omitted or null because the parent entity may not have been persisted yet.",
   "x-contract-version": 1,
   "type": "object",
   "additionalProperties": false,
@@ -61,7 +61,8 @@
     },
     "is_enabled": {
       "type": "boolean",
-      "default": true
+      "const": true,
+      "description": "Must be true when creating a Reminder. A persisted Reminder may become false only through a later update or cancellation."
     },
     "source": {
       "type": "string",

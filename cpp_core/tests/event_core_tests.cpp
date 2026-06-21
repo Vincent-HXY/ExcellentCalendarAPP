@@ -15,6 +15,8 @@
 #include "excellent_calendar/application/create_event_workflow_service.hpp"
 #include "excellent_calendar/application/reminder_service.hpp"
 #include "excellent_calendar/boundary/api/event_api.hpp"
+#include "excellent_calendar/common/clock.hpp"
+#include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/repository/event_repository.hpp"
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
@@ -114,6 +116,13 @@ std::filesystem::path make_temp_dir(const std::string& name) {
 
 std::string encode(const picojson::object& object) {
   return picojson::value(object).serialize();
+}
+
+std::string future_utc(int seconds_from_now) {
+  const auto now = excellent_calendar::common::parse_iso8601_utc_epoch_seconds(
+      excellent_calendar::common::utc_now_iso8601());
+  require(now.has_value(), "test clock should produce valid UTC time");
+  return excellent_calendar::common::format_epoch_seconds_utc_iso8601(*now + seconds_from_now);
 }
 
 std::string create_request(
@@ -325,7 +334,7 @@ void embedded_reminder_boundary_tests() {
 
   expect_ok(excellent_calendar::boundary::api::initialize_storage(dir.string()));
   auto request = decode_object(
-      create_request("Reminder Event", "2026-06-08T01:00:00Z", "2026-06-08T02:00:00Z"));
+      create_request("Reminder Event", future_utc(7200), future_utc(10800)));
   auto draft = reminder_draft();
   draft["target_id"] = picojson::value("client-supplied-id");
   request["reminders"] = picojson::value(
@@ -365,7 +374,7 @@ void workflow_rollback_tests() {
   require(reminder_repository->initialize().ok(), "reminder repository should initialize");
 
   auto ids = std::make_shared<std::vector<std::string>>(
-      std::initializer_list<std::string>{"event-id", "duplicate-reminder-id", "duplicate-reminder-id"});
+      std::initializer_list<std::string>{"event-id", "reminder-1", "reminder-2"});
   auto id_index = std::make_shared<std::size_t>(0);
   auto id_generator = [ids, id_index] {
     const auto index = (*id_index)++;
@@ -390,14 +399,18 @@ void workflow_rollback_tests() {
   command.event.source = "manual";
   ReminderDraftCommand draft;
   draft.target_type = "event";
-  draft.advance_minutes = 15;
+  draft.advance_minutes = 30;
   draft.methods = {"popup"};
   draft.is_enabled = true;
   draft.source = "manual";
-  command.reminders = {draft, draft};
+  auto past_draft = draft;
+  past_draft.advance_minutes = std::nullopt;
+  past_draft.remind_at = "2026-06-07T23:59:59Z";
+  command.reminders = {draft, past_draft};
 
   const auto result = workflow.create_event(command);
-  require(!result.ok(), "second duplicate Reminder should fail the workflow");
+  require(!result.ok() && result.error().code == "REMINDER_TIME_INVALID",
+          "second past Reminder should fail the workflow");
   require(event_repository->find_all().ok() && event_repository->find_all().value().empty(),
           "failed workflow should roll back Event");
   require(reminder_repository->find_all().ok() && reminder_repository->find_all().value().empty(),

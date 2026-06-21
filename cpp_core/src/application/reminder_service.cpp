@@ -60,6 +60,13 @@ common::Error storage_corrupted(std::string field, std::string message) {
       {{"field", std::move(field)}, {"reason", std::move(message)}});
 }
 
+common::Error internal_error(std::string reason) {
+  return common::make_error(
+      "NATIVE_INTERNAL_ERROR",
+      "Native internal error",
+      {{"reason", std::move(reason)}});
+}
+
 bool vector_contains(const std::vector<std::string>& values, const std::string& value) {
   return std::find(values.begin(), values.end(), value) != values.end();
 }
@@ -244,6 +251,16 @@ common::Result<domain::Reminder> ReminderService::create_reminder(const CreateRe
   }
 
   const auto now = clock_();
+  const auto now_epoch = common::parse_iso8601_utc_epoch_seconds(now);
+  if (!now_epoch.has_value()) {
+    return common::Result<domain::Reminder>::failure(
+        internal_error("ReminderService clock returned an invalid UTC time"));
+  }
+  const auto remind_at_epoch = common::parse_iso8601_utc_epoch_seconds(remind_at);
+  if (!remind_at_epoch.has_value() || *remind_at_epoch <= *now_epoch) {
+    return common::Result<domain::Reminder>::failure(reminder_time_invalid("remind_at"));
+  }
+
   domain::Reminder reminder;
   reminder.id = id_generator_();
   reminder.target_type = command.target_type;

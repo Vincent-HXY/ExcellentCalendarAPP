@@ -2,7 +2,6 @@ class ReminderDraftRequestDto {
   const ReminderDraftRequestDto({
     required this.targetType,
     required this.methods,
-    required this.isEnabled,
     required this.source,
     this.targetId,
     this.remindAt,
@@ -16,7 +15,6 @@ class ReminderDraftRequestDto {
   final int? advanceMinutes;
   final List<String> methods;
   final String? message;
-  final bool isEnabled;
   final String source;
 
   Map<String, dynamic> toJson() {
@@ -48,7 +46,7 @@ class ReminderDraftRequestDto {
       'advance_minutes': advanceMinutes,
       'methods': methods,
       'message': message,
-      'is_enabled': isEnabled,
+      'is_enabled': true,
       'source': source,
     };
   }

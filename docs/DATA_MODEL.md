@@ -276,7 +276,7 @@
 | `methods` | `ReminderMethod[]` | 是 | 提醒方式 |
 | `advanceMinutes` | `number` | 否 | 提前提醒分钟数 |
 | `message` | `string` | 否 | 提醒文案 |
-| `isEnabled` | `boolean` | 是 | 是否启用 |
+| `isEnabled` | `boolean` | 是 | 是否启用，初始化为true |
 | `status` | `ReminderStatus` | 是 | 提醒任务状态 |
 | `scheduledAt` | `datetime` | 否 | 实际注册到系统闹钟或投递通道的时间 |
 | `lastTriggeredAt` | `datetime` | 否 | 最近一次触发时间 |
