@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/update_reminder_request.schema.json",
   "title": "UpdateReminderRequest",
-  "description": "Partial update payload for an existing reminder task. It updates Reminder fields only and does not create Notification records.",
+  "description": "Partial update payload for an existing reminder task. It updates reminder content and timing only; scheduling state changes must use explicit native calls such as reminder.mark_scheduled, reminder.mark_sent, reminder.mark_failed, reminder.enable, reminder.disable, or reminder.cancel.",
   "x-contract-version": 1,
   "type": "object",
   "additionalProperties": false,
@@ -57,19 +57,6 @@
       "type": [
         "string",
         "null"
-      ]
-    },
-    "is_enabled": {
-      "type": "boolean"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "pending",
-        "scheduled",
-        "sent",
-        "failed",
-        "cancelled"
       ]
     },
     "source": {
