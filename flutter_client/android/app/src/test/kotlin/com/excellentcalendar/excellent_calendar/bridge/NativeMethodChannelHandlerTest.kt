@@ -188,12 +188,16 @@ class NativeMethodChannelHandlerTest {
     }
 
     @Test
-    fun completeEventForwardsOccurrenceRequestAndValidatesStateResponse() {
+    fun completeEventForwardsSingleEventRequestAndValidatesEventResponse() {
         val nativeResponse = nativeResult(
             ok = true,
-            data = occurrenceStateResponse(),
+            data = eventResponse(
+                id = "event-123",
+                status = "completed",
+                completedAt = "2026-06-08T01:30:00Z",
+            ),
             error = null,
-            requestId = "complete-occurrence",
+            requestId = "complete-event",
         )
         val fakeBridge = FakeNativeEventBridge(
             completeResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
@@ -206,24 +210,24 @@ class NativeMethodChannelHandlerTest {
 
         val sent = NativeContractJsonCodec.decodeObject(fakeBridge.lastCompleteRequestJson!!)
         assertEquals("event-123", sent["event_id"])
-        assertEquals("2026-06-08T01:00:00Z", sent["occurrence_start_at"])
         assertEquals("2026-06-08T01:30:00Z", sent["completed_at"])
         assertEquals("manual", sent["source"])
+        assertFalse(sent.containsKey("occurrence_start_at"))
 
         @Suppress("UNCHECKED_CAST")
         val data = result.successMap()["data"] as Map<String, Any?>
         assertEquals("completed", data["status"])
-        assertEquals("2026-06-08T01:00:00Z", data["occurrence_start_at"])
+        assertEquals("2026-06-08T01:30:00Z", data["completed_at"])
         assertFalse(result.errorCalled)
     }
 
     @Test
-    fun reopenEventForwardsOccurrenceRequestAndValidatesStateResponse() {
+    fun reopenEventForwardsSingleEventRequestAndValidatesEventResponse() {
         val nativeResponse = nativeResult(
             ok = true,
-            data = occurrenceStateResponse(deletedAt = "2026-06-08T02:00:00Z"),
+            data = eventResponse(id = "event-123", status = "active", completedAt = null),
             error = null,
-            requestId = "reopen-occurrence",
+            requestId = "reopen-event",
         )
         val fakeBridge = FakeNativeEventBridge(
             reopenResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
@@ -236,11 +240,12 @@ class NativeMethodChannelHandlerTest {
 
         val sent = NativeContractJsonCodec.decodeObject(fakeBridge.lastReopenRequestJson!!)
         assertEquals("event-123", sent["event_id"])
-        assertEquals("2026-06-08T01:00:00Z", sent["occurrence_start_at"])
+        assertFalse(sent.containsKey("occurrence_start_at"))
 
         @Suppress("UNCHECKED_CAST")
         val data = result.successMap()["data"] as Map<String, Any?>
-        assertEquals("2026-06-08T02:00:00Z", data["deleted_at"])
+        assertEquals("active", data["status"])
+        assertEquals(null, data["completed_at"])
         assertFalse(result.errorCalled)
     }
 
@@ -352,7 +357,6 @@ class NativeMethodChannelHandlerTest {
     private fun completeEventArguments(): Map<String, Any?> {
         return linkedMapOf(
             "event_id" to "event-123",
-            "occurrence_start_at" to "2026-06-08T01:00:00Z",
             "completed_at" to "2026-06-08T01:30:00Z",
             "source" to "manual",
             "note" to "Finished from widget",
@@ -362,7 +366,6 @@ class NativeMethodChannelHandlerTest {
     private fun reopenEventArguments(): Map<String, Any?> {
         return linkedMapOf(
             "event_id" to "event-123",
-            "occurrence_start_at" to "2026-06-08T01:00:00Z",
         )
     }
 
@@ -414,6 +417,8 @@ class NativeMethodChannelHandlerTest {
         content: String? = "Notes",
         categoryId: String? = "category-work",
         importance: String? = "important_urgent",
+        status: String = "active",
+        completedAt: String? = null,
     ): Map<String, Any?> {
         return linkedMapOf(
             "id" to id,
@@ -423,8 +428,8 @@ class NativeMethodChannelHandlerTest {
             "end_at" to "2026-06-06T11:00:00Z",
             "is_all_day" to false,
             "has_recurrence" to false,
-            "status" to "active",
-            "completed_at" to null,
+            "status" to status,
+            "completed_at" to completedAt,
             "recurrence_id" to null,
             "category_id" to categoryId,
             "importance" to importance,
@@ -490,7 +495,7 @@ class NativeMethodChannelHandlerTest {
         private val completeResponseJson: String = NativeContractJsonCodec.encodeObject(
             linkedMapOf(
                 "ok" to true,
-                "data" to occurrenceStateResponseStatic(),
+                "data" to eventResponseStatic(status = "completed", completedAt = "2026-06-08T01:30:00Z"),
                 "error" to null,
                 "contract_version" to 1,
                 "request_id" to "default",
@@ -499,7 +504,7 @@ class NativeMethodChannelHandlerTest {
         private val reopenResponseJson: String = NativeContractJsonCodec.encodeObject(
             linkedMapOf(
                 "ok" to true,
-                "data" to occurrenceStateResponseStatic(deletedAt = "2026-06-08T02:00:00Z"),
+                "data" to eventResponseStatic(status = "active", completedAt = null),
                 "error" to null,
                 "contract_version" to 1,
                 "request_id" to "default",

@@ -7,12 +7,20 @@ namespace excellent_calendar::boundary::api {
 
 std::string create_reminder(std::string_view request_json);
 
+std::string update_reminder(std::string_view request_json);
+
 std::string cancel_reminder(std::string_view request_json);
 
 std::string list_reminders(std::string_view request_json);
 
-std::string mark_reminder_scheduled(std::string_view reminder_id);
+std::string mark_reminder_scheduled(std::string_view request_json);
 
-std::string mark_reminder_failed(std::string_view reminder_id, std::string_view failure_reason);
+std::string mark_reminder_sent(std::string_view request_json);
+
+std::string mark_reminder_failed(std::string_view request_json);
+
+std::string enable_reminder(std::string_view request_json);
+
+std::string disable_reminder(std::string_view request_json);
 
 }  // namespace excellent_calendar::boundary::api

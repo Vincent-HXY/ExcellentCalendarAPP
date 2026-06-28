@@ -12,6 +12,10 @@ interface NativeEventBridge {
     /** 创建事件。`requestJson` 必须符合 CreateEventRequest 合约，返回 NativeResult JSON。 */
     fun createEvent(requestJson: String): String
 
+    fun updateEvent(requestJson: String): String
+
+    fun deleteEvent(requestJson: String): String
+
     /** 搜索事件。`requestJson` 必须符合 SearchEventRequest 合约，返回 NativeResult JSON。 */
     fun searchEvents(requestJson: String): String
 
@@ -23,11 +27,19 @@ interface NativeEventBridge {
 
     fun createReminder(requestJson: String): String
 
+    fun updateReminder(requestJson: String): String
+
     fun cancelReminder(requestJson: String): String
 
     fun listReminders(requestJson: String): String
 
-    fun markReminderScheduled(reminderId: String): String
+    fun markReminderScheduled(requestJson: String): String
 
-    fun markReminderFailed(reminderId: String, failureReason: String): String
+    fun markReminderSent(requestJson: String): String
+
+    fun markReminderFailed(requestJson: String): String
+
+    fun enableReminder(requestJson: String): String
+
+    fun disableReminder(requestJson: String): String
 }

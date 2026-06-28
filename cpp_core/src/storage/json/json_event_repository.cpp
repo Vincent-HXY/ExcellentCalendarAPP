@@ -19,6 +19,13 @@ common::Error storage_corrupted(std::string reason, std::string field = "") {
   return storage_data_corrupted(std::move(reason), std::move(field));
 }
 
+common::Error event_not_found(std::string id) {
+  return common::make_error(
+      "EVENT_NOT_FOUND",
+      "Event not found",
+      {{"id", std::move(id)}});
+}
+
 /** picojson 的 number 是 double；这里判断 double 是否实际表示整数。 */
 bool is_integer_number(double value) {
   return std::floor(value) == value;
@@ -225,6 +232,34 @@ common::Result<domain::Event> JsonEventRepository::create(const domain::Event& e
   }
   auto events = loaded.value();
   events.push_back(event);
+
+  auto saved = save_events_locked(events);
+  if (!saved.ok()) {
+    return common::Result<domain::Event>::failure(saved.error());
+  }
+  return common::Result<domain::Event>::success(event);
+}
+
+common::Result<domain::Event> JsonEventRepository::update(const domain::Event& event) {
+  auto directory_lock = store_.acquire_directory_lock();
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  auto loaded = load_events_locked();
+  if (!loaded.ok()) {
+    return common::Result<domain::Event>::failure(loaded.error());
+  }
+  auto events = loaded.value();
+  bool replaced = false;
+  for (auto& existing : events) {
+    if (existing.id == event.id) {
+      existing = event;
+      replaced = true;
+      break;
+    }
+  }
+  if (!replaced) {
+    return common::Result<domain::Event>::failure(event_not_found(event.id));
+  }
 
   auto saved = save_events_locked(events);
   if (!saved.ok()) {

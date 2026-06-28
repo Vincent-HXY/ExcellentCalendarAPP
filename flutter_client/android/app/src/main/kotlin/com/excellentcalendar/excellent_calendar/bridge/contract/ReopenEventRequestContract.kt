@@ -20,7 +20,6 @@ data class ReopenEventRequestContract(
         /** 重新打开只需要事件 id，以及可选的 occurrence 起始时间。 */
         private val AllowedFields = setOf(
             "event_id",
-            "occurrence_start_at",
         )
 
         /** 从 MethodChannel arguments 创建并校验请求。 */
@@ -39,7 +38,6 @@ data class ReopenEventRequestContract(
             val parent = "ReopenEventRequest"
             ContractValidators.rejectUnknownFields(map, AllowedFields, parent)
             ContractValidators.requireString(map, "event_id", parent, nonEmpty = true)
-            ContractValidators.optionalString(map, "occurrence_start_at", parent)
         }
     }
 }

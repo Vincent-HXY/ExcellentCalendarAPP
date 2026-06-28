@@ -311,23 +311,25 @@ common::Result<domain::Reminder> ReminderService::cancel_reminder(const CancelRe
   const auto now = clock_();
   reminder.status = std::string(domain::kReminderStatusCancelled);
   reminder.is_enabled = false;
-  reminder.deleted_at = now;
   reminder.updated_at = now;
   return reminder_repository_->update(reminder);
 }
 
-common::Result<domain::Reminder> ReminderService::mark_scheduled(const std::string& id) {
-  if (common::trim_ascii(id).empty()) {
+common::Result<domain::Reminder> ReminderService::mark_scheduled(const MarkReminderScheduledCommand& command) {
+  if (common::trim_ascii(command.id).empty()) {
     return common::Result<domain::Reminder>::failure(
         contract_validation_failed("id", "Reminder id must be non-empty."));
   }
-  auto found = reminder_repository_->find_by_id(id);
+  if (!common::is_iso8601_utc_datetime(command.scheduled_at)) {
+    return common::Result<domain::Reminder>::failure(reminder_time_invalid("scheduled_at"));
+  }
+  auto found = reminder_repository_->find_by_id(command.id);
   if (!found.ok()) {
     return common::Result<domain::Reminder>::failure(found.error());
   }
   if (!found.value().has_value() || found.value()->deleted_at.has_value() ||
       found.value()->status == std::string(domain::kReminderStatusCancelled)) {
-    return common::Result<domain::Reminder>::failure(reminder_not_found(id));
+    return common::Result<domain::Reminder>::failure(reminder_not_found(command.id));
   }
   if (!found.value()->is_enabled) {
     return common::Result<domain::Reminder>::failure(
@@ -335,27 +337,58 @@ common::Result<domain::Reminder> ReminderService::mark_scheduled(const std::stri
   }
 
   auto reminder = *found.value();
-  const auto now = clock_();
   reminder.status = std::string(domain::kReminderStatusScheduled);
-  reminder.scheduled_at = now;
+  reminder.scheduled_at = command.scheduled_at;
   reminder.failure_reason = std::nullopt;
-  reminder.updated_at = now;
+  reminder.updated_at = clock_();
   return reminder_repository_->update(reminder);
 }
 
-common::Result<domain::Reminder> ReminderService::mark_failed(const std::string& id,
-                                                              const std::string& failure_reason) {
-  if (common::trim_ascii(id).empty()) {
+common::Result<domain::Reminder> ReminderService::mark_sent(const MarkReminderSentCommand& command) {
+  if (common::trim_ascii(command.id).empty()) {
     return common::Result<domain::Reminder>::failure(
         contract_validation_failed("id", "Reminder id must be non-empty."));
   }
-  auto found = reminder_repository_->find_by_id(id);
+  if (!common::is_iso8601_utc_datetime(command.last_triggered_at)) {
+    return common::Result<domain::Reminder>::failure(reminder_time_invalid("last_triggered_at"));
+  }
+  auto found = reminder_repository_->find_by_id(command.id);
   if (!found.ok()) {
     return common::Result<domain::Reminder>::failure(found.error());
   }
   if (!found.value().has_value() || found.value()->deleted_at.has_value() ||
       found.value()->status == std::string(domain::kReminderStatusCancelled)) {
-    return common::Result<domain::Reminder>::failure(reminder_not_found(id));
+    return common::Result<domain::Reminder>::failure(reminder_not_found(command.id));
+  }
+  if (!found.value()->is_enabled) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("is_enabled", "Disabled reminders cannot be marked sent."));
+  }
+
+  auto reminder = *found.value();
+  reminder.status = std::string(domain::kReminderStatusSent);
+  reminder.last_triggered_at = command.last_triggered_at;
+  reminder.failure_reason = std::nullopt;
+  reminder.updated_at = clock_();
+  return reminder_repository_->update(reminder);
+}
+
+common::Result<domain::Reminder> ReminderService::mark_failed(const MarkReminderFailedCommand& command) {
+  if (common::trim_ascii(command.id).empty()) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("id", "Reminder id must be non-empty."));
+  }
+  if (common::trim_ascii(command.failure_reason).empty()) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("failure_reason", "Reminder failure_reason must be non-empty."));
+  }
+  auto found = reminder_repository_->find_by_id(command.id);
+  if (!found.ok()) {
+    return common::Result<domain::Reminder>::failure(found.error());
+  }
+  if (!found.value().has_value() || found.value()->deleted_at.has_value() ||
+      found.value()->status == std::string(domain::kReminderStatusCancelled)) {
+    return common::Result<domain::Reminder>::failure(reminder_not_found(command.id));
   }
   if (!found.value()->is_enabled) {
     return common::Result<domain::Reminder>::failure(
@@ -364,7 +397,48 @@ common::Result<domain::Reminder> ReminderService::mark_failed(const std::string&
 
   auto reminder = *found.value();
   reminder.status = std::string(domain::kReminderStatusFailed);
-  reminder.failure_reason = sanitize_failure_reason(failure_reason);
+  reminder.failure_reason = sanitize_failure_reason(command.failure_reason);
+  reminder.updated_at = clock_();
+  return reminder_repository_->update(reminder);
+}
+
+common::Result<domain::Reminder> ReminderService::enable_reminder(const ReminderIdCommand& command) {
+  if (common::trim_ascii(command.id).empty()) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("id", "Reminder id must be non-empty."));
+  }
+  auto found = reminder_repository_->find_by_id(command.id);
+  if (!found.ok()) {
+    return common::Result<domain::Reminder>::failure(found.error());
+  }
+  if (!found.value().has_value() || found.value()->deleted_at.has_value() ||
+      found.value()->status == std::string(domain::kReminderStatusCancelled)) {
+    return common::Result<domain::Reminder>::failure(reminder_not_found(command.id));
+  }
+
+  auto reminder = *found.value();
+  reminder.is_enabled = true;
+  reminder.status = std::string(domain::kReminderStatusPending);
+  reminder.updated_at = clock_();
+  return reminder_repository_->update(reminder);
+}
+
+common::Result<domain::Reminder> ReminderService::disable_reminder(const ReminderIdCommand& command) {
+  if (common::trim_ascii(command.id).empty()) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("id", "Reminder id must be non-empty."));
+  }
+  auto found = reminder_repository_->find_by_id(command.id);
+  if (!found.ok()) {
+    return common::Result<domain::Reminder>::failure(found.error());
+  }
+  if (!found.value().has_value() || found.value()->deleted_at.has_value() ||
+      found.value()->status == std::string(domain::kReminderStatusCancelled)) {
+    return common::Result<domain::Reminder>::failure(reminder_not_found(command.id));
+  }
+
+  auto reminder = *found.value();
+  reminder.is_enabled = false;
   reminder.updated_at = clock_();
   return reminder_repository_->update(reminder);
 }

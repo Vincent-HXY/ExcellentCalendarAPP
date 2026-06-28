@@ -77,6 +77,26 @@ class JniNativeEventBridge(
     }
 
     /** 调用 C++ 搜索事件。`?.let { return it }` 表示：如果初始化失败 JSON 非空，直接返回。 */
+    override fun updateEvent(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeUpdateEvent(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeUpdateEvent is unavailable.", error)
+        }
+    }
+
+    override fun deleteEvent(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeDeleteEvent(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeDeleteEvent is unavailable.", error)
+        }
+    }
+
     override fun searchEvents(requestJson: String): String {
         ensureLibraryLoaded()
         ensureStorageInitialized()?.let { return it }
@@ -90,6 +110,7 @@ class JniNativeEventBridge(
     /** 调用 C++ 完成事件。当前 native API 可能尚未实现，但仍通过同一条 JNI 通道返回。 */
     override fun completeEvent(requestJson: String): String {
         ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
         return try {
             nativeCompleteEvent(requestJson)
         } catch (error: UnsatisfiedLinkError) {
@@ -100,6 +121,7 @@ class JniNativeEventBridge(
     /** 调用 C++ 重新打开事件。 */
     override fun reopenEvent(requestJson: String): String {
         ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
         return try {
             nativeReopenEvent(requestJson)
         } catch (error: UnsatisfiedLinkError) {
@@ -114,6 +136,16 @@ class JniNativeEventBridge(
             nativeCreateReminder(requestJson)
         } catch (error: UnsatisfiedLinkError) {
             throw NativeBridgeUnavailableException("JNI symbol nativeCreateReminder is unavailable.", error)
+        }
+    }
+
+    override fun updateReminder(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeUpdateReminder(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeUpdateReminder is unavailable.", error)
         }
     }
 
@@ -137,23 +169,53 @@ class JniNativeEventBridge(
         }
     }
 
-    override fun markReminderScheduled(reminderId: String): String {
+    override fun markReminderScheduled(requestJson: String): String {
         ensureLibraryLoaded()
         ensureStorageInitialized()?.let { return it }
         return try {
-            nativeMarkReminderScheduled(reminderId)
+            nativeMarkReminderScheduled(requestJson)
         } catch (error: UnsatisfiedLinkError) {
             throw NativeBridgeUnavailableException("JNI symbol nativeMarkReminderScheduled is unavailable.", error)
         }
     }
 
-    override fun markReminderFailed(reminderId: String, failureReason: String): String {
+    override fun markReminderSent(requestJson: String): String {
         ensureLibraryLoaded()
         ensureStorageInitialized()?.let { return it }
         return try {
-            nativeMarkReminderFailed(reminderId, failureReason)
+            nativeMarkReminderSent(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeMarkReminderSent is unavailable.", error)
+        }
+    }
+
+    override fun markReminderFailed(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeMarkReminderFailed(requestJson)
         } catch (error: UnsatisfiedLinkError) {
             throw NativeBridgeUnavailableException("JNI symbol nativeMarkReminderFailed is unavailable.", error)
+        }
+    }
+
+    override fun enableReminder(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeEnableReminder(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeEnableReminder is unavailable.", error)
+        }
+    }
+
+    override fun disableReminder(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return try {
+            nativeDisableReminder(requestJson)
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol nativeDisableReminder is unavailable.", error)
         }
     }
 
@@ -165,6 +227,10 @@ class JniNativeEventBridge(
      */
     external fun nativeCreateEvent(requestJson: String): String
 
+    external fun nativeUpdateEvent(requestJson: String): String
+
+    external fun nativeDeleteEvent(requestJson: String): String
+
     external fun nativeInitializeStorage(storageDirectory: String): String
 
     external fun nativeSearchEvents(requestJson: String): String
@@ -175,13 +241,21 @@ class JniNativeEventBridge(
 
     external fun nativeCreateReminder(requestJson: String): String
 
+    external fun nativeUpdateReminder(requestJson: String): String
+
     external fun nativeCancelReminder(requestJson: String): String
 
     external fun nativeListReminders(requestJson: String): String
 
-    external fun nativeMarkReminderScheduled(reminderId: String): String
+    external fun nativeMarkReminderScheduled(requestJson: String): String
 
-    external fun nativeMarkReminderFailed(reminderId: String, failureReason: String): String
+    external fun nativeMarkReminderSent(requestJson: String): String
+
+    external fun nativeMarkReminderFailed(requestJson: String): String
+
+    external fun nativeEnableReminder(requestJson: String): String
+
+    external fun nativeDisableReminder(requestJson: String): String
 
     /** 加载 native 动态库。成功或失败都会被缓存，避免重复加载。 */
     private fun ensureLibraryLoaded() {

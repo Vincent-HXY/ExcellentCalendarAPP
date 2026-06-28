@@ -58,6 +58,13 @@ common::Error internal_error(std::string reason) {
       {{"reason", std::move(reason)}});
 }
 
+common::Error feature_not_implemented(std::string feature) {
+  return common::make_error(
+      "FEATURE_NOT_IMPLEMENTED",
+      "Feature is not implemented in native core yet",
+      {{"feature", std::move(feature)}});
+}
+
 common::Result<picojson::object> parse_json_object(std::string_view request_json) {
   picojson::value value;
   const std::string error = picojson::parse(value, std::string(request_json));
@@ -464,6 +471,156 @@ common::Result<application::ReminderQuery> parse_list_reminders_request(std::str
   return common::Result<application::ReminderQuery>::success(std::move(query));
 }
 
+common::Result<common::Unit> parse_update_reminder_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<common::Unit>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{
+      "id", "target_type", "target_id", "remind_at", "advance_minutes", "methods", "message", "source",
+  };
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateReminderRequest contains an unknown field.", "UpdateReminderRequest." + unknown));
+  }
+
+  auto id = require_string(object, "id", "UpdateReminderRequest", true);
+  if (!id.ok()) return common::Result<common::Unit>::failure(id.error());
+  auto target_type = optional_string(object, "target_type", "UpdateReminderRequest");
+  if (!target_type.ok()) return common::Result<common::Unit>::failure(target_type.error());
+  if (target_type.value().has_value() && !domain::is_valid_reminder_target_type(*target_type.value())) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateReminderRequest.target_type has an unsupported enum value.", "UpdateReminderRequest.target_type"));
+  }
+  auto target_id = optional_string(object, "target_id", "UpdateReminderRequest");
+  if (!target_id.ok()) return common::Result<common::Unit>::failure(target_id.error());
+  if (target_id.value().has_value() && target_id.value()->empty()) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateReminderRequest.target_id must be non-empty.", "UpdateReminderRequest.target_id"));
+  }
+  auto remind_at = optional_string(object, "remind_at", "UpdateReminderRequest");
+  if (!remind_at.ok()) return common::Result<common::Unit>::failure(remind_at.error());
+  if (remind_at.value().has_value() && !common::is_iso8601_utc_datetime(*remind_at.value())) {
+    return common::Result<common::Unit>::failure(reminder_time_invalid("UpdateReminderRequest.remind_at"));
+  }
+  auto advance_minutes = optional_int(object, "advance_minutes", "UpdateReminderRequest");
+  if (!advance_minutes.ok()) return common::Result<common::Unit>::failure(advance_minutes.error());
+  if (advance_minutes.value().has_value() && *advance_minutes.value() < 0) {
+    return common::Result<common::Unit>::failure(reminder_time_invalid("UpdateReminderRequest.advance_minutes"));
+  }
+  const auto* methods_value = field(object, "methods");
+  if (methods_value != nullptr) {
+    auto methods = required_methods(object, "UpdateReminderRequest");
+    if (!methods.ok()) return common::Result<common::Unit>::failure(methods.error());
+  }
+  auto message = optional_string(object, "message", "UpdateReminderRequest");
+  if (!message.ok()) return common::Result<common::Unit>::failure(message.error());
+  auto source = optional_string(object, "source", "UpdateReminderRequest");
+  if (!source.ok()) return common::Result<common::Unit>::failure(source.error());
+  if (source.value().has_value() && !domain::is_valid_reminder_source(*source.value())) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateReminderRequest.source has an unsupported enum value.", "UpdateReminderRequest.source"));
+  }
+  return common::Result<common::Unit>::success(common::Unit{});
+}
+
+common::Result<application::MarkReminderScheduledCommand> parse_mark_reminder_scheduled_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<application::MarkReminderScheduledCommand>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{"id", "scheduled_at"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<application::MarkReminderScheduledCommand>::failure(
+        contract_error("MarkReminderScheduledRequest contains an unknown field.",
+                       "MarkReminderScheduledRequest." + unknown));
+  }
+  auto id = require_string(object, "id", "MarkReminderScheduledRequest", true);
+  if (!id.ok()) return common::Result<application::MarkReminderScheduledCommand>::failure(id.error());
+  auto scheduled_at = require_string(object, "scheduled_at", "MarkReminderScheduledRequest", true);
+  if (!scheduled_at.ok()) return common::Result<application::MarkReminderScheduledCommand>::failure(scheduled_at.error());
+  if (!common::is_iso8601_utc_datetime(scheduled_at.value())) {
+    return common::Result<application::MarkReminderScheduledCommand>::failure(
+        reminder_time_invalid("MarkReminderScheduledRequest.scheduled_at"));
+  }
+  application::MarkReminderScheduledCommand command;
+  command.id = id.value();
+  command.scheduled_at = scheduled_at.value();
+  return common::Result<application::MarkReminderScheduledCommand>::success(std::move(command));
+}
+
+common::Result<application::MarkReminderSentCommand> parse_mark_reminder_sent_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<application::MarkReminderSentCommand>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{"id", "last_triggered_at"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<application::MarkReminderSentCommand>::failure(
+        contract_error("MarkReminderSentRequest contains an unknown field.", "MarkReminderSentRequest." + unknown));
+  }
+  auto id = require_string(object, "id", "MarkReminderSentRequest", true);
+  if (!id.ok()) return common::Result<application::MarkReminderSentCommand>::failure(id.error());
+  auto last_triggered_at = require_string(object, "last_triggered_at", "MarkReminderSentRequest", true);
+  if (!last_triggered_at.ok()) return common::Result<application::MarkReminderSentCommand>::failure(last_triggered_at.error());
+  if (!common::is_iso8601_utc_datetime(last_triggered_at.value())) {
+    return common::Result<application::MarkReminderSentCommand>::failure(
+        reminder_time_invalid("MarkReminderSentRequest.last_triggered_at"));
+  }
+  application::MarkReminderSentCommand command;
+  command.id = id.value();
+  command.last_triggered_at = last_triggered_at.value();
+  return common::Result<application::MarkReminderSentCommand>::success(std::move(command));
+}
+
+common::Result<application::MarkReminderFailedCommand> parse_mark_reminder_failed_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<application::MarkReminderFailedCommand>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{"id", "failure_reason"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<application::MarkReminderFailedCommand>::failure(
+        contract_error("MarkReminderFailedRequest contains an unknown field.", "MarkReminderFailedRequest." + unknown));
+  }
+  auto id = require_string(object, "id", "MarkReminderFailedRequest", true);
+  if (!id.ok()) return common::Result<application::MarkReminderFailedCommand>::failure(id.error());
+  auto failure_reason = require_string(object, "failure_reason", "MarkReminderFailedRequest", true);
+  if (!failure_reason.ok()) return common::Result<application::MarkReminderFailedCommand>::failure(failure_reason.error());
+  application::MarkReminderFailedCommand command;
+  command.id = id.value();
+  command.failure_reason = failure_reason.value();
+  return common::Result<application::MarkReminderFailedCommand>::success(std::move(command));
+}
+
+common::Result<application::ReminderIdCommand> parse_reminder_id_request(std::string_view request_json,
+                                                                         const std::string& parent) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<application::ReminderIdCommand>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{"id"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<application::ReminderIdCommand>::failure(
+        contract_error(parent + " contains an unknown field.", parent + "." + unknown));
+  }
+  auto id = require_string(object, "id", parent, true);
+  if (!id.ok()) return common::Result<application::ReminderIdCommand>::failure(id.error());
+  application::ReminderIdCommand command;
+  command.id = id.value();
+  return common::Result<application::ReminderIdCommand>::success(std::move(command));
+}
+
 std::string failure_response(const common::Error& error, const std::string& request_id) {
   return contract::native_failure_json(error, request_id);
 }
@@ -516,6 +673,21 @@ std::string cancel_reminder(std::string_view request_json) {
   }
 }
 
+std::string update_reminder(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_update_reminder_request(request_json);
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
+    return failure_response(feature_not_implemented("reminder.update"), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
 std::string list_reminders(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
   try {
@@ -539,14 +711,18 @@ std::string list_reminders(std::string_view request_json) {
   }
 }
 
-std::string mark_reminder_scheduled(std::string_view reminder_id) {
+std::string mark_reminder_scheduled(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
   try {
+    auto parsed = parse_mark_reminder_scheduled_request(request_json);
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
     const auto service = current_reminder_service();
     if (!service) {
       return failure_response(storage_not_initialized_error("reminder"), request_id);
     }
-    auto updated = service->mark_scheduled(std::string(reminder_id));
+    auto updated = service->mark_scheduled(parsed.value());
     if (!updated.ok()) {
       return failure_response(updated.error(), request_id);
     }
@@ -558,14 +734,87 @@ std::string mark_reminder_scheduled(std::string_view reminder_id) {
   }
 }
 
-std::string mark_reminder_failed(std::string_view reminder_id, std::string_view failure_reason) {
+std::string mark_reminder_sent(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
   try {
+    auto parsed = parse_mark_reminder_sent_request(request_json);
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
     const auto service = current_reminder_service();
     if (!service) {
       return failure_response(storage_not_initialized_error("reminder"), request_id);
     }
-    auto updated = service->mark_failed(std::string(reminder_id), std::string(failure_reason));
+    auto updated = service->mark_sent(parsed.value());
+    if (!updated.ok()) {
+      return failure_response(updated.error(), request_id);
+    }
+    return contract::native_success_json(contract::reminder_response_to_json(updated.value()), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
+std::string mark_reminder_failed(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_mark_reminder_failed_request(request_json);
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
+    const auto service = current_reminder_service();
+    if (!service) {
+      return failure_response(storage_not_initialized_error("reminder"), request_id);
+    }
+    auto updated = service->mark_failed(parsed.value());
+    if (!updated.ok()) {
+      return failure_response(updated.error(), request_id);
+    }
+    return contract::native_success_json(contract::reminder_response_to_json(updated.value()), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
+std::string enable_reminder(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_reminder_id_request(request_json, "EnableReminderRequest");
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
+    const auto service = current_reminder_service();
+    if (!service) {
+      return failure_response(storage_not_initialized_error("reminder"), request_id);
+    }
+    auto updated = service->enable_reminder(parsed.value());
+    if (!updated.ok()) {
+      return failure_response(updated.error(), request_id);
+    }
+    return contract::native_success_json(contract::reminder_response_to_json(updated.value()), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
+std::string disable_reminder(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_reminder_id_request(request_json, "DisableReminderRequest");
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
+    const auto service = current_reminder_service();
+    if (!service) {
+      return failure_response(storage_not_initialized_error("reminder"), request_id);
+    }
+    auto updated = service->disable_reminder(parsed.value());
     if (!updated.ok()) {
       return failure_response(updated.error(), request_id);
     }

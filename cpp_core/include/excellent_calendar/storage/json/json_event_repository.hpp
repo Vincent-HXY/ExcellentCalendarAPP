@@ -28,6 +28,9 @@ class JsonEventRepository final : public repository::EventRepository {
   /** 追加保存一个事件。内部会读全量 JSON、追加、再写回文件。 */
   common::Result<domain::Event> create(const domain::Event& event) override;
 
+  /** 替换保存一个已存在的事件。 */
+  common::Result<domain::Event> update(const domain::Event& event) override;
+
   /** 按 id 查找事件。 */
   common::Result<std::optional<domain::Event>> find_by_id(std::string_view id) override;
 

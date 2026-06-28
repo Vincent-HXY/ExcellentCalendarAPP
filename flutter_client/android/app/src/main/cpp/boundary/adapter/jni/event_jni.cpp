@@ -65,20 +65,6 @@ jstring call_boundary(JNIEnv* env, jstring input, std::string (*function)(std::s
   }
 }
 
-jstring call_boundary(
-    JNIEnv* env,
-    jstring first,
-    jstring second,
-    std::string (*function)(std::string_view, std::string_view)) {
-  try {
-    return to_jstring(env, function(from_jstring(env, first), from_jstring(env, second)));
-  } catch (const std::exception& error) {
-    return internal_error_result(env, error.what());
-  } catch (...) {
-    return internal_error_result(env, "unknown exception");
-  }
-}
-
 }  // namespace
 
 // extern "C" 禁止 C++ 名字改编；JNIEXPORT/JNICALL 是 JNI 要求的导出宏和调用约定。
@@ -96,6 +82,22 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
     jobject /* this */,
     jstring request_json) {
   return call_boundary(env, request_json, excellent_calendar::boundary::api::create_event);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeUpdateEvent(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::update_event);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeDeleteEvent(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::delete_event);
 }
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -131,6 +133,14 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeUpdateReminder(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::update_reminder);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
 Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeCancelReminder(
     JNIEnv* env,
     jobject /* this */,
@@ -150,15 +160,38 @@ extern "C" JNIEXPORT jstring JNICALL
 Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeMarkReminderScheduled(
     JNIEnv* env,
     jobject /* this */,
-    jstring reminder_id) {
-  return call_boundary(env, reminder_id, excellent_calendar::boundary::api::mark_reminder_scheduled);
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::mark_reminder_scheduled);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeMarkReminderSent(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::mark_reminder_sent);
 }
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeMarkReminderFailed(
     JNIEnv* env,
     jobject /* this */,
-    jstring reminder_id,
-    jstring failure_reason) {
-  return call_boundary(env, reminder_id, failure_reason, excellent_calendar::boundary::api::mark_reminder_failed);
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::mark_reminder_failed);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeEnableReminder(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::enable_reminder);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeDisableReminder(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::disable_reminder);
 }

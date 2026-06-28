@@ -23,6 +23,9 @@ class EventRepository {
   /** 保存一个事件并返回保存后的事件。 */
   virtual common::Result<domain::Event> create(const domain::Event& event) = 0;
 
+  /** 更新一个已存在的事件并返回更新后的事件。 */
+  virtual common::Result<domain::Event> update(const domain::Event& event) = 0;
+
   /** 按 id 查找事件；返回 nullopt 表示没有对应记录。 */
   virtual common::Result<std::optional<domain::Event>> find_by_id(std::string_view id) = 0;
 

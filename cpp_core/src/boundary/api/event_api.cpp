@@ -519,6 +519,181 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   return common::Result<application::EventQuery>::success(std::move(query));
 }
 
+common::Result<common::Unit> parse_update_event_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<common::Unit>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{
+      "id",        "title",       "content",   "start_at", "end_at",   "is_all_day",
+      "category_id", "importance", "location", "timezone", "source",   "recurrence",
+      "reminders",
+  };
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateEventRequest contains an unknown field.", "UpdateEventRequest." + unknown));
+  }
+
+  auto id = require_string(object, "id", "UpdateEventRequest", true);
+  if (!id.ok()) return common::Result<common::Unit>::failure(id.error());
+  auto title = optional_string(object, "title", "UpdateEventRequest");
+  if (!title.ok()) return common::Result<common::Unit>::failure(title.error());
+  if (title.value().has_value() && common::trim_ascii(*title.value()).empty()) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateEventRequest.title must be non-empty.", "UpdateEventRequest.title"));
+  }
+  auto content = optional_string(object, "content", "UpdateEventRequest");
+  if (!content.ok()) return common::Result<common::Unit>::failure(content.error());
+  auto start_at = optional_string(object, "start_at", "UpdateEventRequest");
+  if (!start_at.ok()) return common::Result<common::Unit>::failure(start_at.error());
+  if (start_at.value().has_value() && !common::is_iso8601_utc_datetime(*start_at.value())) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateEventRequest.start_at must be ISO 8601 UTC date-time.", "UpdateEventRequest.start_at"));
+  }
+  auto end_at = optional_string(object, "end_at", "UpdateEventRequest");
+  if (!end_at.ok()) return common::Result<common::Unit>::failure(end_at.error());
+  if (end_at.value().has_value() && !common::is_iso8601_utc_datetime(*end_at.value())) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateEventRequest.end_at must be ISO 8601 UTC date-time.", "UpdateEventRequest.end_at"));
+  }
+  auto is_all_day = optional_bool(object, "is_all_day", "UpdateEventRequest");
+  if (!is_all_day.ok()) return common::Result<common::Unit>::failure(is_all_day.error());
+  auto category_id = optional_string(object, "category_id", "UpdateEventRequest");
+  if (!category_id.ok()) return common::Result<common::Unit>::failure(category_id.error());
+  auto importance = optional_string(object, "importance", "UpdateEventRequest");
+  if (!importance.ok()) return common::Result<common::Unit>::failure(importance.error());
+  if (importance.value().has_value() && !domain::is_valid_importance(*importance.value())) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateEventRequest.importance has an unsupported enum value.", "UpdateEventRequest.importance"));
+  }
+  auto location = optional_string(object, "location", "UpdateEventRequest");
+  if (!location.ok()) return common::Result<common::Unit>::failure(location.error());
+  auto timezone = optional_string(object, "timezone", "UpdateEventRequest");
+  if (!timezone.ok()) return common::Result<common::Unit>::failure(timezone.error());
+  auto source = optional_string(object, "source", "UpdateEventRequest");
+  if (!source.ok()) return common::Result<common::Unit>::failure(source.error());
+  if (source.value().has_value() && !domain::is_valid_create_event_source(*source.value())) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateEventRequest.source has an unsupported enum value.", "UpdateEventRequest.source"));
+  }
+  const auto* recurrence = field(object, "recurrence");
+  if (recurrence != nullptr && !recurrence->is<picojson::null>() && !recurrence->is<picojson::object>()) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateEventRequest.recurrence must be an object or null.", "UpdateEventRequest.recurrence"));
+  }
+  const auto* reminders = field(object, "reminders");
+  if (reminders != nullptr && !reminders->is<picojson::array>()) {
+    return common::Result<common::Unit>::failure(
+        contract_error("UpdateEventRequest.reminders must be an array.", "UpdateEventRequest.reminders"));
+  }
+  return common::Result<common::Unit>::success(common::Unit{});
+}
+
+common::Result<common::Unit> parse_delete_event_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<common::Unit>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{
+      "id", "delete_mode", "recurrence_delete_scope", "occurrence_start_at", "reason",
+  };
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<common::Unit>::failure(
+        contract_error("DeleteEventRequest contains an unknown field.", "DeleteEventRequest." + unknown));
+  }
+  auto id = require_string(object, "id", "DeleteEventRequest", true);
+  if (!id.ok()) return common::Result<common::Unit>::failure(id.error());
+  auto delete_mode = require_string(object, "delete_mode", "DeleteEventRequest", true);
+  if (!delete_mode.ok()) return common::Result<common::Unit>::failure(delete_mode.error());
+  if (delete_mode.value() != "soft" && delete_mode.value() != "hard") {
+    return common::Result<common::Unit>::failure(
+        contract_error("DeleteEventRequest.delete_mode has an unsupported enum value.", "DeleteEventRequest.delete_mode"));
+  }
+  auto recurrence_delete_scope = optional_string(object, "recurrence_delete_scope", "DeleteEventRequest");
+  if (!recurrence_delete_scope.ok()) return common::Result<common::Unit>::failure(recurrence_delete_scope.error());
+  if (recurrence_delete_scope.value().has_value() &&
+      *recurrence_delete_scope.value() != "single_occurrence" &&
+      *recurrence_delete_scope.value() != "future_occurrences" &&
+      *recurrence_delete_scope.value() != "all_occurrences") {
+    return common::Result<common::Unit>::failure(
+        contract_error("DeleteEventRequest.recurrence_delete_scope has an unsupported enum value.",
+                       "DeleteEventRequest.recurrence_delete_scope"));
+  }
+  auto occurrence_start_at = optional_string(object, "occurrence_start_at", "DeleteEventRequest");
+  if (!occurrence_start_at.ok()) return common::Result<common::Unit>::failure(occurrence_start_at.error());
+  if (occurrence_start_at.value().has_value() &&
+      !common::is_iso8601_utc_datetime(*occurrence_start_at.value())) {
+    return common::Result<common::Unit>::failure(
+        contract_error("DeleteEventRequest.occurrence_start_at must be ISO 8601 UTC date-time.",
+                       "DeleteEventRequest.occurrence_start_at"));
+  }
+  auto reason = optional_string(object, "reason", "DeleteEventRequest");
+  if (!reason.ok()) return common::Result<common::Unit>::failure(reason.error());
+  return common::Result<common::Unit>::success(common::Unit{});
+}
+
+common::Result<application::CompleteEventCommand> parse_complete_event_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<application::CompleteEventCommand>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{"event_id", "completed_at", "source", "note"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<application::CompleteEventCommand>::failure(
+        contract_error("CompleteEventRequest contains an unknown field.", "CompleteEventRequest." + unknown));
+  }
+  auto event_id = require_string(object, "event_id", "CompleteEventRequest", true);
+  if (!event_id.ok()) return common::Result<application::CompleteEventCommand>::failure(event_id.error());
+  auto completed_at = require_string(object, "completed_at", "CompleteEventRequest", true);
+  if (!completed_at.ok()) return common::Result<application::CompleteEventCommand>::failure(completed_at.error());
+  if (!common::is_iso8601_utc_datetime(completed_at.value())) {
+    return common::Result<application::CompleteEventCommand>::failure(
+        contract_error("CompleteEventRequest.completed_at must be ISO 8601 UTC date-time.",
+                       "CompleteEventRequest.completed_at"));
+  }
+  auto source = require_string(object, "source", "CompleteEventRequest", true);
+  if (!source.ok()) return common::Result<application::CompleteEventCommand>::failure(source.error());
+  if (!domain::is_valid_reminder_source(source.value())) {
+    return common::Result<application::CompleteEventCommand>::failure(
+        contract_error("CompleteEventRequest.source has an unsupported enum value.", "CompleteEventRequest.source"));
+  }
+  auto note = optional_string(object, "note", "CompleteEventRequest");
+  if (!note.ok()) return common::Result<application::CompleteEventCommand>::failure(note.error());
+
+  application::CompleteEventCommand command;
+  command.event_id = event_id.value();
+  command.completed_at = completed_at.value();
+  command.source = source.value();
+  command.note = note.value();
+  return common::Result<application::CompleteEventCommand>::success(std::move(command));
+}
+
+common::Result<application::ReopenEventCommand> parse_reopen_event_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<application::ReopenEventCommand>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{"event_id"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<application::ReopenEventCommand>::failure(
+        contract_error("ReopenEventRequest contains an unknown field.", "ReopenEventRequest." + unknown));
+  }
+  auto event_id = require_string(object, "event_id", "ReopenEventRequest", true);
+  if (!event_id.ok()) return common::Result<application::ReopenEventCommand>::failure(event_id.error());
+
+  application::ReopenEventCommand command;
+  command.event_id = event_id.value();
+  return common::Result<application::ReopenEventCommand>::success(std::move(command));
+}
+
 /** 把 common::Error 包成 NativeResult JSON。 */
 std::string failure_response(const common::Error& error, const std::string& request_id) {
   return contract::native_failure_json(error, request_id);
@@ -573,6 +748,36 @@ std::string create_event(std::string_view request_json) {
   }
 }
 
+std::string update_event(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_update_event_request(request_json);
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
+    return failure_response(feature_not_implemented("event.update"), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
+std::string delete_event(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_delete_event_request(request_json);
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
+    return failure_response(feature_not_implemented("event.delete"), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
 /** native 搜索事件入口。 */
 std::string search_events(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
@@ -599,16 +804,50 @@ std::string search_events(std::string_view request_json) {
   }
 }
 
-/** 当前阶段未实现，保留 API 形状以便 Dart/Kotlin 先接通完整链路。 */
-std::string complete_event(std::string_view /*request_json*/) {
+std::string complete_event(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
-  return failure_response(feature_not_implemented("event.complete"), request_id);
+  try {
+    auto parsed = parse_complete_event_request(request_json);
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
+    const auto service = current_event_service();
+    if (!service) {
+      return failure_response(storage_not_initialized_error("event"), request_id);
+    }
+    auto completed = service->complete_event(parsed.value());
+    if (!completed.ok()) {
+      return failure_response(completed.error(), request_id);
+    }
+    return contract::native_success_json(contract::event_response_to_json(completed.value()), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
 }
 
-/** 当前阶段未实现，保留 API 形状以便 Dart/Kotlin 先接通完整链路。 */
-std::string reopen_event(std::string_view /*request_json*/) {
+std::string reopen_event(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
-  return failure_response(feature_not_implemented("event.reopen"), request_id);
+  try {
+    auto parsed = parse_reopen_event_request(request_json);
+    if (!parsed.ok()) {
+      return failure_response(parsed.error(), request_id);
+    }
+    const auto service = current_event_service();
+    if (!service) {
+      return failure_response(storage_not_initialized_error("event"), request_id);
+    }
+    auto reopened = service->reopen_event(parsed.value());
+    if (!reopened.ok()) {
+      return failure_response(reopened.error(), request_id);
+    }
+    return contract::native_success_json(contract::event_response_to_json(reopened.value()), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
 }
 
 }  // namespace excellent_calendar::boundary::api

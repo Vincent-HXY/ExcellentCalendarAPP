@@ -29,6 +29,25 @@ struct CancelReminderCommand {
   std::optional<std::string> reason;
 };
 
+struct MarkReminderScheduledCommand {
+  std::string id;
+  std::string scheduled_at;
+};
+
+struct MarkReminderSentCommand {
+  std::string id;
+  std::string last_triggered_at;
+};
+
+struct MarkReminderFailedCommand {
+  std::string id;
+  std::string failure_reason;
+};
+
+struct ReminderIdCommand {
+  std::string id;
+};
+
 struct ReminderPaginationRequest {
   int page = 1;
   int page_size = 20;
@@ -76,9 +95,15 @@ class ReminderService {
 
   common::Result<domain::Reminder> cancel_reminder(const CancelReminderCommand& command);
 
-  common::Result<domain::Reminder> mark_scheduled(const std::string& id);
+  common::Result<domain::Reminder> mark_scheduled(const MarkReminderScheduledCommand& command);
 
-  common::Result<domain::Reminder> mark_failed(const std::string& id, const std::string& failure_reason);
+  common::Result<domain::Reminder> mark_sent(const MarkReminderSentCommand& command);
+
+  common::Result<domain::Reminder> mark_failed(const MarkReminderFailedCommand& command);
+
+  common::Result<domain::Reminder> enable_reminder(const ReminderIdCommand& command);
+
+  common::Result<domain::Reminder> disable_reminder(const ReminderIdCommand& command);
 
   common::Result<ReminderListResult> list_reminders(const ReminderQuery& query);
 

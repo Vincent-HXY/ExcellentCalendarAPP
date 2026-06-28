@@ -48,6 +48,17 @@ struct EventQuery {
   std::string sort_direction = "asc";
 };
 
+struct CompleteEventCommand {
+  std::string event_id;
+  std::string completed_at;
+  std::string source;
+  std::optional<std::string> note;
+};
+
+struct ReopenEventCommand {
+  std::string event_id;
+};
+
 /** 分页响应。next_cursor 为将来 cursor 分页预留，当前通常为空。 */
 struct PaginationResponse {
   int total = 0;
@@ -88,6 +99,12 @@ class EventService {
 
   /** 搜索事件：从仓库读取全部事件，再按 query 做过滤、排序和分页。 */
   common::Result<EventSearchResult> search_events(const EventQuery& query);
+
+  /** 将单次事件标记为已完成。当前阶段不处理重复日程 occurrence。 */
+  common::Result<domain::Event> complete_event(const CompleteEventCommand& command);
+
+  /** 撤销单次事件的完成状态，让它回到 active。 */
+  common::Result<domain::Event> reopen_event(const ReopenEventCommand& command);
 
  private:
   std::shared_ptr<repository::EventRepository> repository_;

@@ -16,6 +16,12 @@ std::string initialize_storage(std::string_view storage_directory);
 /** 创建事件 API。request_json 是 CreateEventRequest JSON，返回 NativeResult JSON。 */
 std::string create_event(std::string_view request_json);
 
+/** 更新事件 API。当前阶段先保留合约化入口。 */
+std::string update_event(std::string_view request_json);
+
+/** 删除事件 API。当前阶段先保留合约化入口。 */
+std::string delete_event(std::string_view request_json);
+
 /** 搜索事件 API。request_json 是 SearchEventRequest JSON，返回 NativeResult JSON。 */
 std::string search_events(std::string_view request_json);
 

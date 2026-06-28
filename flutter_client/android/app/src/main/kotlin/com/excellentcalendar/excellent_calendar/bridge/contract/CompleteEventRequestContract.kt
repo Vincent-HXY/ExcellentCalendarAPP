@@ -21,7 +21,6 @@ data class CompleteEventRequestContract(
         /** 允许的字段集合。 */
         private val AllowedFields = setOf(
             "event_id",
-            "occurrence_start_at",
             "completed_at",
             "source",
             "note",
@@ -43,7 +42,6 @@ data class CompleteEventRequestContract(
             val parent = "CompleteEventRequest"
             ContractValidators.rejectUnknownFields(map, AllowedFields, parent)
             ContractValidators.requireString(map, "event_id", parent, nonEmpty = true)
-            ContractValidators.optionalString(map, "occurrence_start_at", parent)
             ContractValidators.requireString(map, "completed_at", parent, nonEmpty = true)
             ContractValidators.requireEnum(map, "source", parent, ContractEnums.ReminderSource)
             ContractValidators.optionalString(map, "note", parent)

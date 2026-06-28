@@ -8,6 +8,7 @@
 #include "excellent_calendar/domain/data_source.hpp"
 #include "excellent_calendar/domain/event_status.hpp"
 #include "excellent_calendar/domain/importance.hpp"
+#include "excellent_calendar/domain/reminder.hpp"
 
 namespace excellent_calendar::application {
 namespace {
@@ -28,6 +29,20 @@ common::Error event_time_invalid(std::string field = "start_at") {
       "EVENT_TIME_INVALID",
       "Event start time must be earlier than end time",
       {{"field", std::move(field)}});
+}
+
+common::Error event_not_found(std::string id) {
+  return common::make_error(
+      "EVENT_NOT_FOUND",
+      "Event not found",
+      {{"id", std::move(id)}});
+}
+
+common::Error feature_not_implemented(std::string feature) {
+  return common::make_error(
+      "FEATURE_NOT_IMPLEMENTED",
+      "Requested feature is not implemented in this phase",
+      {{"feature", std::move(feature)}});
 }
 
 /** 创建合约校验错误。虽然 Kotlin 已校验一次，C++ 仍会做防御性校验。 */
@@ -294,6 +309,73 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
     result.items.assign(filtered.begin() + offset, filtered.begin() + end);
   }
   return common::Result<EventSearchResult>::success(std::move(result));
+}
+
+common::Result<domain::Event> EventService::complete_event(const CompleteEventCommand& command) {
+  if (common::trim_ascii(command.event_id).empty()) {
+    return common::Result<domain::Event>::failure(
+        contract_validation_failed("event_id", "CompleteEventRequest.event_id must be non-empty."));
+  }
+  if (!common::is_iso8601_utc_datetime(command.completed_at)) {
+    return common::Result<domain::Event>::failure(
+        contract_validation_failed("completed_at", "CompleteEventRequest.completed_at must be ISO 8601 UTC date-time."));
+  }
+  if (!domain::is_valid_reminder_source(command.source)) {
+    return common::Result<domain::Event>::failure(
+        contract_validation_failed("source", "CompleteEventRequest.source has an unsupported enum value."));
+  }
+
+  auto found = repository_->find_by_id(command.event_id);
+  if (!found.ok()) {
+    return common::Result<domain::Event>::failure(found.error());
+  }
+  if (!found.value().has_value() || found.value()->deleted_at.has_value()) {
+    return common::Result<domain::Event>::failure(event_not_found(command.event_id));
+  }
+
+  auto event = *found.value();
+  if (event.has_recurrence) {
+    return common::Result<domain::Event>::failure(feature_not_implemented("event.complete.recurrence"));
+  }
+  if (event.status == std::string(domain::kEventStatusCancelled) ||
+      event.status == std::string(domain::kEventStatusArchived)) {
+    return common::Result<domain::Event>::failure(
+        contract_validation_failed("status", "Only active or completed events can be completed."));
+  }
+
+  event.status = std::string(domain::kEventStatusCompleted);
+  event.completed_at = command.completed_at;
+  event.updated_at = clock_();
+  return repository_->update(event);
+}
+
+common::Result<domain::Event> EventService::reopen_event(const ReopenEventCommand& command) {
+  if (common::trim_ascii(command.event_id).empty()) {
+    return common::Result<domain::Event>::failure(
+        contract_validation_failed("event_id", "ReopenEventRequest.event_id must be non-empty."));
+  }
+
+  auto found = repository_->find_by_id(command.event_id);
+  if (!found.ok()) {
+    return common::Result<domain::Event>::failure(found.error());
+  }
+  if (!found.value().has_value() || found.value()->deleted_at.has_value()) {
+    return common::Result<domain::Event>::failure(event_not_found(command.event_id));
+  }
+
+  auto event = *found.value();
+  if (event.has_recurrence) {
+    return common::Result<domain::Event>::failure(feature_not_implemented("event.reopen.recurrence"));
+  }
+  if (event.status != std::string(domain::kEventStatusCompleted)) {
+    return common::Result<domain::Event>::failure(
+        contract_validation_failed("status", "Only completed events can be reopened."));
+  }
+
+  event.status = std::string(domain::kEventStatusActive);
+  event.completed_at = std::nullopt;
+  event.updated_at = clock_();
+  return repository_->update(event);
 }
 
 }  // namespace excellent_calendar::application

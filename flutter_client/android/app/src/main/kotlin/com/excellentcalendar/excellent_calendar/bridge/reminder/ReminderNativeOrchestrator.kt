@@ -11,11 +11,13 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderListResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import java.time.Instant
 
 class ReminderNativeOrchestrator(
     private val nativeBridge: NativeEventBridge,
     private val scheduler: ReminderScheduler,
     private val logger: ReminderOrchestrationLogger,
+    private val nowUtc: () -> String = { Instant.now().toString() },
 ) {
     fun createReminder(requestJson: String): NativeResultContract {
         val created = parseReminderResult(nativeBridge.createReminder(requestJson))
@@ -25,7 +27,16 @@ class ReminderNativeOrchestrator(
 
         val reminder = ReminderContract.fromData(created.data)
         return when (val scheduleResult = scheduler.schedule(reminder)) {
-            ScheduleResult.Success -> parseReminderResult(nativeBridge.markReminderScheduled(reminder.id))
+            ScheduleResult.Success -> parseReminderResult(
+                nativeBridge.markReminderScheduled(
+                    NativeContractJsonCodec.encodeObject(
+                        linkedMapOf(
+                            "id" to reminder.id,
+                            "scheduled_at" to nowUtc(),
+                        ),
+                    ),
+                ),
+            )
             is ScheduleResult.Failure -> {
                 logger.log(
                     operation = "reminder.create",
@@ -97,8 +108,12 @@ class ReminderNativeOrchestrator(
         return try {
             parseReminderResult(
                 nativeBridge.markReminderFailed(
-                    reminderId,
-                    scheduleResult.message,
+                    NativeContractJsonCodec.encodeObject(
+                        linkedMapOf(
+                            "id" to reminderId,
+                            "failure_reason" to scheduleResult.message,
+                        ),
+                    ),
                 ),
             )
         } catch (error: Throwable) {
