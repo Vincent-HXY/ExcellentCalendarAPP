@@ -136,6 +136,17 @@ adb devices
 
 如果显示 `unauthorized`，需要在手机上点击允许 USB 调试。
 
+### C++ Core 构建与测试
+
+从仓库根目录执行以下命令。`excellent_calendar_check` 会先构建当前源码对应的测试程序，再运行 CTest；编译或测试任一步失败都会返回失败。
+
+```powershell
+cmake -S cpp_core -B cpp_core/build-ninja -G Ninja -DEXCELLENT_CALENDAR_BUILD_TESTS=ON
+cmake --build cpp_core/build-ninja --target excellent_calendar_check
+```
+
+不要把单独执行 `ctest --test-dir cpp_core/build-ninja` 作为完整验收，因为 CTest 不负责编译，构建失败时可能运行目录中遗留的旧测试程序。
+
 ### Smoke test 验证流程
 
 ```powershell

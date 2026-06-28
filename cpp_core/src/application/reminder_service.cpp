@@ -311,6 +311,7 @@ common::Result<domain::Reminder> ReminderService::cancel_reminder(const CancelRe
   const auto now = clock_();
   reminder.status = std::string(domain::kReminderStatusCancelled);
   reminder.is_enabled = false;
+  reminder.deleted_at = now;
   reminder.updated_at = now;
   return reminder_repository_->update(reminder);
 }

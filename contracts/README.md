@@ -87,8 +87,8 @@ NativeResult<T>
 ```text
 event.create -> NativeResult<EventResponse>
 event.search -> NativeResult<EventListResponse>
-event.complete -> NativeResult<EventOccurrenceStateResponse>
-event.reopen -> NativeResult<EventOccurrenceStateResponse>
+event.complete -> NativeResult<EventResponse>
+event.reopen -> NativeResult<EventResponse>
 habit.check_in -> NativeResult<HabitCheckInResponse>
 ```
 

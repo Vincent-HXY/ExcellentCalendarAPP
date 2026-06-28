@@ -23,20 +23,24 @@
 #include "excellent_calendar/storage/json/json_event_reminder_transaction.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "support/event_repository_fakes.hpp"
 
 namespace {
 
 using excellent_calendar::application::CreateEventCommand;
 using excellent_calendar::application::CreateEventWorkflowCommand;
 using excellent_calendar::application::CreateEventWorkflowService;
+using excellent_calendar::application::CompleteEventCommand;
 using excellent_calendar::application::EventQuery;
 using excellent_calendar::application::EventService;
+using excellent_calendar::application::ReopenEventCommand;
 using excellent_calendar::application::ReminderDraftCommand;
 using excellent_calendar::application::ReminderService;
 using excellent_calendar::common::Error;
 using excellent_calendar::common::Result;
 using excellent_calendar::domain::Event;
-using excellent_calendar::repository::EventRepository;
+using excellent_calendar::test_support::FailingEventRepository;
+using excellent_calendar::test_support::InMemoryEventRepository;
 
 void require(bool condition, const std::string& message) {
   if (!condition) {
@@ -218,50 +222,9 @@ Event event_record(
   return event;
 }
 
-class MemoryRepository final : public EventRepository {
- public:
-  Result<Event> create(const Event& event) override {
-    events.push_back(event);
-    return Result<Event>::success(event);
-  }
-
-  Result<std::optional<Event>> find_by_id(std::string_view id) override {
-    for (const auto& event : events) {
-      if (event.id == std::string(id)) {
-        return Result<std::optional<Event>>::success(event);
-      }
-    }
-    return Result<std::optional<Event>>::success(std::nullopt);
-  }
-
-  Result<std::vector<Event>> find_all() override {
-    return Result<std::vector<Event>>::success(events);
-  }
-
-  std::vector<Event> events;
-};
-
-class FailingRepository final : public EventRepository {
- public:
-  Result<Event> create(const Event& /*event*/) override {
-    return Result<Event>::failure(
-        excellent_calendar::common::make_error("STORAGE_IO_ERROR", "Storage input/output operation failed"));
-  }
-
-  Result<std::optional<Event>> find_by_id(std::string_view /*id*/) override {
-    return Result<std::optional<Event>>::failure(
-        excellent_calendar::common::make_error("STORAGE_IO_ERROR", "Storage input/output operation failed"));
-  }
-
-  Result<std::vector<Event>> find_all() override {
-    return Result<std::vector<Event>>::failure(
-        excellent_calendar::common::make_error("STORAGE_IO_ERROR", "Storage input/output operation failed"));
-  }
-};
-
 void service_tests() {
   int sequence = 0;
-  auto repository = std::make_shared<MemoryRepository>();
+  auto repository = std::make_shared<InMemoryEventRepository>();
   EventService service(
       repository,
       [] { return std::string("2026-06-08T12:00:00Z"); },
@@ -295,13 +258,33 @@ void service_tests() {
   require(!time_error.ok() && time_error.error().code == "EVENT_TIME_INVALID", "start >= end should be EVENT_TIME_INVALID");
 
   EventService failing_service(
-      std::make_shared<FailingRepository>(),
+      std::make_shared<FailingEventRepository>(),
       [] { return std::string("2026-06-08T12:00:00Z"); },
       [] { return std::string("event-fail"); });
   command.start_at = "2026-06-08T13:00:00Z";
   command.end_at = "2026-06-08T14:00:00Z";
   auto repository_error = failing_service.create_event(command);
   require(!repository_error.ok() && repository_error.error().code == "STORAGE_IO_ERROR", "repository errors should propagate");
+
+  CompleteEventCommand complete_command;
+  complete_command.event_id = created.value().id;
+  complete_command.completed_at = "2026-06-08T12:30:00Z";
+  complete_command.source = "manual";
+  auto completed = service.complete_event(complete_command);
+  require(completed.ok() && completed.value().status == "completed",
+          "complete should persist completed status through repository update");
+  require(completed.value().completed_at == complete_command.completed_at,
+          "complete should persist the contract completed_at value");
+
+  ReopenEventCommand reopen_command{created.value().id};
+  auto reopened = service.reopen_event(reopen_command);
+  require(reopened.ok() && reopened.value().status == "active",
+          "reopen should persist active status through repository update");
+  require(!reopened.value().completed_at.has_value(), "reopen should clear completed_at");
+
+  auto complete_repository_error = failing_service.complete_event(complete_command);
+  require(!complete_repository_error.ok() && complete_repository_error.error().code == "STORAGE_IO_ERROR",
+          "complete should propagate repository lookup errors");
 }
 
 void repository_tests() {
@@ -533,6 +516,47 @@ void boundary_and_search_tests() {
   expect_ok(reloaded_json);
   require(array_field(object_field(decode_object(reloaded_json), "data"), "items").size() == 3,
           "reinitialize should keep persisted events");
+
+  const auto lifecycle_create = decode_object(excellent_calendar::boundary::api::create_event(
+      create_request("Lifecycle", "2026-06-10T01:00:00Z", "2026-06-10T02:00:00Z")));
+  require(bool_field(lifecycle_create, "ok"), "lifecycle event should be created");
+  const auto lifecycle_id = string_field(object_field(lifecycle_create, "data"), "id");
+
+  picojson::object complete_request;
+  complete_request["event_id"] = picojson::value(lifecycle_id);
+  complete_request["completed_at"] = picojson::value("2026-06-10T02:00:00Z");
+  complete_request["source"] = picojson::value("manual");
+  complete_request["note"] = picojson::value();
+  const auto completed = object_field(
+      decode_object(excellent_calendar::boundary::api::complete_event(encode(complete_request))),
+      "data");
+  require(string_field(completed, "status") == "completed",
+          "complete boundary should return EventResponse with completed status");
+
+  picojson::object reopen_request;
+  reopen_request["event_id"] = picojson::value(lifecycle_id);
+  const auto reopened = object_field(
+      decode_object(excellent_calendar::boundary::api::reopen_event(encode(reopen_request))),
+      "data");
+  require(string_field(reopened, "status") == "active",
+          "reopen boundary should return EventResponse with active status");
+
+  picojson::object update_request;
+  update_request["id"] = picojson::value(lifecycle_id);
+  expect_error(excellent_calendar::boundary::api::update_event(encode(update_request)),
+               "FEATURE_NOT_IMPLEMENTED");
+  update_request["title"] = picojson::value("   ");
+  expect_error(excellent_calendar::boundary::api::update_event(encode(update_request)),
+               "CONTRACT_VALIDATION_FAILED");
+
+  picojson::object delete_request;
+  delete_request["id"] = picojson::value(lifecycle_id);
+  delete_request["delete_mode"] = picojson::value("soft");
+  expect_error(excellent_calendar::boundary::api::delete_event(encode(delete_request)),
+               "FEATURE_NOT_IMPLEMENTED");
+  delete_request["delete_mode"] = picojson::value("invalid");
+  expect_error(excellent_calendar::boundary::api::delete_event(encode(delete_request)),
+               "CONTRACT_VALIDATION_FAILED");
 
   cleanup();
 }

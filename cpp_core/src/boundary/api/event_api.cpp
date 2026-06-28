@@ -17,6 +17,7 @@
 #include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/common/result.hpp"
+#include "excellent_calendar/common/string_utils.hpp"
 #include "excellent_calendar/domain/data_source.hpp"
 #include "excellent_calendar/domain/importance.hpp"
 #include "excellent_calendar/domain/reminder.hpp"

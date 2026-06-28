@@ -69,4 +69,14 @@ if(EXCELLENT_CALENDAR_BUILD_TESTS)
     )
 
     add_test(NAME excellent_calendar_reminder_tests COMMAND excellent_calendar_reminder_tests)
+
+    add_custom_target(
+        excellent_calendar_check
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        DEPENDS
+        excellent_calendar_core_tests
+        excellent_calendar_reminder_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        USES_TERMINAL
+    )
 endif()

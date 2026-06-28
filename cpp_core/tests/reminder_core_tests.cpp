@@ -22,18 +22,24 @@
 #include "excellent_calendar/repository/event_repository.hpp"
 #include "excellent_calendar/repository/reminder_repository.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
+#include "support/event_repository_fakes.hpp"
 
 namespace {
 
 using excellent_calendar::application::CancelReminderCommand;
 using excellent_calendar::application::CreateReminderCommand;
+using excellent_calendar::application::MarkReminderFailedCommand;
+using excellent_calendar::application::MarkReminderScheduledCommand;
+using excellent_calendar::application::MarkReminderSentCommand;
 using excellent_calendar::application::ReminderQuery;
+using excellent_calendar::application::ReminderIdCommand;
 using excellent_calendar::application::ReminderService;
 using excellent_calendar::common::Result;
 using excellent_calendar::domain::Event;
 using excellent_calendar::domain::Reminder;
 using excellent_calendar::repository::EventRepository;
 using excellent_calendar::repository::ReminderRepository;
+using excellent_calendar::test_support::InMemoryEventRepository;
 
 void require(bool condition, const std::string& message) {
   if (!condition) {
@@ -168,29 +174,6 @@ Reminder reminder_record(std::string id = "reminder-1",
   return reminder;
 }
 
-class MemoryEventRepository final : public EventRepository {
- public:
-  Result<Event> create(const Event& event) override {
-    events.push_back(event);
-    return Result<Event>::success(event);
-  }
-
-  Result<std::optional<Event>> find_by_id(std::string_view id) override {
-    for (const auto& event : events) {
-      if (event.id == std::string(id)) {
-        return Result<std::optional<Event>>::success(event);
-      }
-    }
-    return Result<std::optional<Event>>::success(std::nullopt);
-  }
-
-  Result<std::vector<Event>> find_all() override {
-    return Result<std::vector<Event>>::success(events);
-  }
-
-  std::vector<Event> events;
-};
-
 class MemoryReminderRepository final : public ReminderRepository {
  public:
   Result<Reminder> create(const Reminder& reminder) override {
@@ -288,6 +271,29 @@ std::string cancel_request(const std::string& reminder_id) {
   return encode(object);
 }
 
+std::string reminder_id_request(const std::string& reminder_id) {
+  picojson::object object;
+  object["id"] = picojson::value(reminder_id);
+  return encode(object);
+}
+
+std::string reminder_time_request(const std::string& reminder_id,
+                                  const std::string& field,
+                                  const std::string& value) {
+  picojson::object object;
+  object["id"] = picojson::value(reminder_id);
+  object[field] = picojson::value(value);
+  return encode(object);
+}
+
+std::string reminder_failed_request(const std::string& reminder_id,
+                                    const std::string& failure_reason) {
+  picojson::object object;
+  object["id"] = picojson::value(reminder_id);
+  object["failure_reason"] = picojson::value(failure_reason);
+  return encode(object);
+}
+
 std::string list_request(bool include_deleted = false, int page_size = 100) {
   picojson::object pagination;
   pagination["page"] = picojson::value(1.0);
@@ -311,7 +317,7 @@ std::string create_event_and_get_id(const std::filesystem::path& dir) {
 
 void service_tests() {
   int sequence = 0;
-  auto events = std::make_shared<MemoryEventRepository>();
+  auto events = std::make_shared<InMemoryEventRepository>();
   events->events.push_back(event_record());
   auto reminders = std::make_shared<MemoryReminderRepository>();
   ReminderService service(
@@ -425,18 +431,43 @@ void service_tests() {
   require(!disabled_result.ok() && disabled_result.error().code == "CONTRACT_VALIDATION_FAILED",
           "disabled pending create should be rejected");
 
-  auto scheduled = service.mark_scheduled(created.value().id);
+  MarkReminderScheduledCommand scheduled_command{
+      created.value().id,
+      "2026-06-08T12:05:00Z",
+  };
+  auto scheduled = service.mark_scheduled(scheduled_command);
   require(scheduled.ok(), "mark scheduled should succeed");
   require(scheduled.value().status == "scheduled", "status should be scheduled");
-  require(scheduled.value().scheduled_at == "2026-06-08T12:00:00Z", "scheduled_at should be set");
+  require(scheduled.value().scheduled_at == scheduled_command.scheduled_at,
+          "scheduled_at should come from the contract command");
   require(!scheduled.value().failure_reason.has_value(), "scheduled should clear failure_reason");
 
-  auto failed = service.mark_failed(created.value().id, "java.lang.Exception: nope\n\tat /data/user/0/app/Secret.kt:1");
+  MarkReminderSentCommand sent_command{
+      created.value().id,
+      "2026-06-08T12:10:00Z",
+  };
+  auto sent = service.mark_sent(sent_command);
+  require(sent.ok() && sent.value().status == "sent", "mark sent should succeed");
+  require(sent.value().last_triggered_at == sent_command.last_triggered_at,
+          "last_triggered_at should come from the contract command");
+
+  MarkReminderFailedCommand failed_command{
+      created.value().id,
+      "java.lang.Exception: nope\n\tat /data/user/0/app/Secret.kt:1",
+  };
+  auto failed = service.mark_failed(failed_command);
   require(failed.ok(), "mark failed should succeed");
   require(failed.value().status == "failed", "status should be failed");
   require(failed.value().failure_reason.has_value(), "failure_reason should be set");
   require(failed.value().failure_reason->find("/data") == std::string::npos, "failure reason should not store paths");
   require(failed.value().failure_reason->find("Secret.kt") == std::string::npos, "failure reason should not store stack frames");
+
+  auto disabled_status = service.disable_reminder(ReminderIdCommand{created.value().id});
+  require(disabled_status.ok() && !disabled_status.value().is_enabled,
+          "disable should persist is_enabled=false without cancellation");
+  auto enabled_status = service.enable_reminder(ReminderIdCommand{created.value().id});
+  require(enabled_status.ok() && enabled_status.value().is_enabled && enabled_status.value().status == "pending",
+          "enable should restore enabled pending state");
 
   auto cancelled = service.cancel_reminder({created.value().id, std::nullopt});
   require(cancelled.ok(), "cancel should succeed");
@@ -509,18 +540,54 @@ void boundary_create_and_status_tests() {
   require(string_field(reminder, "status") == "pending", "boundary create should return pending");
   require(string_field(reminder, "message") == "中文提醒 ✅", "boundary should preserve Unicode message");
 
-  const auto scheduled_json = excellent_calendar::boundary::api::mark_reminder_scheduled(reminder_id);
+  expect_error(
+      excellent_calendar::boundary::api::mark_reminder_scheduled(reminder_id_request(reminder_id)),
+      "CONTRACT_VALIDATION_FAILED");
+  expect_error(
+      excellent_calendar::boundary::api::mark_reminder_scheduled(
+          reminder_time_request(reminder_id, "scheduled_at", "bad-time")),
+      "REMINDER_TIME_INVALID");
+  const auto scheduled_json = excellent_calendar::boundary::api::mark_reminder_scheduled(
+      reminder_time_request(reminder_id, "scheduled_at", "2026-06-08T12:05:00Z"));
   const auto scheduled = data_object(scheduled_json);
   require(string_field(scheduled, "status") == "scheduled", "mark scheduled should update status");
-  require(!string_field(scheduled, "scheduled_at").empty(), "mark scheduled should set scheduled_at");
+  require(string_field(scheduled, "scheduled_at") == "2026-06-08T12:05:00Z",
+          "mark scheduled should retain scheduled_at from request JSON");
+
+  const auto sent_json = excellent_calendar::boundary::api::mark_reminder_sent(
+      reminder_time_request(reminder_id, "last_triggered_at", "2026-06-08T12:10:00Z"));
+  const auto sent = data_object(sent_json);
+  require(string_field(sent, "status") == "sent", "mark sent should update status");
+  require(string_field(sent, "last_triggered_at") == "2026-06-08T12:10:00Z",
+          "mark sent should retain last_triggered_at from request JSON");
 
   const auto failed_json = excellent_calendar::boundary::api::mark_reminder_failed(
-      reminder_id,
-      "java.lang.IllegalStateException\n at /data/user/0/app/Alarm.kt:7");
+      reminder_failed_request(
+          reminder_id,
+          "java.lang.IllegalStateException\n at /data/user/0/app/Alarm.kt:7"));
   const auto failed = data_object(failed_json);
   require(string_field(failed, "status") == "failed", "mark failed should update status");
   require(string_field(failed, "failure_reason").find("/data") == std::string::npos,
           "mark failed should sanitize paths");
+
+  const auto disabled_json = excellent_calendar::boundary::api::disable_reminder(
+      reminder_id_request(reminder_id));
+  require(!bool_field(data_object(disabled_json), "is_enabled"),
+          "disable boundary should persist is_enabled=false");
+  const auto enabled_json = excellent_calendar::boundary::api::enable_reminder(
+      reminder_id_request(reminder_id));
+  const auto enabled = data_object(enabled_json);
+  require(bool_field(enabled, "is_enabled") && string_field(enabled, "status") == "pending",
+          "enable boundary should restore enabled pending state");
+
+  expect_error(
+      excellent_calendar::boundary::api::update_reminder(reminder_id_request(reminder_id)),
+      "FEATURE_NOT_IMPLEMENTED");
+  auto invalid_update = decode_object(reminder_id_request(reminder_id));
+  invalid_update["unknown"] = picojson::value(true);
+  expect_error(
+      excellent_calendar::boundary::api::update_reminder(encode(invalid_update)),
+      "CONTRACT_VALIDATION_FAILED");
 
   const auto cancelled_json = excellent_calendar::boundary::api::cancel_reminder(cancel_request(reminder_id));
   const auto cancelled = data_object(cancelled_json);
