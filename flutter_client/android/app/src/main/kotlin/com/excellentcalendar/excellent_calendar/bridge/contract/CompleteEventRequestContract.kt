@@ -2,12 +2,7 @@ package com.excellentcalendar.excellent_calendar.bridge.contract
 
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 
-/**
- * 完成事件实例请求合约。
- *
- * 事件可能是一次性事件，也可能是重复事件中的某一次。`occurrence_start_at` 用来定位
- * 重复事件的具体 occurrence；一次性事件可以不传。
- */
+/** 完成单次、非重复事件的请求合约。 */
 data class CompleteEventRequestContract(
     private val payload: Map<String, Any?>,
 ) {
@@ -37,13 +32,13 @@ data class CompleteEventRequestContract(
             return CompleteEventRequestContract(map)
         }
 
-        /** 校验必填 id、完成时间、来源，以及可选 occurrence/note。 */
+        /** 校验必填 id、完成时间、来源，以及可选 note。 */
         private fun validate(map: Map<String, Any?>) {
             val parent = "CompleteEventRequest"
             ContractValidators.rejectUnknownFields(map, AllowedFields, parent)
             ContractValidators.requireString(map, "event_id", parent, nonEmpty = true)
             ContractValidators.requireString(map, "completed_at", parent, nonEmpty = true)
-            ContractValidators.requireEnum(map, "source", parent, ContractEnums.ReminderSource)
+            ContractValidators.requireEnum(map, "source", parent, ContractEnums.CompleteEventSource)
             ContractValidators.optionalString(map, "note", parent)
         }
     }

@@ -107,7 +107,7 @@ class JniNativeEventBridge(
         }
     }
 
-    /** 调用 C++ 完成事件。当前 native API 可能尚未实现，但仍通过同一条 JNI 通道返回。 */
+    /** 调用 C++ 完成单次事件。 */
     override fun completeEvent(requestJson: String): String {
         ensureLibraryLoaded()
         ensureStorageInitialized()?.let { return it }

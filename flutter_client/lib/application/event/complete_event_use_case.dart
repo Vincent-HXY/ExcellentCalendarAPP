@@ -1,6 +1,6 @@
 import '../../gateway_interfaces/event_native_gateway.dart';
 import '../../native_contract/event/complete_event_request_dto.dart';
-import '../../native_contract/event/event_occurrence_state_response_dto.dart';
+import '../../native_contract/event/event_response_dto.dart';
 import '../../native_contract/shared/native_invocation.dart';
 
 class CompleteEventUseCase {
@@ -8,7 +8,7 @@ class CompleteEventUseCase {
 
   final EventNativeGateway _gateway;
 
-  Future<NativeInvocation<EventOccurrenceStateResponseDto>> execute(
+  Future<NativeInvocation<EventResponseDto>> execute(
     CompleteEventRequestDto request,
   ) {
     return _gateway.completeEvent(request);

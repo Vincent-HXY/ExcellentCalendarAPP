@@ -23,6 +23,7 @@ data class SearchEventRequestContract(
             "keyword",
             "start_at_from",
             "start_at_to",
+            "status",
             "category_ids",
             "importance",
             "location",
@@ -51,6 +52,12 @@ data class SearchEventRequestContract(
             ContractValidators.optionalString(map, "keyword", "SearchEventRequest")
             ContractValidators.optionalString(map, "start_at_from", "SearchEventRequest")
             ContractValidators.optionalString(map, "start_at_to", "SearchEventRequest")
+            ContractValidators.optionalStringArray(
+                map,
+                "status",
+                "SearchEventRequest",
+                ContractEnums.EventStatus,
+            )
             ContractValidators.optionalStringArray(map, "category_ids", "SearchEventRequest")
             ContractValidators.optionalStringArray(
                 map,

@@ -116,6 +116,7 @@ class NativeMethodChannelHandlerTest {
 
         val sent = NativeContractJsonCodec.decodeObject(fakeBridge.lastSearchRequestJson!!)
         assertEquals("2026-06-06T00:00:00Z", sent["start_at_from"])
+        assertEquals(listOf("completed"), sent["status"])
         assertEquals(listOf("manual"), sent["source"])
         @Suppress("UNCHECKED_CAST")
         val sentPagination = sent["pagination"] as Map<String, Any?>
@@ -212,12 +213,100 @@ class NativeMethodChannelHandlerTest {
         assertEquals("event-123", sent["event_id"])
         assertEquals("2026-06-08T01:30:00Z", sent["completed_at"])
         assertEquals("manual", sent["source"])
+        assertEquals("Finished from widget", sent["note"])
         assertFalse(sent.containsKey("occurrence_start_at"))
 
+        assertEquals(nativeResponse, result.successMap())
         @Suppress("UNCHECKED_CAST")
         val data = result.successMap()["data"] as Map<String, Any?>
         assertEquals("completed", data["status"])
         assertEquals("2026-06-08T01:30:00Z", data["completed_at"])
+        assertFalse(result.errorCalled)
+    }
+
+    @Test
+    fun completeEventForwardsNativeBusinessFailureWithoutRewritingIt() {
+        val nativeResponse = nativeResult(
+            ok = false,
+            data = null,
+            error = linkedMapOf(
+                "code" to NativeErrorCodes.EventNotFound,
+                "message" to "Event not found",
+                "details" to linkedMapOf("event_id" to "event-123"),
+                "retryable" to false,
+            ),
+            requestId = "complete-not-found",
+        )
+        val fakeBridge = FakeNativeEventBridge(
+            completeResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
+        )
+
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            completeEventArguments(),
+        )
+
+        assertEquals(nativeResponse, result.successMap())
+        assertFalse(result.errorCalled)
+    }
+
+    @Test
+    fun completeEventRejectsNonMapArgumentsAsNativeResultFailure() {
+        val fakeBridge = FakeNativeEventBridge()
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            "not-a-map",
+        )
+
+        val returned = result.successMap()
+        assertEquals(false, returned["ok"])
+        assertNull(returned["data"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.ContractValidationFailed, error["code"])
+        assertNull(fakeBridge.lastCompleteRequestJson)
+        assertFalse(result.errorCalled)
+    }
+
+    @Test
+    fun completeEventRejectsOccurrenceFieldRemovedFromContract() {
+        val fakeBridge = FakeNativeEventBridge()
+        val arguments = completeEventArguments() + (
+            "occurrence_start_at" to "2026-06-08T01:00:00Z"
+        )
+
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            arguments,
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val error = result.successMap()["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.ContractValidationFailed, error["code"])
+        assertNull(fakeBridge.lastCompleteRequestJson)
+    }
+
+    @Test
+    fun completeEventJniFailureReturnsNativeResultFailure() {
+        val fakeBridge = FakeNativeEventBridge(
+            completeError = UnsatisfiedLinkError("missing nativeCompleteEvent"),
+        )
+
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            completeEventArguments(),
+        )
+
+        val returned = result.successMap()
+        assertEquals(false, returned["ok"])
+        assertNull(returned["data"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.NativeInternalError, error["code"])
         assertFalse(result.errorCalled)
     }
 
@@ -285,7 +374,7 @@ class NativeMethodChannelHandlerTest {
     private fun invoke(
         handler: NativeMethodChannelHandler,
         method: String,
-        arguments: Map<String, Any?>,
+        arguments: Any?,
     ): RecordingResult {
         val result = RecordingResult()
         handler.onMethodCall(MethodCall(method, arguments), result)
@@ -336,6 +425,7 @@ class NativeMethodChannelHandlerTest {
             "keyword" to null,
             "start_at_from" to "2026-06-06T00:00:00Z",
             "start_at_to" to "2026-06-07T00:00:00Z",
+            "status" to listOf("completed"),
             "category_ids" to listOf("category-work"),
             "importance" to listOf("important_urgent"),
             "location" to null,
@@ -511,6 +601,7 @@ class NativeMethodChannelHandlerTest {
             ),
         ),
         private val createError: Throwable? = null,
+        private val completeError: Throwable? = null,
     ) : NativeEventBridge {
         var lastCreateRequestJson: String? = null
             private set
@@ -527,6 +618,10 @@ class NativeMethodChannelHandlerTest {
             return createResponseJson
         }
 
+        override fun updateEvent(requestJson: String): String = createResponseJson
+
+        override fun deleteEvent(requestJson: String): String = createResponseJson
+
         override fun searchEvents(requestJson: String): String {
             lastSearchRequestJson = requestJson
             return searchResponseJson
@@ -534,6 +629,7 @@ class NativeMethodChannelHandlerTest {
 
         override fun completeEvent(requestJson: String): String {
             lastCompleteRequestJson = requestJson
+            completeError?.let { throw it }
             return completeResponseJson
         }
 
@@ -559,16 +655,27 @@ class NativeMethodChannelHandlerTest {
             )
         }
 
+        override fun updateReminder(requestJson: String): String = createReminder(requestJson)
+
         override fun cancelReminder(requestJson: String): String = createReminder(requestJson)
 
         override fun listReminders(requestJson: String): String = createReminder(requestJson)
 
-        override fun markReminderScheduled(reminderId: String): String = createReminder(reminderId)
+        override fun markReminderScheduled(requestJson: String): String = createReminder(requestJson)
 
-        override fun markReminderFailed(reminderId: String, failureReason: String): String = createReminder(reminderId)
+        override fun markReminderSent(requestJson: String): String = createReminder(requestJson)
+
+        override fun markReminderFailed(requestJson: String): String = createReminder(requestJson)
+
+        override fun enableReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun disableReminder(requestJson: String): String = createReminder(requestJson)
 
         companion object {
-            private fun eventResponseStatic(): Map<String, Any?> {
+            private fun eventResponseStatic(
+                status: String = "active",
+                completedAt: String? = null,
+            ): Map<String, Any?> {
                 return linkedMapOf(
                     "id" to "event-default",
                     "title" to "Default",
@@ -577,8 +684,8 @@ class NativeMethodChannelHandlerTest {
                     "end_at" to "2026-06-06T11:00:00Z",
                     "is_all_day" to false,
                     "has_recurrence" to false,
-                    "status" to "active",
-                    "completed_at" to null,
+                    "status" to status,
+                    "completed_at" to completedAt,
                     "recurrence_id" to null,
                     "category_id" to null,
                     "importance" to null,

@@ -20,6 +20,7 @@ class InboxColors {
   static const checkbox = Color(0xFFC5CCD0);
   static const checkboxImportant = Color(0xFFE15E64);
   static const accent = Color(0xFF38B9C5);
+  static const success = Color(0xFF5E9C78);
 }
 
 class InboxSpacing {
@@ -34,7 +35,7 @@ class InboxSpacing {
   static const groupHeaderHorizontal = 22.0;
   static const groupHeaderGap = 10.0;
   static const rowHorizontal = 22.0;
-  static const checkboxGap = 14.0;
+  static const checkboxGap = 2.0;
   static const dateGap = 10.0;
 }
 

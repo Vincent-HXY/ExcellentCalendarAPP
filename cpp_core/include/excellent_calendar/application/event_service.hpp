@@ -37,6 +37,8 @@ struct EventQuery {
   std::optional<std::string> keyword;
   std::optional<std::string> start_at_from;
   std::optional<std::string> start_at_to;
+  /** 空数组表示使用默认状态 active；非空数组表示显式状态过滤。 */
+  std::vector<std::string> status;
   std::vector<std::string> category_ids;
   std::vector<std::string> importance;
   std::optional<std::string> location;

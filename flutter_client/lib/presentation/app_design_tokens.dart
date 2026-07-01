@@ -16,6 +16,9 @@ abstract final class AppMotion {
   static const pickerYearMonthDayPanel = Duration(milliseconds: 300);
   static const pickerDaySelection = Duration(milliseconds: 180);
   static const pickerAutoStepPause = Duration(milliseconds: 100);
+  static const taskStrikeThrough = Duration(milliseconds: 220);
+  static const taskFadeOut = Duration(milliseconds: 180);
+  static const taskCollapse = Duration(milliseconds: 220);
 
   static const standard = Curves.easeInOutCubic;
   static const enter = Curves.easeOutCubic;

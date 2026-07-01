@@ -335,8 +335,9 @@ class ReminderMethodChannelHandlerTest {
 
         override fun listReminders(requestJson: String): String = listRemindersJson
 
-        override fun markReminderScheduled(reminderId: String): String {
-            markScheduledIds.add(reminderId)
+        override fun markReminderScheduled(requestJson: String): String {
+            val request = NativeContractJsonCodec.decodeObject(requestJson)
+            markScheduledIds.add(request["id"] as String)
             return NativeContractJsonCodec.encodeObject(
                 nativeResult(
                     ok = true,
@@ -347,7 +348,10 @@ class ReminderMethodChannelHandlerTest {
             )
         }
 
-        override fun markReminderFailed(reminderId: String, failureReason: String): String {
+        override fun markReminderFailed(requestJson: String): String {
+            val request = NativeContractJsonCodec.decodeObject(requestJson)
+            val reminderId = request["id"] as String
+            val failureReason = request["failure_reason"] as String
             markFailedCalls.add(reminderId to failureReason)
             return NativeContractJsonCodec.encodeObject(
                 nativeResult(
@@ -361,11 +365,23 @@ class ReminderMethodChannelHandlerTest {
 
         override fun createEvent(requestJson: String): String = unsupported()
 
+        override fun updateEvent(requestJson: String): String = unsupported()
+
+        override fun deleteEvent(requestJson: String): String = unsupported()
+
         override fun searchEvents(requestJson: String): String = unsupported()
 
         override fun completeEvent(requestJson: String): String = unsupported()
 
         override fun reopenEvent(requestJson: String): String = unsupported()
+
+        override fun updateReminder(requestJson: String): String = unsupported()
+
+        override fun markReminderSent(requestJson: String): String = unsupported()
+
+        override fun enableReminder(requestJson: String): String = unsupported()
+
+        override fun disableReminder(requestJson: String): String = unsupported()
 
         private fun unsupported(): String {
             return NativeContractJsonCodec.encodeObject(

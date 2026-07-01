@@ -16,6 +16,7 @@ internal object ContractEnums {
         "important_urgent",
     )
     val CreateEventSource = setOf("manual", "ai_extraction", "sync", "import", "wechat")
+    val CompleteEventSource = setOf("manual", "auto", "ai_extraction", "sync", "import", "wechat")
     val ReminderSource = setOf("manual", "auto", "ai_extraction", "sync", "import", "wechat")
     val ReminderMethods = setOf("ring", "popup", "wechat")
     val ReminderStatus = setOf("pending", "scheduled", "sent", "failed", "cancelled")

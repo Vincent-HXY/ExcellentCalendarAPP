@@ -19,7 +19,7 @@ interface NativeEventBridge {
     /** 搜索事件。`requestJson` 必须符合 SearchEventRequest 合约，返回 NativeResult JSON。 */
     fun searchEvents(requestJson: String): String
 
-    /** 完成一个事件实例。当前 C++ 阶段可能返回 FEATURE_NOT_IMPLEMENTED。 */
+    /** 完成一个单次、非重复事件。 */
     fun completeEvent(requestJson: String): String
 
     /** 将已完成的事件实例重新打开。当前 C++ 阶段可能返回 FEATURE_NOT_IMPLEMENTED。 */

@@ -23,6 +23,7 @@ class InboxTaskViewData {
     required this.title,
     required this.importance,
     required this.isCompleted,
+    this.hasRecurrence = false,
     this.dueDateLabel,
   });
 
@@ -36,4 +37,5 @@ class InboxTaskViewData {
   final TaskImportance importance;
   // 数据块作用：任务是否完成，决定所在分组和标题样式。
   final bool isCompleted;
+  final bool hasRecurrence;
 }

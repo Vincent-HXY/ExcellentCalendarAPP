@@ -3,12 +3,10 @@ class CompleteEventRequestDto {
     required this.eventId,
     required this.completedAt,
     required this.source,
-    this.occurrenceStartAt,
     this.note,
   });
 
   final String eventId;
-  final DateTime? occurrenceStartAt;
   final DateTime completedAt;
   final String source;
   final String? note;
@@ -17,7 +15,6 @@ class CompleteEventRequestDto {
     _validateSource(source);
     return {
       'event_id': eventId,
-      'occurrence_start_at': occurrenceStartAt?.toUtc().toIso8601String(),
       'completed_at': completedAt.toUtc().toIso8601String(),
       'source': source,
       'note': note,

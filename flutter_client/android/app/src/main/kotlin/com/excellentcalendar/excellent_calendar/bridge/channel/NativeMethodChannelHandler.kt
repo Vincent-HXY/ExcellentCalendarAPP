@@ -161,7 +161,7 @@ class NativeMethodChannelHandler(
         }
     }
 
-    /** 解析“完成事件实例”请求。当前 C++ 层未实现时，也会按 NativeResult 返回失败。 */
+    /** 解析完成单次事件请求，并将 C++ NativeResult 完整返回给 Flutter。 */
     private fun handleCompleteEvent(call: MethodCall, completion: SingleCompletion) {
         val request = try {
             CompleteEventRequestContract.fromMethodArguments(call.arguments)

@@ -182,6 +182,7 @@ std::string search_request(
   object["keyword"] = keyword.empty() ? picojson::value() : picojson::value(std::move(keyword));
   object["start_at_from"] = picojson::value();
   object["start_at_to"] = picojson::value();
+  object["status"] = picojson::value(picojson::array{});
   object["category_ids"] = picojson::value(picojson::array{});
   object["importance"] = picojson::value(picojson::array{});
   object["location"] = picojson::value();
@@ -224,10 +225,11 @@ Event event_record(
 
 void service_tests() {
   int sequence = 0;
+  std::string clock_value = "2026-06-08T12:00:00Z";
   auto repository = std::make_shared<InMemoryEventRepository>();
   EventService service(
       repository,
-      [] { return std::string("2026-06-08T12:00:00Z"); },
+      [&] { return clock_value; },
       [&] { return "event-" + std::to_string(++sequence); });
 
   CreateEventCommand command;
@@ -270,11 +272,79 @@ void service_tests() {
   complete_command.event_id = created.value().id;
   complete_command.completed_at = "2026-06-08T12:30:00Z";
   complete_command.source = "manual";
+  clock_value = "2026-06-08T12:31:00Z";
   auto completed = service.complete_event(complete_command);
   require(completed.ok() && completed.value().status == "completed",
           "complete should persist completed status through repository update");
   require(completed.value().completed_at == complete_command.completed_at,
           "complete should persist the contract completed_at value");
+  require(completed.value().updated_at == clock_value,
+          "complete should update updated_at from the C++ clock");
+
+  auto repeated_command = complete_command;
+  repeated_command.completed_at = "2026-06-08T12:40:00Z";
+  repeated_command.source = "sync";
+  clock_value = "2026-06-08T12:45:00Z";
+  auto repeated = service.complete_event(repeated_command);
+  require(repeated.ok() && repeated.value().status == "completed",
+          "completing an already completed event should be idempotent");
+  require(repeated.value().completed_at == complete_command.completed_at,
+          "idempotent complete should preserve the original completed_at");
+  require(repeated.value().updated_at == completed.value().updated_at,
+          "idempotent complete should preserve the original updated_at");
+
+  EventQuery default_status_query;
+  auto active_results = service.search_events(default_status_query);
+  require(active_results.ok() && active_results.value().items.size() == 1 &&
+              active_results.value().items[0].status == "active",
+          "search without status should default to active events");
+
+  EventQuery completed_query;
+  completed_query.status = {"completed"};
+  completed_query.sort_by = "updated_at";
+  completed_query.sort_direction = "desc";
+  auto completed_results = service.search_events(completed_query);
+  require(completed_results.ok() && completed_results.value().items.size() == 1 &&
+              completed_results.value().items[0].id == created.value().id,
+          "search status=completed should return the completed event only");
+
+  EventQuery invalid_status_query;
+  invalid_status_query.status = {"done"};
+  auto invalid_status = service.search_events(invalid_status_query);
+  require(!invalid_status.ok() && invalid_status.error().code == "SEARCH_QUERY_INVALID",
+          "direct service queries should reject invalid event statuses");
+
+  auto missing_command = complete_command;
+  missing_command.event_id = "event-missing";
+  auto missing = service.complete_event(missing_command);
+  require(!missing.ok() && missing.error().code == "EVENT_NOT_FOUND",
+          "completing a missing event should return EVENT_NOT_FOUND");
+
+  auto deleted_event = event_record(
+      "event-deleted", "Deleted", "2026-06-08T13:00:00Z", "2026-06-08T14:00:00Z",
+      "2026-06-08T12:10:00Z");
+  deleted_event.status = "completed";
+  deleted_event.completed_at = "2026-06-08T12:05:00Z";
+  repository->events.push_back(deleted_event);
+  auto deleted_command = complete_command;
+  deleted_command.event_id = deleted_event.id;
+  auto deleted = service.complete_event(deleted_command);
+  require(!deleted.ok() && deleted.error().code == "EVENT_NOT_FOUND",
+          "soft-deleted events should not be completable");
+  auto completed_without_deleted = service.search_events(completed_query);
+  require(completed_without_deleted.ok() && completed_without_deleted.value().items.size() == 1,
+          "completed search should exclude soft-deleted events by default");
+
+  auto recurring_event = event_record(
+      "event-recurring", "Recurring", "2026-06-08T13:00:00Z", "2026-06-08T14:00:00Z");
+  recurring_event.has_recurrence = true;
+  recurring_event.recurrence_id = "recurrence-1";
+  repository->events.push_back(recurring_event);
+  auto recurring_command = complete_command;
+  recurring_command.event_id = recurring_event.id;
+  auto recurring = service.complete_event(recurring_command);
+  require(!recurring.ok() && recurring.error().code == "FEATURE_NOT_IMPLEMENTED",
+          "recurring events should remain outside single-event completion");
 
   ReopenEventCommand reopen_command{created.value().id};
   auto reopened = service.reopen_event(reopen_command);
@@ -307,6 +377,31 @@ void repository_tests() {
   auto loaded = reloaded.find_all();
   require(loaded.ok() && loaded.value().size() == 2, "repository should persist records");
   require(loaded.value()[0].title == "中文标题 ✅", "repository should preserve UTF-8");
+
+  auto completion_repository =
+      std::make_shared<excellent_calendar::storage::json::JsonEventRepository>(dir);
+  require(completion_repository->initialize().ok(), "completion repository should initialize");
+  EventService completion_service(
+      completion_repository,
+      [] { return std::string("2026-06-08T03:01:00Z"); },
+      [] { return std::string("unused-id"); });
+  CompleteEventCommand complete_command;
+  complete_command.event_id = "event-1";
+  complete_command.completed_at = "2026-06-08T03:00:00Z";
+  complete_command.source = "manual";
+  auto completed = completion_service.complete_event(complete_command);
+  require(completed.ok() && completed.value().status == "completed",
+          "JSON repository should persist completed status");
+
+  excellent_calendar::storage::json::JsonEventRepository completed_reloaded(dir);
+  require(completed_reloaded.initialize().ok(), "completed repository should reinitialize");
+  auto completed_after_restart = completed_reloaded.find_by_id("event-1");
+  require(completed_after_restart.ok() && completed_after_restart.value().has_value(),
+          "completed event should remain readable after restart");
+  require(completed_after_restart.value()->status == "completed" &&
+              completed_after_restart.value()->completed_at == complete_command.completed_at &&
+              completed_after_restart.value()->updated_at == "2026-06-08T03:01:00Z",
+          "completed fields should survive repository restart");
 
   cleanup();
 }
@@ -527,11 +622,62 @@ void boundary_and_search_tests() {
   complete_request["completed_at"] = picojson::value("2026-06-10T02:00:00Z");
   complete_request["source"] = picojson::value("manual");
   complete_request["note"] = picojson::value();
-  const auto completed = object_field(
-      decode_object(excellent_calendar::boundary::api::complete_event(encode(complete_request))),
-      "data");
+  const auto completed_json = excellent_calendar::boundary::api::complete_event(encode(complete_request));
+  expect_ok(completed_json);
+  const auto completed = object_field(decode_object(completed_json), "data");
   require(string_field(completed, "status") == "completed",
           "complete boundary should return EventResponse with completed status");
+  require(string_field(completed, "completed_at") == "2026-06-10T02:00:00Z",
+          "complete boundary should return the contract completed_at");
+  require(!string_field(completed, "updated_at").empty(),
+          "complete boundary should return updated_at");
+  const auto deleted_at = completed.find("deleted_at");
+  require(deleted_at != completed.end() && deleted_at->second.is<picojson::null>(),
+          "completed event should remain non-deleted");
+
+  const auto original_updated_at = string_field(completed, "updated_at");
+  complete_request["completed_at"] = picojson::value("2026-06-10T02:30:00Z");
+  complete_request["source"] = picojson::value("auto");
+  const auto repeated_json = excellent_calendar::boundary::api::complete_event(encode(complete_request));
+  expect_ok(repeated_json);
+  const auto repeated = object_field(decode_object(repeated_json), "data");
+  require(string_field(repeated, "completed_at") == "2026-06-10T02:00:00Z" &&
+              string_field(repeated, "updated_at") == original_updated_at,
+          "repeated complete should return the existing completed EventResponse unchanged");
+
+  auto missing_complete_request = complete_request;
+  missing_complete_request["event_id"] = picojson::value("event-missing");
+  expect_error(excellent_calendar::boundary::api::complete_event(encode(missing_complete_request)),
+               "EVENT_NOT_FOUND");
+
+  expect_ok(excellent_calendar::boundary::api::initialize_storage(dir.string()));
+  const auto default_lifecycle_search_json =
+      excellent_calendar::boundary::api::search_events(search_request("Lifecycle"));
+  expect_ok(default_lifecycle_search_json);
+  require(array_field(object_field(decode_object(default_lifecycle_search_json), "data"), "items").empty(),
+          "search without status should not mix completed events into active results");
+
+  auto completed_search_request = decode_object(search_request("Lifecycle", 1, 20, "updated_at", "desc"));
+  completed_search_request["status"] =
+      picojson::value(picojson::array{picojson::value("completed")});
+  const auto completed_search_json = excellent_calendar::boundary::api::search_events(
+      encode(completed_search_request));
+  expect_ok(completed_search_json);
+  const auto completed_items =
+      array_field(object_field(decode_object(completed_search_json), "data"), "items");
+  require(completed_items.size() == 1 &&
+              string_field(completed_items[0].get<picojson::object>(), "status") == "completed",
+          "event.search status=completed should return the persisted completed event");
+  const auto completed_deleted_at = completed_items[0].get<picojson::object>().find("deleted_at");
+  require(completed_deleted_at != completed_items[0].get<picojson::object>().end() &&
+              completed_deleted_at->second.is<picojson::null>(),
+          "completed search should return only non-deleted events by default");
+
+  auto invalid_status_search = decode_object(search_request());
+  invalid_status_search["status"] =
+      picojson::value(picojson::array{picojson::value("done")});
+  expect_error(excellent_calendar::boundary::api::search_events(encode(invalid_status_search)),
+               "CONTRACT_VALIDATION_FAILED");
 
   picojson::object reopen_request;
   reopen_request["event_id"] = picojson::value(lifecycle_id);

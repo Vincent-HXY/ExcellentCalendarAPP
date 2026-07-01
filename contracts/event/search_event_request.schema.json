@@ -27,6 +27,13 @@
       ],
       "format": "date-time"
     },
+    "status": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["active", "completed", "cancelled", "archived"]
+      }
+    },
     "category_ids": {
       "type": "array",
       "items": {

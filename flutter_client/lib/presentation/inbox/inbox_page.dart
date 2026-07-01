@@ -1,15 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../application/event/complete_event_use_case.dart';
 import '../../application/event/create_event_use_case.dart';
 import '../../application/event/read_events_use_case.dart';
-import '../../native_contract/event/event_response_dto.dart';
 import '../app_design_tokens.dart';
 import '../new_schedule/new_schedule_page.dart';
-import '../shared/native_result_dialog.dart';
 import 'components/add_task_button.dart';
 import 'components/bottom_nav_bar.dart';
 import 'components/inbox_top_bar.dart';
 import 'components/task_list_card.dart';
+import 'inbox_controller.dart';
 import 'inbox_design_tokens.dart';
 import 'models/inbox_task_view_data.dart';
 
@@ -17,89 +19,48 @@ class InboxPage extends StatefulWidget {
   const InboxPage({
     required this.readEventsUseCase,
     required this.createEventUseCase,
+    required this.completeEventUseCase,
     super.key,
   });
 
   final ReadEventsUseCase readEventsUseCase;
   final CreateEventUseCase createEventUseCase;
+  final CompleteEventUseCase completeEventUseCase;
 
   @override
   State<InboxPage> createState() => _InboxPageState();
 }
 
 class _InboxPageState extends State<InboxPage> {
-  var _isLoading = false;
-  String? _errorText;
-  List<InboxTaskViewData> _tasks = const [];
+  late final InboxController _controller;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _readEvents();
-    });
-  }
-
-  Future<void> _readEvents() async {
-    setState(() {
-      _isLoading = true;
-      _errorText = null;
-    });
-
-    final invocation = await widget.readEventsUseCase.execute();
-    if (!mounted) {
-      return;
-    }
-
-    await showNativeResultDialog(
-      context: context,
-      title: 'event.search NativeResult',
-      rawResponse: invocation.rawResponse,
+    _controller = InboxController(
+      readEventsUseCase: widget.readEventsUseCase,
+      completeEventUseCase: widget.completeEventUseCase,
     );
+    unawaited(_controller.initialize());
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<bool> _completeTask(InboxTaskViewData task) async {
+    final result = await _controller.completeTask(task);
     if (!mounted) {
-      return;
+      return false;
     }
-
-    final nativeResult = invocation.result;
-    setState(() {
-      _isLoading = false;
-      if (nativeResult.ok) {
-        _tasks = nativeResult.data!.items
-            .map(_toInboxTask)
-            .toList(growable: false);
-        _errorText = null;
-      } else {
-        _tasks = const [];
-        final error = nativeResult.error;
-        _errorText = error == null
-            ? '读取日程失败'
-            : '${error.code}: ${error.message}\nrequest_id=${nativeResult.requestId ?? '-'} retryable=${error.retryable}';
-      }
-    });
-  }
-
-  InboxTaskViewData _toInboxTask(EventResponseDto event) {
-    return InboxTaskViewData(
-      id: event.id,
-      title: event.title,
-      dueDateLabel: _formatDueDate(event.startAt),
-      importance: _mapImportance(event.importance),
-      isCompleted: false,
-    );
-  }
-
-  TaskImportance _mapImportance(String? importance) {
-    return switch (importance) {
-      'important_noturgent' => TaskImportance.importantNotUrgent,
-      'unimportant_urgent' => TaskImportance.unimportantUrgent,
-      'important_urgent' => TaskImportance.importantUrgent,
-      _ => TaskImportance.unimportantNotUrgent,
-    };
-  }
-
-  String _formatDueDate(DateTime dateTime) {
-    final local = dateTime.toLocal();
-    return '${local.month.toString().padLeft(2, '0')}/${local.day.toString().padLeft(2, '0')}';
+    if (!result.succeeded) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.errorMessage ?? '完成日程失败')));
+    }
+    return result.succeeded;
   }
 
   Future<void> _openNewSchedulePage() async {
@@ -132,7 +93,7 @@ class _InboxPageState extends State<InboxPage> {
     );
 
     if (didCreate == true && mounted) {
-      await _readEvents();
+      await _controller.loadActive();
     }
   }
 
@@ -155,7 +116,10 @@ class _InboxPageState extends State<InboxPage> {
                       InboxSpacing.pageHorizontal,
                       InboxSpacing.contentBottom,
                     ),
-                    child: _buildContent(),
+                    child: ListenableBuilder(
+                      listenable: _controller,
+                      builder: (context, child) => _buildContent(),
+                    ),
                   ),
                 ),
               ],
@@ -178,23 +142,30 @@ class _InboxPageState extends State<InboxPage> {
   }
 
   Widget _buildContent() {
-    if (_isLoading) {
+    if (_controller.isLoadingActive && _controller.activeTasks.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: InboxColors.accent),
       );
     }
-    if (_errorText != null) {
+    if (_controller.activeError != null && _controller.activeTasks.isEmpty) {
       return _InboxStatusCard(
         title: '读取日程失败',
-        body: _errorText!,
+        body: _controller.activeError!,
         actionLabel: '重试',
-        onAction: _readEvents,
+        onAction: _controller.loadActive,
       );
     }
-    if (_tasks.isEmpty) {
-      return const _InboxStatusCard(title: '暂无日程', body: '当前 native 数据源返回空列表');
-    }
-    return TaskListCard(tasks: _tasks);
+    return TaskListCard(
+      tasks: _controller.activeTasks,
+      completedTasks: _controller.completedTasks,
+      completedCountLabel: _controller.completedCountLabel,
+      completingIds: _controller.completingIds,
+      isLoadingCompleted: _controller.isLoadingCompleted,
+      completedError: _controller.completedError,
+      onTaskComplete: _completeTask,
+      onTaskRemovalFinished: _controller.finalizeCompletion,
+      onCompletedExpandedChanged: _controller.setCompletedExpanded,
+    );
   }
 }
 

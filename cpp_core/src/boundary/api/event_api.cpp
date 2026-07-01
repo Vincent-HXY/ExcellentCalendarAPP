@@ -403,7 +403,7 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   }
   const auto& object = parsed.value();
   static const std::set<std::string> allowed{
-      "keyword",      "start_at_from", "start_at_to", "category_ids", "importance", "location",
+      "keyword",      "start_at_from", "start_at_to", "status",       "category_ids", "importance", "location",
       "has_recurrence", "source",      "include_deleted", "pagination", "sort_by", "sort_direction",
   };
   std::string unknown;
@@ -430,8 +430,11 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   static const std::set<std::string> importance_values{
       "unimportant_noturgent", "important_noturgent", "unimportant_urgent", "important_urgent",
   };
-  // 数组字段用 vector<string> 表示；空 vector 意味着不按该字段过滤。
+  // 数组字段用 vector<string> 表示；status 空数组由 application 层解释为默认 active。
+  static const std::set<std::string> status_values{"active", "completed", "cancelled", "archived"};
   static const std::set<std::string> source_values{"manual", "ai_extraction", "sync", "import", "wechat"};
+  auto status = optional_string_array(object, "status", "SearchEventRequest", &status_values);
+  if (!status.ok()) return common::Result<application::EventQuery>::failure(status.error());
   auto category_ids = optional_string_array(object, "category_ids", "SearchEventRequest");
   if (!category_ids.ok()) return common::Result<application::EventQuery>::failure(category_ids.error());
   auto importance = optional_string_array(object, "importance", "SearchEventRequest", &importance_values);
@@ -445,6 +448,7 @@ common::Result<application::EventQuery> parse_search_event_request(std::string_v
   query.location = location.value();
   query.has_recurrence = has_recurrence.value();
   query.include_deleted = include_deleted.value().value_or(false);
+  query.status = status.value();
   query.category_ids = category_ids.value();
   query.importance = importance.value();
   query.source = source.value();
@@ -660,7 +664,7 @@ common::Result<application::CompleteEventCommand> parse_complete_event_request(s
   }
   auto source = require_string(object, "source", "CompleteEventRequest", true);
   if (!source.ok()) return common::Result<application::CompleteEventCommand>::failure(source.error());
-  if (!domain::is_valid_reminder_source(source.value())) {
+  if (!domain::is_valid_complete_event_source(source.value())) {
     return common::Result<application::CompleteEventCommand>::failure(
         contract_error("CompleteEventRequest.source has an unsupported enum value.", "CompleteEventRequest.source"));
   }

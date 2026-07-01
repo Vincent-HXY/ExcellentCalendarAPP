@@ -8,7 +8,6 @@
 #include "excellent_calendar/domain/data_source.hpp"
 #include "excellent_calendar/domain/event_status.hpp"
 #include "excellent_calendar/domain/importance.hpp"
-#include "excellent_calendar/domain/reminder.hpp"
 
 namespace excellent_calendar::application {
 namespace {
@@ -209,6 +208,12 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
     return common::Result<EventSearchResult>::failure(
         common::make_error("SEARCH_QUERY_INVALID", "Search pagination is invalid", {{"field", "pagination"}}));
   }
+  for (const auto& status : query.status) {
+    if (!domain::is_valid_event_status(status)) {
+      return common::Result<EventSearchResult>::failure(
+          common::make_error("SEARCH_QUERY_INVALID", "Search status is invalid", {{"field", "status"}}));
+    }
+  }
 
   // 时间范围过滤需要把请求里的字符串解析成可比较的数值。
   std::optional<std::int64_t> from_time;
@@ -242,6 +247,13 @@ common::Result<EventSearchResult> EventService::search_events(const EventQuery& 
   for (const auto& event : repository_result.value()) {
     // include_deleted=false 时过滤掉软删除事件。
     if (!query.include_deleted && event.deleted_at.has_value()) {
+      continue;
+    }
+    if (query.status.empty()) {
+      if (event.status != std::string(domain::kEventStatusActive)) {
+        continue;
+      }
+    } else if (!vector_contains(query.status, event.status)) {
       continue;
     }
     if (query.keyword.has_value() && !matches_keyword(event, *query.keyword)) {
@@ -320,7 +332,7 @@ common::Result<domain::Event> EventService::complete_event(const CompleteEventCo
     return common::Result<domain::Event>::failure(
         contract_validation_failed("completed_at", "CompleteEventRequest.completed_at must be ISO 8601 UTC date-time."));
   }
-  if (!domain::is_valid_reminder_source(command.source)) {
+  if (!domain::is_valid_complete_event_source(command.source)) {
     return common::Result<domain::Event>::failure(
         contract_validation_failed("source", "CompleteEventRequest.source has an unsupported enum value."));
   }
@@ -336,6 +348,9 @@ common::Result<domain::Event> EventService::complete_event(const CompleteEventCo
   auto event = *found.value();
   if (event.has_recurrence) {
     return common::Result<domain::Event>::failure(feature_not_implemented("event.complete.recurrence"));
+  }
+  if (event.status == std::string(domain::kEventStatusCompleted)) {
+    return common::Result<domain::Event>::success(std::move(event));
   }
   if (event.status == std::string(domain::kEventStatusCancelled) ||
       event.status == std::string(domain::kEventStatusArchived)) {

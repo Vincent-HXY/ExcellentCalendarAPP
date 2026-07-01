@@ -45,13 +45,13 @@ class MethodChannelEventAdapter implements EventNativeGateway {
   }
 
   @override
-  Future<NativeInvocation<EventOccurrenceStateResponseDto>> completeEvent(
+  Future<NativeInvocation<EventResponseDto>> completeEvent(
     CompleteEventRequestDto request,
   ) {
-    return _invoker.invoke<EventOccurrenceStateResponseDto>(
+    return _invoker.invoke<EventResponseDto>(
       method: NativeEventMethods.complete,
       arguments: request.toJson(),
-      parseData: EventMapper.eventOccurrenceStateFromNativeData,
+      parseData: EventMapper.eventResponseFromNativeData,
     );
   }
 

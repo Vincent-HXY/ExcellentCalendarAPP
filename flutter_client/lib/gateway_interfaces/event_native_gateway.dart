@@ -16,7 +16,7 @@ abstract interface class EventNativeGateway {
     SearchEventRequestDto request,
   );
 
-  Future<NativeInvocation<EventOccurrenceStateResponseDto>> completeEvent(
+  Future<NativeInvocation<EventResponseDto>> completeEvent(
     CompleteEventRequestDto request,
   );
 

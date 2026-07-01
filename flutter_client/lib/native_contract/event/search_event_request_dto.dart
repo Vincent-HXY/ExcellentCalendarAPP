@@ -5,6 +5,7 @@ class SearchEventRequestDto {
     this.keyword,
     this.startAtFrom,
     this.startAtTo,
+    this.status = const [],
     this.categoryIds = const [],
     this.importance = const [],
     this.location,
@@ -19,6 +20,7 @@ class SearchEventRequestDto {
   final String? keyword;
   final DateTime? startAtFrom;
   final DateTime? startAtTo;
+  final List<String> status;
   final List<String> categoryIds;
   final List<String> importance;
   final String? location;
@@ -30,6 +32,9 @@ class SearchEventRequestDto {
   final String? sortDirection;
 
   Map<String, dynamic> toJson() {
+    for (final value in status) {
+      _validateStatus(value);
+    }
     for (final value in importance) {
       _validateImportance(value);
     }
@@ -42,6 +47,7 @@ class SearchEventRequestDto {
       'keyword': keyword,
       'start_at_from': startAtFrom?.toUtc().toIso8601String(),
       'start_at_to': startAtTo?.toUtc().toIso8601String(),
+      'status': status,
       'category_ids': categoryIds,
       'importance': importance,
       'location': location,
@@ -52,6 +58,13 @@ class SearchEventRequestDto {
       'sort_by': sortBy,
       'sort_direction': sortDirection,
     };
+  }
+
+  static void _validateStatus(String value) {
+    const allowed = {'active', 'completed', 'cancelled', 'archived'};
+    if (!allowed.contains(value)) {
+      throw FormatException('Unknown EventStatus: $value');
+    }
   }
 
   static void _validateImportance(String value) {

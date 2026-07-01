@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'application/event/create_event_use_case.dart';
+import 'application/event/complete_event_use_case.dart';
 import 'application/event/read_events_use_case.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
 import 'presentation/inbox/inbox_page.dart';
@@ -27,6 +28,7 @@ class ExcellentCalendarApp extends StatelessWidget {
       home: InboxPage(
         readEventsUseCase: ReadEventsUseCase(eventGateway),
         createEventUseCase: CreateEventUseCase(eventGateway),
+        completeEventUseCase: CompleteEventUseCase(eventGateway),
       ),
     );
   }
