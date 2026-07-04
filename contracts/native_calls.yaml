@@ -102,6 +102,26 @@ calls:
       envelope: common/native_result.schema.json
       data: reminder/reminder_list_response.schema.json
 
+  reminder.get:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/get_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.list_schedulable:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/list_schedulable_reminders_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/schedulable_reminder_list_response.schema.json
+
   reminder.mark_scheduled:
     module: reminder
     visibility: internal
@@ -151,3 +171,23 @@ calls:
     result:
       envelope: common/native_result.schema.json
       data: reminder/reminder_response.schema.json
+
+  reminder.consume_after_delivery:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/consume_reminder_after_delivery_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/consume_reminder_after_delivery_response.schema.json
+
+  notification.create:
+    module: notification
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: notification/create_notification_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_response.schema.json

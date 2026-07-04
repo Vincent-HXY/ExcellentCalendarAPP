@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // 目的：验证重复规则只有确认后才提交；方法：先选择并取消，再选择并确认，比较外部结果。
   testWidgets('recurrence selection commits only after confirm', (
     tester,
   ) async {
@@ -39,6 +40,7 @@ void main() {
     expect(selected, RecurrencePreset.weekly);
   });
 
+  // 目的：验证用户可以一次提交多个预设提醒；方法：勾选多项、确认并比较返回集合。
   testWidgets('reminder selection supports multiple committed options', (
     tester,
   ) async {
@@ -71,6 +73,7 @@ void main() {
     });
   });
 
+  // 目的：验证自定义提前分钟数能显示并提交；方法：输入 15 分钟、确认并检查返回模型。
   testWidgets('custom reminder sheet returns one custom advance value', (
     tester,
   ) async {
@@ -107,6 +110,7 @@ void main() {
   });
 }
 
+// 为 bottom sheet 提供 Navigator/Material 上下文的最小宿主，测试不必启动完整应用。
 class _SheetHost extends StatelessWidget {
   const _SheetHost({required this.onOpen});
 

@@ -15,6 +15,7 @@ import 'fakes/fake_reminder_gateway.dart';
 import 'fixtures/reminder_fixtures.dart';
 
 void main() {
+  // 目的：验证创建提醒成功时 Application 层输出正确阶段和结果；方法：注入成功 Fake Gateway。
   test(
     'create reminder succeeds and preserves request id and details',
     () async {
@@ -44,6 +45,7 @@ void main() {
     },
   );
 
+  // 目的：确认原生业务错误原样上传；方法：Fake 返回 REMINDER_TIME_INVALID 并检查 details/requestId。
   test('create reminder propagates NativeResult business failure', () async {
     final gateway = FakeReminderGateway(
       onCreate: (_) async => reminderFailureInvocation(
@@ -64,6 +66,7 @@ void main() {
     expect(outcome.requestId, 'native-create-failure');
   });
 
+  // 目的：区分本地 Contract 错误与原生业务错误；方法：提交非法 methods 并检查 outcome 类型。
   test(
     'contract validation failure is not collapsed into business failure',
     () async {
@@ -84,6 +87,7 @@ void main() {
     },
   );
 
+  // 目的：表示“记录创建成功但 Android 调度失败”的部分成功状态；方法：返回 failed Reminder DTO。
   test('create reminder expresses scheduling failed status', () async {
     final gateway = FakeReminderGateway(
       onCreate: (_) async => reminderSuccessInvocation(
@@ -102,6 +106,7 @@ void main() {
     expect(outcome.reminder!.failureReason, 'Alarm registration failed.');
   });
 
+  // 目的：验证取消成功后的状态映射；方法：Fake 返回 cancelled，并检查启用与删除时间字段。
   test(
     'delete reminder succeeds only with cancelled soft-delete state',
     () async {
@@ -128,6 +133,7 @@ void main() {
     },
   );
 
+  // 目的：确认取消不存在的提醒会保留 REMINDER_NOT_FOUND；方法：Fake 返回业务失败信封。
   test('delete reminder propagates not found business failure', () async {
     final gateway = FakeReminderGateway(
       onCreate: (_) async => reminderSuccessInvocation(),
@@ -146,6 +152,7 @@ void main() {
     expect(outcome.error!.details, {'id': 'reminder-1'});
   });
 
+  // 目的：确认通道异常被分类为 transportFailure；方法：Fake 抛出传输错误并检查 details。
   test(
     'delete reminder exposes channel failure as transport failure',
     () async {
@@ -163,6 +170,7 @@ void main() {
     },
   );
 
+  // 目的：防止用户连点造成重复请求；方法：保持首个 Future 未完成并再次提交同一操作。
   test('create and same-id delete prevent duplicate submission', () async {
     final createCompleter = Completer<NativeInvocation<ReminderResponseDto>>();
     final cancelCompleter = Completer<NativeInvocation<ReminderResponseDto>>();

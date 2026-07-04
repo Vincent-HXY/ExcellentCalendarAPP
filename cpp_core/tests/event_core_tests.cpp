@@ -42,12 +42,15 @@ using excellent_calendar::domain::Event;
 using excellent_calendar::test_support::FailingEventRepository;
 using excellent_calendar::test_support::InMemoryEventRepository;
 
+// 本文件没有引入 GoogleTest，因此用 require 作为最小断言工具。
+// 条件失败时抛出异常，main() 会捕获异常并让测试程序以非零状态退出。
 void require(bool condition, const std::string& message) {
   if (!condition) {
     throw std::runtime_error(message);
   }
 }
 
+// 把边界 API 返回的 JSON 解码成对象；格式不合法或顶层不是 object 时立即让测试失败。
 picojson::object decode_object(const std::string& json) {
   picojson::value value;
   const auto error = picojson::parse(value, json);
@@ -56,6 +59,7 @@ picojson::object decode_object(const std::string& json) {
   return value.get<picojson::object>();
 }
 
+// 以下 field 辅助函数同时检查“字段存在”和“字段类型正确”，让场景断言更简洁。
 std::string string_field(const picojson::object& object, const std::string& key) {
   const auto found = object.find(key);
   require(found != object.end(), "missing field: " + key);
@@ -91,6 +95,7 @@ picojson::array array_field(const picojson::object& object, const std::string& k
   return found->second.get<picojson::array>();
 }
 
+// 验证成功的 NativeResult 信封，而不只检查业务 data。
 void expect_ok(const std::string& json) {
   const auto result = decode_object(json);
   require(bool_field(result, "ok"), "NativeResult expected ok=true: " + json);
@@ -100,6 +105,7 @@ void expect_ok(const std::string& json) {
   require(!string_field(result, "request_id").empty(), "request_id must be populated");
 }
 
+// 验证失败的 NativeResult 结构以及预期错误码。
 void expect_error(const std::string& json, const std::string& code) {
   const auto result = decode_object(json);
   require(!bool_field(result, "ok"), "NativeResult expected ok=false: " + json);
@@ -111,6 +117,7 @@ void expect_error(const std::string& json, const std::string& code) {
   require(!string_field(result, "request_id").empty(), "request_id must be populated");
 }
 
+// 每个文件存储场景使用独立临时目录，避免测试之间共享 events.json 而相互污染。
 std::filesystem::path make_temp_dir(const std::string& name) {
   auto path = std::filesystem::temp_directory_path() /
               ("excellent_calendar_" + name + "_" + excellent_calendar::common::generate_uuid_v4());
@@ -223,6 +230,8 @@ Event event_record(
   return event;
 }
 
+// 目的：验证 EventService 的业务规则，与 JSON 文件实现解耦。
+// 方法：注入内存/失败 Repository 及固定时钟、ID 生成器，再检查结果和错误码。
 void service_tests() {
   int sequence = 0;
   std::string clock_value = "2026-06-08T12:00:00Z";
@@ -357,6 +366,8 @@ void service_tests() {
           "complete should propagate repository lookup errors");
 }
 
+// 目的：验证 JsonEventRepository 能真实持久化 Event，并在重新初始化后恢复数据。
+// 方法：在临时目录写入记录，构造新的 Repository 读取同一目录并比较字段。
 void repository_tests() {
   const auto dir = make_temp_dir("repository");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -406,6 +417,8 @@ void repository_tests() {
   cleanup();
 }
 
+// 目的：验证创建带提醒的 Event 时，Event 与 Reminder 会作为一个工作流共同落盘。
+// 方法：从边界 API 发起请求，再直接读取两个 Repository 检查关联 ID 和初始状态。
 void embedded_reminder_boundary_tests() {
   const auto dir = make_temp_dir("embedded_reminder");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -437,6 +450,8 @@ void embedded_reminder_boundary_tests() {
   cleanup();
 }
 
+// 目的：验证 Reminder 校验失败时不会只留下 Event，避免跨仓库的半完成数据。
+// 方法：制造非法提醒时间，随后确认两个仓库和事务日志都已回滚/清理。
 void workflow_rollback_tests() {
   const auto dir = make_temp_dir("workflow_rollback");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -499,6 +514,8 @@ void workflow_rollback_tests() {
   cleanup();
 }
 
+// 目的：验证进程中断后，初始化过程能根据事务日志恢复未完成操作。
+// 方法：手工写入未提交日志和 Event，再重新初始化事务并检查残留文件被清理。
 void transaction_recovery_tests() {
   const auto dir = make_temp_dir("transaction_recovery");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -531,6 +548,8 @@ void transaction_recovery_tests() {
   cleanup();
 }
 
+// 目的：验证 C++ 公开 JSON 边界的 Contract 校验、搜索筛选、分页和生命周期操作。
+// 方法：发送合法与非法 JSON，请求完成/重开 Event，并检查 NativeResult 和持久化结果。
 void boundary_and_search_tests() {
   const auto dir = make_temp_dir("boundary");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -707,6 +726,8 @@ void boundary_and_search_tests() {
   cleanup();
 }
 
+// 目的：验证软删除过滤，以及损坏的 JSON 不会被静默覆盖。
+// 方法：准备正常/已删除记录并主动写坏文件，再检查查询结果和错误码。
 void soft_delete_and_corruption_tests() {
   const auto dir = make_temp_dir("corruption");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -755,6 +776,8 @@ void soft_delete_and_corruption_tests() {
   cleanup();
 }
 
+// 目的：验证并发创建时文件锁和仓库锁不会丢失记录。
+// 方法：启动 24 个线程同时调用公开 API，join 后查询并断言恰有 24 条数据。
 void concurrency_tests() {
   const auto dir = make_temp_dir("concurrency");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -782,6 +805,8 @@ void concurrency_tests() {
   cleanup();
 }
 
+// 目的：验证非法存储路径会返回稳定的 STORAGE_PATH_INVALID，而不是崩溃。
+// 方法：分别传入空路径和普通文件路径，检查统一错误信封。
 void initialize_failure_tests() {
   expect_error(excellent_calendar::boundary::api::initialize_storage(""), "STORAGE_PATH_INVALID");
 
@@ -797,6 +822,7 @@ void initialize_failure_tests() {
 
 }  // namespace
 
+// CTest 运行的是这个可执行程序；任一场景抛异常即整体失败。
 int main() {
   try {
     service_tests();

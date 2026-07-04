@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/notification/request_notification_permission_request.schema.json",
+  "title": "RequestNotificationPermissionRequest",
+  "description": "User-initiated request to ask for notification permission and/or open exact-alarm access settings.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_notification_permission",
+    "request_exact_alarm_permission",
+    "source"
+  ],
+  "properties": {
+    "request_notification_permission": {
+      "type": "boolean"
+    },
+    "request_exact_alarm_permission": {
+      "type": "boolean"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["app_startup", "settings_page", "reminder_creation", "manual_retry"]
+    }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "request_notification_permission": { "const": true }
+      },
+      "required": ["request_notification_permission"]
+    },
+    {
+      "properties": {
+        "request_exact_alarm_permission": { "const": true }
+      },
+      "required": ["request_exact_alarm_permission"]
+    }
+  ]
+}

@@ -11,6 +11,8 @@
 
 namespace excellent_calendar::test_support {
 
+// 正常存储替身：用 vector 保存 Event，不访问磁盘。
+// 测试可预先向 events 填入数据，也可在调用 Service 后直接检查保存结果。
 class InMemoryEventRepository final : public repository::EventRepository {
  public:
   common::Result<domain::Event> create(const domain::Event& event) override {
@@ -45,6 +47,8 @@ class InMemoryEventRepository final : public repository::EventRepository {
   std::vector<domain::Event> events;
 };
 
+// 故障存储替身：所有操作都稳定返回 STORAGE_IO_ERROR。
+// 它让测试无需真的破坏文件权限，也能验证 Service 是否正确传播存储错误。
 class FailingEventRepository final : public repository::EventRepository {
  public:
   common::Result<domain::Event> create(const domain::Event& /*event*/) override {

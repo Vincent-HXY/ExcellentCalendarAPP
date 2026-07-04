@@ -23,6 +23,8 @@ import org.junit.Test
  * 这样可以专注验证 Kotlin 层：请求校验、JSON 转换、响应合约校验、错误包装和回调行为。
  */
 class NativeMethodChannelHandlerTest {
+    // 目的：验证 event.create 的 Map 会转换成 snake_case JSON，并把合法 NativeResult 返回 Flutter。
+    // 方法：Fake Bridge 记录 requestJson，RecordingResult 捕获 Handler 输出，再分别解析断言。
     @Test
     fun createEventSuccessForwardsSnakeCaseJsonAndNativeResult() {
         val nativeResponse = nativeResult(
@@ -74,6 +76,8 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：确认 C++ 返回的业务错误信封不会被 Kotlin 改写或伪装成成功。
+    // 方法：Fake 返回失败 NativeResult，检查 Flutter 收到的 code、details 和 request_id。
     @Test
     fun createEventFailurePreservesBusinessErrorEnvelope() {
         val nativeResponse = nativeResult(
@@ -103,6 +107,7 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：验证空搜索结果仍包含正确 pagination；方法：Fake 返回空 items 并检查 Handler 输出。
     @Test
     fun searchEventsReturnsEmptyListWithPagination() {
         val nativeResponse = nativeResult(
@@ -128,6 +133,8 @@ class NativeMethodChannelHandlerTest {
         assertEquals(pagination(total = 0, page = 1, pageSize = 20, hasMore = false), data["pagination"])
     }
 
+    // 目的：验证列表中单项/多项及 null 可选字段都能安全跨过 Kotlin 边界。
+    // 方法：构造两种原生列表 JSON，调用 Handler 后比较项目数量与可选字段。
     @Test
     fun searchEventsReturnsSingleAndMultipleEventsWithNullOptionalFields() {
         val singleEvent = eventResponse(id = "event-1", content = null, categoryId = null)
@@ -164,6 +171,7 @@ class NativeMethodChannelHandlerTest {
         assertEquals("cursor-2", returnedPagination["next_cursor"])
     }
 
+    // 目的：避免损坏的原生搜索响应直接泄漏给 Flutter；方法：返回畸形 JSON 并检查归一化错误。
     @Test
     fun malformedNativeSearchResponseReturnsNormalizedFailure() {
         val fakeBridge = FakeNativeEventBridge(
@@ -188,6 +196,8 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：验证 event.complete 只转发单 Event Contract，并校验 EventResponse。
+    // 方法：记录发往 Fake Bridge 的 JSON，同时检查返回给 Flutter 的完成状态。
     @Test
     fun completeEventForwardsSingleEventRequestAndValidatesEventResponse() {
         val nativeResponse = nativeResult(
@@ -224,6 +234,7 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：确认 complete 的 C++ 业务失败保持原样；方法：Fake 返回失败信封并比较错误字段。
     @Test
     fun completeEventForwardsNativeBusinessFailureWithoutRewritingIt() {
         val nativeResponse = nativeResult(
@@ -251,6 +262,7 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：拒绝 Flutter 传入非 Map 参数；方法：传入错误类型并检查 Contract 失败 NativeResult。
     @Test
     fun completeEventRejectsNonMapArgumentsAsNativeResultFailure() {
         val fakeBridge = FakeNativeEventBridge()
@@ -270,6 +282,7 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：防止已从 Contract 删除的 occurrence 字段继续被接受；方法：添加旧字段并期待校验失败。
     @Test
     fun completeEventRejectsOccurrenceFieldRemovedFromContract() {
         val fakeBridge = FakeNativeEventBridge()
@@ -289,6 +302,8 @@ class NativeMethodChannelHandlerTest {
         assertNull(fakeBridge.lastCompleteRequestJson)
     }
 
+    // 目的：验证 JNI 调用异常会被转换成稳定的内部错误，而不是让 MethodChannel 崩溃。
+    // 方法：让 Fake Bridge 抛异常并检查返回信封。
     @Test
     fun completeEventJniFailureReturnsNativeResultFailure() {
         val fakeBridge = FakeNativeEventBridge(
@@ -310,6 +325,7 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：验证 event.reopen 的请求转发和响应解析；方法：记录 JSON 并检查 active 状态。
     @Test
     fun reopenEventForwardsSingleEventRequestAndValidatesEventResponse() {
         val nativeResponse = nativeResult(
@@ -338,6 +354,7 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：JNI 不可用时禁止生成假成功；方法：让 Bridge 抛链接错误并检查失败结果。
     @Test
     fun jniUnavailableReturnsFailureWithoutFakeSuccess() {
         val fakeBridge = FakeNativeEventBridge(createError = UnsatisfiedLinkError("missing nativeCreateEvent"))
@@ -353,6 +370,7 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：未知方法应交回 Flutter 的标准 notImplemented；方法：发送不存在的方法并检查记录标志。
     @Test
     fun unknownMethodIsNotImplemented() {
         val result = invoke(handler(FakeNativeEventBridge()), "event.read_calendar", searchArguments())
@@ -362,6 +380,7 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 使用 Fake Bridge 构造被测 Handler，隔离真实 JNI 动态库。
     private fun handler(fakeBridge: FakeNativeEventBridge): NativeMethodChannelHandler {
         return NativeMethodChannelHandler(
             nativeEventBridge = fakeBridge,
@@ -371,6 +390,7 @@ class NativeMethodChannelHandlerTest {
         )
     }
 
+    // 模拟 Flutter 发起 MethodCall，并返回可供测试读取的 RecordingResult。
     private fun invoke(
         handler: NativeMethodChannelHandler,
         method: String,
@@ -554,6 +574,7 @@ class NativeMethodChannelHandlerTest {
      * 它记录 Kotlin 发给 native 的 JSON，并返回测试预设的 NativeResult JSON。
      * 这是一种常见测试手法：用 fake 隔离外部依赖，让单元测试稳定、快速。
      */
+    // JNI Bridge 替身：保存最后收到的 JSON，并按场景返回指定响应或抛出指定异常。
     private class FakeNativeEventBridge(
         private val createResponseJson: String = NativeContractJsonCodec.encodeObject(
             linkedMapOf(
@@ -723,6 +744,7 @@ class NativeMethodChannelHandlerTest {
      * Flutter 的真实 result 会把数据送回 Dart；测试里只需要记录 success/error/notImplemented
      * 哪个被调用，以及 success 的值是什么。
      */
+    // MethodChannel.Result 测试探针：记录 success/error/notImplemented，代替真实 Flutter 引擎。
     private class RecordingResult : MethodChannel.Result {
         var successValue: Any? = null
             private set

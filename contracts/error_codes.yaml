@@ -96,6 +96,11 @@ errors:
     message: "Notification delivery failed"
     retryable: true
 
+  NOTIFICATION_INITIALIZATION_FAILED:
+    module: notification
+    message: "Notification system initialization failed"
+    retryable: true
+
   HABIT_TITLE_EMPTY:
     module: habit
     message: "Habit title cannot be empty"
@@ -174,4 +179,29 @@ errors:
   ALARM_CANCEL_FAILED:
     module: android
     message: "Failed to cancel alarm"
+    retryable: true
+
+  NOTIFICATION_PERMISSION_DENIED:
+    module: notification
+    message: "Notification permission is denied"
+    retryable: true
+
+  EXACT_ALARM_PERMISSION_DENIED:
+    module: reminder
+    message: "Exact alarm permission is denied"
+    retryable: true
+
+  UNSUPPORTED_REMINDER_METHOD:
+    module: reminder
+    message: "Reminder method is not supported in current version"
+    retryable: false
+
+  REMINDER_ALREADY_CONSUMED:
+    module: reminder
+    message: "Reminder has already been consumed"
+    retryable: false
+
+  REMINDER_NOT_DUE:
+    module: reminder
+    message: "Reminder is not due yet"
     retryable: true

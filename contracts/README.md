@@ -54,7 +54,7 @@ contracts/
 └── search/
 ```
 
-当前核心闭环优先级为 `common/`、`event/`、`recurrence/`、`reminder/`、`habit/`、`category/`。`notification/`、`search/`、`ai/`、`sync/`、`user/` 先作为稳定协议草案保留，后续实现层必须先更新本目录再落代码。
+当前核心闭环优先级为 `common/`、`event/`、`recurrence/`、`reminder/`、`habit/`、`category/`、`notification/`。、`search/`、`ai/`、`sync/`、`user/` 先作为稳定协议草案保留，后续实现层必须先更新本目录再落代码。
 
 ## Versioning
 

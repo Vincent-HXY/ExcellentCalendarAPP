@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // 目的：验证选择器打开时正确显示外部初始值；方法：传入固定时间并查找日期、时间文本。
   testWidgets('picker shows the provided initial date time', (tester) async {
     await _pumpPickerHost(tester, initial: DateTime(2026, 6, 9, 14, 30));
     await tester.tap(find.text('open'));
@@ -16,6 +17,7 @@ void main() {
     expect(find.text('2026年6月'), findsOneWidget);
   });
 
+  // 目的：验证时间滚轮从午夜附近循环显示；方法：打开时间步骤并检查小时、分钟选项。
   testWidgets('time initial step opens wheel and loops around 00:00', (
     tester,
   ) async {
@@ -33,6 +35,7 @@ void main() {
     expect(find.text('59'), findsWidgets);
   });
 
+  // 目的：锁定滚轮的交互参数；方法：读取 ListWheelScrollView 属性并比较放大率、尺寸和物理效果。
   testWidgets('time wheels use the native continuous magnifier', (
     tester,
   ) async {
@@ -61,6 +64,7 @@ void main() {
     }
   });
 
+  // 目的：验证跨年时上月/下月导航正确；方法：从一月前后导航并检查月份标题。
   testWidgets(
     'month navigation supports previous and next including year edge',
     (tester) async {
@@ -79,6 +83,7 @@ void main() {
     },
   );
 
+  // 目的：验证选择日期后进入时间步骤，返回日期步骤仍保留选择；方法：模拟点击并检查页面组件。
   testWidgets('selecting a calendar day moves to the time wheel', (
     tester,
   ) async {
@@ -101,6 +106,7 @@ void main() {
     expect(find.byType(ListWheelScrollView), findsNWidgets(2));
   });
 
+  // 目的：验证月份标题可以进入年月日滚轮并提交；方法：切换视图、滚动选择并检查返回月份。
   testWidgets('month title opens year month day wheel and commits back', (
     tester,
   ) async {
@@ -117,6 +123,7 @@ void main() {
     expect(find.text('2026年6月'), findsOneWidget);
   });
 
+  // 目的：防止窄屏布局溢出；方法：设置较小测试视口、打开三列滚轮并检查布局异常。
   testWidgets('year month day wheel does not overflow on narrow widths', (
     tester,
   ) async {
@@ -143,6 +150,7 @@ void main() {
     }
   });
 
+  // 目的：区分取消与确认的提交语义；方法：两次打开选择器，分别取消/确认并检查外部值。
   testWidgets('cancel keeps outer value and confirm updates it', (
     tester,
   ) async {
@@ -172,6 +180,7 @@ void main() {
     expect(selected, DateTime(2026, 6, 10, 14, 30));
   });
 
+  // 目的：验证同一选择器组件可用于结束时间；方法：传入结束时间标题和初始值并检查显示。
   testWidgets('picker can be reused for end time', (tester) async {
     await _pumpPickerHost(
       tester,
@@ -184,6 +193,7 @@ void main() {
     expect(find.text('选择结束时间'), findsOneWidget);
   });
 
+  // 目的：验证闰年和月末修正规则；方法：直接调用纯日期函数检查典型边界值。
   test('picker date math handles leap years and month-end clamping', () {
     expect(
       PickerDateMath.clampedDate(year: 2024, month: 2, day: 29),
@@ -201,6 +211,7 @@ void main() {
   });
 }
 
+// 构建带按钮的最小 Material 宿主；点击按钮后打开被测日期时间选择器。
 Future<void> _pumpPickerHost(
   WidgetTester tester, {
   required DateTime initial,

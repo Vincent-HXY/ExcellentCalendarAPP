@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/notification/notification_permission_status_response.schema.json",
+  "title": "NotificationPermissionStatusResponse",
+  "description": "Read-only snapshot of Android notification and exact-alarm access.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notification_permission",
+    "exact_alarm_permission",
+    "can_post_notifications",
+    "can_schedule_exact_alarms",
+    "sdk_int",
+    "should_show_notification_rationale"
+  ],
+  "properties": {
+    "notification_permission": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "permanently_denied", "unknown"]
+    },
+    "exact_alarm_permission": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "unknown"]
+    },
+    "can_post_notifications": {
+      "type": "boolean"
+    },
+    "can_schedule_exact_alarms": {
+      "type": "boolean"
+    },
+    "sdk_int": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "should_show_notification_rationale": {
+      "type": "boolean"
+    }
+  }
+}

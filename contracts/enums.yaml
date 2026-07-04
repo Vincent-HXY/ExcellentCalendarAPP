@@ -49,6 +49,34 @@ NotificationStatus:
     - failed
     - cancelled
 
+NotificationPermissionStatus:
+  values:
+    - granted
+    - denied
+    - not_required
+    - permanently_denied
+    - unknown
+
+ExactAlarmPermissionStatus:
+  values:
+    - granted
+    - denied
+    - not_required
+    - unknown
+
+NotificationPermissionRequestSource:
+  values:
+    - app_startup
+    - settings_page
+    - reminder_creation
+    - manual_retry
+
+NotificationSettingsTarget:
+  values:
+    - notification
+    - exact_alarm
+    - application
+
 HabitCheckInStatus:
   values:
     - done

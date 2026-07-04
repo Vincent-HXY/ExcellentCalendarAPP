@@ -41,12 +41,14 @@ using excellent_calendar::repository::EventRepository;
 using excellent_calendar::repository::ReminderRepository;
 using excellent_calendar::test_support::InMemoryEventRepository;
 
+// 本文件使用轻量自定义断言；失败时抛异常，由 main() 转换为测试进程失败。
 void require(bool condition, const std::string& message) {
   if (!condition) {
     throw std::runtime_error(message);
   }
 }
 
+// 解码并校验边界返回值的顶层 JSON 类型，后续场景只需关注具体字段。
 picojson::object decode_object(const std::string& json) {
   picojson::value value;
   const auto error = picojson::parse(value, json);
@@ -59,6 +61,7 @@ std::string encode(const picojson::object& object) {
   return picojson::value(object).serialize();
 }
 
+// 以下 field 辅助函数会同时检查字段存在性和 JSON 类型。
 std::string string_field(const picojson::object& object, const std::string& key) {
   const auto found = object.find(key);
   require(found != object.end(), "missing field: " + key);
@@ -94,6 +97,7 @@ picojson::array array_field(const picojson::object& object, const std::string& k
   return found->second.get<picojson::array>();
 }
 
+// 验证成功 NativeResult 的公共信封字段。
 void expect_ok(const std::string& json) {
   const auto result = decode_object(json);
   require(bool_field(result, "ok"), "NativeResult expected ok=true: " + json);
@@ -103,6 +107,7 @@ void expect_ok(const std::string& json) {
   require(!string_field(result, "request_id").empty(), "request_id must be populated");
 }
 
+// 验证失败 NativeResult 的公共结构和指定业务错误码。
 void expect_error(const std::string& json, const std::string& code) {
   const auto result = decode_object(json);
   require(!bool_field(result, "ok"), "NativeResult expected ok=false: " + json);
@@ -114,11 +119,13 @@ void expect_error(const std::string& json, const std::string& code) {
   require(!string_field(result, "request_id").empty(), "request_id must be populated");
 }
 
+// 先确认调用成功，再取出 data；避免测试在错误响应上继续做误导性的字段断言。
 picojson::object data_object(const std::string& native_result_json) {
   expect_ok(native_result_json);
   return object_field(decode_object(native_result_json), "data");
 }
 
+// 为真实 JSON 存储测试创建互不干扰的临时目录。
 std::filesystem::path make_temp_dir(const std::string& name) {
   auto path = std::filesystem::temp_directory_path() /
               ("excellent_calendar_reminder_" + name + "_" + excellent_calendar::common::generate_uuid_v4());
@@ -315,6 +322,8 @@ std::string create_event_and_get_id(const std::filesystem::path& dir) {
   return string_field(event, "id");
 }
 
+// 目的：验证 ReminderService 的时间、目标、提醒方式和状态迁移规则。
+// 方法：注入内存仓库、固定时钟和顺序 ID，构造边界值并检查结果/错误码。
 void service_tests() {
   int sequence = 0;
   auto events = std::make_shared<InMemoryEventRepository>();
@@ -491,6 +500,8 @@ void service_tests() {
           "include_deleted should expose retained records");
 }
 
+// 目的：验证 Reminder 写入 JSON 后，重新构造 Repository 仍能读取完整数据。
+// 方法：写入临时目录后模拟重启，并比较数量及 UTF-8 字段。
 void repository_restart_tests() {
   const auto dir = make_temp_dir("repository");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -513,6 +524,8 @@ void repository_restart_tests() {
   cleanup();
 }
 
+// 目的：验证 Reminder 的公开 JSON API 及 pending→scheduled/sent/failed/cancelled 状态变化。
+// 方法：创建关联 Event 和 Reminder，逐个调用状态 API，并检查响应及底层软删除记录。
 void boundary_create_and_status_tests() {
   const auto dir = make_temp_dir("boundary");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -610,6 +623,8 @@ void boundary_create_and_status_tests() {
   cleanup();
 }
 
+// 目的：验证 native runtime 重新初始化后仍能列出先前保存的 Reminder。
+// 方法：创建提醒、再次 initialize_storage，再通过边界 API 查询。
 void boundary_restart_tests() {
   const auto dir = make_temp_dir("restart");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -623,6 +638,8 @@ void boundary_restart_tests() {
   cleanup();
 }
 
+// 目的：验证多个线程同时创建 Reminder 时不会覆盖或遗漏 JSON 记录。
+// 方法：24 个线程并发调用 API，等待结束后断言列表包含 24 项。
 void concurrency_tests() {
   const auto dir = make_temp_dir("concurrency");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -647,6 +664,8 @@ void concurrency_tests() {
   cleanup();
 }
 
+// 目的：验证 reminders.json 损坏时返回明确错误，并保留原始坏文件供诊断。
+// 方法：主动写入非法 JSON，再查询并确认错误码以及文件未被覆盖。
 void corruption_tests() {
   const auto dir = make_temp_dir("corruption");
   auto cleanup = [&] { std::filesystem::remove_all(dir); };
@@ -672,6 +691,7 @@ void corruption_tests() {
 
 }  // namespace
 
+// CTest 以进程退出码判断结果；任一场景异常都会返回 1。
 int main() {
   try {
     service_tests();

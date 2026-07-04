@@ -32,3 +32,77 @@
 - 现在还没有正式接入通知这个任务，需要接入这个通知，然后通知发生之后，我们可以点击完成选项完成或者日程。
 - 现在点击之后，不能查看日志的一个详细情况
 - 现在的日程都是默认即将到来的一个状态，我们需要设置好恰当的时间线去调整
+
+
+缺少投递前生成的稳定 notification_id
+[notification_tap_payload.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\notification\\notification_tap_payload.schema.json:9) 要求点击 PendingIntent 必须包含 notification_id。
+但 [consume_reminder_after_delivery_request.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\consume_reminder_after_delivery_request.schema.json:9) 和 [create_notification_request.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\notification\\create_notification_request.schema.json:9) 都不接收预先生成的 notification_id。
+这会产生顺序矛盾：
+先弹系统通知：构造 PendingIntent 时还没有 Notification ID。
+先调用 consume：数据库已经记录 sent，但系统通知可能随后展示失败。
+建议增加两阶段协议：
+notification.prepare_delivery
+→ 返回 notification_id / delivery_attempt_id / tap_payload
+→ Android NotificationManager.notify
+→ reminder.finalize_delivery
+finalize_delivery 根据成功或失败原子更新 Notification 和 Reminder。
+
+投递流程缺少幂等键
+Alarm Receiver 可能因为进程重启、系统重投或异常恢复重复执行。当前 consume_after_delivery 只有 reminder_id，无法准确区分同一次投递重试。
+建议增加：
+delivery_attempt_id
+schedule_generation
+expected_remind_at
+同一个 delivery_attempt_id 重复提交应返回之前结果，而不是 REMINDER_ALREADY_CONSUMED 错误。
+
+无法防止旧 Alarm 消费更新后的 Reminder
+[get_reminder_request.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\get_reminder_request.schema.json:9) 只包含 ID。如果提醒从 08:00 修改到 09:00，而旧的 08:00 Alarm 仍然触发，它可能读取并消费已经更新的 Reminder。
+建议 Alarm PendingIntent 和后续请求携带 expected_remind_at 或 schedule_generation，C++ 必须验证它与当前 Reminder 一致。
+
+reminder.get 不足以生成实际通知内容
+[reminder_response.schema.json (line 20)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\reminder_response.schema.json:20) 只有目标 ID 和提醒 message，没有 Event/Habit/Anniversary 的标题。而 consume_after_delivery 又要求 Kotlin提供非空 title。
+建议增加内部聚合接口：
+reminder.get_delivery_context
+返回 Reminder、目标标题、通知正文、目标类型和 ID。它只是 Boundary DTO，不应把标题冗余写进 Reminder 领域模型。
+
+通知点击只读一次并立即清除，不够可靠
+[notification_tap_payload_response.schema.json (line 5)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\notification\\notification_tap_payload_response.schema.json:5) 规定读取成功后立即清除。Flutter 取到 payload 后如果在完成导航前崩溃，该点击会永久丢失。
+EventChannel 也可能在 Flutter 订阅前发出事件。
+建议改成持久化的小型点击队列：
+notification.peek_pending_taps
+notification.ack_tap
+payload 增加 tap_id，Flutter 完成导航后再确认消费。
+
+启动恢复来源没有进入协议
+reminder.schedule_pending 不仅会由 App 启动触发，还应由这些 Android 场景触发：
+BOOT_COMPLETED
+MY_PACKAGE_REPLACED
+系统时间调整
+时区调整
+手动重试
+建议请求增加 trigger_source。同时 Kotlin 应复用同一个调度服务，不能依赖 Flutter MethodChannel 才能恢复提醒。
+
+批量调度错误信息不足
+[schedule_pending_reminders_response.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\schedule_pending_reminders_response.schema.json:9) 只有失败 ID 和数量，没有每条失败的错误码、原因及可重试状态。
+建议改成：
+{
+  "failures": [
+    {
+      "reminder_id": "...",
+      "code": "ALARM_SCHEDULE_FAILED",
+      "message": "...",
+      "retryable": true
+    }
+  ]
+}
+
+精确提醒还是近似提醒尚未明确
+权限 Contract 同时提供 notification permission 和 exact-alarm permission，这很好；但 Reminder 没有声明是否必须精确触发。
+需要明确：
+所有 Reminder 都要求 exact alarm；或者
+支持 exact / inexact 调度策略，并在无精确权限时降级。
+否则 schedule_pending 遇到缺少精确闹钟权限时，各平台实现可能采取不同策略。
+
+重复提醒尚未进入消费闭环
+delete_after_sent 当前固定为 true，[consume_reminder_after_delivery_request.schema.json (line 41)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\consume_reminder_after_delivery_request.schema.json:41)，所以 V1 只覆盖一次性 Reminder。
+如果要支持重复日程，消费成功后还需要由 C++ 生成下一条 Reminder，或者响应中返回 next_reminder。当前流程还没有定义。

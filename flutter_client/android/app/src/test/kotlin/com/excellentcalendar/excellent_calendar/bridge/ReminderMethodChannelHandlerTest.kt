@@ -21,6 +21,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReminderMethodChannelHandlerTest {
+    // 目的：验证提醒创建成功后会注册 Android 调度并回写 scheduled。
+    // 方法：Fake Bridge/Scheduler 记录调用顺序，最终检查状态和 scheduledAt。
     @Test
     fun createReminderSuccessSchedulesAndMarksScheduled() {
         val fakeBridge = FakeNativeEventBridge()
@@ -41,6 +43,7 @@ class ReminderMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：C++ 创建失败时不得注册闹钟；方法：Fake 返回业务失败并检查 Scheduler 未调用。
     @Test
     fun createReminderNativeFailureDoesNotSchedule() {
         val nativeFailure = nativeResult(
@@ -59,6 +62,7 @@ class ReminderMethodChannelHandlerTest {
         assertEquals("create-failed", result.successMap()["request_id"])
     }
 
+    // 目的：Android 调度失败后必须回写 failed；方法：Scheduler 返回失败并检查 markReminderFailed。
     @Test
     fun alarmScheduleFailureMarksReminderFailed() {
         val fakeBridge = FakeNativeEventBridge()
@@ -80,6 +84,7 @@ class ReminderMethodChannelHandlerTest {
         assertEquals("mark-failed-request", result.successMap()["request_id"])
     }
 
+    // 目的：当前不支持的微信提醒不能被静默忽略；方法：提交 wechat method 并检查明确错误。
     @Test
     fun unsupportedWechatMethodIsNotSilentlyIgnored() {
         val fakeBridge = FakeNativeEventBridge(
@@ -107,6 +112,8 @@ class ReminderMethodChannelHandlerTest {
         assertEquals("failed", data["status"])
     }
 
+    // 目的：验证取消顺序是先撤销系统闹钟，再在 C++ 中软删除。
+    // 方法：Fake 记录两个边界调用并检查最终 cancelled 响应。
     @Test
     fun cancelReminderSuccessCancelsAlarmThenNativeSoftDelete() {
         val fakeBridge = FakeNativeEventBridge()
@@ -123,6 +130,7 @@ class ReminderMethodChannelHandlerTest {
         assertEquals("2026-06-14T01:00:00Z", data["deleted_at"])
     }
 
+    // 目的：不存在的 Reminder 不应触碰系统 Alarm；方法：预查询返回空列表并检查未调用 cancel。
     @Test
     fun cancelMissingReminderReturnsNotFoundWithoutCancellingAlarm() {
         val fakeBridge = FakeNativeEventBridge(
@@ -144,6 +152,7 @@ class ReminderMethodChannelHandlerTest {
         assertEquals(emptyList<String>(), fakeBridge.cancelReminderIds)
     }
 
+    // 目的：系统闹钟取消失败时不得继续软删除；方法：Scheduler 返回失败并检查 C++ cancel 未调用。
     @Test
     fun cancelAlarmFailureDoesNotSoftDeleteInNative() {
         val fakeBridge = FakeNativeEventBridge()
@@ -161,6 +170,8 @@ class ReminderMethodChannelHandlerTest {
         assertEquals(emptyList<String>(), fakeBridge.cancelReminderIds)
     }
 
+    // 目的：闹钟已取消但 C++ 持久化失败时执行补偿，避免活跃 Reminder 永久失去调度。
+    // 方法：让 native cancel 失败，再检查 Scheduler 收到重新注册调用。
     @Test
     fun cancelNativePersistenceFailureReschedulesAsCompensation() {
         val nativeFailure = nativeResult(
@@ -180,6 +191,7 @@ class ReminderMethodChannelHandlerTest {
         assertEquals("cancel-storage-failed", result.successMap()["request_id"])
     }
 
+    // 目的：重复取消保持幂等结果；方法：连续调用两次并检查第二次仍稳定返回 cancelled。
     @Test
     fun repeatedCancelReturnsStableCancelledResult() {
         val alreadyCancelled = reminderResponse(
@@ -217,6 +229,7 @@ class ReminderMethodChannelHandlerTest {
         assertEquals("cancel-again", result.successMap()["request_id"])
     }
 
+    // 目的：未知 reminder 方法必须返回 notImplemented；方法：发送不存在的方法并检查结果探针。
     @Test
     fun unknownReminderMethodIsNotImplemented() {
         val result = invoke(handler(FakeNativeEventBridge(), FakeReminderScheduler()), "reminder.delete", cancelReminderArguments())
@@ -226,6 +239,7 @@ class ReminderMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 组装被测 Handler，并注入 Fake JNI Bridge 与 Fake Android Scheduler。
     private fun handler(
         fakeBridge: FakeNativeEventBridge,
         fakeScheduler: FakeReminderScheduler,
@@ -243,6 +257,7 @@ class ReminderMethodChannelHandlerTest {
         )
     }
 
+    // 模拟一次来自 Flutter 的 MethodCall，收集同步返回结果供断言。
     private fun invoke(
         handler: NativeMethodChannelHandler,
         method: String,
@@ -275,6 +290,7 @@ class ReminderMethodChannelHandlerTest {
         )
     }
 
+    // Android 调度器替身：可配置成功/失败，并记录 schedule、cancel 的参数与次数。
     private class FakeReminderScheduler(
         private val scheduleResult: ScheduleResult = ScheduleResult.Success,
         private val cancelResult: CancelResult = CancelResult.Success,
@@ -300,6 +316,7 @@ class ReminderMethodChannelHandlerTest {
         }
     }
 
+    // C++ JNI 边界替身：为不同状态 API 返回预设 JSON，同时记录发生过的回写。
     private class FakeNativeEventBridge(
         private val createReminderJson: String = NativeContractJsonCodec.encodeObject(
             nativeResult(ok = true, data = reminderResponse(status = "pending"), error = null, requestId = "create-reminder"),
@@ -395,6 +412,7 @@ class ReminderMethodChannelHandlerTest {
         }
     }
 
+    // MethodChannel 返回值探针，用于检查 success/error/notImplemented，而不启动 Flutter 引擎。
     private class RecordingResult : MethodChannel.Result {
         var successValue: Any? = null
             private set

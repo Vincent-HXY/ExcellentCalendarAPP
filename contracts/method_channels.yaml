@@ -82,6 +82,54 @@ methods:
       data: reminder/reminder_list_response.schema.json
     event_stream: false
 
+  reminder.schedule_pending:
+    module: reminder
+    request: reminder/schedule_pending_reminders_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/schedule_pending_reminders_response.schema.json
+    event_stream: false
+
+  notification.initialize:
+    module: notification
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_initialize_response.schema.json
+    event_stream: false
+
+  notification.permission_status:
+    module: notification
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_permission_status_response.schema.json
+    event_stream: false
+
+  notification.request_permission:
+    module: notification
+    request: notification/request_notification_permission_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/request_notification_permission_response.schema.json
+    event_stream: false
+
+  notification.open_settings:
+    module: notification
+    request: notification/open_notification_settings_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: common/operation_response.schema.json
+    event_stream: false
+
+  notification.get_initial_tap_payload:
+    module: notification
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_tap_payload_response.schema.json
+    event_stream: false
+
   notification.list:
     module: notification
     request: common/pagination_request.schema.json
@@ -156,3 +204,8 @@ event_channels:
     module: notification
     channel: excellent_calendar/events/notification
     data: notification/notification_response.schema.json
+
+  notification.opened:
+    module: notification
+    channel: excellent_calendar/events/notification_opened
+    data: notification/notification_tap_payload.schema.json

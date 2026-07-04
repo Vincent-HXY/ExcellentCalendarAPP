@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/list_schedulable_reminders_request.schema.json",
+  "title": "ListSchedulableRemindersRequest",
+  "description": "Internal scheduler query. C++ returns enabled, non-deleted reminders in the time window with pending/failed status, plus scheduled status only when include_scheduled is true.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["from_at", "to_at", "supported_methods"],
+  "properties": {
+    "from_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "to_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500,
+      "default": 500
+    },
+    "include_failed": {
+      "type": "boolean",
+      "default": true
+    },
+    "include_scheduled": {
+      "type": "boolean",
+      "default": false
+    },
+    "supported_methods": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "const": "popup"
+      }
+    }
+  }
+}

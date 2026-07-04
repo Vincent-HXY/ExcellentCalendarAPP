@@ -26,6 +26,7 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
+  // 目的：锁定完成单次 Event 的请求协议；方法：序列化 DTO 并确认没有旧的 occurrence 字段。
   test('complete DTO follows the single-event contract', () {
     final json = CompleteEventRequestDto(
       eventId: 'event-1',
@@ -42,6 +43,7 @@ void main() {
     expect(json, isNot(contains('occurrence_start_at')));
   });
 
+  // 目的：验证 Dart Adapter 的方法名、参数和响应解析；方法：Mock MethodChannel 并检查捕获调用。
   test('event adapter calls event.complete and parses EventResponse', () async {
     MethodCall? captured;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -65,6 +67,7 @@ void main() {
     expect(invocation.result.data!.status, 'completed');
   });
 
+  // 目的：验证完成操作的乐观 UI 与动画移除流程；方法：注入 Fake Gateway 并观察 Controller 状态。
   test(
     'controller completes locally then finalizes animated removal',
     () async {
@@ -98,6 +101,7 @@ void main() {
     },
   );
 
+  // 目的：验证已完成筛选条件能通过本地校验并正确序列化。
   test('search DTO validates and serializes completed status', () {
     const request = SearchEventRequestDto(
       status: ['completed'],
@@ -109,6 +113,7 @@ void main() {
     expect(request.toJson()['include_deleted'], isFalse);
   });
 
+  // 目的：保护尚未支持的重复日程完成逻辑；方法：传入 recurring task 并确认 Gateway 未被调用。
   test('controller does not complete recurring events', () async {
     final gateway = _FakeEventGateway();
     final controller = InboxController(
@@ -130,6 +135,7 @@ void main() {
     controller.dispose();
   });
 
+  // 目的：验证初始化会同时恢复进行中和已完成列表；方法：Fake 返回两组分页数据并检查请求参数。
   test('initialize eagerly loads active and completed events', () async {
     final gateway = _FakeEventGateway(completedItemCount: 7, completedTotal: 7);
     final controller = InboxController(
@@ -156,6 +162,7 @@ void main() {
     controller.dispose();
   });
 
+  // 目的：验证重建 Controller 后已完成数量仍来自后端分页总数，而非当前已加载条数。
   test('a new controller restores completed count before expansion', () async {
     for (var restart = 0; restart < 2; restart++) {
       final gateway = _FakeEventGateway(
@@ -180,6 +187,7 @@ void main() {
     }
   });
 
+  // 目的：验证首次加载失败可被用户展开操作重试；方法：Fake 先失败后成功并观察占位状态。
   test('completed failure shows placeholder and expansion retries', () async {
     final gateway = _FakeEventGateway(
       completedItemCount: 7,
@@ -201,6 +209,7 @@ void main() {
     controller.dispose();
   });
 
+  // 目的：验证计数使用 pagination.total；方法：只返回一页项目但提供更大的 total。
   test('completed count uses pagination total beyond loaded page', () async {
     final gateway = _FakeEventGateway(
       completedItemCount: 20,
@@ -220,6 +229,8 @@ void main() {
   });
 }
 
+// Controller 测试的 Event Gateway 替身：按测试配置返回结果，并记录调用参数与次数。
+// 这样能只测试 Dart Application 状态机，不依赖 MethodChannel 或 Android 环境。
 class _FakeEventGateway implements EventNativeGateway {
   _FakeEventGateway({
     this.completedItemCount = 1,
@@ -275,6 +286,7 @@ class _FakeEventGateway implements EventNativeGateway {
   }
 }
 
+// 构造单个 Event 的成功 NativeInvocation，供完成/重开场景复用。
 NativeInvocation<EventResponseDto> _eventInvocation({required String status}) {
   final rawResponse = <String, dynamic>{
     'ok': true,
@@ -293,6 +305,7 @@ NativeInvocation<EventResponseDto> _eventInvocation({required String status}) {
   );
 }
 
+// 构造带 pagination 的列表响应，可分别控制实际项目数和服务端 total。
 NativeInvocation<EventListResponseDto> _eventListInvocation({
   required String status,
   int itemCount = 1,
@@ -327,6 +340,7 @@ NativeInvocation<EventListResponseDto> _eventListInvocation({
   );
 }
 
+// 构造一次稳定的列表业务失败，用于验证 Controller 的错误与重试状态。
 NativeInvocation<EventListResponseDto> _eventListFailureInvocation() {
   final rawResponse = <String, dynamic>{
     'ok': false,
@@ -350,6 +364,7 @@ NativeInvocation<EventListResponseDto> _eventListFailureInvocation() {
   );
 }
 
+// 生成符合 EventResponse Contract 的最小 JSON 样本，减少测试里的重复字段。
 Map<String, dynamic> _eventJson({
   required String status,
   String id = 'event-1',

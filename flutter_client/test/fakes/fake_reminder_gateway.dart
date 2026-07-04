@@ -13,6 +13,8 @@ typedef CancelReminderHandler =
       CancelReminderRequestDto request,
     );
 
+// Reminder Application 单元测试使用的可编程替身。
+// 测试通过预设返回值、记录最后请求和调用次数，既隔离 MethodChannel，又能验证交互行为。
 class FakeReminderGateway implements ReminderNativeGateway {
   FakeReminderGateway({required this.onCreate, required this.onCancel});
 

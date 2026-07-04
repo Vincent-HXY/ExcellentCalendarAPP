@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/common/operation_response.schema.json",
+  "title": "OperationResponse",
+  "description": "Business result for a successfully handled call that does not return a domain object.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["performed"],
+  "properties": {
+    "performed": {
+      "type": "boolean",
+      "description": "Whether the requested operation was actually performed."
+    },
+    "message": {
+      "type": ["string", "null"],
+      "description": "Optional human-readable operation note for debugging or UI fallback."
+    }
+  },
+  "additionalProperties": false
+}

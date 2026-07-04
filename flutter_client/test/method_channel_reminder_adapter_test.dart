@@ -16,6 +16,7 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
+  // 目的：确认 Adapter 使用正式方法名和 Contract 字段；方法：拦截 MethodChannel 并检查 MethodCall。
   test('adapter invokes reminder.create with contract payload', () async {
     MethodCall? captured;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -41,6 +42,7 @@ void main() {
     expect(invocation.result.ok, isTrue);
   });
 
+  // 目的：防止取消提醒的方法名漂移；方法：记录调用并精确比较 method 与 arguments。
   test('adapter invokes reminder.cancel instead of delete aliases', () async {
     MethodCall? captured;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -68,6 +70,7 @@ void main() {
     });
   });
 
+  // 目的：确认非 NativeResult 的平台返回不会被误判为成功；方法：返回坏数据并检查标准内部错误。
   test(
     'adapter converts PlatformException into transport invocation',
     () async {

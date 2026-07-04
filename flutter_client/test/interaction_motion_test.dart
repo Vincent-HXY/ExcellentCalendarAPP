@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // 目的：验证分段控件能切换创建模式；方法：pump 组件、模拟点击并检查回调值和选中状态。
   testWidgets('segmented control switches between modes', (tester) async {
     var selectedMode = CreateScheduleMode.manual;
 
@@ -41,6 +42,7 @@ void main() {
     expect(selectedMode, CreateScheduleMode.manual);
   });
 
+  // 目的：验证任务组标题可控制展开/折叠；方法：点击 header 后检查子任务是否存在。
   testWidgets('task group card expands and collapses from the header', (
     tester,
   ) async {
@@ -83,6 +85,7 @@ void main() {
     expect(find.text('Visible task'), findsOneWidget);
   });
 
+  // 目的：验证完成动画必须等待原生成功，并分阶段移除；方法：手动完成 Future，逐帧检查回调。
   testWidgets(
     'task completion waits for native success then removes in phases',
     (tester) async {
@@ -133,6 +136,7 @@ void main() {
     },
   );
 
+  // 目的：避免已完成项目被误当作可点击的“重新打开”按钮；方法：检查图标存在但无操作语义。
   testWidgets('completed task check has no reopen action', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
@@ -154,6 +158,7 @@ void main() {
     expect(find.bySemanticsLabel('完成日程'), findsNothing);
   });
 
+  // 目的：验证已完成数量加载中的占位和加载后的总数；方法：重建不同状态的组件并查找文本。
   testWidgets('collapsed completed group shows loading then loaded total', (
     tester,
   ) async {
@@ -181,6 +186,7 @@ void main() {
     expect(find.text('7'), findsOneWidget);
   });
 
+  // 目的：确保按下按钮时不提前执行，完整点击结束后才触发；方法：分别发送 down/up 手势并计数。
   testWidgets('add button waits for tap up before running callback', (
     tester,
   ) async {
@@ -211,6 +217,7 @@ void main() {
     expect(openCount, 1);
   });
 
+  // 目的：验证取消手势不会误触创建操作；方法：发送 tapCancel 并检查回调次数为零。
   testWidgets('add button tap cancel restores without running callback', (
     tester,
   ) async {

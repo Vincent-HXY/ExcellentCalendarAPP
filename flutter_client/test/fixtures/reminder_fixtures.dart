@@ -1,8 +1,11 @@
+// 测试 fixture 集中提供稳定的请求和响应样本，避免每个用例重复拼装大段 Map。
+// 修改 Contract 字段时，这些样本也能集中暴露需要同步更新的位置。
 import 'package:excellent_calendar/native_contract/common/native_result_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/reminder_mapper.dart';
 import 'package:excellent_calendar/native_contract/reminder/reminder_response_dto.dart';
 import 'package:excellent_calendar/native_contract/shared/native_invocation.dart';
 
+// 构造 ReminderResponse 的线格式 Map，可通过参数覆盖当前场景关心的字段。
 Map<String, dynamic> reminderResponseJson({
   String id = 'reminder-1',
   String status = 'scheduled',
@@ -29,6 +32,7 @@ Map<String, dynamic> reminderResponseJson({
   };
 }
 
+// 构造“通道正常且业务成功”的调用结果。
 NativeInvocation<ReminderResponseDto> reminderSuccessInvocation({
   String status = 'scheduled',
   bool isEnabled = true,
@@ -58,6 +62,7 @@ NativeInvocation<ReminderResponseDto> reminderSuccessInvocation({
   );
 }
 
+// 构造“通道正常但业务失败”的 NativeResult，用于区分业务错误与传输错误。
 NativeInvocation<ReminderResponseDto> reminderFailureInvocation({
   required String code,
   String message = 'Reminder operation failed.',
@@ -88,6 +93,7 @@ NativeInvocation<ReminderResponseDto> reminderFailureInvocation({
   );
 }
 
+// 构造“没有收到合法 NativeResult”的传输失败。
 NativeInvocation<ReminderResponseDto> reminderTransportFailureInvocation() {
   return NativeInvocation<ReminderResponseDto>(
     rawResponse: const {

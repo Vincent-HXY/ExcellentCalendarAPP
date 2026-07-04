@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/notification/notification_initialize_response.schema.json",
+  "title": "NotificationInitializeResponse",
+  "description": "Result of preparing Android notification channels and tap handling. Initialization must be idempotent and must not request permissions or schedule reminders.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "initialized",
+    "notification_channel_ready",
+    "default_channel_id",
+    "sdk_int"
+  ],
+  "properties": {
+    "initialized": {
+      "type": "boolean",
+      "const": true
+    },
+    "notification_channel_ready": {
+      "type": "boolean",
+      "const": true,
+      "description": "Whether the default channel exists and is ready, regardless of whether this call created it."
+    },
+    "default_channel_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sdk_int": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "message": {
+      "type": ["string", "null"]
+    }
+  }
+}

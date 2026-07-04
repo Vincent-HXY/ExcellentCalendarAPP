@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/schedulable_reminder_list_response.schema.json",
+  "title": "SchedulableReminderListResponse",
+  "description": "Bounded result for Android alarm registration. has_more prevents a truncated batch from being mistaken for a complete scan.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "selected_count", "has_more", "unsupported_reminder_ids"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "$ref": "./reminder_response.schema.json"
+      }
+    },
+    "selected_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 500
+    },
+    "has_more": {
+      "type": "boolean"
+    },
+    "unsupported_reminder_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Eligible reminder IDs excluded because none of their methods are supported by the caller."
+    }
+  }
+}
