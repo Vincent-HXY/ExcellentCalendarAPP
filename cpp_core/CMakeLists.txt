@@ -8,26 +8,36 @@ add_library(
     src/application/event_service.cpp
     src/application/create_event_workflow_service.cpp
     src/application/reminder_service.cpp
+    src/application/notification_service.cpp
     src/boundary/api/event_api.cpp
     src/boundary/api/native_runtime.cpp
+    src/boundary/api/notification_api.cpp
     src/boundary/api/reminder_api.cpp
+    src/boundary/contract/consume_reminder_after_delivery_response.cpp
     src/boundary/contract/event_list_response.cpp
     src/boundary/contract/event_response.cpp
     src/boundary/contract/native_result.cpp
+    src/boundary/contract/notification_response.cpp
     src/boundary/contract/reminder_list_response.cpp
     src/boundary/contract/reminder_response.cpp
+    src/boundary/contract/schedulable_reminder_list_response.cpp
     src/common/clock.cpp
     src/common/datetime.cpp
+    src/common/failure_reason.cpp
     src/common/id_generator.cpp
     src/common/string_utils.cpp
     src/domain/data_source.cpp
     src/domain/event_status.cpp
     src/domain/importance.cpp
+    src/domain/notification.cpp
     src/domain/reminder.cpp
     src/storage/json/atomic_json_file_store.cpp
     src/storage/json/json_event_repository.cpp
     src/storage/json/json_event_reminder_transaction.cpp
+    src/storage/json/json_notification_repository.cpp
     src/storage/json/json_reminder_repository.cpp
+    src/storage/json/json_reminder_notification_transaction.cpp
+    src/storage/json/json_snapshot_transaction.cpp
 )
 
 target_compile_features(excellent_calendar_core PUBLIC cxx_std_17)

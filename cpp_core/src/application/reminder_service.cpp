@@ -1,11 +1,10 @@
 #include "excellent_calendar/application/reminder_service.hpp"
 
 #include <algorithm>
-#include <cctype>
 #include <set>
-#include <sstream>
 
 #include "excellent_calendar/common/datetime.hpp"
+#include "excellent_calendar/common/failure_reason.hpp"
 #include "excellent_calendar/common/string_utils.hpp"
 
 namespace excellent_calendar::application {
@@ -36,6 +35,13 @@ common::Error reminder_not_found(std::string id) {
   return common::make_error(
       "REMINDER_NOT_FOUND",
       "Reminder not found",
+      {{"id", std::move(id)}});
+}
+
+common::Error reminder_already_consumed(std::string id) {
+  return common::make_error(
+      "REMINDER_ALREADY_CONSUMED",
+      "Reminder has already been consumed",
       {{"id", std::move(id)}});
 }
 
@@ -129,46 +135,6 @@ bool is_cancelable_status(const std::string& status) {
   return status == std::string(domain::kReminderStatusPending) ||
          status == std::string(domain::kReminderStatusScheduled) ||
          status == std::string(domain::kReminderStatusFailed);
-}
-
-std::string sanitize_failure_reason(const std::string& reason) {
-  std::string first_line;
-  first_line.reserve(reason.size());
-  for (const char ch : reason) {
-    if (ch == '\r' || ch == '\n') {
-      break;
-    }
-    if (std::iscntrl(static_cast<unsigned char>(ch))) {
-      first_line.push_back(' ');
-    } else {
-      first_line.push_back(ch);
-    }
-  }
-
-  std::istringstream input(first_line);
-  std::ostringstream output;
-  bool first = true;
-  std::string token;
-  while (input >> token) {
-    if (token.find('/') != std::string::npos || token.find('\\') != std::string::npos) {
-      token = "[path]";
-    }
-    if (!first) {
-      output << ' ';
-    }
-    output << token;
-    first = false;
-  }
-
-  auto cleaned = common::trim_ascii(output.str());
-  if (cleaned.empty()) {
-    cleaned = "Alarm scheduling failed";
-  }
-  static constexpr std::size_t kMaxReasonLength = 200;
-  if (cleaned.size() > kMaxReasonLength) {
-    cleaned.resize(kMaxReasonLength);
-  }
-  return cleaned;
 }
 
 }  // namespace
@@ -316,6 +282,104 @@ common::Result<domain::Reminder> ReminderService::cancel_reminder(const CancelRe
   return reminder_repository_->update(reminder);
 }
 
+common::Result<domain::Reminder> ReminderService::get_reminder(const GetReminderCommand& command) {
+  if (common::trim_ascii(command.id).empty()) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("id", "GetReminderRequest.id must be non-empty."));
+  }
+  auto found = reminder_repository_->find_by_id(command.id);
+  if (!found.ok()) {
+    return common::Result<domain::Reminder>::failure(found.error());
+  }
+  if (!found.value().has_value()) {
+    return common::Result<domain::Reminder>::failure(reminder_not_found(command.id));
+  }
+  return common::Result<domain::Reminder>::success(*found.value());
+}
+
+common::Result<SchedulableReminderListResult> ReminderService::list_schedulable_reminders(
+    const ListSchedulableRemindersCommand& command) {
+  const auto from_time = common::parse_iso8601_utc_epoch_seconds(command.from_at);
+  const auto to_time = common::parse_iso8601_utc_epoch_seconds(command.to_at);
+  if (!from_time.has_value()) {
+    return common::Result<SchedulableReminderListResult>::failure(reminder_time_invalid("from_at"));
+  }
+  if (!to_time.has_value() || *from_time > *to_time) {
+    return common::Result<SchedulableReminderListResult>::failure(reminder_time_invalid("to_at"));
+  }
+  if (command.limit < 1 || command.limit > 500) {
+    return common::Result<SchedulableReminderListResult>::failure(
+        contract_validation_failed("limit", "ListSchedulableRemindersRequest.limit must be between 1 and 500."));
+  }
+  if (command.supported_methods.empty()) {
+    return common::Result<SchedulableReminderListResult>::failure(
+        contract_validation_failed("supported_methods", "At least one supported method is required."));
+  }
+  std::set<std::string> supported_method_set;
+  for (const auto& method : command.supported_methods) {
+    if (method != std::string(domain::kReminderMethodPopup)) {
+      return common::Result<SchedulableReminderListResult>::failure(
+          common::make_error(
+              "UNSUPPORTED_REMINDER_METHOD",
+              "Reminder method is not supported in current version",
+              {{"method", method}}));
+    }
+    if (!supported_method_set.insert(method).second) {
+      return common::Result<SchedulableReminderListResult>::failure(
+          contract_validation_failed("supported_methods", "supported_methods must contain unique values."));
+    }
+  }
+
+  auto loaded = reminder_repository_->find_all();
+  if (!loaded.ok()) {
+    return common::Result<SchedulableReminderListResult>::failure(loaded.error());
+  }
+
+  std::vector<domain::Reminder> candidates;
+  SchedulableReminderListResult result;
+  for (const auto& reminder : loaded.value()) {
+    if (!reminder.is_enabled || reminder.deleted_at.has_value()) {
+      continue;
+    }
+    const bool eligible_status =
+        reminder.status == std::string(domain::kReminderStatusPending) ||
+        (command.include_failed && reminder.status == std::string(domain::kReminderStatusFailed)) ||
+        (command.include_scheduled && reminder.status == std::string(domain::kReminderStatusScheduled));
+    if (!eligible_status) {
+      continue;
+    }
+    const auto remind_time = common::parse_iso8601_utc_epoch_seconds(reminder.remind_at);
+    if (!remind_time.has_value()) {
+      return common::Result<SchedulableReminderListResult>::failure(
+          storage_corrupted("remind_at", "stored reminder remind_at is invalid"));
+    }
+    if (*remind_time < *from_time || *remind_time > *to_time) {
+      continue;
+    }
+    if (!reminder_has_any_method(reminder, command.supported_methods)) {
+      result.unsupported_reminder_ids.push_back(reminder.id);
+      continue;
+    }
+    candidates.push_back(reminder);
+  }
+
+  std::stable_sort(candidates.begin(), candidates.end(), [](const domain::Reminder& left,
+                                                            const domain::Reminder& right) {
+    const auto left_time = common::parse_iso8601_utc_epoch_seconds(left.remind_at).value();
+    const auto right_time = common::parse_iso8601_utc_epoch_seconds(right.remind_at).value();
+    if (left_time == right_time) {
+      return left.id < right.id;
+    }
+    return left_time < right_time;
+  });
+  result.has_more = candidates.size() > static_cast<std::size_t>(command.limit);
+  if (result.has_more) {
+    candidates.resize(static_cast<std::size_t>(command.limit));
+  }
+  result.items = std::move(candidates);
+  return common::Result<SchedulableReminderListResult>::success(std::move(result));
+}
+
 common::Result<domain::Reminder> ReminderService::mark_scheduled(const MarkReminderScheduledCommand& command) {
   if (common::trim_ascii(command.id).empty()) {
     return common::Result<domain::Reminder>::failure(
@@ -335,6 +399,16 @@ common::Result<domain::Reminder> ReminderService::mark_scheduled(const MarkRemin
   if (!found.value()->is_enabled) {
     return common::Result<domain::Reminder>::failure(
         contract_validation_failed("is_enabled", "Disabled reminders cannot be scheduled."));
+  }
+
+  if (found.value()->status == std::string(domain::kReminderStatusSent)) {
+    return common::Result<domain::Reminder>::failure(reminder_already_consumed(command.id));
+  }
+  if (found.value()->status != std::string(domain::kReminderStatusPending) &&
+      found.value()->status != std::string(domain::kReminderStatusFailed) &&
+      found.value()->status != std::string(domain::kReminderStatusScheduled)) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("status", "Reminder cannot transition to scheduled from its current status."));
   }
 
   auto reminder = *found.value();
@@ -364,6 +438,16 @@ common::Result<domain::Reminder> ReminderService::mark_sent(const MarkReminderSe
   if (!found.value()->is_enabled) {
     return common::Result<domain::Reminder>::failure(
         contract_validation_failed("is_enabled", "Disabled reminders cannot be marked sent."));
+  }
+
+  if (found.value()->status == std::string(domain::kReminderStatusSent)) {
+    return common::Result<domain::Reminder>::success(*found.value());
+  }
+  if (found.value()->status != std::string(domain::kReminderStatusPending) &&
+      found.value()->status != std::string(domain::kReminderStatusFailed) &&
+      found.value()->status != std::string(domain::kReminderStatusScheduled)) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("status", "Reminder cannot transition to sent from its current status."));
   }
 
   auto reminder = *found.value();
@@ -396,9 +480,20 @@ common::Result<domain::Reminder> ReminderService::mark_failed(const MarkReminder
         contract_validation_failed("is_enabled", "Disabled reminders cannot be marked failed."));
   }
 
+  if (found.value()->status == std::string(domain::kReminderStatusSent)) {
+    return common::Result<domain::Reminder>::failure(reminder_already_consumed(command.id));
+  }
+  if (found.value()->status != std::string(domain::kReminderStatusPending) &&
+      found.value()->status != std::string(domain::kReminderStatusFailed) &&
+      found.value()->status != std::string(domain::kReminderStatusScheduled)) {
+    return common::Result<domain::Reminder>::failure(
+        contract_validation_failed("status", "Reminder cannot transition to failed from its current status."));
+  }
+
   auto reminder = *found.value();
   reminder.status = std::string(domain::kReminderStatusFailed);
-  reminder.failure_reason = sanitize_failure_reason(command.failure_reason);
+  reminder.failure_reason = common::sanitize_failure_reason(
+      command.failure_reason, "Alarm scheduling failed");
   reminder.updated_at = clock_();
   return reminder_repository_->update(reminder);
 }
@@ -415,6 +510,9 @@ common::Result<domain::Reminder> ReminderService::enable_reminder(const Reminder
   if (!found.value().has_value() || found.value()->deleted_at.has_value() ||
       found.value()->status == std::string(domain::kReminderStatusCancelled)) {
     return common::Result<domain::Reminder>::failure(reminder_not_found(command.id));
+  }
+  if (found.value()->status == std::string(domain::kReminderStatusSent)) {
+    return common::Result<domain::Reminder>::failure(reminder_already_consumed(command.id));
   }
 
   auto reminder = *found.value();
@@ -436,6 +534,9 @@ common::Result<domain::Reminder> ReminderService::disable_reminder(const Reminde
   if (!found.value().has_value() || found.value()->deleted_at.has_value() ||
       found.value()->status == std::string(domain::kReminderStatusCancelled)) {
     return common::Result<domain::Reminder>::failure(reminder_not_found(command.id));
+  }
+  if (found.value()->status == std::string(domain::kReminderStatusSent)) {
+    return common::Result<domain::Reminder>::failure(reminder_already_consumed(command.id));
   }
 
   auto reminder = *found.value();

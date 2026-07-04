@@ -205,3 +205,8 @@ errors:
     module: reminder
     message: "Reminder is not due yet"
     retryable: true
+
+  REMINDER_NOT_DELIVERABLE:
+    module: reminder
+    message: "Reminder is not deliverable"
+    retryable: false

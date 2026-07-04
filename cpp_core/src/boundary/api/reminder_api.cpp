@@ -12,9 +12,16 @@
 
 #include "excellent_calendar/application/reminder_service.hpp"
 #include "excellent_calendar/boundary/api/native_runtime.hpp"
+#include "excellent_calendar/boundary/contract/consume_reminder_after_delivery_request.hpp"
+#include "excellent_calendar/boundary/contract/consume_reminder_after_delivery_response.hpp"
+#include "excellent_calendar/boundary/contract/get_reminder_request.hpp"
+#include "excellent_calendar/boundary/contract/list_schedulable_reminders_request.hpp"
+#include "excellent_calendar/boundary/contract/mark_reminder_failed_request.hpp"
+#include "excellent_calendar/boundary/contract/mark_reminder_scheduled_request.hpp"
 #include "excellent_calendar/boundary/contract/native_result.hpp"
 #include "excellent_calendar/boundary/contract/reminder_list_response.hpp"
 #include "excellent_calendar/boundary/contract/reminder_response.hpp"
+#include "excellent_calendar/boundary/contract/schedulable_reminder_list_response.hpp"
 #include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/domain/reminder.hpp"
@@ -251,6 +258,156 @@ bool is_valid_sort_by(std::string_view value) {
 
 bool is_valid_sort_direction(std::string_view value) {
   return value == "asc" || value == "desc";
+}
+
+common::Result<std::vector<std::string>> require_popup_methods(
+    const picojson::object& object,
+    const std::string& parent) {
+  const auto* value = field(object, "supported_methods");
+  if (value == nullptr || !value->is<picojson::array>()) {
+    return common::Result<std::vector<std::string>>::failure(
+        contract_error(parent + ".supported_methods must be an array.", parent + ".supported_methods"));
+  }
+  const auto& array = value->get<picojson::array>();
+  if (array.empty()) {
+    return common::Result<std::vector<std::string>>::failure(
+        contract_error(parent + ".supported_methods must not be empty.", parent + ".supported_methods"));
+  }
+  std::set<std::string> seen;
+  std::vector<std::string> methods;
+  for (const auto& item : array) {
+    if (!item.is<std::string>() || item.get<std::string>() != "popup" ||
+        !seen.insert(item.get<std::string>()).second) {
+      return common::Result<std::vector<std::string>>::failure(
+          contract_error(parent + ".supported_methods only accepts unique popup.",
+                         parent + ".supported_methods"));
+    }
+    methods.push_back(item.get<std::string>());
+  }
+  return common::Result<std::vector<std::string>>::success(std::move(methods));
+}
+
+common::Result<contract::GetReminderRequest> parse_get_reminder_request(
+    std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) return common::Result<contract::GetReminderRequest>::failure(parsed.error());
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{"id"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<contract::GetReminderRequest>::failure(
+        contract_error("GetReminderRequest contains an unknown field.", "GetReminderRequest." + unknown));
+  }
+  auto id = require_string(object, "id", "GetReminderRequest", true);
+  if (!id.ok()) return common::Result<contract::GetReminderRequest>::failure(id.error());
+  return common::Result<contract::GetReminderRequest>::success({id.value()});
+}
+
+common::Result<contract::ListSchedulableRemindersRequest>
+parse_list_schedulable_reminders_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<contract::ListSchedulableRemindersRequest>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{
+      "from_at", "to_at", "limit", "include_failed", "include_scheduled", "supported_methods"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<contract::ListSchedulableRemindersRequest>::failure(
+        contract_error("ListSchedulableRemindersRequest contains an unknown field.",
+                       "ListSchedulableRemindersRequest." + unknown));
+  }
+  auto from_at = require_string(object, "from_at", "ListSchedulableRemindersRequest", true);
+  auto to_at = require_string(object, "to_at", "ListSchedulableRemindersRequest", true);
+  if (!from_at.ok()) return common::Result<contract::ListSchedulableRemindersRequest>::failure(from_at.error());
+  if (!to_at.ok()) return common::Result<contract::ListSchedulableRemindersRequest>::failure(to_at.error());
+  if (!common::is_iso8601_utc_datetime(from_at.value())) {
+    return common::Result<contract::ListSchedulableRemindersRequest>::failure(
+        reminder_time_invalid("ListSchedulableRemindersRequest.from_at"));
+  }
+  if (!common::is_iso8601_utc_datetime(to_at.value())) {
+    return common::Result<contract::ListSchedulableRemindersRequest>::failure(
+        reminder_time_invalid("ListSchedulableRemindersRequest.to_at"));
+  }
+  auto methods = require_popup_methods(object, "ListSchedulableRemindersRequest");
+  if (!methods.ok()) {
+    return common::Result<contract::ListSchedulableRemindersRequest>::failure(methods.error());
+  }
+  auto limit = optional_int(object, "limit", "ListSchedulableRemindersRequest");
+  auto include_failed = optional_bool(object, "include_failed", "ListSchedulableRemindersRequest");
+  auto include_scheduled = optional_bool(object, "include_scheduled", "ListSchedulableRemindersRequest");
+  if (!limit.ok()) return common::Result<contract::ListSchedulableRemindersRequest>::failure(limit.error());
+  if (!include_failed.ok()) return common::Result<contract::ListSchedulableRemindersRequest>::failure(include_failed.error());
+  if (!include_scheduled.ok()) return common::Result<contract::ListSchedulableRemindersRequest>::failure(include_scheduled.error());
+  if (limit.value().has_value() && (*limit.value() < 1 || *limit.value() > 500)) {
+    return common::Result<contract::ListSchedulableRemindersRequest>::failure(
+        contract_error("ListSchedulableRemindersRequest.limit is out of range.",
+                       "ListSchedulableRemindersRequest.limit"));
+  }
+  contract::ListSchedulableRemindersRequest request;
+  request.from_at = from_at.value();
+  request.to_at = to_at.value();
+  request.limit = limit.value().value_or(500);
+  request.include_failed = include_failed.value().value_or(true);
+  request.include_scheduled = include_scheduled.value().value_or(false);
+  request.supported_methods = methods.value();
+  return common::Result<contract::ListSchedulableRemindersRequest>::success(std::move(request));
+}
+
+common::Result<contract::ConsumeReminderAfterDeliveryRequest>
+parse_consume_reminder_after_delivery_request(std::string_view request_json) {
+  auto parsed = parse_json_object(request_json);
+  if (!parsed.ok()) {
+    return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(parsed.error());
+  }
+  const auto& object = parsed.value();
+  static const std::set<std::string> allowed{
+      "reminder_id", "method", "title", "body", "planned_at", "sent_at", "delete_after_sent"};
+  std::string unknown;
+  if (has_unknown_field(object, allowed, unknown)) {
+    return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(
+        contract_error("ConsumeReminderAfterDeliveryRequest contains an unknown field.",
+                       "ConsumeReminderAfterDeliveryRequest." + unknown));
+  }
+  auto reminder_id = require_string(object, "reminder_id", "ConsumeReminderAfterDeliveryRequest", true);
+  auto method = require_string(object, "method", "ConsumeReminderAfterDeliveryRequest", true);
+  auto title = require_string(object, "title", "ConsumeReminderAfterDeliveryRequest", true);
+  auto body = optional_string(object, "body", "ConsumeReminderAfterDeliveryRequest");
+  auto planned_at = require_string(object, "planned_at", "ConsumeReminderAfterDeliveryRequest", true);
+  auto sent_at = require_string(object, "sent_at", "ConsumeReminderAfterDeliveryRequest", true);
+  auto delete_after_sent = require_bool(object, "delete_after_sent", "ConsumeReminderAfterDeliveryRequest");
+  if (!reminder_id.ok()) return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(reminder_id.error());
+  if (!method.ok()) return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(method.error());
+  if (!title.ok()) return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(title.error());
+  if (!body.ok()) return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(body.error());
+  if (!planned_at.ok()) return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(planned_at.error());
+  if (!sent_at.ok()) return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(sent_at.error());
+  if (!delete_after_sent.ok()) return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(delete_after_sent.error());
+  if (method.value() != "popup") {
+    return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(
+        contract_error("ConsumeReminderAfterDeliveryRequest.method must be popup.",
+                       "ConsumeReminderAfterDeliveryRequest.method"));
+  }
+  if (!common::is_iso8601_utc_datetime(planned_at.value()) ||
+      !common::is_iso8601_utc_datetime(sent_at.value())) {
+    return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(
+        reminder_time_invalid("ConsumeReminderAfterDeliveryRequest.planned_at"));
+  }
+  if (!delete_after_sent.value()) {
+    return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::failure(
+        contract_error("ConsumeReminderAfterDeliveryRequest.delete_after_sent must be true.",
+                       "ConsumeReminderAfterDeliveryRequest.delete_after_sent"));
+  }
+  contract::ConsumeReminderAfterDeliveryRequest request;
+  request.reminder_id = reminder_id.value();
+  request.method = method.value();
+  request.title = title.value();
+  request.body = body.value();
+  request.planned_at = planned_at.value();
+  request.sent_at = sent_at.value();
+  request.delete_after_sent = delete_after_sent.value();
+  return common::Result<contract::ConsumeReminderAfterDeliveryRequest>::success(std::move(request));
 }
 
 common::Result<application::CreateReminderCommand> parse_create_reminder_request(std::string_view request_json) {
@@ -526,31 +683,29 @@ common::Result<common::Unit> parse_update_reminder_request(std::string_view requ
   return common::Result<common::Unit>::success(common::Unit{});
 }
 
-common::Result<application::MarkReminderScheduledCommand> parse_mark_reminder_scheduled_request(std::string_view request_json) {
+common::Result<contract::MarkReminderScheduledRequest> parse_mark_reminder_scheduled_request(std::string_view request_json) {
   auto parsed = parse_json_object(request_json);
   if (!parsed.ok()) {
-    return common::Result<application::MarkReminderScheduledCommand>::failure(parsed.error());
+    return common::Result<contract::MarkReminderScheduledRequest>::failure(parsed.error());
   }
   const auto& object = parsed.value();
   static const std::set<std::string> allowed{"id", "scheduled_at"};
   std::string unknown;
   if (has_unknown_field(object, allowed, unknown)) {
-    return common::Result<application::MarkReminderScheduledCommand>::failure(
+    return common::Result<contract::MarkReminderScheduledRequest>::failure(
         contract_error("MarkReminderScheduledRequest contains an unknown field.",
                        "MarkReminderScheduledRequest." + unknown));
   }
   auto id = require_string(object, "id", "MarkReminderScheduledRequest", true);
-  if (!id.ok()) return common::Result<application::MarkReminderScheduledCommand>::failure(id.error());
+  if (!id.ok()) return common::Result<contract::MarkReminderScheduledRequest>::failure(id.error());
   auto scheduled_at = require_string(object, "scheduled_at", "MarkReminderScheduledRequest", true);
-  if (!scheduled_at.ok()) return common::Result<application::MarkReminderScheduledCommand>::failure(scheduled_at.error());
+  if (!scheduled_at.ok()) return common::Result<contract::MarkReminderScheduledRequest>::failure(scheduled_at.error());
   if (!common::is_iso8601_utc_datetime(scheduled_at.value())) {
-    return common::Result<application::MarkReminderScheduledCommand>::failure(
+    return common::Result<contract::MarkReminderScheduledRequest>::failure(
         reminder_time_invalid("MarkReminderScheduledRequest.scheduled_at"));
   }
-  application::MarkReminderScheduledCommand command;
-  command.id = id.value();
-  command.scheduled_at = scheduled_at.value();
-  return common::Result<application::MarkReminderScheduledCommand>::success(std::move(command));
+  return common::Result<contract::MarkReminderScheduledRequest>::success(
+      {id.value(), scheduled_at.value()});
 }
 
 common::Result<application::MarkReminderSentCommand> parse_mark_reminder_sent_request(std::string_view request_json) {
@@ -579,26 +734,24 @@ common::Result<application::MarkReminderSentCommand> parse_mark_reminder_sent_re
   return common::Result<application::MarkReminderSentCommand>::success(std::move(command));
 }
 
-common::Result<application::MarkReminderFailedCommand> parse_mark_reminder_failed_request(std::string_view request_json) {
+common::Result<contract::MarkReminderFailedRequest> parse_mark_reminder_failed_request(std::string_view request_json) {
   auto parsed = parse_json_object(request_json);
   if (!parsed.ok()) {
-    return common::Result<application::MarkReminderFailedCommand>::failure(parsed.error());
+    return common::Result<contract::MarkReminderFailedRequest>::failure(parsed.error());
   }
   const auto& object = parsed.value();
   static const std::set<std::string> allowed{"id", "failure_reason"};
   std::string unknown;
   if (has_unknown_field(object, allowed, unknown)) {
-    return common::Result<application::MarkReminderFailedCommand>::failure(
+    return common::Result<contract::MarkReminderFailedRequest>::failure(
         contract_error("MarkReminderFailedRequest contains an unknown field.", "MarkReminderFailedRequest." + unknown));
   }
   auto id = require_string(object, "id", "MarkReminderFailedRequest", true);
-  if (!id.ok()) return common::Result<application::MarkReminderFailedCommand>::failure(id.error());
+  if (!id.ok()) return common::Result<contract::MarkReminderFailedRequest>::failure(id.error());
   auto failure_reason = require_string(object, "failure_reason", "MarkReminderFailedRequest", true);
-  if (!failure_reason.ok()) return common::Result<application::MarkReminderFailedCommand>::failure(failure_reason.error());
-  application::MarkReminderFailedCommand command;
-  command.id = id.value();
-  command.failure_reason = failure_reason.value();
-  return common::Result<application::MarkReminderFailedCommand>::success(std::move(command));
+  if (!failure_reason.ok()) return common::Result<contract::MarkReminderFailedRequest>::failure(failure_reason.error());
+  return common::Result<contract::MarkReminderFailedRequest>::success(
+      {id.value(), failure_reason.value()});
 }
 
 common::Result<application::ReminderIdCommand> parse_reminder_id_request(std::string_view request_json,
@@ -711,6 +864,52 @@ std::string list_reminders(std::string_view request_json) {
   }
 }
 
+std::string get_reminder(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_get_reminder_request(request_json);
+    if (!parsed.ok()) return failure_response(parsed.error(), request_id);
+    const auto service = current_reminder_service();
+    if (!service) return failure_response(storage_not_initialized_error("reminder.get"), request_id);
+    auto reminder = service->get_reminder({parsed.value().id});
+    if (!reminder.ok()) return failure_response(reminder.error(), request_id);
+    return contract::native_success_json(
+        contract::reminder_response_to_json(reminder.value()), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
+std::string list_schedulable_reminders(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_list_schedulable_reminders_request(request_json);
+    if (!parsed.ok()) return failure_response(parsed.error(), request_id);
+    const auto service = current_reminder_service();
+    if (!service) {
+      return failure_response(storage_not_initialized_error("reminder.list_schedulable"), request_id);
+    }
+    application::ListSchedulableRemindersCommand command;
+    command.from_at = parsed.value().from_at;
+    command.to_at = parsed.value().to_at;
+    command.limit = parsed.value().limit;
+    command.include_failed = parsed.value().include_failed;
+    command.include_scheduled = parsed.value().include_scheduled;
+    command.supported_methods = parsed.value().supported_methods;
+    auto listed = service->list_schedulable_reminders(command);
+    if (!listed.ok()) return failure_response(listed.error(), request_id);
+    const auto response = contract::make_schedulable_reminder_list_response(listed.value());
+    return contract::native_success_json(
+        contract::schedulable_reminder_list_response_to_json(response), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
 std::string mark_reminder_scheduled(std::string_view request_json) {
   const auto request_id = common::generate_uuid_v4();
   try {
@@ -722,7 +921,8 @@ std::string mark_reminder_scheduled(std::string_view request_json) {
     if (!service) {
       return failure_response(storage_not_initialized_error("reminder"), request_id);
     }
-    auto updated = service->mark_scheduled(parsed.value());
+    auto updated = service->mark_scheduled(
+        {parsed.value().id, parsed.value().scheduled_at});
     if (!updated.ok()) {
       return failure_response(updated.error(), request_id);
     }
@@ -768,7 +968,8 @@ std::string mark_reminder_failed(std::string_view request_json) {
     if (!service) {
       return failure_response(storage_not_initialized_error("reminder"), request_id);
     }
-    auto updated = service->mark_failed(parsed.value());
+    auto updated = service->mark_failed(
+        {parsed.value().id, parsed.value().failure_reason});
     if (!updated.ok()) {
       return failure_response(updated.error(), request_id);
     }
@@ -819,6 +1020,35 @@ std::string disable_reminder(std::string_view request_json) {
       return failure_response(updated.error(), request_id);
     }
     return contract::native_success_json(contract::reminder_response_to_json(updated.value()), request_id);
+  } catch (const std::exception& error) {
+    return failure_response(internal_error(error.what()), request_id);
+  } catch (...) {
+    return failure_response(internal_error("unknown exception"), request_id);
+  }
+}
+
+std::string consume_reminder_after_delivery(std::string_view request_json) {
+  const auto request_id = common::generate_uuid_v4();
+  try {
+    auto parsed = parse_consume_reminder_after_delivery_request(request_json);
+    if (!parsed.ok()) return failure_response(parsed.error(), request_id);
+    const auto service = current_notification_service();
+    if (!service) {
+      return failure_response(storage_not_initialized_error("reminder.consume_after_delivery"), request_id);
+    }
+    application::ConsumeReminderAfterDeliveryCommand command;
+    command.reminder_id = parsed.value().reminder_id;
+    command.method = parsed.value().method;
+    command.title = parsed.value().title;
+    command.body = parsed.value().body;
+    command.planned_at = parsed.value().planned_at;
+    command.sent_at = parsed.value().sent_at;
+    command.delete_after_sent = parsed.value().delete_after_sent;
+    auto consumed = service->consume_after_delivery(command);
+    if (!consumed.ok()) return failure_response(consumed.error(), request_id);
+    const auto response = contract::make_consume_reminder_after_delivery_response(consumed.value());
+    return contract::native_success_json(
+        contract::consume_reminder_after_delivery_response_to_json(response), request_id);
   } catch (const std::exception& error) {
     return failure_response(internal_error(error.what()), request_id);
   } catch (...) {

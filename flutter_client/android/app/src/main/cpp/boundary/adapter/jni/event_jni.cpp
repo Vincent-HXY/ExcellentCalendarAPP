@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "excellent_calendar/boundary/api/event_api.hpp"
+#include "excellent_calendar/boundary/api/notification_api.hpp"
 #include "excellent_calendar/boundary/api/reminder_api.hpp"
 #include "excellent_calendar/boundary/contract/native_result.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
@@ -157,6 +158,23 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeGetReminder(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::get_reminder);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeListSchedulableReminders(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(
+      env, request_json, excellent_calendar::boundary::api::list_schedulable_reminders);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
 Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeMarkReminderScheduled(
     JNIEnv* env,
     jobject /* this */,
@@ -194,4 +212,21 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
     jobject /* this */,
     jstring request_json) {
   return call_boundary(env, request_json, excellent_calendar::boundary::api::disable_reminder);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeCreateNotification(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(env, request_json, excellent_calendar::boundary::api::create_notification);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeConsumeReminderAfterDelivery(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_boundary(
+      env, request_json, excellent_calendar::boundary::api::consume_reminder_after_delivery);
 }

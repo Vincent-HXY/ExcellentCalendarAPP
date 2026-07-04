@@ -48,6 +48,25 @@ struct ReminderIdCommand {
   std::string id;
 };
 
+struct GetReminderCommand {
+  std::string id;
+};
+
+struct ListSchedulableRemindersCommand {
+  std::string from_at;
+  std::string to_at;
+  int limit = 500;
+  bool include_failed = true;
+  bool include_scheduled = false;
+  std::vector<std::string> supported_methods;
+};
+
+struct SchedulableReminderListResult {
+  std::vector<domain::Reminder> items;
+  bool has_more = false;
+  std::vector<std::string> unsupported_reminder_ids;
+};
+
 struct ReminderPaginationRequest {
   int page = 1;
   int page_size = 20;
@@ -92,6 +111,11 @@ class ReminderService {
       IdGeneratorFn id_generator);
 
   common::Result<domain::Reminder> create_reminder(const CreateReminderCommand& command);
+
+  common::Result<domain::Reminder> get_reminder(const GetReminderCommand& command);
+
+  common::Result<SchedulableReminderListResult> list_schedulable_reminders(
+      const ListSchedulableRemindersCommand& command);
 
   common::Result<domain::Reminder> cancel_reminder(const CancelReminderCommand& command);
 

@@ -19,7 +19,27 @@ picojson::value optional_int_to_json(const std::optional<int>& value) {
 
 }  // namespace
 
-picojson::value reminder_response_to_json(const domain::Reminder& reminder) {
+ReminderResponse make_reminder_response(const domain::Reminder& reminder) {
+  ReminderResponse response;
+  response.id = reminder.id;
+  response.target_type = reminder.target_type;
+  response.target_id = reminder.target_id;
+  response.remind_at = reminder.remind_at;
+  response.methods = reminder.methods;
+  response.advance_minutes = reminder.advance_minutes;
+  response.message = reminder.message;
+  response.is_enabled = reminder.is_enabled;
+  response.status = reminder.status;
+  response.scheduled_at = reminder.scheduled_at;
+  response.last_triggered_at = reminder.last_triggered_at;
+  response.failure_reason = reminder.failure_reason;
+  response.created_at = reminder.created_at;
+  response.updated_at = reminder.updated_at;
+  response.deleted_at = reminder.deleted_at;
+  return response;
+}
+
+picojson::value reminder_response_to_json(const ReminderResponse& reminder) {
   picojson::array methods;
   methods.reserve(reminder.methods.size());
   for (const auto& method : reminder.methods) {
@@ -43,6 +63,10 @@ picojson::value reminder_response_to_json(const domain::Reminder& reminder) {
   object["updated_at"] = picojson::value(reminder.updated_at);
   object["deleted_at"] = optional_string_to_json(reminder.deleted_at);
   return picojson::value(std::move(object));
+}
+
+picojson::value reminder_response_to_json(const domain::Reminder& reminder) {
+  return reminder_response_to_json(make_reminder_response(reminder));
 }
 
 }  // namespace excellent_calendar::boundary::contract
