@@ -11,6 +11,7 @@ import 'package:excellent_calendar/native_contract/event/event_occurrence_state_
 import 'package:excellent_calendar/native_contract/event/event_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/reopen_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/search_event_request_dto.dart';
+import 'package:excellent_calendar/native_contract/event/update_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/shared/native_invocation.dart';
 import 'package:excellent_calendar/presentation/inbox/inbox_controller.dart';
 import 'package:excellent_calendar/presentation/inbox/models/inbox_task_view_data.dart';
@@ -232,6 +233,11 @@ void main() {
 // Controller 测试的 Event Gateway 替身：按测试配置返回结果，并记录调用参数与次数。
 // 这样能只测试 Dart Application 状态机，不依赖 MethodChannel 或 Android 环境。
 class _FakeEventGateway implements EventNativeGateway {
+  @override
+  Future<NativeInvocation<EventResponseDto>> updateEvent(
+    UpdateEventRequestDto request,
+  ) => throw UnimplementedError();
+
   _FakeEventGateway({
     this.completedItemCount = 1,
     this.completedTotal = 1,

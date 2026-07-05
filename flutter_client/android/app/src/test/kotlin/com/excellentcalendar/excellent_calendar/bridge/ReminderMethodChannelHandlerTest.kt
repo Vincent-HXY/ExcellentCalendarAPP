@@ -352,6 +352,10 @@ class ReminderMethodChannelHandlerTest {
 
         override fun listReminders(requestJson: String): String = listRemindersJson
 
+        override fun getReminder(requestJson: String): String = unsupported()
+
+        override fun listSchedulableReminders(requestJson: String): String = unsupported()
+
         override fun markReminderScheduled(requestJson: String): String {
             val request = NativeContractJsonCodec.decodeObject(requestJson)
             markScheduledIds.add(request["id"] as String)
@@ -399,6 +403,10 @@ class ReminderMethodChannelHandlerTest {
         override fun enableReminder(requestJson: String): String = unsupported()
 
         override fun disableReminder(requestJson: String): String = unsupported()
+
+        override fun createNotification(requestJson: String): String = unsupported()
+
+        override fun consumeReminderAfterDelivery(requestJson: String): String = unsupported()
 
         private fun unsupported(): String {
             return NativeContractJsonCodec.encodeObject(

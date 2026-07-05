@@ -169,6 +169,18 @@ class JniNativeEventBridge(
         }
     }
 
+    override fun getReminder(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return callNative("nativeGetReminder") { nativeGetReminder(requestJson) }
+    }
+
+    override fun listSchedulableReminders(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return callNative("nativeListSchedulableReminders") { nativeListSchedulableReminders(requestJson) }
+    }
+
     override fun markReminderScheduled(requestJson: String): String {
         ensureLibraryLoaded()
         ensureStorageInitialized()?.let { return it }
@@ -219,6 +231,20 @@ class JniNativeEventBridge(
         }
     }
 
+    override fun createNotification(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return callNative("nativeCreateNotification") { nativeCreateNotification(requestJson) }
+    }
+
+    override fun consumeReminderAfterDelivery(requestJson: String): String {
+        ensureLibraryLoaded()
+        ensureStorageInitialized()?.let { return it }
+        return callNative("nativeConsumeReminderAfterDelivery") {
+            nativeConsumeReminderAfterDelivery(requestJson)
+        }
+    }
+
     /**
      * `external` 表示函数体不在 Kotlin 中，而是在 JNI/C++ 中实现。
      *
@@ -247,6 +273,10 @@ class JniNativeEventBridge(
 
     external fun nativeListReminders(requestJson: String): String
 
+    external fun nativeGetReminder(requestJson: String): String
+
+    external fun nativeListSchedulableReminders(requestJson: String): String
+
     external fun nativeMarkReminderScheduled(requestJson: String): String
 
     external fun nativeMarkReminderSent(requestJson: String): String
@@ -256,6 +286,18 @@ class JniNativeEventBridge(
     external fun nativeEnableReminder(requestJson: String): String
 
     external fun nativeDisableReminder(requestJson: String): String
+
+    external fun nativeCreateNotification(requestJson: String): String
+
+    external fun nativeConsumeReminderAfterDelivery(requestJson: String): String
+
+    private inline fun callNative(symbol: String, call: () -> String): String {
+        return try {
+            call()
+        } catch (error: UnsatisfiedLinkError) {
+            throw NativeBridgeUnavailableException("JNI symbol $symbol is unavailable.", error)
+        }
+    }
 
     /** 加载 native 动态库。成功或失败都会被缓存，避免重复加载。 */
     private fun ensureLibraryLoaded() {

@@ -1,13 +1,20 @@
 package com.excellentcalendar.excellent_calendar
 
+import android.content.Intent
+import android.os.Bundle
 import com.excellentcalendar.excellent_calendar.android.alarm.AlarmManagerReminderScheduler
+import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationChannelManager
+import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationPermissionManager
+import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationRuntime
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
-import com.excellentcalendar.excellent_calendar.bridge.native.JniNativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.AndroidNativeBridgeFactory
+import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
+import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
-import java.io.File
 
 /**
  * Android 端的 Flutter 入口 Activity。
@@ -28,6 +35,18 @@ class MainActivity : FlutterActivity() {
      * `NativeMethodChannelHandler?`，使用时需要 `?.` 安全调用。
      */
     private var nativeMethodChannelHandler: NativeMethodChannelHandler? = null
+    private var notificationPermissionManager: AndroidNotificationPermissionManager? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        AndroidNotificationRuntime.handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        AndroidNotificationRuntime.handleIntent(intent)
+    }
 
     /**
      * Flutter 引擎创建后会调用这个函数。
@@ -38,12 +57,27 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        // Android 每个 app 都有独立的 filesDir。这里把 JSON 存储放在 app 私有目录下，
-        // 普通用户和其他 app 不能直接访问，适合保存本地业务数据。
-        val storageDirectory = File(applicationContext.filesDir, "local_storage/test_storage_json")
-        val nativeBridge = JniNativeEventBridge(storageDirectory = storageDirectory.absolutePath)
+        val nativeBridge = AndroidNativeBridgeFactory.create(applicationContext)
         val reminderScheduler = AlarmManagerReminderScheduler(applicationContext)
         val reminderOrchestrator = ReminderNativeOrchestrator(
+            nativeBridge = nativeBridge,
+            scheduler = reminderScheduler,
+            logger = { operation, reminderId, message ->
+                android.util.Log.d(
+                    NativeMethodChannelHandler.LogTag,
+                    "operation=$operation reminder_id=${reminderId ?: "null"} $message",
+                )
+            },
+        )
+        val permissionManager = AndroidNotificationPermissionManager(this)
+        notificationPermissionManager = permissionManager
+        val notificationOrchestrator = NotificationMethodOrchestrator(
+            channels = AndroidNotificationChannelManager(applicationContext),
+            permissions = permissionManager,
+            tapStore = AndroidNotificationRuntime.tapPayloadStore,
+            captureLaunchPayload = { AndroidNotificationRuntime.handleIntent(intent) },
+        )
+        val pendingScheduleService = PendingReminderScheduleService(
             nativeBridge = nativeBridge,
             scheduler = reminderScheduler,
             logger = { operation, reminderId, message ->
@@ -56,6 +90,8 @@ class MainActivity : FlutterActivity() {
         val handler = NativeMethodChannelHandler(
             nativeEventBridge = nativeBridge,
             reminderOrchestrator = reminderOrchestrator,
+            notificationOrchestrator = notificationOrchestrator,
+            pendingReminderScheduleService = pendingScheduleService,
         )
         nativeMethodChannelHandler = handler
         // MethodChannel 是 Flutter 的“方法调用通道”：
@@ -64,6 +100,25 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             NativeMethodChannelHandler.ChannelName,
         ).setMethodCallHandler(handler)
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            AndroidNotificationRuntime.OpenedEventChannel,
+        ).setStreamHandler(AndroidNotificationRuntime.eventHub.openedStreamHandler)
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            AndroidNotificationRuntime.DeliveredEventChannel,
+        ).setStreamHandler(AndroidNotificationRuntime.eventHub.deliveredStreamHandler)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        if (notificationPermissionManager?.onRequestPermissionsResult(requestCode, permissions, grantResults) == true) {
+            return
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     /**
@@ -77,8 +132,18 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             NativeMethodChannelHandler.ChannelName,
         ).setMethodCallHandler(null)
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            AndroidNotificationRuntime.OpenedEventChannel,
+        ).setStreamHandler(null)
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            AndroidNotificationRuntime.DeliveredEventChannel,
+        ).setStreamHandler(null)
         nativeMethodChannelHandler?.close()
         nativeMethodChannelHandler = null
+        notificationPermissionManager = null
+        AndroidNotificationRuntime.eventHub.clear()
         super.cleanUpFlutterEngine(flutterEngine)
     }
 }

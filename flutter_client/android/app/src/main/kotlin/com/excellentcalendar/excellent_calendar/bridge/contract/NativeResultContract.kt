@@ -1,6 +1,7 @@
 package com.excellentcalendar.excellent_calendar.bridge.contract
 
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
+import java.util.UUID
 
 /**
  * native 层统一返回格式。
@@ -131,6 +132,20 @@ data class NativeResultContract(
                     details = details,
                     retryable = retryable,
                 ),
+                contractVersion = ContractVersion,
+                requestId = requestId,
+            )
+        }
+
+        /** Kotlin 本地能力成功时也使用统一 NativeResult 外壳。 */
+        fun success(
+            data: Any?,
+            requestId: String = UUID.randomUUID().toString(),
+        ): NativeResultContract {
+            return NativeResultContract(
+                ok = true,
+                data = data,
+                error = null,
                 contractVersion = ContractVersion,
                 requestId = requestId,
             )

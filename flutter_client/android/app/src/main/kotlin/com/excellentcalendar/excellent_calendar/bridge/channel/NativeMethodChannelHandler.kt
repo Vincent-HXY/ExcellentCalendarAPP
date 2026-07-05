@@ -8,20 +8,26 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.CancelReminderRe
 import com.excellentcalendar.excellent_calendar.bridge.contract.CreateEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.CreateReminderRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.DeleteEventRequestContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.EmptyRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.EventListResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.EventResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ListRemindersRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeContractViolation
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.OpenNotificationSettingsContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.RequestNotificationPermissionContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReopenEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderListResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.SearchEventRequestContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.SchedulePendingRemindersContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.UpdateEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.UpdateReminderRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeBridgeUnavailableException
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
+import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -77,6 +83,8 @@ class AndroidNativeBridgeLogger : NativeBridgeLogger {
 class NativeMethodChannelHandler(
     private val nativeEventBridge: NativeEventBridge,
     private val reminderOrchestrator: ReminderNativeOrchestrator? = null,
+    private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
+    private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
     /**
      * native 调用放到后台 executor 中执行，避免阻塞 Android 主线程。
      *
@@ -100,6 +108,12 @@ class NativeMethodChannelHandler(
             MethodReminderUpdate -> handleUpdateReminder(call, completion)
             MethodReminderCancel -> handleCancelReminder(call, completion)
             MethodReminderList -> handleListReminders(call, completion)
+            MethodReminderSchedulePending -> handleSchedulePending(call, completion)
+            MethodNotificationInitialize -> handleNotificationInitialize(call, completion)
+            MethodNotificationPermissionStatus -> handleNotificationPermissionStatus(call, completion)
+            MethodNotificationRequestPermission -> handleNotificationRequestPermission(call, completion)
+            MethodNotificationOpenSettings -> handleNotificationOpenSettings(call, completion)
+            MethodNotificationGetInitialTapPayload -> handleGetInitialTapPayload(call, completion)
             else -> completion.notImplemented()
         }
     }
@@ -109,6 +123,7 @@ class NativeMethodChannelHandler(
         if (executor is ExecutorService) {
             executor.shutdownNow()
         }
+        notificationOrchestrator?.close()
     }
 
     /** 解析并校验创建事件请求，然后交给 native bridge。 */
@@ -235,6 +250,92 @@ class NativeMethodChannelHandler(
         }
     }
 
+    private fun handleSchedulePending(call: MethodCall, completion: SingleCompletion) {
+        val request = try {
+            SchedulePendingRemindersContract.fromMethodArguments(call.arguments)
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            return
+        }
+        executeReminder(call.method, completion) {
+            requirePendingScheduleService(call.method).schedulePending(request)
+        }
+    }
+
+    private fun handleNotificationInitialize(call: MethodCall, completion: SingleCompletion) {
+        if (!validateEmptyRequest(call, completion)) return
+        executeLocal(call.method, completion) { requireNotificationOrchestrator(call.method).initialize() }
+    }
+
+    private fun handleNotificationPermissionStatus(call: MethodCall, completion: SingleCompletion) {
+        if (!validateEmptyRequest(call, completion)) return
+        executeLocal(call.method, completion) {
+            requireNotificationOrchestrator(call.method).permissionStatus()
+        }
+    }
+
+    private fun handleNotificationRequestPermission(call: MethodCall, completion: SingleCompletion) {
+        val request = try {
+            RequestNotificationPermissionContract.fromMethodArguments(call.arguments)
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            return
+        }
+        try {
+            requireNotificationOrchestrator(call.method).requestPermission(request) { nativeResult ->
+                logger.log(call.method, nativeResult.requestId, "completed ok=${nativeResult.ok}")
+                completion.success(nativeResult.toMap())
+            }
+        } catch (error: Throwable) {
+            completion.success(nativeInternalFailure(call.method, error).toMap())
+        }
+    }
+
+    private fun handleNotificationOpenSettings(call: MethodCall, completion: SingleCompletion) {
+        val request = try {
+            OpenNotificationSettingsContract.fromMethodArguments(call.arguments)
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            return
+        }
+        executeLocal(call.method, completion) {
+            requireNotificationOrchestrator(call.method).openSettings(request.settingsTarget)
+        }
+    }
+
+    private fun handleGetInitialTapPayload(call: MethodCall, completion: SingleCompletion) {
+        if (!validateEmptyRequest(call, completion)) return
+        executeLocal(call.method, completion) {
+            requireNotificationOrchestrator(call.method).takeInitialTapPayload()
+        }
+    }
+
+    private fun validateEmptyRequest(call: MethodCall, completion: SingleCompletion): Boolean {
+        return try {
+            EmptyRequestContract.validate(call.arguments)
+            true
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            false
+        }
+    }
+
+    private fun executeLocal(
+        method: String,
+        completion: SingleCompletion,
+        operation: () -> NativeResultContract,
+    ) {
+        val nativeResult = try {
+            operation()
+        } catch (error: NativeContractViolation) {
+            contractFailure(method, error)
+        } catch (error: Throwable) {
+            nativeInternalFailure(method, error)
+        }
+        logger.log(method, nativeResult.requestId, "completed ok=${nativeResult.ok}")
+        completion.success(nativeResult.toMap())
+    }
+
     /**
      * 执行一次 native 调用的通用模板。
      *
@@ -290,6 +391,18 @@ class NativeMethodChannelHandler(
     private fun requireReminderOrchestrator(method: String): ReminderNativeOrchestrator {
         return reminderOrchestrator ?: throw NativeBridgeUnavailableException(
             "Reminder orchestration is not configured for $method.",
+        )
+    }
+
+    private fun requireNotificationOrchestrator(method: String): NotificationMethodOrchestrator {
+        return notificationOrchestrator ?: throw NativeBridgeUnavailableException(
+            "Notification orchestration is not configured for $method.",
+        )
+    }
+
+    private fun requirePendingScheduleService(method: String): PendingReminderScheduleService {
+        return pendingReminderScheduleService ?: throw NativeBridgeUnavailableException(
+            "Pending reminder scheduling is not configured for $method.",
         )
     }
 
@@ -373,6 +486,12 @@ class NativeMethodChannelHandler(
         const val MethodReminderUpdate = "reminder.update"
         const val MethodReminderCancel = "reminder.cancel"
         const val MethodReminderList = "reminder.list"
+        const val MethodReminderSchedulePending = "reminder.schedule_pending"
+        const val MethodNotificationInitialize = "notification.initialize"
+        const val MethodNotificationPermissionStatus = "notification.permission_status"
+        const val MethodNotificationRequestPermission = "notification.request_permission"
+        const val MethodNotificationOpenSettings = "notification.open_settings"
+        const val MethodNotificationGetInitialTapPayload = "notification.get_initial_tap_payload"
         const val LogTag = "ExcellentCalendarNative"
     }
 }

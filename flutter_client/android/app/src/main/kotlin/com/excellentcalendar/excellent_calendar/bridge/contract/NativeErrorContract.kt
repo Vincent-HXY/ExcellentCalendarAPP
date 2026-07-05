@@ -42,6 +42,13 @@ object NativeErrorCodes {
     const val PermissionDenied = "PERMISSION_DENIED"
     const val AlarmScheduleFailed = "ALARM_SCHEDULE_FAILED"
     const val AlarmCancelFailed = "ALARM_CANCEL_FAILED"
+    const val NotificationPermissionDenied = "NOTIFICATION_PERMISSION_DENIED"
+    const val ExactAlarmPermissionDenied = "EXACT_ALARM_PERMISSION_DENIED"
+    const val UnsupportedReminderMethod = "UNSUPPORTED_REMINDER_METHOD"
+    const val ReminderAlreadyConsumed = "REMINDER_ALREADY_CONSUMED"
+    const val ReminderNotDue = "REMINDER_NOT_DUE"
+    const val ReminderNotDeliverable = "REMINDER_NOT_DELIVERABLE"
+    const val NotificationInitializationFailed = "NOTIFICATION_INITIALIZATION_FAILED"
 
     /** 用于校验 native 返回的错误码是否是协议中声明过的值。 */
     val All = setOf(
@@ -80,6 +87,13 @@ object NativeErrorCodes {
         PermissionDenied,
         AlarmScheduleFailed,
         AlarmCancelFailed,
+        NotificationPermissionDenied,
+        ExactAlarmPermissionDenied,
+        UnsupportedReminderMethod,
+        ReminderAlreadyConsumed,
+        ReminderNotDue,
+        ReminderNotDeliverable,
+        NotificationInitializationFailed,
     )
 }
 

@@ -33,6 +33,10 @@ interface NativeEventBridge {
 
     fun listReminders(requestJson: String): String
 
+    fun getReminder(requestJson: String): String
+
+    fun listSchedulableReminders(requestJson: String): String
+
     fun markReminderScheduled(requestJson: String): String
 
     fun markReminderSent(requestJson: String): String
@@ -42,4 +46,8 @@ interface NativeEventBridge {
     fun enableReminder(requestJson: String): String
 
     fun disableReminder(requestJson: String): String
+
+    fun createNotification(requestJson: String): String
+
+    fun consumeReminderAfterDelivery(requestJson: String): String
 }

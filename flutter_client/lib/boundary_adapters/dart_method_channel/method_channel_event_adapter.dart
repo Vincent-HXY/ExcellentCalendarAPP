@@ -9,6 +9,7 @@ import '../../native_contract/event/event_mapper.dart';
 import '../../native_contract/event/event_response_dto.dart';
 import '../../native_contract/event/reopen_event_request_dto.dart';
 import '../../native_contract/event/search_event_request_dto.dart';
+import '../../native_contract/event/update_event_request_dto.dart';
 import '../../native_contract/shared/native_invocation.dart';
 import 'native_method_channel_contract.dart';
 import 'native_method_channel_invoker.dart';
@@ -28,6 +29,17 @@ class MethodChannelEventAdapter implements EventNativeGateway {
   ) {
     return _invoker.invoke<EventResponseDto>(
       method: NativeEventMethods.create,
+      arguments: request.toJson(),
+      parseData: EventMapper.eventResponseFromNativeData,
+    );
+  }
+
+  @override
+  Future<NativeInvocation<EventResponseDto>> updateEvent(
+    UpdateEventRequestDto request,
+  ) {
+    return _invoker.invoke<EventResponseDto>(
+      method: NativeEventMethods.update,
       arguments: request.toJson(),
       parseData: EventMapper.eventResponseFromNativeData,
     );

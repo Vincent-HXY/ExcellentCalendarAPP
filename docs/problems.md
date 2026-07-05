@@ -106,3 +106,79 @@ MY_PACKAGE_REPLACED
 重复提醒尚未进入消费闭环
 delete_after_sent 当前固定为 true，[consume_reminder_after_delivery_request.schema.json (line 41)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\consume_reminder_after_delivery_request.schema.json:41)，所以 V1 只覆盖一次性 Reminder。
 如果要支持重复日程，消费成功后还需要由 C++ 生成下一条 Reminder，或者响应中返回 next_reminder。当前流程还没有定义。
+
+
+二、notification_id 的生成时机冲突
+正常投递顺序是：
+Alarm 到点
+→ 构造 Android Notification 和点击 PendingIntent
+→ NotificationManager.notify()
+→ C++ consume_after_delivery
+→ C++ 创建 NotificationResponse.id
+问题是，Android Notification 在调用 notify() 前就必须准备好点击 payload；但真正的 NotificationResponse.id 要到之后调用 C++ 才生成。
+也就是说：
+需要 notification_id 的时间
+早于
+C++ 生成 notification_id 的时间
+当前实现使用稳定的 reminder_id 作为点击 payload 的 notification_id 去重键。它能保证同一条通知重复点击不会重复导航，但它不等于 C++ 中持久化的 NotificationResponse.id。
+当前影响：
+Flutter 只使用 payload 打开 target_id 对应页面：没有问题。
+Flutter 把 notification_id 只当作不透明去重键：没有问题。
+Flutter 使用该 ID 查询 Notification 记录：会查询不到。
+埋点需要把点击和 Notification 表记录严格关联：会关联失败。
+将来一个 Reminder 可以重复投递多次时，只用 reminder ID 会错误地把后续投递视为重复点击。
+当前 V1 是一次性提醒，且 delete_after_sent=true，所以短期风险较低。
+推荐的长期解决方案
+建议在 contract 中把两个概念分开：
+{
+  "delivery_id": "稳定的单次投递去重键",
+  "notification_id": "C++ NotificationResponse.id，可为 null"
+}
+更完整的方案是增加原生两阶段流程：
+notification.prepare_delivery
+→ C++ 提前生成 notification_id / delivery_id
+→ Kotlin 展示系统通知
+→ reminder.consume_after_delivery 使用同一个 ID 完成持久化
+这样可以同时保证：
+点击 payload 使用真实 Notification ID；
+重试具有幂等键；
+Flutter 点击事件能关联 C++ 记录；
+系统通知失败时不会被错误记录为 sent。
+结论
+目前可以继续开发，前提是：
+V1 UI 暂时只开放 popup。
+Flutter 将点击 payload 的 notification_id 只用于去重，不用于查询 C++ Notification。
+在支持 ring、重复提醒或通知历史点击关联前，先完成一次独立 Contract 变更。
+
+
+[P1] 通知点击后没有进入可用页面。
+[notification_tap_router.dart (line 36)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/app/routing/notification_tap_router.dart:36) 将日程通知路由到详情页，但 [app_router.dart (line 20)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/app/routing/app_router.dart:20) 只是固定显示“日程不存在或已删除”，没有读取日程，也没有进入用户描述的主页面。当前闭环在最后一步实际中断。
+
+[P1] 部分提醒可能永远没有注册 Android Alarm。
+[schedule_pending_reminders_use_case.dart (line 5)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/reminder/schedule_pending_reminders_use_case.dart:5) 每次只扫描未来 7 天、最多 128 条，并且不处理返回结果中的 has_more。[BootCompletedReceiver.kt (line 19)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/android/alarm/BootCompletedReceiver.kt:19) 同样只执行一次，没有发现周期扫描机制。因此：
+7 天内超过 128 条时，后续提醒不会注册。
+超过 7 天的提醒进入窗口后，如果用户没有重新打开 App、重启手机或修改日程，也不会注册。
+
+[P1] 过期 Alarm 会先显示错误通知，再由 C++ 拒绝。
+[ReminderDeliveryService.kt (line 51)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/reminder/ReminderDeliveryService.kt:51) 使用 Alarm 中的旧 plannedAt 直接弹通知，到第 83 行才调用 C++ 消费；而 C++ 在 [notification_service.cpp (line 236)](/A:/calendar/ExcellentCalendarAPP/cpp_core/src/application/notification_service.cpp:236) 才检查时间是否仍匹配。用户可能看到或听到本不应该触发的旧提醒。
+
+[P1] 完成日程不会处理尚未触发的提醒。
+[complete_event_use_case.dart (line 11)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/event/complete_event_use_case.dart:11) 只完成 Event；C++ 的 [event_service.cpp (line 326)](/A:/calendar/ExcellentCalendarAPP/cpp_core/src/application/event_service.cpp:326) 也只修改 Event 状态。关联 Reminder 仍然是 scheduled，因此用户提前完成日程后，提醒依然可能照常弹出。
+
+[P2] 创建日程成功会掩盖提醒调度失败。
+[create_event_use_case.dart (line 19)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/event/create_event_use_case.dart:19) 等待调度调用，但最终始终返回日程创建结果。无论 schedule_pending 整体失败，还是返回 failed_count > 0，上层看到的仍是创建成功。
+
+[P2] notification_id 实际保存的是 Reminder ID。
+[NotificationDisplayService.kt (line 85)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/android/notification/NotificationDisplayService.kt:85) 将 notification_id 和 reminder_id 都设置为 content.reminderId。这与 DATA_MODEL 中 Notification 和 Reminder 是两个独立实体、各自具有独立 ID 的设计不一致，也使点击载荷无法追踪 C++ 创建的真实 Notification 记录。
+
+[P2] 不同提醒可能覆盖彼此的系统通知。
+[NotificationDisplayService.kt (line 131)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/android/notification/NotificationDisplayService.kt:131) 使用 Java 字符串哈希作为 Android Notification ID。哈希存在碰撞，例如 "Aa" 与 "BB" 会得到同一个 ID，后一条通知会覆盖前一条。
+
+[P2] Notification 初始化失败后仍继续注册提醒。
+[app_notification_bootstrap.dart (line 88)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/app/bootstrap/app_notification_bootstrap.dart:88) 将状态设为 degraded 后没有终止流程，第 93 至 94 行仍检查权限并执行调度。这不符合所定义的初始化先决顺序。
+
+[P3] 存在会长期误导开发的命名。
+[NativeEventBridge.kt (line 11)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/native/NativeEventBridge.kt:11) 已承担 Event、Reminder、Notification 三类能力，但仍叫 NativeEventBridge。[AndroidNativeBridgeFactory.kt (line 8)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/native/AndroidNativeBridgeFactory.kt:8) 的正式数据目录仍叫 test_storage_json。
+
+当前自动化测试没有真正验证整个三端闭环。
+Flutter 和 Kotlin 测试使用 Fake Gateway/Fake Native Bridge/Fake Notification Service；C++ 测试独立运行。它们不能证明真实 MethodChannel、JNI、文件、AlarmManager、系统通知及点击 Intent 能在设备上连续工作。

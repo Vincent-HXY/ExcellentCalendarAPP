@@ -682,6 +682,10 @@ class NativeMethodChannelHandlerTest {
 
         override fun listReminders(requestJson: String): String = createReminder(requestJson)
 
+        override fun getReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun listSchedulableReminders(requestJson: String): String = createReminder(requestJson)
+
         override fun markReminderScheduled(requestJson: String): String = createReminder(requestJson)
 
         override fun markReminderSent(requestJson: String): String = createReminder(requestJson)
@@ -691,6 +695,10 @@ class NativeMethodChannelHandlerTest {
         override fun enableReminder(requestJson: String): String = createReminder(requestJson)
 
         override fun disableReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun createNotification(requestJson: String): String = createReminder(requestJson)
+
+        override fun consumeReminderAfterDelivery(requestJson: String): String = createReminder(requestJson)
 
         companion object {
             private fun eventResponseStatic(

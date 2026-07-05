@@ -3,10 +3,14 @@ package com.excellentcalendar.excellent_calendar.bridge.contract
 /** ReminderResponse 合约校验与调度所需字段读取。 */
 data class ReminderContract(
     val id: String,
+    val targetType: String,
+    val targetId: String,
     val remindAt: String,
     val methods: List<String>,
+    val message: String?,
     val isEnabled: Boolean,
     val status: String,
+    val deletedAt: String?,
 ) {
     companion object {
         fun fromData(data: Any?): ReminderContract {
@@ -19,10 +23,14 @@ data class ReminderContract(
             @Suppress("UNCHECKED_CAST")
             return ReminderContract(
                 id = map["id"] as String,
+                targetType = map["target_type"] as String,
+                targetId = map["target_id"] as String,
                 remindAt = map["remind_at"] as String,
                 methods = (map["methods"] as List<*>).map { it as String },
+                message = map["message"] as String?,
                 isEnabled = map["is_enabled"] as Boolean,
                 status = map["status"] as String,
+                deletedAt = map["deleted_at"] as String?,
             )
         }
     }

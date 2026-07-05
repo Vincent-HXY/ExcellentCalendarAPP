@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderContract
 import java.time.Instant
@@ -19,12 +20,18 @@ class AlarmManagerReminderScheduler(
         if (!reminder.isEnabled || reminder.status == "cancelled" || reminder.status == "sent") {
             return ScheduleResult.Success
         }
-        val unsupported = reminder.methods.firstOrNull { it !in SupportedMethods }
-        if (unsupported != null) {
+        if (reminder.methods.none { it in SupportedMethods }) {
             return ScheduleResult.Failure(
-                code = NativeErrorCodes.FeatureNotImplemented,
-                message = "Reminder method is not supported by Android local scheduler: $unsupported",
+                code = NativeErrorCodes.UnsupportedReminderMethod,
+                message = "Reminder has no method supported by the Android V1 local scheduler.",
                 retryable = false,
+            )
+        }
+        if (!canScheduleExactAlarms()) {
+            return ScheduleResult.Failure(
+                code = NativeErrorCodes.ExactAlarmPermissionDenied,
+                message = "Android exact alarm permission is denied.",
+                retryable = true,
             )
         }
 
@@ -39,22 +46,26 @@ class AlarmManagerReminderScheduler(
         }
 
         return try {
-            val operation = pendingIntent(reminder.id, PendingIntent.FLAG_UPDATE_CURRENT)
+            val operation = pendingIntent(
+                reminder.id,
+                reminder.remindAt,
+                PendingIntent.FLAG_UPDATE_CURRENT,
+            )
                 ?: return ScheduleResult.Failure(
                     code = NativeErrorCodes.AlarmScheduleFailed,
                     message = "Android alarm PendingIntent could not be created.",
                     retryable = true,
                 )
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                operation,
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+            }
             ScheduleResult.Success
         } catch (error: SecurityException) {
             ScheduleResult.Failure(
-                code = NativeErrorCodes.PermissionDenied,
-                message = "Android alarm scheduling permission was denied.",
+                code = NativeErrorCodes.ExactAlarmPermissionDenied,
+                message = "Android exact alarm permission is denied.",
                 retryable = true,
             )
         } catch (error: RuntimeException) {
@@ -68,7 +79,7 @@ class AlarmManagerReminderScheduler(
 
     override fun cancel(reminderId: String): CancelResult {
         return try {
-            val existing = pendingIntent(reminderId, PendingIntent.FLAG_NO_CREATE)
+            val existing = pendingIntent(reminderId, null, PendingIntent.FLAG_NO_CREATE)
             if (existing != null) {
                 alarmManager.cancel(existing)
                 existing.cancel()
@@ -89,23 +100,31 @@ class AlarmManagerReminderScheduler(
         }
     }
 
-    private fun pendingIntent(reminderId: String, lookupFlag: Int): PendingIntent? {
-        val flags = lookupFlag or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getBroadcast(appContext, StableRequestCode, intent(reminderId), flags)
+    override fun canScheduleExactAlarms(): Boolean {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
     }
 
-    private fun intent(reminderId: String): Intent {
+    private fun pendingIntent(reminderId: String, plannedAt: String?, lookupFlag: Int): PendingIntent? {
+        val flags = lookupFlag or PendingIntent.FLAG_IMMUTABLE
+        return PendingIntent.getBroadcast(appContext, StableRequestCode, intent(reminderId, plannedAt), flags)
+    }
+
+    private fun intent(reminderId: String, plannedAt: String?): Intent {
         return Intent(appContext, ReminderAlarmReceiver::class.java)
             .setAction(ActionReminderAlarm)
             .setPackage(appContext.packageName)
             .setData(Uri.parse("excellentcalendar://reminder/${Uri.encode(reminderId)}"))
             .putExtra(ExtraReminderId, reminderId)
+            .apply {
+                if (plannedAt != null) putExtra(ExtraPlannedAt, plannedAt)
+            }
     }
 
     companion object {
-        const val ActionReminderAlarm = "com.excellentcalendar.excellent_calendar.REMINDER_ALARM"
+        const val ActionReminderAlarm = "excellent_calendar.action.REMINDER_ALARM"
         const val ExtraReminderId = "reminder_id"
+        const val ExtraPlannedAt = "planned_at"
         private const val StableRequestCode = 0
-        private val SupportedMethods = setOf("ring", "popup")
+        private val SupportedMethods = setOf("popup")
     }
 }

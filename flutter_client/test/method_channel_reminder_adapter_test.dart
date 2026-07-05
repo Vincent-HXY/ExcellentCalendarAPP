@@ -2,6 +2,7 @@ import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_
 import 'package:excellent_calendar/native_contract/reminder/cancel_reminder_request_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/create_reminder_request_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/reminder_contract_enums.dart';
+import 'package:excellent_calendar/native_contract/reminder/schedule_pending_reminders_dto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -88,4 +89,39 @@ void main() {
       expect(invocation.result.error!.details!['method'], 'reminder.cancel');
     },
   );
+
+  test('adapter invokes reminder.schedule_pending with UTC range', () async {
+    MethodCall? captured;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          captured = call;
+          return {
+            'ok': true,
+            'data': {
+              'scheduled_count': 1,
+              'skipped_count': 0,
+              'failed_count': 0,
+              'unsupported_method_count': 0,
+              'has_more': false,
+              'failed_reminder_ids': <String>[],
+              'unsupported_reminder_ids': <String>[],
+            },
+            'error': null,
+            'contract_version': 1,
+            'request_id': 'schedule-1',
+          };
+        });
+
+    await MethodChannelReminderAdapter(channel: channel).schedulePending(
+      SchedulePendingRemindersRequestDto(
+        fromAt: DateTime.utc(2026, 7, 5),
+        toAt: DateTime.utc(2026, 7, 12),
+        limit: 128,
+      ),
+    );
+
+    expect(captured!.method, 'reminder.schedule_pending');
+    expect(captured!.arguments['limit'], 128);
+    expect(captured!.arguments['from_at'], '2026-07-05T00:00:00.000Z');
+  });
 }

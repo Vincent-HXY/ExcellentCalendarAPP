@@ -6,6 +6,8 @@ interface ReminderScheduler {
     fun schedule(reminder: ReminderContract): ScheduleResult
 
     fun cancel(reminderId: String): CancelResult
+
+    fun canScheduleExactAlarms(): Boolean = true
 }
 
 sealed class ScheduleResult {

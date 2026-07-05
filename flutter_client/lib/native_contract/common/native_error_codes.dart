@@ -20,6 +20,8 @@ class NativeErrorCodes {
   static const reminderNotFound = 'REMINDER_NOT_FOUND';
   static const reminderMethodInvalid = 'REMINDER_METHOD_INVALID';
   static const notificationDeliveryFailed = 'NOTIFICATION_DELIVERY_FAILED';
+  static const notificationInitializationFailed =
+      'NOTIFICATION_INITIALIZATION_FAILED';
   static const habitTitleEmpty = 'HABIT_TITLE_EMPTY';
   static const habitNotFound = 'HABIT_NOT_FOUND';
   static const habitCheckInDuplicated = 'HABIT_CHECK_IN_DUPLICATED';
@@ -36,6 +38,12 @@ class NativeErrorCodes {
   static const permissionDenied = 'PERMISSION_DENIED';
   static const alarmScheduleFailed = 'ALARM_SCHEDULE_FAILED';
   static const alarmCancelFailed = 'ALARM_CANCEL_FAILED';
+  static const notificationPermissionDenied = 'NOTIFICATION_PERMISSION_DENIED';
+  static const exactAlarmPermissionDenied = 'EXACT_ALARM_PERMISSION_DENIED';
+  static const unsupportedReminderMethod = 'UNSUPPORTED_REMINDER_METHOD';
+  static const reminderAlreadyConsumed = 'REMINDER_ALREADY_CONSUMED';
+  static const reminderNotDue = 'REMINDER_NOT_DUE';
+  static const reminderNotDeliverable = 'REMINDER_NOT_DELIVERABLE';
 
   static const values = {
     nativeInternalError,
@@ -57,6 +65,7 @@ class NativeErrorCodes {
     reminderNotFound,
     reminderMethodInvalid,
     notificationDeliveryFailed,
+    notificationInitializationFailed,
     habitTitleEmpty,
     habitNotFound,
     habitCheckInDuplicated,
@@ -73,5 +82,11 @@ class NativeErrorCodes {
     permissionDenied,
     alarmScheduleFailed,
     alarmCancelFailed,
+    notificationPermissionDenied,
+    exactAlarmPermissionDenied,
+    unsupportedReminderMethod,
+    reminderAlreadyConsumed,
+    reminderNotDue,
+    reminderNotDeliverable,
   };
 }
