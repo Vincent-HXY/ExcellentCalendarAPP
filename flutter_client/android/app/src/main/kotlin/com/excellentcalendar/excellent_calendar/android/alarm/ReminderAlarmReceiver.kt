@@ -4,41 +4,32 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationDisplayService
-import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationRuntime
-import com.excellentcalendar.excellent_calendar.bridge.native.AndroidNativeBridgeFactory
-import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderDeliveryService
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
 import java.util.concurrent.Executors
 
-/**
- * AlarmManager 的落点 receiver。
- *
- * Receiver 使用 goAsync 在后台完成 JNI 查询、系统通知投递和消费状态回写。
- */
 class ReminderAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != AlarmManagerReminderScheduler.ActionReminderAlarm) {
-            return
-        }
-        val reminderId = intent.getStringExtra(AlarmManagerReminderScheduler.ExtraReminderId)
-        if (reminderId.isNullOrBlank()) return
-        val plannedAt = intent.getStringExtra(AlarmManagerReminderScheduler.ExtraPlannedAt)
+        val isDispatcher = intent.action == ReminderDispatchAlarmScheduler.ActionDispatchAlarm
+        val isLegacy = intent.action == AlarmManagerReminderScheduler.ActionReminderAlarm
+        if (!isDispatcher && !isLegacy) return
+
+        // A queued legacy broadcast must never deliver directly after migration.
         val pendingResult = goAsync()
         Executor.execute {
             try {
-                val bridge = AndroidNativeBridgeFactory.create(context)
-                val service = ReminderDeliveryService(
-                    nativeBridge = bridge,
-                    notifications = AndroidNotificationDisplayService(context),
-                    eventHub = AndroidNotificationRuntime.eventHub,
-                    logger = { operation, id, message ->
-                        Log.d(LogTag, "operation=$operation reminder_id=${id ?: "null"} $message")
-                    },
+                ReminderWorkScheduler.ensurePeriodic(context)
+                val result = ReminderCoordinatorFactory.create(context).reconcile(
+                    ReconcileReminderScheduleContract(ReminderScheduleTrigger.AlarmFired, force = true),
                 )
-                val result = service.deliver(reminderId, plannedAt)
-                Log.d(LogTag, "Reminder alarm handled reminder_id=$reminderId result=${result.javaClass.simpleName}")
+                Log.d(
+                    LogTag,
+                    "dispatcher handled legacy=$isLegacy planned_at=" +
+                        "${intent.getStringExtra(ReminderDispatchAlarmScheduler.ExtraPlannedAt)} ok=${result.ok}",
+                )
             } catch (error: Throwable) {
-                Log.e(LogTag, "Reminder alarm failed reminder_id=$reminderId type=${error.javaClass.simpleName}")
+                Log.e(LogTag, "dispatcher failed type=${error.javaClass.simpleName}")
+                ReminderWorkScheduler.enqueueContinuation(context)
             } finally {
                 pendingResult.finish()
             }

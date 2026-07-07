@@ -7,7 +7,7 @@ import 'app/routing/notification_tap_router.dart';
 import 'application/event/create_event_use_case.dart';
 import 'application/event/complete_event_use_case.dart';
 import 'application/event/read_events_use_case.dart';
-import 'application/reminder/schedule_pending_reminders_use_case.dart';
+import 'application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_notification_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_reminder_adapter.dart';
@@ -28,7 +28,7 @@ class ExcellentCalendarApp extends StatefulWidget {
 class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   late final MethodChannelEventAdapter _eventGateway;
-  late final SchedulePendingRemindersUseCase _schedulePendingRemindersUseCase;
+  late final ReconcileReminderScheduleUseCase _reconcileReminderScheduleUseCase;
   late final CreateEventUseCase _createEventUseCase;
   late final AppNotificationBootstrap _notificationBootstrap;
 
@@ -37,16 +37,16 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
     super.initState();
     _eventGateway = MethodChannelEventAdapter();
     final reminderGateway = MethodChannelReminderAdapter();
-    _schedulePendingRemindersUseCase = SchedulePendingRemindersUseCase(
+    _reconcileReminderScheduleUseCase = ReconcileReminderScheduleUseCase(
       reminderGateway,
     );
     _createEventUseCase = CreateEventUseCase(
       _eventGateway,
-      schedulePendingRemindersUseCase: _schedulePendingRemindersUseCase,
+      reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
     );
     _notificationBootstrap = AppNotificationBootstrap(
       notificationGateway: MethodChannelNotificationAdapter(),
-      schedulePendingRemindersUseCase: _schedulePendingRemindersUseCase,
+      reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
       notificationTapRouter: NotificationTapRouter(
         navigator: NavigatorAppRouteNavigator(_navigatorKey),
       ),

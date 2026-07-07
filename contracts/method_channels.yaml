@@ -84,10 +84,19 @@ methods:
 
   reminder.schedule_pending:
     module: reminder
+    deprecated: true
     request: reminder/schedule_pending_reminders_request.schema.json
     result:
       envelope: common/native_result.schema.json
       data: reminder/schedule_pending_reminders_response.schema.json
+    event_stream: false
+
+  reminder.reconcile_schedule:
+    module: reminder
+    request: reminder/reconcile_reminder_schedule_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reconcile_reminder_schedule_response.schema.json
     event_stream: false
 
   notification.initialize:

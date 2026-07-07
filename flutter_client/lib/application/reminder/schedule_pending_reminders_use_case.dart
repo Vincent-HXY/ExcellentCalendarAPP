@@ -26,6 +26,7 @@ class SchedulePendingRemindersCommand {
   }
 }
 
+@Deprecated('Use ReconcileReminderScheduleUseCase.')
 class SchedulePendingRemindersUseCase {
   SchedulePendingRemindersUseCase(this._gateway, {DateTime Function()? clock})
     : _clock = clock ?? DateTime.now;

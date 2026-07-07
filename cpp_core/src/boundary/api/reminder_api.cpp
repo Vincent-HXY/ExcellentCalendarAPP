@@ -311,22 +311,22 @@ parse_list_schedulable_reminders_request(std::string_view request_json) {
   }
   const auto& object = parsed.value();
   static const std::set<std::string> allowed{
-      "from_at", "to_at", "limit", "include_failed", "include_scheduled", "supported_methods"};
+      "from_at", "to_at", "cursor", "limit", "include_failed", "include_scheduled", "supported_methods"};
   std::string unknown;
   if (has_unknown_field(object, allowed, unknown)) {
     return common::Result<contract::ListSchedulableRemindersRequest>::failure(
         contract_error("ListSchedulableRemindersRequest contains an unknown field.",
                        "ListSchedulableRemindersRequest." + unknown));
   }
-  auto from_at = require_string(object, "from_at", "ListSchedulableRemindersRequest", true);
-  auto to_at = require_string(object, "to_at", "ListSchedulableRemindersRequest", true);
+  auto from_at = optional_string(object, "from_at", "ListSchedulableRemindersRequest");
+  auto to_at = optional_string(object, "to_at", "ListSchedulableRemindersRequest");
   if (!from_at.ok()) return common::Result<contract::ListSchedulableRemindersRequest>::failure(from_at.error());
   if (!to_at.ok()) return common::Result<contract::ListSchedulableRemindersRequest>::failure(to_at.error());
-  if (!common::is_iso8601_utc_datetime(from_at.value())) {
+  if (from_at.value().has_value() && !common::is_iso8601_utc_datetime(*from_at.value())) {
     return common::Result<contract::ListSchedulableRemindersRequest>::failure(
         reminder_time_invalid("ListSchedulableRemindersRequest.from_at"));
   }
-  if (!common::is_iso8601_utc_datetime(to_at.value())) {
+  if (to_at.value().has_value() && !common::is_iso8601_utc_datetime(*to_at.value())) {
     return common::Result<contract::ListSchedulableRemindersRequest>::failure(
         reminder_time_invalid("ListSchedulableRemindersRequest.to_at"));
   }
@@ -348,6 +348,37 @@ parse_list_schedulable_reminders_request(std::string_view request_json) {
   contract::ListSchedulableRemindersRequest request;
   request.from_at = from_at.value();
   request.to_at = to_at.value();
+  const auto* cursor_value = field(object, "cursor");
+  if (cursor_value != nullptr && !cursor_value->is<picojson::null>()) {
+    if (!cursor_value->is<picojson::object>()) {
+      return common::Result<contract::ListSchedulableRemindersRequest>::failure(
+          contract_error("ListSchedulableRemindersRequest.cursor must be an object or null.",
+                         "ListSchedulableRemindersRequest.cursor"));
+    }
+    const auto& cursor_object = cursor_value->get<picojson::object>();
+    static const std::set<std::string> cursor_allowed{"remind_at", "id"};
+    std::string cursor_unknown;
+    if (has_unknown_field(cursor_object, cursor_allowed, cursor_unknown)) {
+      return common::Result<contract::ListSchedulableRemindersRequest>::failure(
+          contract_error("SchedulableReminderCursor contains an unknown field.",
+                         "ListSchedulableRemindersRequest.cursor." + cursor_unknown));
+    }
+    auto cursor_remind_at = require_string(
+        cursor_object, "remind_at", "ListSchedulableRemindersRequest.cursor", true);
+    auto cursor_id = require_string(cursor_object, "id", "ListSchedulableRemindersRequest.cursor", true);
+    if (!cursor_remind_at.ok()) {
+      return common::Result<contract::ListSchedulableRemindersRequest>::failure(cursor_remind_at.error());
+    }
+    if (!cursor_id.ok()) {
+      return common::Result<contract::ListSchedulableRemindersRequest>::failure(cursor_id.error());
+    }
+    if (!common::is_iso8601_utc_datetime(cursor_remind_at.value())) {
+      return common::Result<contract::ListSchedulableRemindersRequest>::failure(
+          reminder_time_invalid("ListSchedulableRemindersRequest.cursor.remind_at"));
+    }
+    request.cursor = contract::SchedulableReminderCursor{
+        cursor_remind_at.value(), cursor_id.value()};
+  }
   request.limit = limit.value().value_or(500);
   request.include_failed = include_failed.value().value_or(true);
   request.include_scheduled = include_scheduled.value().value_or(false);
@@ -894,6 +925,10 @@ std::string list_schedulable_reminders(std::string_view request_json) {
     application::ListSchedulableRemindersCommand command;
     command.from_at = parsed.value().from_at;
     command.to_at = parsed.value().to_at;
+    if (parsed.value().cursor.has_value()) {
+      command.cursor_remind_at = parsed.value().cursor->remind_at;
+      command.cursor_id = parsed.value().cursor->id;
+    }
     command.limit = parsed.value().limit;
     command.include_failed = parsed.value().include_failed;
     command.include_scheduled = parsed.value().include_scheduled;

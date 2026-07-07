@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/schedule_pending_reminders_request.schema.json",
   "title": "SchedulePendingRemindersRequest",
-  "description": "Flutter-to-Kotlin request to register schedulable reminders with Android AlarmManager.",
+  "description": "Deprecated compatibility request. New callers use reminder.reconcile_schedule and the single dispatcher queue.",
   "x-contract-version": 1,
   "type": "object",
   "additionalProperties": false,

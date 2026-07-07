@@ -1,6 +1,6 @@
 import 'package:excellent_calendar/app/bootstrap/app_notification_bootstrap.dart';
 import 'package:excellent_calendar/app/routing/notification_tap_router.dart';
-import 'package:excellent_calendar/application/reminder/schedule_pending_reminders_use_case.dart';
+import 'package:excellent_calendar/application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'package:excellent_calendar/gateway_interfaces/notification_native_gateway.dart';
 import 'package:excellent_calendar/native_contract/common/operation_response_dto.dart';
 import 'package:excellent_calendar/native_contract/notification/notification_tap_payload_dto.dart';
@@ -27,16 +27,15 @@ void main() {
         callLog: callLog,
       );
       final reminderGateway = _reminderGateway(
-        onSchedule: (_) async {
-          callLog.add('schedule_pending');
-          return successInvocation(scheduleResponse);
+        onReconcile: (_) async {
+          callLog.add('reconcile_schedule');
+          return successInvocation(reconcileResponse);
         },
       );
       final bootstrap = AppNotificationBootstrap(
         notificationGateway: notificationGateway,
-        schedulePendingRemindersUseCase: SchedulePendingRemindersUseCase(
+        reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
           reminderGateway,
-          clock: () => DateTime.utc(2026, 7, 5),
         ),
         notificationTapRouter: NotificationTapRouter(navigator: navigator),
       );
@@ -47,7 +46,7 @@ void main() {
         'opened.listen',
         'initialize',
         'permission_status',
-        'schedule_pending',
+        'reconcile_schedule',
         'initial_payload',
       ]);
       expect(navigator.routes, ['/event/detail/event-1']);
@@ -67,11 +66,11 @@ void main() {
       shouldOpenSettings: true,
     );
     final reminderGateway = _reminderGateway(
-      onSchedule: (_) async => successInvocation(scheduleResponse),
+      onReconcile: (_) async => successInvocation(reconcileResponse),
     );
     final bootstrap = AppNotificationBootstrap(
       notificationGateway: notificationGateway,
-      schedulePendingRemindersUseCase: SchedulePendingRemindersUseCase(
+      reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
         reminderGateway,
       ),
       notificationTapRouter: NotificationTapRouter(
@@ -96,7 +95,7 @@ void main() {
     expect(bootstrap.state.permissionRequestHandled, isTrue);
     expect(bootstrap.state.shouldOfferSettings, isTrue);
     expect(find.text('去设置'), findsOneWidget);
-    expect(reminderGateway.schedulePendingCallCount, 0);
+    expect(reminderGateway.reconcileScheduleCallCount, 0);
 
     await notificationGateway.openedController.close();
   });
@@ -108,11 +107,11 @@ void main() {
       canScheduleExact: true,
     );
     final reminderGateway = _reminderGateway(
-      onSchedule: (_) async => successInvocation(scheduleResponse),
+      onReconcile: (_) async => successInvocation(reconcileResponse),
     );
     final bootstrap = AppNotificationBootstrap(
       notificationGateway: notificationGateway,
-      schedulePendingRemindersUseCase: SchedulePendingRemindersUseCase(
+      reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
         reminderGateway,
       ),
       notificationTapRouter: NotificationTapRouter(navigator: navigator),
@@ -142,11 +141,11 @@ void main() {
         initializeFails: true,
       );
       final reminderGateway = _reminderGateway(
-        onSchedule: (_) async => successInvocation(scheduleResponse),
+        onReconcile: (_) async => successInvocation(reconcileResponse),
       );
       final bootstrap = AppNotificationBootstrap(
         notificationGateway: notificationGateway,
-        schedulePendingRemindersUseCase: SchedulePendingRemindersUseCase(
+        reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
           reminderGateway,
         ),
         notificationTapRouter: NotificationTapRouter(
@@ -157,21 +156,20 @@ void main() {
       await bootstrap.start();
 
       expect(bootstrap.state.phase, NotificationBootstrapPhase.degraded);
-      expect(reminderGateway.schedulePendingCallCount, 0);
+      expect(reminderGateway.reconcileScheduleCallCount, 0);
       bootstrap.dispose();
       await notificationGateway.openedController.close();
     },
-    skip: 'Known defect: start() continues scheduling after initialize fails.',
   );
 }
 
 FakeReminderGateway _reminderGateway({
-  required SchedulePendingRemindersHandler onSchedule,
+  required ReconcileReminderScheduleHandler onReconcile,
 }) {
   return FakeReminderGateway(
     onCreate: (_) async => reminderSuccessInvocation(),
     onCancel: (_) async => reminderSuccessInvocation(),
-    onSchedulePending: onSchedule,
+    onReconcileSchedule: onReconcile,
   );
 }
 

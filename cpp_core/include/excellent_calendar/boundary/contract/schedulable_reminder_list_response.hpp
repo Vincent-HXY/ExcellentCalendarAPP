@@ -14,6 +14,8 @@ struct SchedulableReminderListResponse {
   std::vector<ReminderResponse> items;
   int selected_count = 0;
   bool has_more = false;
+  std::optional<std::string> next_cursor_remind_at;
+  std::optional<std::string> next_cursor_id;
   std::vector<std::string> unsupported_reminder_ids;
 };
 

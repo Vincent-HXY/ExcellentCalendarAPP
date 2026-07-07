@@ -53,8 +53,10 @@ struct GetReminderCommand {
 };
 
 struct ListSchedulableRemindersCommand {
-  std::string from_at;
-  std::string to_at;
+  std::optional<std::string> from_at;
+  std::optional<std::string> to_at;
+  std::optional<std::string> cursor_remind_at;
+  std::optional<std::string> cursor_id;
   int limit = 500;
   bool include_failed = true;
   bool include_scheduled = false;
@@ -64,6 +66,8 @@ struct ListSchedulableRemindersCommand {
 struct SchedulableReminderListResult {
   std::vector<domain::Reminder> items;
   bool has_more = false;
+  std::optional<std::string> next_cursor_remind_at;
+  std::optional<std::string> next_cursor_id;
   std::vector<std::string> unsupported_reminder_ids;
 };
 

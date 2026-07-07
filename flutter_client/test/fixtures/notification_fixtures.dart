@@ -6,6 +6,7 @@ import 'package:excellent_calendar/native_contract/notification/notification_per
 import 'package:excellent_calendar/native_contract/notification/notification_tap_payload_dto.dart';
 import 'package:excellent_calendar/native_contract/notification/request_notification_permission_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/schedule_pending_reminders_dto.dart';
+import 'package:excellent_calendar/native_contract/reminder/reconcile_reminder_schedule_dto.dart';
 import 'package:excellent_calendar/native_contract/shared/native_invocation.dart';
 
 NativeInvocation<T> successInvocation<T>(
@@ -112,6 +113,15 @@ const scheduleResponse = SchedulePendingRemindersResponseDto(
   hasMore: false,
   failedReminderIds: [],
   unsupportedReminderIds: [],
+);
+
+const reconcileResponse = ReconcileReminderScheduleResponseDto(
+  action: 'scheduled',
+  nextRemindAt: null,
+  processedDueCount: 0,
+  failedCount: 0,
+  continuationEnqueued: false,
+  failedReminderIds: [],
 );
 
 NotificationTapPayloadDto tapPayload({

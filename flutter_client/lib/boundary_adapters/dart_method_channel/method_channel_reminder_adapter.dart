@@ -5,6 +5,7 @@ import '../../native_contract/reminder/cancel_reminder_request_dto.dart';
 import '../../native_contract/reminder/create_reminder_request_dto.dart';
 import '../../native_contract/reminder/reminder_mapper.dart';
 import '../../native_contract/reminder/reminder_response_dto.dart';
+import '../../native_contract/reminder/reconcile_reminder_schedule_dto.dart';
 import '../../native_contract/reminder/schedule_pending_reminders_dto.dart';
 import '../../native_contract/shared/native_invocation.dart';
 import 'native_method_channel_contract.dart';
@@ -55,6 +56,23 @@ class MethodChannelReminderAdapter implements ReminderNativeGateway {
           );
         }
         return SchedulePendingRemindersResponseDto.fromJson(rawData);
+      },
+    );
+  }
+
+  @override
+  Future<NativeInvocation<ReconcileReminderScheduleResponseDto>>
+  reconcileSchedule(ReconcileReminderScheduleRequestDto request) {
+    return _invoker.invoke<ReconcileReminderScheduleResponseDto>(
+      method: NativeReminderMethods.reconcileSchedule,
+      arguments: request.toJson(),
+      parseData: (rawData) {
+        if (rawData is! Map<String, dynamic>) {
+          throw const FormatException(
+            'ReconcileReminderScheduleResponse data must be object.',
+          );
+        }
+        return ReconcileReminderScheduleResponseDto.fromJson(rawData);
       },
     );
   }

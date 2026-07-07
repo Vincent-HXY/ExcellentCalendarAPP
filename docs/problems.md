@@ -159,6 +159,8 @@ Flutter 将点击 payload 的 notification_id 只用于去重，不用于查询 
 7 天内超过 128 条时，后续提醒不会注册。
 超过 7 天的提醒进入窗口后，如果用户没有重新打开 App、重启手机或修改日程，也不会注册。
 
+已修复：Android 改为由 Reminder 持久队列驱动的单 Dispatcher Alarm；C++ 调度查询支持无界 keyset cursor，Alarm/Boot/前台与 WorkManager 看门狗统一进入 `ReminderScheduleCoordinator`，不再依赖 7 天窗口或 128 条批次。
+
 [P1] 过期 Alarm 会先显示错误通知，再由 C++ 拒绝。
 [ReminderDeliveryService.kt (line 51)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/reminder/ReminderDeliveryService.kt:51) 使用 Alarm 中的旧 plannedAt 直接弹通知，到第 83 行才调用 C++ 消费；而 C++ 在 [notification_service.cpp (line 236)](/A:/calendar/ExcellentCalendarAPP/cpp_core/src/application/notification_service.cpp:236) 才检查时间是否仍匹配。用户可能看到或听到本不应该触发的旧提醒。
 

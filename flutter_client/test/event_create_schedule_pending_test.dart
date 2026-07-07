@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:excellent_calendar/application/event/create_event_use_case.dart';
 import 'package:excellent_calendar/application/event/update_event_use_case.dart';
-import 'package:excellent_calendar/application/reminder/schedule_pending_reminders_use_case.dart';
+import 'package:excellent_calendar/application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'package:excellent_calendar/gateway_interfaces/event_native_gateway.dart';
 import 'package:excellent_calendar/native_contract/event/complete_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/create_event_request_dto.dart';
@@ -12,7 +12,7 @@ import 'package:excellent_calendar/native_contract/event/event_response_dto.dart
 import 'package:excellent_calendar/native_contract/event/reopen_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/search_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/update_event_request_dto.dart';
-import 'package:excellent_calendar/native_contract/reminder/schedule_pending_reminders_dto.dart';
+import 'package:excellent_calendar/native_contract/reminder/reconcile_reminder_schedule_dto.dart';
 import 'package:excellent_calendar/native_contract/shared/native_invocation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,215 +22,142 @@ import 'fixtures/reminder_fixtures.dart';
 
 void main() {
   test(
-    'successful event creation triggers pending reminder scheduling',
+    'successful event mutation reconciles the durable reminder queue',
     () async {
-      final reminderGateway = FakeReminderGateway(
-        onCreate: (_) async => reminderSuccessInvocation(),
-        onCancel: (_) async => reminderSuccessInvocation(),
-        onSchedulePending: (_) async => successInvocation(scheduleResponse),
+      final reminderGateway = _reminderGateway();
+      final reconciler = ReconcileReminderScheduleUseCase(reminderGateway);
+      final create = CreateEventUseCase(
+        _EventGateway(),
+        reconcileReminderScheduleUseCase: reconciler,
       );
-      final useCase = CreateEventUseCase(
-        _CreateEventGateway(),
-        schedulePendingRemindersUseCase: SchedulePendingRemindersUseCase(
-          reminderGateway,
-          clock: () => DateTime.utc(2026, 7, 5),
-        ),
+      final update = UpdateEventUseCase(
+        _EventGateway(),
+        reconcileReminderScheduleUseCase: reconciler,
       );
 
-      final result = await useCase.execute(
-        CreateEventRequestDto(
-          title: 'Meeting',
-          startAt: DateTime.utc(2026, 7, 5, 10),
-          endAt: DateTime.utc(2026, 7, 5, 11),
-          isAllDay: false,
-          source: 'manual',
-        ),
+      await create.execute(_createRequest());
+      await update.execute(
+        const UpdateEventRequestDto(id: 'event-1', title: 'Updated'),
       );
 
-      expect(result.result.ok, isTrue);
-      expect(reminderGateway.schedulePendingCallCount, 1);
+      expect(reminderGateway.reconcileScheduleCallCount, 2);
       expect(
-        reminderGateway.lastSchedulePendingRequest!.toJson()['limit'],
-        128,
+        reminderGateway.lastReconcileScheduleRequest!.triggerSource,
+        ReminderScheduleTrigger.mutation,
       );
+      expect(reminderGateway.lastReconcileScheduleRequest!.force, isTrue);
     },
   );
 
-  test(
-    'successful event update triggers pending reminder scheduling',
-    () async {
-      final reminderGateway = FakeReminderGateway(
-        onCreate: (_) async => reminderSuccessInvocation(),
-        onCancel: (_) async => reminderSuccessInvocation(),
-        onSchedulePending: (_) async => successInvocation(scheduleResponse),
-      );
-      final useCase = UpdateEventUseCase(
-        _CreateEventGateway(),
-        schedulePendingRemindersUseCase: SchedulePendingRemindersUseCase(
-          reminderGateway,
-          clock: () => DateTime.utc(2026, 7, 5),
-        ),
-      );
-
-      final result = await useCase.execute(
-        const UpdateEventRequestDto(id: 'event-1', title: 'Updated meeting'),
-      );
-
-      expect(result.result.ok, isTrue);
-      expect(reminderGateway.schedulePendingCallCount, 1);
-    },
-  );
-
-  test('failed event creation does not schedule pending reminders', () async {
-    final reminderGateway = FakeReminderGateway(
-      onCreate: (_) async => reminderSuccessInvocation(),
-      onCancel: (_) async => reminderSuccessInvocation(),
-      onSchedulePending: (_) async => successInvocation(scheduleResponse),
-    );
+  test('failed event creation does not reconcile reminders', () async {
+    final reminderGateway = _reminderGateway();
     final useCase = CreateEventUseCase(
-      _CreateEventGateway(
-        createResult: failureInvocation<EventResponseDto>(
-          code: 'EVENT_VALIDATION_FAILED',
-        ),
-      ),
-      schedulePendingRemindersUseCase: SchedulePendingRemindersUseCase(
+      _EventGateway(createFails: true),
+      reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
         reminderGateway,
       ),
     );
 
-    final result = await useCase.execute(
-      CreateEventRequestDto(
-        title: '',
-        startAt: DateTime.utc(2026, 7, 5, 10),
-        endAt: DateTime.utc(2026, 7, 5, 11),
-        isAllDay: false,
-        source: 'manual',
-      ),
-    );
+    await useCase.execute(_createRequest());
 
-    expect(result.result.ok, isFalse);
-    expect(reminderGateway.schedulePendingCallCount, 0);
+    expect(reminderGateway.reconcileScheduleCallCount, 0);
   });
 
-  test('concurrent scheduling requests share one native invocation', () async {
-    final pendingResult =
-        Completer<NativeInvocation<SchedulePendingRemindersResponseDto>>();
-    final reminderGateway = FakeReminderGateway(
-      onCreate: (_) async => reminderSuccessInvocation(),
-      onCancel: (_) async => reminderSuccessInvocation(),
-      onSchedulePending: (_) => pendingResult.future,
+  test('concurrent reconcile requests share one native invocation', () async {
+    final pending =
+        Completer<NativeInvocation<ReconcileReminderScheduleResponseDto>>();
+    final gateway = _reminderGateway(onReconcile: (_) => pending.future);
+    final useCase = ReconcileReminderScheduleUseCase(gateway);
+
+    final first = useCase.execute(
+      triggerSource: ReminderScheduleTrigger.appStart,
     );
-    final useCase = SchedulePendingRemindersUseCase(
-      reminderGateway,
-      clock: () => DateTime.utc(2026, 7, 5),
+    final second = useCase.execute(
+      triggerSource: ReminderScheduleTrigger.appResume,
     );
-
-    final first = useCase.execute();
-    final second = useCase.execute();
-
-    expect(reminderGateway.schedulePendingCallCount, 1);
-    expect(useCase.isScheduling, isTrue);
-    pendingResult.complete(successInvocation(scheduleResponse));
-    expect((await first).result.ok, isTrue);
-    expect((await second).result.ok, isTrue);
-    expect(useCase.isScheduling, isFalse);
-
-    await useCase.execute();
-    expect(reminderGateway.schedulePendingCallCount, 2);
+    expect(gateway.reconcileScheduleCallCount, 1);
+    pending.complete(successInvocation(reconcileResponse));
+    await Future.wait([first, second]);
+    expect(useCase.isReconciling, isFalse);
   });
 
   test(
-    'scheduling drains every page when native reports has_more',
+    'event use case exposes reconcile failure instead of discarding it',
     () async {
-      var callCount = 0;
-      final reminderGateway = FakeReminderGateway(
-        onCreate: (_) async => reminderSuccessInvocation(),
-        onCancel: (_) async => reminderSuccessInvocation(),
-        onSchedulePending: (_) async {
-          callCount += 1;
-          return successInvocation(
-            SchedulePendingRemindersResponseDto(
-              scheduledCount: 128,
-              skippedCount: 0,
-              failedCount: 0,
-              unsupportedMethodCount: 0,
-              hasMore: callCount == 1,
-              failedReminderIds: const [],
-              unsupportedReminderIds: const [],
-            ),
-          );
-        },
+      final gateway = _reminderGateway(
+        onReconcile: (_) async =>
+            failureInvocation(code: 'ALARM_SCHEDULE_FAILED'),
       );
-      final useCase = SchedulePendingRemindersUseCase(reminderGateway);
+      final useCase = CreateEventUseCase(
+        _EventGateway(),
+        reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
+          gateway,
+        ),
+      );
 
-      await useCase.execute();
+      final eventResult = await useCase.execute(_createRequest());
 
-      expect(callCount, 2);
+      expect(eventResult.result.ok, isTrue);
+      expect(useCase.lastReconcileInvocation?.result.ok, isFalse);
     },
-    skip:
-        'Known defect: has_more is returned but no caller drains the next page.',
   );
 }
 
-class _CreateEventGateway implements EventNativeGateway {
-  _CreateEventGateway({this.createResult});
+FakeReminderGateway _reminderGateway({
+  ReconcileReminderScheduleHandler? onReconcile,
+}) => FakeReminderGateway(
+  onCreate: (_) async => reminderSuccessInvocation(),
+  onCancel: (_) async => reminderSuccessInvocation(),
+  onReconcileSchedule:
+      onReconcile ?? (_) async => successInvocation(reconcileResponse),
+);
 
-  final NativeInvocation<EventResponseDto>? createResult;
+CreateEventRequestDto _createRequest() => CreateEventRequestDto(
+  title: 'Meeting',
+  startAt: DateTime.utc(2026, 7, 5, 10),
+  endAt: DateTime.utc(2026, 7, 5, 11),
+  isAllDay: false,
+  source: 'manual',
+);
 
-  @override
-  Future<NativeInvocation<EventResponseDto>> updateEvent(
-    UpdateEventRequestDto request,
-  ) async {
-    final now = DateTime.utc(2026, 7, 5);
-    return successInvocation(
-      EventResponseDto(
-        id: request.id,
-        title: request.title ?? 'Meeting',
-        startAt: DateTime.utc(2026, 7, 5, 10),
-        endAt: DateTime.utc(2026, 7, 5, 11),
-        isAllDay: false,
-        hasRecurrence: false,
-        status: 'active',
-        source: request.source ?? 'manual',
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
-  }
+class _EventGateway implements EventNativeGateway {
+  _EventGateway({this.createFails = false});
+  final bool createFails;
 
   @override
   Future<NativeInvocation<EventResponseDto>> createEvent(
     CreateEventRequestDto request,
   ) async {
-    final configuredResult = createResult;
-    if (configuredResult != null) return configuredResult;
-    final now = DateTime.utc(2026, 7, 5);
-    return successInvocation(
-      EventResponseDto(
-        id: 'event-1',
-        title: request.title,
-        startAt: request.startAt,
-        endAt: request.endAt,
-        isAllDay: request.isAllDay,
-        hasRecurrence: false,
-        status: 'active',
-        source: request.source,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+    if (createFails) return failureInvocation(code: 'EVENT_VALIDATION_FAILED');
+    return successInvocation(_event(title: request.title));
   }
+
+  @override
+  Future<NativeInvocation<EventResponseDto>> updateEvent(
+    UpdateEventRequestDto request,
+  ) async => successInvocation(_event(title: request.title ?? 'Meeting'));
+
+  EventResponseDto _event({required String title}) => EventResponseDto(
+    id: 'event-1',
+    title: title,
+    startAt: DateTime.utc(2026, 7, 5, 10),
+    endAt: DateTime.utc(2026, 7, 5, 11),
+    isAllDay: false,
+    hasRecurrence: false,
+    status: 'active',
+    source: 'manual',
+    createdAt: DateTime.utc(2026, 7, 5),
+    updatedAt: DateTime.utc(2026, 7, 5),
+  );
 
   @override
   Future<NativeInvocation<EventResponseDto>> completeEvent(
     CompleteEventRequestDto request,
   ) => throw UnimplementedError();
-
   @override
   Future<NativeInvocation<EventListResponseDto>> readEvents(
     SearchEventRequestDto request,
   ) => throw UnimplementedError();
-
   @override
   Future<NativeInvocation<EventOccurrenceStateResponseDto>> reopenEvent(
     ReopenEventRequestDto request,

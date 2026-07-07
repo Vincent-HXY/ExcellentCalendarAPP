@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../application/reminder/schedule_pending_reminders_use_case.dart';
+import '../../application/reminder/reconcile_reminder_schedule_use_case.dart';
 import '../../gateway_interfaces/notification_native_gateway.dart';
 import '../../native_contract/notification/notification_contract_enums.dart';
 import '../../native_contract/notification/notification_permission_status_dto.dart';
 import '../../native_contract/notification/open_notification_settings_request_dto.dart';
 import '../../native_contract/notification/request_notification_permission_dto.dart';
-import '../../native_contract/reminder/schedule_pending_reminders_dto.dart';
+import '../../native_contract/reminder/reconcile_reminder_schedule_dto.dart';
 import '../routing/notification_tap_router.dart';
 
 enum NotificationBootstrapPhase { idle, starting, ready, degraded }
@@ -29,7 +29,7 @@ class AppNotificationBootstrapState {
   final bool needsPermissionExplanation;
   final bool permissionRequestHandled;
   final bool shouldOfferSettings;
-  final SchedulePendingRemindersResponseDto? lastScheduleResponse;
+  final ReconcileReminderScheduleResponseDto? lastScheduleResponse;
   final String? errorMessage;
 
   AppNotificationBootstrapState copyWith({
@@ -38,7 +38,7 @@ class AppNotificationBootstrapState {
     bool? needsPermissionExplanation,
     bool? permissionRequestHandled,
     bool? shouldOfferSettings,
-    SchedulePendingRemindersResponseDto? lastScheduleResponse,
+    ReconcileReminderScheduleResponseDto? lastScheduleResponse,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -59,14 +59,14 @@ class AppNotificationBootstrapState {
 class AppNotificationBootstrap extends ChangeNotifier {
   AppNotificationBootstrap({
     required NotificationNativeGateway notificationGateway,
-    required SchedulePendingRemindersUseCase schedulePendingRemindersUseCase,
+    required ReconcileReminderScheduleUseCase reconcileReminderScheduleUseCase,
     required NotificationTapRouter notificationTapRouter,
   }) : _notificationGateway = notificationGateway,
-       _schedulePendingRemindersUseCase = schedulePendingRemindersUseCase,
+       _reconcileReminderScheduleUseCase = reconcileReminderScheduleUseCase,
        _notificationTapRouter = notificationTapRouter;
 
   final NotificationNativeGateway _notificationGateway;
-  final SchedulePendingRemindersUseCase _schedulePendingRemindersUseCase;
+  final ReconcileReminderScheduleUseCase _reconcileReminderScheduleUseCase;
   final NotificationTapRouter _notificationTapRouter;
   StreamSubscription<NotificationOpenedEvent>? _openedSubscription;
   AppNotificationBootstrapState _state = const AppNotificationBootstrapState();
@@ -88,10 +88,11 @@ class AppNotificationBootstrap extends ChangeNotifier {
     final initialization = await _notificationGateway.initialize();
     if (!initialization.result.ok) {
       _setDegraded(_nativeError(initialization.result.error?.message));
+      return;
     }
 
     await _refreshPermissionStatus(showExplanation: true);
-    await _scheduleIfAllowed();
+    await _reconcileIfAllowed(ReminderScheduleTrigger.appStart);
 
     final initialPayload = await _notificationGateway.getInitialTapPayload();
     if (initialPayload.result.ok) {
@@ -140,7 +141,7 @@ class AppNotificationBootstrap extends ChangeNotifier {
       ),
     );
     await _refreshPermissionStatus(showExplanation: false);
-    await _scheduleIfAllowed();
+    await _reconcileIfAllowed(ReminderScheduleTrigger.manualRetry, force: true);
   }
 
   void dismissPermissionExplanation() {
@@ -169,10 +170,11 @@ class AppNotificationBootstrap extends ChangeNotifier {
   Future<void> onAppResumed() async {
     if (!_started) return;
     await _refreshPermissionStatus(showExplanation: false);
-    await _scheduleIfAllowed();
+    await _reconcileIfAllowed(ReminderScheduleTrigger.appResume);
   }
 
-  Future<void> schedulePendingAfterMutation() => _scheduleIfAllowed();
+  Future<void> schedulePendingAfterMutation() =>
+      _reconcileIfAllowed(ReminderScheduleTrigger.mutation, force: true);
 
   Future<void> _refreshPermissionStatus({required bool showExplanation}) async {
     final invocation = await _notificationGateway.permissionStatus();
@@ -197,14 +199,20 @@ class AppNotificationBootstrap extends ChangeNotifier {
     );
   }
 
-  Future<void> _scheduleIfAllowed() async {
+  Future<void> _reconcileIfAllowed(
+    ReminderScheduleTrigger triggerSource, {
+    bool force = false,
+  }) async {
     final status = _state.permissionStatus;
     if (status == null ||
         !status.canPostNotifications ||
         !status.canScheduleExactAlarms) {
       return;
     }
-    final invocation = await _schedulePendingRemindersUseCase.execute();
+    final invocation = await _reconcileReminderScheduleUseCase.execute(
+      triggerSource: triggerSource,
+      force: force,
+    );
     if (invocation.result.ok) {
       _setState(
         _state.copyWith(

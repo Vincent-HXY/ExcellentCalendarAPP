@@ -18,11 +18,18 @@ class ReminderNativeOrchestrator(
     private val scheduler: ReminderScheduler,
     private val logger: ReminderOrchestrationLogger,
     private val nowUtc: () -> String = { Instant.now().toString() },
+    private val reconcileAfterMutation: (() -> NativeResultContract)? = null,
 ) {
     fun createReminder(requestJson: String): NativeResultContract {
         val created = parseReminderResult(nativeBridge.createReminder(requestJson))
         if (!created.ok) {
             return created
+        }
+
+        val reconciler = reconcileAfterMutation
+        if (reconciler != null) {
+            val reconciled = reconciler()
+            return if (reconciled.ok) created else reconciled
         }
 
         val reminder = ReminderContract.fromData(created.data)
@@ -49,6 +56,13 @@ class ReminderNativeOrchestrator(
     }
 
     fun cancelReminder(requestJson: String, reminderId: String): NativeResultContract {
+        val reconciler = reconcileAfterMutation
+        if (reconciler != null) {
+            val cancelled = parseReminderResult(nativeBridge.cancelReminder(requestJson))
+            if (!cancelled.ok) return cancelled
+            val reconciled = reconciler()
+            return if (reconciled.ok) cancelled else reconciled
+        }
         val preflight = findReminder(reminderId)
         if (preflight.failure != null) {
             return preflight.failure
@@ -74,6 +88,14 @@ class ReminderNativeOrchestrator(
                 retryable = cancelResult.retryable,
             )
         }
+    }
+
+    fun updateReminder(requestJson: String): NativeResultContract {
+        val updated = parseReminderResult(nativeBridge.updateReminder(requestJson))
+        if (!updated.ok) return updated
+        val reconciler = reconcileAfterMutation ?: return updated
+        val reconciled = reconciler()
+        return if (reconciled.ok) updated else reconciled
     }
 
     private fun findReminder(reminderId: String): ReminderPreflight {

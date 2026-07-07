@@ -651,6 +651,39 @@ void schedulable_service_tests() {
   auto limited = service.list_schedulable_reminders(command);
   require(limited.ok() && limited.value().items.size() == 1 && limited.value().has_more,
           "schedulable limit should set has_more when results are truncated");
+  require(limited.value().next_cursor_remind_at.has_value() && limited.value().next_cursor_id.has_value(),
+          "truncated schedulable page should return a keyset cursor");
+
+  command.cursor_remind_at = limited.value().next_cursor_remind_at;
+  command.cursor_id = limited.value().next_cursor_id;
+  auto second_page = service.list_schedulable_reminders(command);
+  require(second_page.ok() && !second_page.value().items.empty() &&
+              second_page.value().items.front().id != limited.value().items.front().id,
+          "keyset pagination should advance even when the previous item remains failed");
+
+  command.cursor_remind_at = std::nullopt;
+  command.cursor_id = std::nullopt;
+  command.from_at = std::nullopt;
+  command.to_at = std::nullopt;
+  command.limit = 500;
+  auto unbounded = service.list_schedulable_reminders(command);
+  require(unbounded.ok() && unbounded.value().items.size() == 4,
+          "unbounded scheduler query should include future reminders outside the old window");
+
+  for (int index = 0; index < 501; ++index) {
+    add("bulk-" + std::to_string(index), "2026-06-08T12:50:00Z", "pending");
+  }
+  command.from_at = "2026-06-08T12:00:00Z";
+  command.to_at = "2026-06-08T13:00:00Z";
+  command.limit = 500;
+  auto bulk_first = service.list_schedulable_reminders(command);
+  require(bulk_first.ok() && bulk_first.value().items.size() == 500 && bulk_first.value().has_more,
+          "scheduler should expose more than the Android per-UID alarm cap without truncating the queue");
+  command.cursor_remind_at = bulk_first.value().next_cursor_remind_at;
+  command.cursor_id = bulk_first.value().next_cursor_id;
+  auto bulk_second = service.list_schedulable_reminders(command);
+  require(bulk_second.ok() && !bulk_second.value().items.empty(),
+          "scheduler keyset cursor should drain reminders beyond the first 500");
 }
 
 void notification_delivery_tests() {

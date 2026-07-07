@@ -100,6 +100,7 @@ data class SchedulePendingRemindersContract(
 data class SchedulableReminderBatch(
     val reminders: List<ReminderContract>,
     val hasMore: Boolean,
+    val nextCursor: SchedulableReminderCursor?,
     val unsupportedReminderIds: List<String>,
 ) {
     companion object {
@@ -112,7 +113,7 @@ data class SchedulableReminderBatch(
             val parent = "SchedulableReminderListResponse"
             ContractValidators.rejectUnknownFields(
                 map,
-                setOf("items", "selected_count", "has_more", "unsupported_reminder_ids"),
+                setOf("items", "selected_count", "has_more", "next_cursor", "unsupported_reminder_ids"),
                 parent,
             )
             val items = map["items"]
@@ -121,6 +122,14 @@ data class SchedulableReminderBatch(
             }
             ContractValidators.requireInteger(map, "selected_count", parent)
             ContractValidators.requireBoolean(map, "has_more", parent)
+            val nextCursor = SchedulableReminderCursor.fromData(map["next_cursor"])
+            val hasMore = map["has_more"] as Boolean
+            if (hasMore != (nextCursor != null)) {
+                throw NativeContractViolation(
+                    "$parent.next_cursor must be present exactly when has_more is true.",
+                    "$parent.next_cursor",
+                )
+            }
             val unsupported = map["unsupported_reminder_ids"]
             if (unsupported !is List<*> || unsupported.any { it !is String || it.isBlank() }) {
                 throw NativeContractViolation(
@@ -136,9 +145,29 @@ data class SchedulableReminderBatch(
             @Suppress("UNCHECKED_CAST")
             return SchedulableReminderBatch(
                 reminders = reminders,
-                hasMore = map["has_more"] as Boolean,
+                hasMore = hasMore,
+                nextCursor = nextCursor,
                 unsupportedReminderIds = unsupported as List<String>,
             )
+        }
+    }
+}
+
+data class SchedulableReminderCursor(val remindAt: String, val id: String) {
+    fun toMap(): Map<String, Any?> = linkedMapOf("remind_at" to remindAt, "id" to id)
+
+    companion object {
+        fun fromData(data: Any?): SchedulableReminderCursor? {
+            if (data == null) return null
+            if (data !is Map<*, *>) {
+                throw NativeContractViolation("SchedulableReminderCursor must be an object or null.", "next_cursor")
+            }
+            @Suppress("UNCHECKED_CAST")
+            val map = data as Map<String, Any?>
+            ContractValidators.rejectUnknownFields(map, setOf("remind_at", "id"), "SchedulableReminderCursor")
+            ContractValidators.requireString(map, "remind_at", "SchedulableReminderCursor", nonEmpty = true)
+            ContractValidators.requireString(map, "id", "SchedulableReminderCursor", nonEmpty = true)
+            return SchedulableReminderCursor(map["remind_at"] as String, map["id"] as String)
         }
     }
 }

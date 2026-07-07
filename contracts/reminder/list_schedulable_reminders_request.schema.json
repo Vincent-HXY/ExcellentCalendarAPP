@@ -6,15 +6,30 @@
   "x-contract-version": 1,
   "type": "object",
   "additionalProperties": false,
-  "required": ["from_at", "to_at", "supported_methods"],
+  "required": ["supported_methods"],
   "properties": {
     "from_at": {
-      "type": "string",
+      "type": ["string", "null"],
       "format": "date-time"
     },
     "to_at": {
-      "type": "string",
+      "type": ["string", "null"],
       "format": "date-time"
+    },
+    "cursor": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["remind_at", "id"],
+          "properties": {
+            "remind_at": {"type": "string", "format": "date-time"},
+            "id": {"type": "string", "minLength": 1}
+          }
+        }
+      ],
+      "description": "Exclusive keyset cursor ordered by (remind_at, id)."
     },
     "limit": {
       "type": "integer",

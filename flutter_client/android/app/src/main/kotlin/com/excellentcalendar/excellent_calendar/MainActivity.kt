@@ -3,10 +3,13 @@ package com.excellentcalendar.excellent_calendar
 import android.content.Intent
 import android.os.Bundle
 import com.excellentcalendar.excellent_calendar.android.alarm.AlarmManagerReminderScheduler
+import com.excellentcalendar.excellent_calendar.android.alarm.ReminderCoordinatorFactory
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationChannelManager
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationPermissionManager
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationRuntime
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
 import com.excellentcalendar.excellent_calendar.bridge.native.AndroidNativeBridgeFactory
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
@@ -59,6 +62,7 @@ class MainActivity : FlutterActivity() {
 
         val nativeBridge = AndroidNativeBridgeFactory.create(applicationContext)
         val reminderScheduler = AlarmManagerReminderScheduler(applicationContext)
+        val reminderScheduleCoordinator = ReminderCoordinatorFactory.create(applicationContext)
         val reminderOrchestrator = ReminderNativeOrchestrator(
             nativeBridge = nativeBridge,
             scheduler = reminderScheduler,
@@ -66,6 +70,11 @@ class MainActivity : FlutterActivity() {
                 android.util.Log.d(
                     NativeMethodChannelHandler.LogTag,
                     "operation=$operation reminder_id=${reminderId ?: "null"} $message",
+                )
+            },
+            reconcileAfterMutation = {
+                reminderScheduleCoordinator.reconcile(
+                    ReconcileReminderScheduleContract(ReminderScheduleTrigger.Mutation, force = true),
                 )
             },
         )
@@ -92,6 +101,7 @@ class MainActivity : FlutterActivity() {
             reminderOrchestrator = reminderOrchestrator,
             notificationOrchestrator = notificationOrchestrator,
             pendingReminderScheduleService = pendingScheduleService,
+            reminderScheduleCoordinator = reminderScheduleCoordinator,
         )
         nativeMethodChannelHandler = handler
         // MethodChannel 是 Flutter 的“方法调用通道”：

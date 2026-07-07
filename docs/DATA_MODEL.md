@@ -266,6 +266,9 @@
 - `Reminder` 回答“未来什么时候需要提醒、提醒谁、用什么方式提醒”。
 - `Reminder` 是待执行任务，适合被后台扫描、注册系统闹钟、失败重试。
 - `Reminder` 不负责记录通知最终有没有展示成功；投递结果由 `Notification` 记录。
+- Android 不再为每条 Reminder 分别注册 Alarm。调度器始终从本表按 `(remindAt, id)` 读取最早任务，使用一个 Dispatcher Alarm 覆盖该触发时刻；触发后排空所有到期 Reminder，再滚动到下一时刻。
+- `status = scheduled` 表示该 Reminder 的触发时刻已由当前 Dispatcher Alarm 覆盖，不表示 Android 中存在一条与 Reminder 一一对应的 Alarm。
+- 后续切换到 SQLite 时，调度查询应建立覆盖 `isEnabled / deletedAt / status / remindAt / id` 的索引；Notification 仍不得参与扫描。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |

@@ -22,6 +22,7 @@ class NativeReminderMethods {
   static const create = 'reminder.create';
   static const cancel = 'reminder.cancel';
   static const schedulePending = 'reminder.schedule_pending';
+  static const reconcileSchedule = 'reminder.reconcile_schedule';
 }
 
 class NativeNotificationMethods {

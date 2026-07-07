@@ -299,13 +299,32 @@ common::Result<domain::Reminder> ReminderService::get_reminder(const GetReminder
 
 common::Result<SchedulableReminderListResult> ReminderService::list_schedulable_reminders(
     const ListSchedulableRemindersCommand& command) {
-  const auto from_time = common::parse_iso8601_utc_epoch_seconds(command.from_at);
-  const auto to_time = common::parse_iso8601_utc_epoch_seconds(command.to_at);
-  if (!from_time.has_value()) {
+  const auto from_time = command.from_at.has_value()
+      ? common::parse_iso8601_utc_epoch_seconds(*command.from_at)
+      : std::optional<std::int64_t>{};
+  const auto to_time = command.to_at.has_value()
+      ? common::parse_iso8601_utc_epoch_seconds(*command.to_at)
+      : std::optional<std::int64_t>{};
+  if (command.from_at.has_value() && !from_time.has_value()) {
     return common::Result<SchedulableReminderListResult>::failure(reminder_time_invalid("from_at"));
   }
-  if (!to_time.has_value() || *from_time > *to_time) {
+  if (command.to_at.has_value() && !to_time.has_value()) {
     return common::Result<SchedulableReminderListResult>::failure(reminder_time_invalid("to_at"));
+  }
+  if (from_time.has_value() && to_time.has_value() && *from_time > *to_time) {
+    return common::Result<SchedulableReminderListResult>::failure(reminder_time_invalid("to_at"));
+  }
+  if (command.cursor_remind_at.has_value() != command.cursor_id.has_value()) {
+    return common::Result<SchedulableReminderListResult>::failure(
+        contract_validation_failed("cursor", "Schedulable reminder cursor must contain remind_at and id."));
+  }
+  std::optional<std::int64_t> cursor_time;
+  if (command.cursor_remind_at.has_value()) {
+    cursor_time = common::parse_iso8601_utc_epoch_seconds(*command.cursor_remind_at);
+    if (!cursor_time.has_value() || command.cursor_id->empty()) {
+      return common::Result<SchedulableReminderListResult>::failure(
+          contract_validation_failed("cursor", "Schedulable reminder cursor is invalid."));
+    }
   }
   if (command.limit < 1 || command.limit > 500) {
     return common::Result<SchedulableReminderListResult>::failure(
@@ -353,7 +372,13 @@ common::Result<SchedulableReminderListResult> ReminderService::list_schedulable_
       return common::Result<SchedulableReminderListResult>::failure(
           storage_corrupted("remind_at", "stored reminder remind_at is invalid"));
     }
-    if (*remind_time < *from_time || *remind_time > *to_time) {
+    if ((from_time.has_value() && *remind_time < *from_time) ||
+        (to_time.has_value() && *remind_time > *to_time)) {
+      continue;
+    }
+    if (cursor_time.has_value() &&
+        (*remind_time < *cursor_time ||
+         (*remind_time == *cursor_time && reminder.id <= *command.cursor_id))) {
       continue;
     }
     if (!reminder_has_any_method(reminder, command.supported_methods)) {
@@ -377,6 +402,11 @@ common::Result<SchedulableReminderListResult> ReminderService::list_schedulable_
     candidates.resize(static_cast<std::size_t>(command.limit));
   }
   result.items = std::move(candidates);
+  if (result.has_more && !result.items.empty()) {
+    const auto& last = result.items.back();
+    result.next_cursor_remind_at = last.remind_at;
+    result.next_cursor_id = last.id;
+  }
   return common::Result<SchedulableReminderListResult>::success(std::move(result));
 }
 

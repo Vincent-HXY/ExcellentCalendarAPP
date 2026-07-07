@@ -2,6 +2,7 @@ import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_
 import 'package:excellent_calendar/native_contract/reminder/cancel_reminder_request_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/create_reminder_request_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/reminder_contract_enums.dart';
+import 'package:excellent_calendar/native_contract/reminder/reconcile_reminder_schedule_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/schedule_pending_reminders_dto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -124,4 +125,44 @@ void main() {
     expect(captured!.arguments['limit'], 128);
     expect(captured!.arguments['from_at'], '2026-07-05T00:00:00.000Z');
   });
+
+  test(
+    'adapter invokes reminder.reconcile_schedule with trigger source',
+    () async {
+      MethodCall? captured;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            captured = call;
+            return {
+              'ok': true,
+              'data': {
+                'action': 'scheduled',
+                'next_remind_at': '2026-08-05T00:00:00Z',
+                'processed_due_count': 0,
+                'failed_count': 0,
+                'continuation_enqueued': false,
+                'failed_reminder_ids': <String>[],
+              },
+              'error': null,
+              'contract_version': 1,
+              'request_id': 'reconcile-1',
+            };
+          });
+
+      final result = await MethodChannelReminderAdapter(channel: channel)
+          .reconcileSchedule(
+            const ReconcileReminderScheduleRequestDto(
+              triggerSource: ReminderScheduleTrigger.appResume,
+              force: true,
+            ),
+          );
+
+      expect(captured!.method, 'reminder.reconcile_schedule');
+      expect(captured!.arguments, {
+        'trigger_source': 'app_resume',
+        'force': true,
+      });
+      expect(result.result.data!.nextRemindAt, DateTime.utc(2026, 8, 5));
+    },
+  );
 }

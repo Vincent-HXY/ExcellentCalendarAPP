@@ -18,6 +18,7 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultCont
 import com.excellentcalendar.excellent_calendar.bridge.contract.OpenNotificationSettingsContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.RequestNotificationPermissionContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReopenEventRequestContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderListResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.SearchEventRequestContract
@@ -29,6 +30,7 @@ import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
+import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderScheduleCoordinator
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executor
@@ -85,6 +87,7 @@ class NativeMethodChannelHandler(
     private val reminderOrchestrator: ReminderNativeOrchestrator? = null,
     private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
     private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
+    private val reminderScheduleCoordinator: ReminderScheduleCoordinator? = null,
     /**
      * native 调用放到后台 executor 中执行，避免阻塞 Android 主线程。
      *
@@ -109,6 +112,7 @@ class NativeMethodChannelHandler(
             MethodReminderCancel -> handleCancelReminder(call, completion)
             MethodReminderList -> handleListReminders(call, completion)
             MethodReminderSchedulePending -> handleSchedulePending(call, completion)
+            MethodReminderReconcileSchedule -> handleReconcileSchedule(call, completion)
             MethodNotificationInitialize -> handleNotificationInitialize(call, completion)
             MethodNotificationPermissionStatus -> handleNotificationPermissionStatus(call, completion)
             MethodNotificationRequestPermission -> handleNotificationRequestPermission(call, completion)
@@ -221,8 +225,8 @@ class NativeMethodChannelHandler(
             completion.success(contractFailure(call.method, error).toMap())
             return
         }
-        executeNative(call.method, completion, ReminderResponseContract::validate) {
-            nativeEventBridge.updateReminder(request.toJson())
+        executeReminder(call.method, completion) {
+            requireReminderOrchestrator(call.method).updateReminder(request.toJson())
         }
     }
 
@@ -258,7 +262,46 @@ class NativeMethodChannelHandler(
             return
         }
         executeReminder(call.method, completion) {
-            requirePendingScheduleService(call.method).schedulePending(request)
+            val coordinator = reminderScheduleCoordinator
+            if (coordinator == null) {
+                requirePendingScheduleService(call.method).schedulePending(request)
+            } else {
+                val reconciled = coordinator.reconcile(
+                    ReconcileReminderScheduleContract(
+                        com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger.AppStart,
+                        force = request.forceReschedule,
+                    ),
+                )
+                if (!reconciled.ok) {
+                    reconciled
+                } else {
+                    @Suppress("UNCHECKED_CAST")
+                    val data = reconciled.data as Map<String, Any?>
+                    NativeResultContract.success(
+                        linkedMapOf(
+                            "scheduled_count" to if (data["action"] == "scheduled") 1 else 0,
+                            "skipped_count" to 0,
+                            "failed_count" to data["failed_count"],
+                            "unsupported_method_count" to 0,
+                            "has_more" to data["continuation_enqueued"],
+                            "failed_reminder_ids" to data["failed_reminder_ids"],
+                            "unsupported_reminder_ids" to emptyList<String>(),
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun handleReconcileSchedule(call: MethodCall, completion: SingleCompletion) {
+        val request = try {
+            ReconcileReminderScheduleContract.fromMethodArguments(call.arguments)
+        } catch (error: NativeContractViolation) {
+            completion.success(contractFailure(call.method, error).toMap())
+            return
+        }
+        executeReminder(call.method, completion) {
+            requireReminderScheduleCoordinator(call.method).reconcile(request)
         }
     }
 
@@ -406,6 +449,12 @@ class NativeMethodChannelHandler(
         )
     }
 
+    private fun requireReminderScheduleCoordinator(method: String): ReminderScheduleCoordinator {
+        return reminderScheduleCoordinator ?: throw NativeBridgeUnavailableException(
+            "Reminder schedule coordinator is not configured for $method.",
+        )
+    }
+
     /** 把 Kotlin 侧或 native 响应侧的合约错误转换成统一 NativeResult。 */
     private fun contractFailure(method: String, error: NativeContractViolation): NativeResultContract {
         logger.log(method, null, "contract validation failed field=${error.field ?: "unknown"}")
@@ -487,6 +536,7 @@ class NativeMethodChannelHandler(
         const val MethodReminderCancel = "reminder.cancel"
         const val MethodReminderList = "reminder.list"
         const val MethodReminderSchedulePending = "reminder.schedule_pending"
+        const val MethodReminderReconcileSchedule = "reminder.reconcile_schedule"
         const val MethodNotificationInitialize = "notification.initialize"
         const val MethodNotificationPermissionStatus = "notification.permission_status"
         const val MethodNotificationRequestPermission = "notification.request_permission"
