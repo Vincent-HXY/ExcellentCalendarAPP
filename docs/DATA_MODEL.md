@@ -331,6 +331,7 @@
 - `Notification` 是结果日志，不参与未来提醒扫描。
 - 本地系统通知、响铃、弹窗、微信提醒都可以生成 `Notification` 记录。
 - 由 `Reminder` 触发的通知必须关联 `reminderId`；未来如果 `DatedMessage` 也走通知投递，可以通过 `targetType` 和 `targetId` 关联消息本体。
+- Android 系统通知的运行时身份由 Android Native Layer 私有管理，当前使用 `(tag = reminder:<reminderId>, id = 1)`，不写入 `Notification` 领域模型；不同 `Reminder` 的 popup 通知应能同时展示，不应因系统通知 ID 碰撞互相覆盖。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |

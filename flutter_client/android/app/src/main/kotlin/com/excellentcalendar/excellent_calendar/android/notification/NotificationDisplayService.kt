@@ -22,8 +22,13 @@ data class ReminderNotificationContent(
     val plannedAt: String,
 )
 
+data class AndroidNotificationIdentity(
+    val tag: String,
+    val id: Int,
+)
+
 sealed class NotificationPostResult {
-    data class Success(val androidNotificationId: Int) : NotificationPostResult()
+    data class Success(val androidNotificationIdentity: AndroidNotificationIdentity) : NotificationPostResult()
     data class Failure(
         val code: String,
         val message: String,
@@ -53,9 +58,9 @@ class AndroidNotificationDisplayService(
         }
         return try {
             channelManager.ensureChannels()
-            val notificationId = stableNotificationId(content.reminderId)
-            notificationManager.notify(notificationId, buildNotification(content, sentAt))
-            NotificationPostResult.Success(notificationId)
+            val identity = notificationIdentity(content.reminderId)
+            notificationManager.notify(identity.tag, identity.id, buildNotification(content, sentAt))
+            NotificationPostResult.Success(identity)
         } catch (error: SecurityException) {
             NotificationPostResult.Failure(
                 NativeErrorCodes.NotificationPermissionDenied,
@@ -72,7 +77,8 @@ class AndroidNotificationDisplayService(
     }
 
     override fun cancel(reminderId: String) {
-        notificationManager.cancel(stableNotificationId(reminderId))
+        val identity = notificationIdentity(reminderId)
+        notificationManager.cancel(identity.tag, identity.id)
     }
 
     private fun canPostNotifications(): Boolean {
@@ -129,6 +135,13 @@ class AndroidNotificationDisplayService(
     }
 
     companion object {
-        fun stableNotificationId(reminderId: String): Int = reminderId.hashCode() and Int.MAX_VALUE
+        private const val ReminderNotificationId = 1
+
+        fun notificationIdentity(reminderId: String): AndroidNotificationIdentity {
+            return AndroidNotificationIdentity(
+                tag = "reminder:$reminderId",
+                id = ReminderNotificationId,
+            )
+        }
     }
 }

@@ -287,12 +287,23 @@ class NotificationReminderBridgeTest {
         assertTrue(display.posted.isEmpty())
     }
 
-    @Ignore("Known defect: Java String hash collisions can overwrite another reminder notification.")
     @Test
-    fun differentReminderIdsProduceDifferentAndroidNotificationIds() {
-        assertNotEquals(
-            AndroidNotificationDisplayService.stableNotificationId("Aa"),
-            AndroidNotificationDisplayService.stableNotificationId("BB"),
+    fun differentReminderIdsProduceDifferentAndroidNotificationIdentities() {
+        val first = AndroidNotificationDisplayService.notificationIdentity("Aa")
+        val second = AndroidNotificationDisplayService.notificationIdentity("BB")
+
+        assertEquals(1, first.id)
+        assertEquals(1, second.id)
+        assertEquals("reminder:Aa", first.tag)
+        assertEquals("reminder:BB", second.tag)
+        assertNotEquals(first, second)
+    }
+
+    @Test
+    fun sameReminderIdProducesSameAndroidNotificationIdentityForPostAndCancel() {
+        assertEquals(
+            AndroidNotificationDisplayService.notificationIdentity("rem_001"),
+            AndroidNotificationDisplayService.notificationIdentity("rem_001"),
         )
     }
 
@@ -402,7 +413,9 @@ class NotificationReminderBridgeTest {
     }
 
     private class FakeDisplayService(
-        private val postResult: NotificationPostResult = NotificationPostResult.Success(1),
+        private val postResult: NotificationPostResult = NotificationPostResult.Success(
+            AndroidNotificationDisplayService.notificationIdentity("rem_001"),
+        ),
     ) : NotificationDisplayService {
         val posted = mutableListOf<ReminderNotificationContent>()
         val cancelledIds = mutableListOf<String>()

@@ -3,6 +3,7 @@ package com.excellentcalendar.excellent_calendar.bridge
 import com.excellentcalendar.excellent_calendar.android.alarm.CancelResult
 import com.excellentcalendar.excellent_calendar.android.alarm.DispatchAlarmScheduler
 import com.excellentcalendar.excellent_calendar.android.alarm.ScheduleResult
+import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationDisplayService
 import com.excellentcalendar.excellent_calendar.android.notification.NotificationDisplayService
 import com.excellentcalendar.excellent_calendar.android.notification.NotificationEventHub
 import com.excellentcalendar.excellent_calendar.android.notification.NotificationPostResult
@@ -114,7 +115,9 @@ private class FakeDispatchScheduler(
 }
 
 private object NoopDisplayService : NotificationDisplayService {
-    override fun post(content: ReminderNotificationContent, sentAt: String) = NotificationPostResult.Success(1)
+    override fun post(content: ReminderNotificationContent, sentAt: String) = NotificationPostResult.Success(
+        AndroidNotificationDisplayService.notificationIdentity(content.reminderId),
+    )
     override fun cancel(reminderId: String) = Unit
 }
 
