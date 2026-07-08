@@ -7,7 +7,6 @@ import 'package:excellent_calendar/native_contract/event/complete_event_request_
 import 'package:excellent_calendar/native_contract/event/create_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/event_list_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/event_mapper.dart';
-import 'package:excellent_calendar/native_contract/event/event_occurrence_state_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/event_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/reopen_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/search_event_request_dto.dart';
@@ -67,6 +66,34 @@ void main() {
     expect(invocation.result.data, isA<EventResponseDto>());
     expect(invocation.result.data!.status, 'completed');
   });
+
+  test(
+    'reopen DTO and adapter use single-event EventResponse contract',
+    () async {
+      final reopenJson = const ReopenEventRequestDto(
+        eventId: 'event-1',
+      ).toJson();
+      expect(reopenJson, {'event_id': 'event-1'});
+      expect(reopenJson, isNot(contains('occurrence_start_at')));
+
+      MethodCall? captured;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            captured = call;
+            return _eventInvocation(status: 'active').rawResponse;
+          });
+
+      final invocation = await MethodChannelEventAdapter(
+        channel: channel,
+      ).reopenEvent(const ReopenEventRequestDto(eventId: 'event-1'));
+
+      expect(captured!.method, 'event.reopen');
+      expect(captured!.arguments, {'event_id': 'event-1'});
+      expect(captured!.arguments, isNot(contains('occurrence_start_at')));
+      expect(invocation.result.data, isA<EventResponseDto>());
+      expect(invocation.result.data!.status, 'active');
+    },
+  );
 
   // 目的：验证完成操作的乐观 UI 与动画移除流程；方法：注入 Fake Gateway 并观察 Controller 状态。
   test(
@@ -285,7 +312,7 @@ class _FakeEventGateway implements EventNativeGateway {
   }
 
   @override
-  Future<NativeInvocation<EventOccurrenceStateResponseDto>> reopenEvent(
+  Future<NativeInvocation<EventResponseDto>> reopenEvent(
     ReopenEventRequestDto request,
   ) {
     throw UnimplementedError();

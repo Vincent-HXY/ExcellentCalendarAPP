@@ -17,6 +17,7 @@ class ReminderResponseDto {
     this.scheduledAt,
     this.lastTriggeredAt,
     this.failureReason,
+    this.cancellationReason,
     this.deletedAt,
   });
 
@@ -32,6 +33,7 @@ class ReminderResponseDto {
   final DateTime? scheduledAt;
   final DateTime? lastTriggeredAt;
   final String? failureReason;
+  final String? cancellationReason;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -50,6 +52,7 @@ class ReminderResponseDto {
       'scheduled_at',
       'last_triggered_at',
       'failure_reason',
+      'cancellation_reason',
       'created_at',
       'updated_at',
       'deleted_at',
@@ -91,6 +94,7 @@ class ReminderResponseDto {
       scheduledAt: _readOptionalDateTime(json, 'scheduled_at'),
       lastTriggeredAt: _readOptionalDateTime(json, 'last_triggered_at'),
       failureReason: _readOptionalString(json, 'failure_reason'),
+      cancellationReason: _readCancellationReason(json),
       createdAt: _readDateTime(json, 'created_at'),
       updatedAt: _readDateTime(json, 'updated_at'),
       deletedAt: _readOptionalDateTime(json, 'deleted_at'),
@@ -114,6 +118,20 @@ class ReminderResponseDto {
       return value;
     }
     throw FormatException('ReminderResponse.$key must be string or null.');
+  }
+
+  static String? _readCancellationReason(Map<String, dynamic> json) {
+    final value = _readOptionalString(json, 'cancellation_reason');
+    if (value == null) {
+      return null;
+    }
+    const allowed = {'user_cancelled', 'event_completed'};
+    if (allowed.contains(value)) {
+      return value;
+    }
+    throw const FormatException(
+      'ReminderResponse.cancellation_reason is invalid.',
+    );
   }
 
   static List<String> _readStringList(Map<String, dynamic> json, String key) {

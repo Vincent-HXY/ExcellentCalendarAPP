@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/event/complete_event_request.schema.json",
   "title": "CompleteEventRequest",
-  "description": "Input payload for marking a single non-recurring event as completed. Recurring event occurrences are out of scope for the current stage.",
+  "description": "Input payload for marking a single non-recurring event as completed. Completing an Event also atomically cancels its pending/scheduled/failed untriggered Reminder tasks. Recurring event occurrences are out of scope for the current stage.",
   "x-contract-version": 1,
   "type": "object",
   "additionalProperties": false,

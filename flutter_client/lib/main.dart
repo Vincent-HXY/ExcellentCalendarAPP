@@ -59,7 +59,10 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
       child: InboxPage(
         readEventsUseCase: ReadEventsUseCase(_eventGateway),
         createEventUseCase: _createEventUseCase,
-        completeEventUseCase: CompleteEventUseCase(_eventGateway),
+        completeEventUseCase: CompleteEventUseCase(
+          _eventGateway,
+          reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
+        ),
       ),
     );
   }

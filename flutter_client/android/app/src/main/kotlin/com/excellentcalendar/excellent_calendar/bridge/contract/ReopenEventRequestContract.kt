@@ -3,9 +3,7 @@ package com.excellentcalendar.excellent_calendar.bridge.contract
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 
 /**
- * 重新打开事件实例请求合约。
- *
- * 用于把已经完成/跳过/取消的事件 occurrence 恢复到可处理状态。
+ * 重新打开单个已完成 Event 的请求合约。
  */
 data class ReopenEventRequestContract(
     private val payload: Map<String, Any?>,
@@ -17,7 +15,7 @@ data class ReopenEventRequestContract(
     fun toMap(): Map<String, Any?> = payload
 
     companion object {
-        /** 重新打开只需要事件 id，以及可选的 occurrence 起始时间。 */
+        /** 重新打开只需要 Event id；不再接受 occurrence_start_at。 */
         private val AllowedFields = setOf(
             "event_id",
         )
@@ -33,7 +31,7 @@ data class ReopenEventRequestContract(
             return ReopenEventRequestContract(map)
         }
 
-        /** 校验 event_id 必填，occurrence_start_at 可选。 */
+        /** 校验 event_id 必填，并拒绝旧版 occurrence_start_at。 */
         private fun validate(map: Map<String, Any?>) {
             val parent = "ReopenEventRequest"
             ContractValidators.rejectUnknownFields(map, AllowedFields, parent)

@@ -944,6 +944,8 @@ void boundary_create_and_status_tests() {
       cancel_request(lifecycle_reminder_id));
   const auto cancelled = data_object(cancelled_json);
   require(string_field(cancelled, "status") == "cancelled", "cancel should update status");
+  require(string_field(cancelled, "cancellation_reason") == "user_cancelled",
+          "cancel should record user_cancelled reason");
   require(!bool_field(cancelled, "is_enabled"), "cancel should disable reminder");
   require(!string_field(cancelled, "deleted_at").empty(), "cancel should set deleted_at");
   expect_ok(excellent_calendar::boundary::api::cancel_reminder(

@@ -4,7 +4,6 @@ import '../../gateway_interfaces/event_native_gateway.dart';
 import '../../native_contract/event/complete_event_request_dto.dart';
 import '../../native_contract/event/create_event_request_dto.dart';
 import '../../native_contract/event/event_list_response_dto.dart';
-import '../../native_contract/event/event_occurrence_state_response_dto.dart';
 import '../../native_contract/event/event_mapper.dart';
 import '../../native_contract/event/event_response_dto.dart';
 import '../../native_contract/event/reopen_event_request_dto.dart';
@@ -68,13 +67,13 @@ class MethodChannelEventAdapter implements EventNativeGateway {
   }
 
   @override
-  Future<NativeInvocation<EventOccurrenceStateResponseDto>> reopenEvent(
+  Future<NativeInvocation<EventResponseDto>> reopenEvent(
     ReopenEventRequestDto request,
   ) {
-    return _invoker.invoke<EventOccurrenceStateResponseDto>(
+    return _invoker.invoke<EventResponseDto>(
       method: NativeEventMethods.reopen,
       arguments: request.toJson(),
-      parseData: EventMapper.eventOccurrenceStateFromNativeData,
+      parseData: EventMapper.eventResponseFromNativeData,
     );
   }
 }

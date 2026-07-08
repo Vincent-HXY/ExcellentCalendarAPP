@@ -23,6 +23,7 @@ struct ReminderResponse {
   std::optional<std::string> scheduled_at;
   std::optional<std::string> last_triggered_at;
   std::optional<std::string> failure_reason;
+  std::optional<std::string> cancellation_reason;
   std::string created_at;
   std::string updated_at;
   std::optional<std::string> deleted_at;

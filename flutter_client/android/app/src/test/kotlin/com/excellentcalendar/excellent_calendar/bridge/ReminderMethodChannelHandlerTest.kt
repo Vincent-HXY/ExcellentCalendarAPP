@@ -127,6 +127,7 @@ class ReminderMethodChannelHandlerTest {
         assertEquals("reminder-1", fakeBridge.cancelReminderIds.single())
         assertEquals("cancelled", data["status"])
         assertEquals(false, data["is_enabled"])
+        assertEquals("user_cancelled", data["cancellation_reason"])
         assertEquals("2026-06-14T01:00:00Z", data["deleted_at"])
     }
 
@@ -197,6 +198,7 @@ class ReminderMethodChannelHandlerTest {
         val alreadyCancelled = reminderResponse(
             status = "cancelled",
             isEnabled = false,
+            cancellationReason = "user_cancelled",
             deletedAt = "2026-06-14T01:00:00Z",
         )
         val fakeBridge = FakeNativeCalendarCoreBridge(
@@ -324,7 +326,12 @@ class ReminderMethodChannelHandlerTest {
         private val cancelReminderJson: String = NativeContractJsonCodec.encodeObject(
             nativeResult(
                 ok = true,
-                data = reminderResponse(status = "cancelled", isEnabled = false, deletedAt = "2026-06-14T01:00:00Z"),
+                data = reminderResponse(
+                    status = "cancelled",
+                    isEnabled = false,
+                    cancellationReason = "user_cancelled",
+                    deletedAt = "2026-06-14T01:00:00Z",
+                ),
                 error = null,
                 requestId = "cancel-reminder",
             ),
@@ -501,6 +508,7 @@ class ReminderMethodChannelHandlerTest {
             isEnabled: Boolean = true,
             scheduledAt: String? = null,
             failureReason: String? = null,
+            cancellationReason: String? = null,
             deletedAt: String? = null,
         ): Map<String, Any?> {
             return linkedMapOf(
@@ -516,6 +524,7 @@ class ReminderMethodChannelHandlerTest {
                 "scheduled_at" to scheduledAt,
                 "last_triggered_at" to null,
                 "failure_reason" to failureReason,
+                "cancellation_reason" to cancellationReason,
                 "created_at" to "2026-06-14T00:00:00Z",
                 "updated_at" to "2026-06-14T00:00:00Z",
                 "deleted_at" to deletedAt,

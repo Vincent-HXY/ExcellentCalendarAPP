@@ -97,6 +97,18 @@
         "null"
       ]
     },
+    "cancellation_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "user_cancelled",
+        "event_completed",
+        null
+      ],
+      "description": "Machine-readable reason for status=cancelled. Used to distinguish user cancellation from automatic cancellation caused by completing the target Event."
+    },
     "created_at": {
       "type": "string",
       "format": "date-time"

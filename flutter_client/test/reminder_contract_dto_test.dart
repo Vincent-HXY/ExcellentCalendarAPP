@@ -45,6 +45,30 @@ void main() {
     expect(response.methods, [ReminderMethod.ring, ReminderMethod.popup]);
   });
 
+  test('response preserves event-completed cancellation reason', () {
+    final response = ReminderResponseDto.fromJson(
+      reminderResponseJson(
+        status: 'cancelled',
+        isEnabled: false,
+        cancellationReason: 'event_completed',
+        deletedAt: '2026-06-15T01:30:00.000Z',
+      ),
+    );
+
+    expect(response.status, ReminderStatus.cancelled);
+    expect(response.isEnabled, isFalse);
+    expect(response.cancellationReason, 'event_completed');
+  });
+
+  test('response rejects unknown cancellation reason', () {
+    expect(
+      () => ReminderResponseDto.fromJson(
+        reminderResponseJson(cancellationReason: 'unknown_reason'),
+      ),
+      throwsFormatException,
+    );
+  });
+
   // 目的：验证随 Event 创建的提醒默认启用；方法：序列化 draft 并检查 is_enabled。
   test('embedded reminder draft is always created enabled', () {
     const draft = ReminderDraftRequestDto(

@@ -21,6 +21,9 @@ inline constexpr std::string_view kReminderStatusSent = "sent";
 inline constexpr std::string_view kReminderStatusFailed = "failed";
 inline constexpr std::string_view kReminderStatusCancelled = "cancelled";
 
+inline constexpr std::string_view kReminderCancellationReasonUserCancelled = "user_cancelled";
+inline constexpr std::string_view kReminderCancellationReasonEventCompleted = "event_completed";
+
 struct Reminder {
   std::string id;
   std::string target_type;
@@ -34,6 +37,7 @@ struct Reminder {
   std::optional<std::string> scheduled_at;
   std::optional<std::string> last_triggered_at;
   std::optional<std::string> failure_reason;
+  std::optional<std::string> cancellation_reason;
   std::string source;
   std::string created_at;
   std::string updated_at;
@@ -47,6 +51,8 @@ bool is_supported_reminder_target_type(std::string_view value);
 bool is_valid_reminder_method(std::string_view value);
 
 bool is_valid_reminder_status(std::string_view value);
+
+bool is_valid_reminder_cancellation_reason(std::string_view value);
 
 bool is_valid_reminder_source(std::string_view value);
 

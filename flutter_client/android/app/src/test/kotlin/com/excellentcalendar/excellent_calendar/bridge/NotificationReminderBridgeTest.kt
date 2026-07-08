@@ -570,6 +570,7 @@ class NotificationReminderBridgeTest {
         private fun reminderResponse(
             status: String,
             isEnabled: Boolean = true,
+            cancellationReason: String? = null,
             deletedAt: String? = null,
         ): Map<String, Any?> = linkedMapOf(
             "id" to "rem_001",
@@ -584,6 +585,7 @@ class NotificationReminderBridgeTest {
             "scheduled_at" to null,
             "last_triggered_at" to null,
             "failure_reason" to null,
+            "cancellation_reason" to cancellationReason,
             "created_at" to "2026-07-04T09:00:00Z",
             "updated_at" to "2026-07-04T09:55:00Z",
             "deleted_at" to deletedAt,

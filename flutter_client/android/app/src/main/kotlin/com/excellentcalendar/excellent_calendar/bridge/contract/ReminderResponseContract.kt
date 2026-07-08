@@ -50,6 +50,7 @@ object ReminderResponseContract {
         "scheduled_at",
         "last_triggered_at",
         "failure_reason",
+        "cancellation_reason",
         "created_at",
         "updated_at",
         "deleted_at",
@@ -84,6 +85,12 @@ object ReminderResponseContract {
         ContractValidators.optionalString(map, "scheduled_at", parent)
         ContractValidators.optionalString(map, "last_triggered_at", parent)
         ContractValidators.optionalString(map, "failure_reason", parent)
+        ContractValidators.optionalEnum(
+            map,
+            "cancellation_reason",
+            parent,
+            setOf("user_cancelled", "event_completed"),
+        )
         ContractValidators.requireString(map, "created_at", parent, nonEmpty = true)
         ContractValidators.requireString(map, "updated_at", parent, nonEmpty = true)
         ContractValidators.optionalString(map, "deleted_at", parent)

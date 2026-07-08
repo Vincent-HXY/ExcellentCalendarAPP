@@ -33,6 +33,7 @@ ReminderResponse make_reminder_response(const domain::Reminder& reminder) {
   response.scheduled_at = reminder.scheduled_at;
   response.last_triggered_at = reminder.last_triggered_at;
   response.failure_reason = reminder.failure_reason;
+  response.cancellation_reason = reminder.cancellation_reason;
   response.created_at = reminder.created_at;
   response.updated_at = reminder.updated_at;
   response.deleted_at = reminder.deleted_at;
@@ -59,6 +60,7 @@ picojson::value reminder_response_to_json(const ReminderResponse& reminder) {
   object["scheduled_at"] = optional_string_to_json(reminder.scheduled_at);
   object["last_triggered_at"] = optional_string_to_json(reminder.last_triggered_at);
   object["failure_reason"] = optional_string_to_json(reminder.failure_reason);
+  object["cancellation_reason"] = optional_string_to_json(reminder.cancellation_reason);
   object["created_at"] = picojson::value(reminder.created_at);
   object["updated_at"] = picojson::value(reminder.updated_at);
   object["deleted_at"] = optional_string_to_json(reminder.deleted_at);

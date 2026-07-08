@@ -1558,6 +1558,12 @@ C++ Boundary Contract 负责和 Dart/Kotlin 传输数据。
 
 禁止 C++ Core 直接把 Domain Model 暴露给 Dart/Kotlin。
 
+跨实体生命周期变更必须放在 C++ workflow / transaction 层完成，而不是让 Flutter 或 Kotlin 分散补偿。当前约定：
+
+1. `event.complete` 仍返回 `EventResponse`，但内部必须通过 `EventLifecycleWorkflowService` 在同一个 `EventReminderTransaction` 中完成 Event，并取消关联的未触发 Reminder。
+2. `event.reopen` 同样走 `EventLifecycleWorkflowService`，只恢复因 `event_completed` 自动取消、且仍在未来的 Reminder。
+3. Reminder 的 `cancellation_reason` 是领域字段，用于区分 `user_cancelled` 和 `event_completed`；Android Alarm/Notification 只根据当前 Reminder 表状态执行，不保存额外真相源。
+
 正确流程：
 
 ```text

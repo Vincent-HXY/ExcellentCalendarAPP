@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:excellent_calendar/application/event/create_event_use_case.dart';
+import 'package:excellent_calendar/application/event/complete_event_use_case.dart';
+import 'package:excellent_calendar/application/event/reopen_event_use_case.dart';
 import 'package:excellent_calendar/application/event/update_event_use_case.dart';
 import 'package:excellent_calendar/application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'package:excellent_calendar/gateway_interfaces/event_native_gateway.dart';
 import 'package:excellent_calendar/native_contract/event/complete_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/create_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/event_list_response_dto.dart';
-import 'package:excellent_calendar/native_contract/event/event_occurrence_state_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/event_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/reopen_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/search_event_request_dto.dart';
@@ -39,6 +40,38 @@ void main() {
       await update.execute(
         const UpdateEventRequestDto(id: 'event-1', title: 'Updated'),
       );
+
+      expect(reminderGateway.reconcileScheduleCallCount, 2);
+      expect(
+        reminderGateway.lastReconcileScheduleRequest!.triggerSource,
+        ReminderScheduleTrigger.mutation,
+      );
+      expect(reminderGateway.lastReconcileScheduleRequest!.force, isTrue);
+    },
+  );
+
+  test(
+    'successful event lifecycle mutations reconcile the reminder queue',
+    () async {
+      final reminderGateway = _reminderGateway();
+      final reconciler = ReconcileReminderScheduleUseCase(reminderGateway);
+      final complete = CompleteEventUseCase(
+        _EventGateway(),
+        reconcileReminderScheduleUseCase: reconciler,
+      );
+      final reopen = ReopenEventUseCase(
+        _EventGateway(),
+        reconcileReminderScheduleUseCase: reconciler,
+      );
+
+      await complete.execute(
+        CompleteEventRequestDto(
+          eventId: 'event-1',
+          completedAt: DateTime.utc(2026, 7, 5, 12),
+          source: 'manual',
+        ),
+      );
+      await reopen.execute(const ReopenEventRequestDto(eventId: 'event-1'));
 
       expect(reminderGateway.reconcileScheduleCallCount, 2);
       expect(
@@ -137,14 +170,19 @@ class _EventGateway implements EventNativeGateway {
     UpdateEventRequestDto request,
   ) async => successInvocation(_event(title: request.title ?? 'Meeting'));
 
-  EventResponseDto _event({required String title}) => EventResponseDto(
+  EventResponseDto _event({
+    required String title,
+    String status = 'active',
+    DateTime? completedAt,
+  }) => EventResponseDto(
     id: 'event-1',
     title: title,
     startAt: DateTime.utc(2026, 7, 5, 10),
     endAt: DateTime.utc(2026, 7, 5, 11),
     isAllDay: false,
     hasRecurrence: false,
-    status: 'active',
+    status: status,
+    completedAt: completedAt,
     source: 'manual',
     createdAt: DateTime.utc(2026, 7, 5),
     updatedAt: DateTime.utc(2026, 7, 5),
@@ -153,13 +191,19 @@ class _EventGateway implements EventNativeGateway {
   @override
   Future<NativeInvocation<EventResponseDto>> completeEvent(
     CompleteEventRequestDto request,
-  ) => throw UnimplementedError();
+  ) async => successInvocation(
+    _event(
+      title: 'Meeting',
+      status: 'completed',
+      completedAt: request.completedAt,
+    ),
+  );
   @override
   Future<NativeInvocation<EventListResponseDto>> readEvents(
     SearchEventRequestDto request,
   ) => throw UnimplementedError();
   @override
-  Future<NativeInvocation<EventOccurrenceStateResponseDto>> reopenEvent(
+  Future<NativeInvocation<EventResponseDto>> reopenEvent(
     ReopenEventRequestDto request,
-  ) => throw UnimplementedError();
+  ) async => successInvocation(_event(title: 'Meeting'));
 }

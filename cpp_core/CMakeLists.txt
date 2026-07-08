@@ -7,6 +7,7 @@ add_library(
     STATIC
     src/application/event_service.cpp
     src/application/create_event_workflow_service.cpp
+    src/application/event_lifecycle_workflow_service.cpp
     src/application/reminder_service.cpp
     src/application/notification_service.cpp
     src/boundary/api/event_api.cpp

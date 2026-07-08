@@ -11,6 +11,7 @@ Map<String, dynamic> reminderResponseJson({
   String status = 'scheduled',
   bool isEnabled = true,
   String? failureReason,
+  String? cancellationReason,
   String? deletedAt,
 }) {
   return {
@@ -26,6 +27,7 @@ Map<String, dynamic> reminderResponseJson({
     'scheduled_at': status == 'scheduled' ? '2026-06-15T01:00:00.000Z' : null,
     'last_triggered_at': null,
     'failure_reason': failureReason,
+    'cancellation_reason': cancellationReason,
     'created_at': '2026-06-15T00:00:00.000Z',
     'updated_at': '2026-06-15T01:00:00.000Z',
     'deleted_at': deletedAt,
@@ -37,6 +39,7 @@ NativeInvocation<ReminderResponseDto> reminderSuccessInvocation({
   String status = 'scheduled',
   bool isEnabled = true,
   String? failureReason,
+  String? cancellationReason,
   String? deletedAt,
   String requestId = 'native-request-1',
 }) {
@@ -46,6 +49,7 @@ NativeInvocation<ReminderResponseDto> reminderSuccessInvocation({
       status: status,
       isEnabled: isEnabled,
       failureReason: failureReason,
+      cancellationReason: cancellationReason,
       deletedAt: deletedAt,
     ),
     'error': null,

@@ -26,6 +26,11 @@ bool is_valid_reminder_status(std::string_view value) {
          value == kReminderStatusCancelled;
 }
 
+bool is_valid_reminder_cancellation_reason(std::string_view value) {
+  return value == kReminderCancellationReasonUserCancelled ||
+         value == kReminderCancellationReasonEventCompleted;
+}
+
 bool is_valid_reminder_source(std::string_view value) {
   return value == "manual" ||
          value == "auto" ||

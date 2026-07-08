@@ -168,6 +168,8 @@ common::Result<domain::Reminder> parse_reminder_record(const picojson::value& va
   if (!last_triggered_at.ok()) return common::Result<domain::Reminder>::failure(last_triggered_at.error());
   auto failure_reason = read_optional_string(object, "failure_reason", parent);
   if (!failure_reason.ok()) return common::Result<domain::Reminder>::failure(failure_reason.error());
+  auto cancellation_reason = read_optional_string(object, "cancellation_reason", parent);
+  if (!cancellation_reason.ok()) return common::Result<domain::Reminder>::failure(cancellation_reason.error());
   auto deleted_at = read_optional_string(object, "deleted_at", parent);
   if (!deleted_at.ok()) return common::Result<domain::Reminder>::failure(deleted_at.error());
 
@@ -183,6 +185,7 @@ common::Result<domain::Reminder> parse_reminder_record(const picojson::value& va
   reminder.scheduled_at = scheduled_at.value();
   reminder.last_triggered_at = last_triggered_at.value();
   reminder.failure_reason = failure_reason.value();
+  reminder.cancellation_reason = cancellation_reason.value();
   reminder.source = source.value();
   reminder.created_at = created_at.value();
   reminder.updated_at = updated_at.value();
@@ -203,6 +206,11 @@ common::Result<domain::Reminder> parse_reminder_record(const picojson::value& va
   if (!domain::is_valid_reminder_source(reminder.source)) {
     return common::Result<domain::Reminder>::failure(
         storage_corrupted("stored source is invalid", parent + ".source"));
+  }
+  if (reminder.cancellation_reason.has_value() &&
+      !domain::is_valid_reminder_cancellation_reason(*reminder.cancellation_reason)) {
+    return common::Result<domain::Reminder>::failure(
+        storage_corrupted("stored cancellation_reason is invalid", parent + ".cancellation_reason"));
   }
   if (!common::is_iso8601_utc_datetime(reminder.created_at)) {
     return common::Result<domain::Reminder>::failure(
@@ -256,6 +264,7 @@ picojson::value reminder_to_storage_json(const domain::Reminder& reminder) {
   object["scheduled_at"] = optional_string_to_json(reminder.scheduled_at);
   object["last_triggered_at"] = optional_string_to_json(reminder.last_triggered_at);
   object["failure_reason"] = optional_string_to_json(reminder.failure_reason);
+  object["cancellation_reason"] = optional_string_to_json(reminder.cancellation_reason);
   object["source"] = picojson::value(reminder.source);
   object["created_at"] = picojson::value(reminder.created_at);
   object["updated_at"] = picojson::value(reminder.updated_at);

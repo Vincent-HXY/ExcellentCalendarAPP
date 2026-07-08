@@ -153,6 +153,7 @@
 - 日程本身不直接保存提醒方式和提醒时间。只要日程需要提醒，就在 `Reminder` 表中创建一条或多条提醒任务。
 - 如果一个日程有多个提醒时间，例如提前 1 天、提前 1 小时、开始时各提醒一次，则创建 3 条 `Reminder`，它们的 `targetType = event` 且 `targetId = Event.id`。
 - `Event.status` 表示整个 Event 或整个重复系列的生命周期状态，不表示“今天已完成”或“今天跳过”。
+- 单次非重复 Event 完成时，关联且尚未触发的 `pending` / `scheduled` / `failed` Reminder 会在同一 C++ workflow transaction 中自动取消，并写入 `cancellationReason = event_completed`；重新打开 Event 时，只自动恢复该原因且仍在未来的 Reminder。
 - 重复日程某一次 occurrence 的完成、跳过、取消状态保存到 `EventOccurrenceState`。
 - 软删除表示用户删除后先不从数据库物理移除，而是写入 `deletedAt`。这样方便撤销删除、同步删除状态、排查误删。正常查询默认只显示 `deletedAt` 为空的记录。
 
@@ -284,6 +285,7 @@
 | `scheduledAt` | `datetime` | 否 | 实际注册到系统闹钟或投递通道的时间 |
 | `lastTriggeredAt` | `datetime` | 否 | 最近一次触发时间 |
 | `failureReason` | `string` | 否 | 调度或发送失败原因 |
+| `cancellationReason` | `string` | 否 | 机器可读取消原因，例如 `user_cancelled`、`event_completed`；用于区分用户主动取消和完成日程后自动取消 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
 | `deletedAt` | `datetime` | 否 | 软删除时间 |

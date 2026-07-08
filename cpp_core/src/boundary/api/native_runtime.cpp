@@ -5,6 +5,7 @@
 
 #include "excellent_calendar/common/clock.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
+#include "excellent_calendar/application/event_lifecycle_workflow_service.hpp"
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
 #include "excellent_calendar/storage/json/json_event_reminder_transaction.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
@@ -19,6 +20,7 @@ struct RuntimeState {
   std::shared_ptr<application::EventService> event_service;
   std::shared_ptr<storage::json::JsonEventReminderTransaction> event_reminder_transaction;
   std::shared_ptr<application::CreateEventWorkflowService> create_event_workflow_service;
+  std::shared_ptr<application::EventLifecycleWorkflowService> event_lifecycle_workflow_service;
   std::shared_ptr<storage::json::JsonReminderRepository> reminder_repository;
   std::shared_ptr<application::ReminderService> reminder_service;
   std::shared_ptr<storage::json::JsonNotificationRepository> notification_repository;
@@ -88,6 +90,11 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
       event_service,
       reminder_service,
       event_reminder_transaction);
+  auto event_lifecycle_workflow_service = std::make_shared<application::EventLifecycleWorkflowService>(
+      event_service,
+      reminder_repository,
+      event_reminder_transaction,
+      common::utc_now_iso8601);
 
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -95,6 +102,7 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
     g_state.event_service = std::move(event_service);
     g_state.event_reminder_transaction = std::move(event_reminder_transaction);
     g_state.create_event_workflow_service = std::move(create_event_workflow_service);
+    g_state.event_lifecycle_workflow_service = std::move(event_lifecycle_workflow_service);
     g_state.reminder_repository = std::move(reminder_repository);
     g_state.reminder_service = std::move(reminder_service);
     g_state.notification_repository = std::move(notification_repository);
@@ -114,6 +122,11 @@ std::shared_ptr<application::EventService> current_event_service() {
 std::shared_ptr<application::CreateEventWorkflowService> current_create_event_workflow_service() {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   return g_state.create_event_workflow_service;
+}
+
+std::shared_ptr<application::EventLifecycleWorkflowService> current_event_lifecycle_workflow_service() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.event_lifecycle_workflow_service;
 }
 
 std::shared_ptr<application::ReminderService> current_reminder_service() {

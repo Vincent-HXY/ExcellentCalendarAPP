@@ -1,13 +1,9 @@
 class ReopenEventRequestDto {
-  const ReopenEventRequestDto({required this.eventId, this.occurrenceStartAt});
+  const ReopenEventRequestDto({required this.eventId});
 
   final String eventId;
-  final DateTime? occurrenceStartAt;
 
   Map<String, dynamic> toJson() {
-    return {
-      'event_id': eventId,
-      'occurrence_start_at': occurrenceStartAt?.toUtc().toIso8601String(),
-    };
+    return {'event_id': eventId};
   }
 }

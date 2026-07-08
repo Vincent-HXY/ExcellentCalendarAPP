@@ -167,8 +167,9 @@ Flutter 将点击 payload 的 notification_id 只用于去重，不用于查询 
 [P1] 完成日程不会处理尚未触发的提醒。
 [complete_event_use_case.dart (line 11)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/event/complete_event_use_case.dart:11) 只完成 Event；C++ 的 [event_service.cpp (line 326)](/A:/calendar/ExcellentCalendarAPP/cpp_core/src/application/event_service.cpp:326) 也只修改 Event 状态。关联 Reminder 仍然是 scheduled，因此用户提前完成日程后，提醒依然可能照常弹出。
 
-[P2] 创建日程成功会掩盖提醒调度失败。
-[create_event_use_case.dart (line 19)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/event/create_event_use_case.dart:19) 等待调度调用，但最终始终返回日程创建结果。无论 schedule_pending 整体失败，还是返回 failed_count > 0，上层看到的仍是创建成功。
+~~ [P2] 创建日程成功会掩盖提醒调度失败。
+[create_event_use_case.dart (line 19)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/event/create_event_use_case.dart:19) 等待调度调用，但最终始终返回日程创建结果。无论 schedule_pending 整体失败，还是返回 failed_count > 0，上层看到的仍是创建成功。~~
+这个本身不是问题，问题的出现在于我们之后是否有可靠的reconcile机制，因为我们无法保证一个提醒哪怕他已经是scheduled了，但是我们不能保证他之后一定会提醒，比如设备的重启，后台的关掉。
 
 [P2] notification_id 实际保存的是 Reminder ID。
 [NotificationDisplayService.kt (line 85)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/android/notification/NotificationDisplayService.kt:85) 将 notification_id 和 reminder_id 都设置为 content.reminderId。这与 DATA_MODEL 中 Notification 和 Reminder 是两个独立实体、各自具有独立 ID 的设计不一致，也使点击载荷无法追踪 C++ 创建的真实 Notification 记录。

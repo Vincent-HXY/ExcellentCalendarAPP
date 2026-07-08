@@ -11,14 +11,16 @@
 
 #include <picojson/picojson.h>
 
-#include "excellent_calendar/application/event_service.hpp"
 #include "excellent_calendar/application/create_event_workflow_service.hpp"
+#include "excellent_calendar/application/event_lifecycle_workflow_service.hpp"
+#include "excellent_calendar/application/event_service.hpp"
 #include "excellent_calendar/application/reminder_service.hpp"
 #include "excellent_calendar/boundary/api/event_api.hpp"
 #include "excellent_calendar/common/clock.hpp"
 #include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/repository/event_repository.hpp"
+#include "excellent_calendar/repository/reminder_repository.hpp"
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
 #include "excellent_calendar/storage/json/json_event_reminder_transaction.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
@@ -32,6 +34,7 @@ using excellent_calendar::application::CreateEventWorkflowCommand;
 using excellent_calendar::application::CreateEventWorkflowService;
 using excellent_calendar::application::CompleteEventCommand;
 using excellent_calendar::application::EventQuery;
+using excellent_calendar::application::EventLifecycleWorkflowService;
 using excellent_calendar::application::EventService;
 using excellent_calendar::application::ReopenEventCommand;
 using excellent_calendar::application::ReminderDraftCommand;
@@ -39,8 +42,36 @@ using excellent_calendar::application::ReminderService;
 using excellent_calendar::common::Error;
 using excellent_calendar::common::Result;
 using excellent_calendar::domain::Event;
+using excellent_calendar::domain::Reminder;
 using excellent_calendar::test_support::FailingEventRepository;
 using excellent_calendar::test_support::InMemoryEventRepository;
+
+class FailingUpdateReminderRepository final : public excellent_calendar::repository::ReminderRepository {
+ public:
+  explicit FailingUpdateReminderRepository(
+      std::shared_ptr<excellent_calendar::repository::ReminderRepository> delegate)
+      : delegate_(std::move(delegate)) {}
+
+  Result<Reminder> create(const Reminder& reminder) override {
+    return delegate_->create(reminder);
+  }
+
+  Result<std::optional<Reminder>> find_by_id(std::string_view id) override {
+    return delegate_->find_by_id(id);
+  }
+
+  Result<Reminder> update(const Reminder& /*reminder*/) override {
+    return Result<Reminder>::failure(
+        excellent_calendar::common::make_error("STORAGE_IO_ERROR", "Storage input/output operation failed"));
+  }
+
+  Result<std::vector<Reminder>> find_all() override {
+    return delegate_->find_all();
+  }
+
+ private:
+  std::shared_ptr<excellent_calendar::repository::ReminderRepository> delegate_;
+};
 
 // 本文件没有引入 GoogleTest，因此用 require 作为最小断言工具。
 // 条件失败时抛出异常，main() 会捕获异常并让测试程序以非零状态退出。
@@ -228,6 +259,31 @@ Event event_record(
   event.updated_at = "2026-06-01T00:00:00Z";
   event.deleted_at = std::move(deleted_at);
   return event;
+}
+
+Reminder reminder_record(
+    std::string id,
+    std::string target_id,
+    std::string status = "scheduled") {
+  Reminder reminder;
+  reminder.id = std::move(id);
+  reminder.target_type = "event";
+  reminder.target_id = std::move(target_id);
+  reminder.remind_at = "2026-06-08T12:30:00Z";
+  reminder.methods = {"popup"};
+  reminder.advance_minutes = 30;
+  reminder.message = "Lifecycle reminder";
+  reminder.is_enabled = true;
+  reminder.status = std::move(status);
+  reminder.scheduled_at = "2026-06-08T12:00:00Z";
+  reminder.last_triggered_at = std::nullopt;
+  reminder.failure_reason = std::nullopt;
+  reminder.cancellation_reason = std::nullopt;
+  reminder.source = "manual";
+  reminder.created_at = "2026-06-08T11:00:00Z";
+  reminder.updated_at = "2026-06-08T11:00:00Z";
+  reminder.deleted_at = std::nullopt;
+  return reminder;
 }
 
 // 目的：验证 EventService 的业务规则，与 JSON 文件实现解耦。
@@ -514,6 +570,67 @@ void workflow_rollback_tests() {
   cleanup();
 }
 
+// 目的：验证完成 Event 后取消 Reminder 的生命周期 workflow 仍是原子操作。
+// 方法：让 Reminder update 失败，随后确认 Event 完成状态也被事务回滚。
+void lifecycle_workflow_rollback_tests() {
+  const auto dir = make_temp_dir("lifecycle_workflow_rollback");
+  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+
+  auto event_repository =
+      std::make_shared<excellent_calendar::storage::json::JsonEventRepository>(dir);
+  auto reminder_repository =
+      std::make_shared<excellent_calendar::storage::json::JsonReminderRepository>(dir);
+  auto transaction =
+      std::make_shared<excellent_calendar::storage::json::JsonEventReminderTransaction>(dir);
+  require(transaction->initialize().ok(), "lifecycle transaction should initialize");
+  require(event_repository->initialize().ok(), "lifecycle event repository should initialize");
+  require(reminder_repository->initialize().ok(), "lifecycle reminder repository should initialize");
+  require(event_repository->create(
+              event_record("event-lifecycle", "Lifecycle rollback", "2026-06-08T12:00:00Z", "2026-06-08T13:00:00Z"))
+              .ok(),
+          "lifecycle event should be created");
+  require(reminder_repository->create(reminder_record("reminder-lifecycle", "event-lifecycle")).ok(),
+          "lifecycle reminder should be created");
+
+  auto event_service = std::make_shared<EventService>(
+      event_repository,
+      [] { return std::string("2026-06-08T12:05:00Z"); },
+      [] { return std::string("unused-id"); });
+  auto failing_reminder_repository =
+      std::make_shared<FailingUpdateReminderRepository>(reminder_repository);
+  EventLifecycleWorkflowService workflow(
+      event_service,
+      failing_reminder_repository,
+      transaction,
+      [] { return std::string("2026-06-08T12:05:00Z"); });
+
+  CompleteEventCommand command;
+  command.event_id = "event-lifecycle";
+  command.completed_at = "2026-06-08T12:05:00Z";
+  command.source = "manual";
+  command.note = std::nullopt;
+  auto completed = workflow.complete_event(command);
+  require(!completed.ok() && completed.error().code == "STORAGE_IO_ERROR",
+          "lifecycle workflow should surface Reminder update failure");
+
+  auto event_after_failure = event_repository->find_by_id("event-lifecycle");
+  require(event_after_failure.ok() && event_after_failure.value().has_value() &&
+              event_after_failure.value()->status == "active" &&
+              !event_after_failure.value()->completed_at.has_value(),
+          "failed lifecycle workflow should roll back Event completion");
+  auto reminder_after_failure = reminder_repository->find_by_id("reminder-lifecycle");
+  require(reminder_after_failure.ok() && reminder_after_failure.value().has_value() &&
+              reminder_after_failure.value()->status == "scheduled" &&
+              reminder_after_failure.value()->is_enabled &&
+              !reminder_after_failure.value()->deleted_at.has_value() &&
+              !reminder_after_failure.value()->cancellation_reason.has_value(),
+          "failed lifecycle workflow should leave Reminder unchanged");
+  require(!std::filesystem::exists(dir / "event_reminder_transaction.json"),
+          "failed lifecycle workflow should remove its transaction journal");
+
+  cleanup();
+}
+
 // 目的：验证进程中断后，初始化过程能根据事务日志恢复未完成操作。
 // 方法：手工写入未提交日志和 Event，再重新初始化事务并检查残留文件被清理。
 void transaction_recovery_tests() {
@@ -631,10 +748,39 @@ void boundary_and_search_tests() {
   require(array_field(object_field(decode_object(reloaded_json), "data"), "items").size() == 3,
           "reinitialize should keep persisted events");
 
-  const auto lifecycle_create = decode_object(excellent_calendar::boundary::api::create_event(
-      create_request("Lifecycle", "2026-06-10T01:00:00Z", "2026-06-10T02:00:00Z")));
+  auto lifecycle_request = decode_object(create_request("Lifecycle", future_utc(7200), future_utc(10800)));
+  lifecycle_request["reminders"] = picojson::value(picojson::array{
+      picojson::value(reminder_draft(15)),
+      picojson::value(reminder_draft(30)),
+      picojson::value(reminder_draft(45)),
+  });
+  const auto lifecycle_create = decode_object(
+      excellent_calendar::boundary::api::create_event(encode(lifecycle_request)));
   require(bool_field(lifecycle_create, "ok"), "lifecycle event should be created");
   const auto lifecycle_id = string_field(object_field(lifecycle_create, "data"), "id");
+
+  excellent_calendar::storage::json::JsonReminderRepository lifecycle_reminder_repository(dir);
+  require(lifecycle_reminder_repository.initialize().ok(), "lifecycle reminder repository should initialize");
+  auto lifecycle_reminders = lifecycle_reminder_repository.find_all();
+  require(lifecycle_reminders.ok(), "lifecycle reminders should load");
+  std::vector<excellent_calendar::domain::Reminder> target_reminders;
+  for (auto reminder : lifecycle_reminders.value()) {
+    if (reminder.target_id == lifecycle_id) {
+      target_reminders.push_back(reminder);
+    }
+  }
+  require(target_reminders.size() == 3, "lifecycle event should have three reminders");
+  target_reminders[0].status = "scheduled";
+  target_reminders[0].scheduled_at = excellent_calendar::common::utc_now_iso8601();
+  target_reminders[1].status = "sent";
+  target_reminders[1].last_triggered_at = excellent_calendar::common::utc_now_iso8601();
+  target_reminders[2].status = "cancelled";
+  target_reminders[2].is_enabled = false;
+  target_reminders[2].deleted_at = excellent_calendar::common::utc_now_iso8601();
+  target_reminders[2].cancellation_reason = "user_cancelled";
+  for (const auto& reminder : target_reminders) {
+    require(lifecycle_reminder_repository.update(reminder).ok(), "prepared reminder state should persist");
+  }
 
   picojson::object complete_request;
   complete_request["event_id"] = picojson::value(lifecycle_id);
@@ -654,7 +800,40 @@ void boundary_and_search_tests() {
   require(deleted_at != completed.end() && deleted_at->second.is<picojson::null>(),
           "completed event should remain non-deleted");
 
+  auto after_complete = lifecycle_reminder_repository.find_all();
+  require(after_complete.ok(), "reminders should load after complete");
+  std::optional<excellent_calendar::domain::Reminder> completed_cancelled;
+  std::optional<excellent_calendar::domain::Reminder> completed_sent;
+  std::optional<excellent_calendar::domain::Reminder> completed_user_cancelled;
+  for (const auto& reminder : after_complete.value()) {
+    if (reminder.id == target_reminders[0].id) completed_cancelled = reminder;
+    if (reminder.id == target_reminders[1].id) completed_sent = reminder;
+    if (reminder.id == target_reminders[2].id) completed_user_cancelled = reminder;
+  }
+  require(completed_cancelled.has_value() &&
+              completed_cancelled->status == "cancelled" &&
+              !completed_cancelled->is_enabled &&
+              completed_cancelled->deleted_at.has_value() &&
+              !completed_cancelled->scheduled_at.has_value() &&
+              completed_cancelled->cancellation_reason == std::optional<std::string>("event_completed"),
+          "complete should cancel scheduled event reminders with event_completed reason");
+  require(completed_sent.has_value() && completed_sent->status == "sent",
+          "complete should not alter already sent reminders");
+  require(completed_user_cancelled.has_value() &&
+              completed_user_cancelled->status == "cancelled" &&
+              completed_user_cancelled->cancellation_reason == std::optional<std::string>("user_cancelled"),
+          "complete should not overwrite user-cancelled reminders");
+
   const auto original_updated_at = string_field(completed, "updated_at");
+  auto legacy_scheduled = *completed_sent;
+  legacy_scheduled.status = "scheduled";
+  legacy_scheduled.is_enabled = true;
+  legacy_scheduled.deleted_at = std::nullopt;
+  legacy_scheduled.scheduled_at = excellent_calendar::common::utc_now_iso8601();
+  legacy_scheduled.last_triggered_at = std::nullopt;
+  legacy_scheduled.cancellation_reason = std::nullopt;
+  require(lifecycle_reminder_repository.update(legacy_scheduled).ok(),
+          "legacy scheduled reminder should be prepared");
   complete_request["completed_at"] = picojson::value("2026-06-10T02:30:00Z");
   complete_request["source"] = picojson::value("auto");
   const auto repeated_json = excellent_calendar::boundary::api::complete_event(encode(complete_request));
@@ -663,6 +842,12 @@ void boundary_and_search_tests() {
   require(string_field(repeated, "completed_at") == "2026-06-10T02:00:00Z" &&
               string_field(repeated, "updated_at") == original_updated_at,
           "repeated complete should return the existing completed EventResponse unchanged");
+  auto after_repeated_complete = lifecycle_reminder_repository.find_by_id(legacy_scheduled.id);
+  require(after_repeated_complete.ok() &&
+              after_repeated_complete.value().has_value() &&
+              after_repeated_complete.value()->status == "cancelled" &&
+              after_repeated_complete.value()->cancellation_reason == std::optional<std::string>("event_completed"),
+          "repeated complete should clean legacy open reminders for completed events");
 
   auto missing_complete_request = complete_request;
   missing_complete_request["event_id"] = picojson::value("event-missing");
@@ -705,6 +890,23 @@ void boundary_and_search_tests() {
       "data");
   require(string_field(reopened, "status") == "active",
           "reopen boundary should return EventResponse with active status");
+  auto after_reopen_a = lifecycle_reminder_repository.find_by_id(target_reminders[0].id);
+  auto after_reopen_b = lifecycle_reminder_repository.find_by_id(legacy_scheduled.id);
+  auto after_reopen_user = lifecycle_reminder_repository.find_by_id(target_reminders[2].id);
+  require(after_reopen_a.ok() && after_reopen_a.value().has_value() &&
+              after_reopen_a.value()->status == "pending" &&
+              after_reopen_a.value()->is_enabled &&
+              !after_reopen_a.value()->deleted_at.has_value() &&
+              !after_reopen_a.value()->cancellation_reason.has_value(),
+          "reopen should restore future reminders cancelled by event completion");
+  require(after_reopen_b.ok() && after_reopen_b.value().has_value() &&
+              after_reopen_b.value()->status == "pending" &&
+              after_reopen_b.value()->is_enabled,
+          "reopen should restore legacy reminders cancelled by repeated completion cleanup");
+  require(after_reopen_user.ok() && after_reopen_user.value().has_value() &&
+              after_reopen_user.value()->status == "cancelled" &&
+              after_reopen_user.value()->cancellation_reason == std::optional<std::string>("user_cancelled"),
+          "reopen should not restore user-cancelled reminders");
 
   picojson::object update_request;
   update_request["id"] = picojson::value(lifecycle_id);
@@ -829,6 +1031,7 @@ int main() {
     repository_tests();
     embedded_reminder_boundary_tests();
     workflow_rollback_tests();
+    lifecycle_workflow_rollback_tests();
     transaction_recovery_tests();
     boundary_and_search_tests();
     soft_delete_and_corruption_tests();

@@ -7,8 +7,9 @@
 
 #include <picojson/picojson.h>
 
-#include "excellent_calendar/application/event_service.hpp"
 #include "excellent_calendar/application/create_event_workflow_service.hpp"
+#include "excellent_calendar/application/event_lifecycle_workflow_service.hpp"
+#include "excellent_calendar/application/event_service.hpp"
 #include "excellent_calendar/boundary/api/native_runtime.hpp"
 #include "excellent_calendar/boundary/contract/create_event_request.hpp"
 #include "excellent_calendar/boundary/contract/event_list_response.hpp"
@@ -816,7 +817,7 @@ std::string complete_event(std::string_view request_json) {
     if (!parsed.ok()) {
       return failure_response(parsed.error(), request_id);
     }
-    const auto service = current_event_service();
+    const auto service = current_event_lifecycle_workflow_service();
     if (!service) {
       return failure_response(storage_not_initialized_error("event"), request_id);
     }
@@ -839,7 +840,7 @@ std::string reopen_event(std::string_view request_json) {
     if (!parsed.ok()) {
       return failure_response(parsed.error(), request_id);
     }
-    const auto service = current_event_service();
+    const auto service = current_event_lifecycle_workflow_service();
     if (!service) {
       return failure_response(storage_not_initialized_error("event"), request_id);
     }
