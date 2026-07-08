@@ -10,14 +10,14 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminde
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.SchedulableReminderBatch
 import com.excellentcalendar.excellent_calendar.bridge.contract.SchedulableReminderCursor
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeReminderBridge
 import java.time.Instant
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /** Serializes every queue/Alarm reconciliation in this process. Reminder storage remains authoritative. */
 class ReminderScheduleCoordinator(
-    private val nativeBridge: NativeEventBridge,
+    private val nativeBridge: NativeReminderBridge,
     private val alarmScheduler: DispatchAlarmScheduler,
     private val deliveryService: ReminderDeliveryService,
     private val continuationEnqueuer: () -> Unit,

@@ -173,14 +173,14 @@ Flutter 将点击 payload 的 notification_id 只用于去重，不用于查询 
 [P2] notification_id 实际保存的是 Reminder ID。
 [NotificationDisplayService.kt (line 85)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/android/notification/NotificationDisplayService.kt:85) 将 notification_id 和 reminder_id 都设置为 content.reminderId。这与 DATA_MODEL 中 Notification 和 Reminder 是两个独立实体、各自具有独立 ID 的设计不一致，也使点击载荷无法追踪 C++ 创建的真实 Notification 记录。
 
-[P2] 不同提醒可能覆盖彼此的系统通知。
-[NotificationDisplayService.kt (line 131)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/android/notification/NotificationDisplayService.kt:131) 使用 Java 字符串哈希作为 Android Notification ID。哈希存在碰撞，例如 "Aa" 与 "BB" 会得到同一个 ID，后一条通知会覆盖前一条。
+~~[P2] 不同提醒可能覆盖彼此的系统通知。
+[NotificationDisplayService.kt (line 131)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/android/notification/NotificationDisplayService.kt:131) 使用 Java 字符串哈希作为 Android Notification ID。哈希存在碰撞，例如 "Aa" 与 "BB" 会得到同一个 ID，后一条通知会覆盖前一条。~~
 
 [P2] Notification 初始化失败后仍继续注册提醒。
 [app_notification_bootstrap.dart (line 88)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/app/bootstrap/app_notification_bootstrap.dart:88) 将状态设为 degraded 后没有终止流程，第 93 至 94 行仍检查权限并执行调度。这不符合所定义的初始化先决顺序。
 
-[P3] 存在会长期误导开发的命名。
-[NativeEventBridge.kt (line 11)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/native/NativeEventBridge.kt:11) 已承担 Event、Reminder、Notification 三类能力，但仍叫 NativeEventBridge。[AndroidNativeBridgeFactory.kt (line 8)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/native/AndroidNativeBridgeFactory.kt:8) 的正式数据目录仍叫 test_storage_json。
+~~[P3] 存在会长期误导开发的命名。
+[NativeEventBridge.kt (line 11)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/native/NativeEventBridge.kt:11) 已承担 Event、Reminder、Notification 三类能力，但仍叫 NativeEventBridge。[AndroidNativeBridgeFactory.kt (line 8)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/native/AndroidNativeBridgeFactory.kt:8) 的正式数据目录仍叫 test_storage_json。~~ 已通过 Native Calendar Core Bridge 拆分和 `calendar_core_storage_json` 目录迁移解决；`test_storage_json` 仅保留为旧版本升级迁移来源。
 
 当前自动化测试没有真正验证整个三端闭环。
 Flutter 和 Kotlin 测试使用 Fake Gateway/Fake Native Bridge/Fake Notification Service；C++ 测试独立运行。它们不能证明真实 MethodChannel、JNI、文件、AlarmManager、系统通知及点击 Intent 能在设备上连续工作。

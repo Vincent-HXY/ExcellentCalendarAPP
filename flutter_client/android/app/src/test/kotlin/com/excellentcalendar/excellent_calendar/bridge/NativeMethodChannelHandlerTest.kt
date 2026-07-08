@@ -1,11 +1,11 @@
-package com.excellentcalendar.excellent_calendar.bridge
+﻿package com.excellentcalendar.excellent_calendar.bridge
 
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeBridgeLogger
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
 import com.excellentcalendar.excellent_calendar.bridge.channel.ResultDispatcher
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executor
@@ -19,7 +19,7 @@ import org.junit.Test
 /**
  * NativeMethodChannelHandler 的单元测试。
  *
- * 这些测试不加载真实 C++ 动态库，而是用 FakeNativeEventBridge 模拟 native 返回。
+ * 这些测试不加载真实 C++ 动态库，而是用 FakeNativeCalendarCoreBridge 模拟 native 返回。
  * 这样可以专注验证 Kotlin 层：请求校验、JSON 转换、响应合约校验、错误包装和回调行为。
  */
 class NativeMethodChannelHandlerTest {
@@ -37,7 +37,7 @@ class NativeMethodChannelHandlerTest {
             error = null,
             requestId = "native-request-1",
         )
-        val fakeBridge = FakeNativeEventBridge(createResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
+        val fakeBridge = FakeNativeCalendarCoreBridge(createResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
         val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventCreate, createEventArguments())
 
         val sentJson = fakeBridge.lastCreateRequestJson
@@ -91,7 +91,7 @@ class NativeMethodChannelHandlerTest {
             ),
             requestId = "native-request-2",
         )
-        val fakeBridge = FakeNativeEventBridge(createResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
+        val fakeBridge = FakeNativeCalendarCoreBridge(createResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
         val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventCreate, createEventArguments())
         val returned = result.successMap()
 
@@ -116,7 +116,7 @@ class NativeMethodChannelHandlerTest {
             error = null,
             requestId = "search-empty",
         )
-        val fakeBridge = FakeNativeEventBridge(searchResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
+        val fakeBridge = FakeNativeCalendarCoreBridge(searchResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
         val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventSearch, searchArguments())
 
         val sent = NativeContractJsonCodec.decodeObject(fakeBridge.lastSearchRequestJson!!)
@@ -151,7 +151,7 @@ class NativeMethodChannelHandlerTest {
             error = null,
             requestId = "search-many",
         )
-        val fakeBridge = FakeNativeEventBridge(searchResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
+        val fakeBridge = FakeNativeCalendarCoreBridge(searchResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
         val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventSearch, searchArguments(pageSize = 2))
 
         @Suppress("UNCHECKED_CAST")
@@ -174,7 +174,7 @@ class NativeMethodChannelHandlerTest {
     // 目的：避免损坏的原生搜索响应直接泄漏给 Flutter；方法：返回畸形 JSON 并检查归一化错误。
     @Test
     fun malformedNativeSearchResponseReturnsNormalizedFailure() {
-        val fakeBridge = FakeNativeEventBridge(
+        val fakeBridge = FakeNativeCalendarCoreBridge(
             searchResponseJson = NativeContractJsonCodec.encodeObject(
                 linkedMapOf(
                     "ok" to true,
@@ -210,7 +210,7 @@ class NativeMethodChannelHandlerTest {
             error = null,
             requestId = "complete-event",
         )
-        val fakeBridge = FakeNativeEventBridge(
+        val fakeBridge = FakeNativeCalendarCoreBridge(
             completeResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
         )
         val result = invoke(
@@ -248,7 +248,7 @@ class NativeMethodChannelHandlerTest {
             ),
             requestId = "complete-not-found",
         )
-        val fakeBridge = FakeNativeEventBridge(
+        val fakeBridge = FakeNativeCalendarCoreBridge(
             completeResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
         )
 
@@ -265,7 +265,7 @@ class NativeMethodChannelHandlerTest {
     // 目的：拒绝 Flutter 传入非 Map 参数；方法：传入错误类型并检查 Contract 失败 NativeResult。
     @Test
     fun completeEventRejectsNonMapArgumentsAsNativeResultFailure() {
-        val fakeBridge = FakeNativeEventBridge()
+        val fakeBridge = FakeNativeCalendarCoreBridge()
         val result = invoke(
             handler(fakeBridge),
             NativeMethodChannelHandler.MethodEventComplete,
@@ -285,7 +285,7 @@ class NativeMethodChannelHandlerTest {
     // 目的：防止已从 Contract 删除的 occurrence 字段继续被接受；方法：添加旧字段并期待校验失败。
     @Test
     fun completeEventRejectsOccurrenceFieldRemovedFromContract() {
-        val fakeBridge = FakeNativeEventBridge()
+        val fakeBridge = FakeNativeCalendarCoreBridge()
         val arguments = completeEventArguments() + (
             "occurrence_start_at" to "2026-06-08T01:00:00Z"
         )
@@ -306,7 +306,7 @@ class NativeMethodChannelHandlerTest {
     // 方法：让 Fake Bridge 抛异常并检查返回信封。
     @Test
     fun completeEventJniFailureReturnsNativeResultFailure() {
-        val fakeBridge = FakeNativeEventBridge(
+        val fakeBridge = FakeNativeCalendarCoreBridge(
             completeError = UnsatisfiedLinkError("missing nativeCompleteEvent"),
         )
 
@@ -334,7 +334,7 @@ class NativeMethodChannelHandlerTest {
             error = null,
             requestId = "reopen-event",
         )
-        val fakeBridge = FakeNativeEventBridge(
+        val fakeBridge = FakeNativeCalendarCoreBridge(
             reopenResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
         )
         val result = invoke(
@@ -357,7 +357,7 @@ class NativeMethodChannelHandlerTest {
     // 目的：JNI 不可用时禁止生成假成功；方法：让 Bridge 抛链接错误并检查失败结果。
     @Test
     fun jniUnavailableReturnsFailureWithoutFakeSuccess() {
-        val fakeBridge = FakeNativeEventBridge(createError = UnsatisfiedLinkError("missing nativeCreateEvent"))
+        val fakeBridge = FakeNativeCalendarCoreBridge(createError = UnsatisfiedLinkError("missing nativeCreateEvent"))
         val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventCreate, createEventArguments())
         val returned = result.successMap()
 
@@ -366,14 +366,14 @@ class NativeMethodChannelHandlerTest {
         @Suppress("UNCHECKED_CAST")
         val error = returned["error"] as Map<String, Any?>
         assertEquals(NativeErrorCodes.NativeInternalError, error["code"])
-        assertEquals("Native event bridge is unavailable.", error["message"])
+        assertEquals("Native calendar core bridge is unavailable.", error["message"])
         assertFalse(result.errorCalled)
     }
 
     // 目的：未知方法应交回 Flutter 的标准 notImplemented；方法：发送不存在的方法并检查记录标志。
     @Test
     fun unknownMethodIsNotImplemented() {
-        val result = invoke(handler(FakeNativeEventBridge()), "event.read_calendar", searchArguments())
+        val result = invoke(handler(FakeNativeCalendarCoreBridge()), "event.read_calendar", searchArguments())
 
         assertTrue(result.notImplementedCalled)
         assertFalse(result.successCalled)
@@ -381,9 +381,9 @@ class NativeMethodChannelHandlerTest {
     }
 
     // 使用 Fake Bridge 构造被测 Handler，隔离真实 JNI 动态库。
-    private fun handler(fakeBridge: FakeNativeEventBridge): NativeMethodChannelHandler {
+    private fun handler(fakeBridge: FakeNativeCalendarCoreBridge): NativeMethodChannelHandler {
         return NativeMethodChannelHandler(
-            nativeEventBridge = fakeBridge,
+            nativeCalendarCoreBridge = fakeBridge,
             executor = Executor { command -> command.run() },
             resultDispatcher = ResultDispatcher { block -> block() },
             logger = NativeBridgeLogger { _, _, _ -> },
@@ -575,7 +575,7 @@ class NativeMethodChannelHandlerTest {
      * 这是一种常见测试手法：用 fake 隔离外部依赖，让单元测试稳定、快速。
      */
     // JNI Bridge 替身：保存最后收到的 JSON，并按场景返回指定响应或抛出指定异常。
-    private class FakeNativeEventBridge(
+    private class FakeNativeCalendarCoreBridge(
         private val createResponseJson: String = NativeContractJsonCodec.encodeObject(
             linkedMapOf(
                 "ok" to true,
@@ -623,7 +623,7 @@ class NativeMethodChannelHandlerTest {
         ),
         private val createError: Throwable? = null,
         private val completeError: Throwable? = null,
-    ) : NativeEventBridge {
+    ) : NativeCalendarCoreBridge {
         var lastCreateRequestJson: String? = null
             private set
         var lastSearchRequestJson: String? = null

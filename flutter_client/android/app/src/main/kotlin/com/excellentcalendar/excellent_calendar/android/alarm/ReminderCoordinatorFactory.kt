@@ -21,7 +21,8 @@ object ReminderCoordinatorFactory {
             nativeBridge = bridge,
             alarmScheduler = ReminderDispatchAlarmScheduler(appContext),
             deliveryService = ReminderDeliveryService(
-                nativeBridge = bridge,
+                nativeReminderBridge = bridge,
+                nativeNotificationBridge = bridge,
                 notifications = AndroidNotificationDisplayService(appContext),
                 eventHub = AndroidNotificationRuntime.eventHub,
                 logger = logger,

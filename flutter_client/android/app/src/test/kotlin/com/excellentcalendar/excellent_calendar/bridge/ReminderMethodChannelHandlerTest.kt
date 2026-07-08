@@ -1,4 +1,4 @@
-package com.excellentcalendar.excellent_calendar.bridge
+﻿package com.excellentcalendar.excellent_calendar.bridge
 
 import com.excellentcalendar.excellent_calendar.android.alarm.CancelResult
 import com.excellentcalendar.excellent_calendar.android.alarm.ReminderScheduler
@@ -9,7 +9,7 @@ import com.excellentcalendar.excellent_calendar.bridge.channel.ResultDispatcher
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderContract
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -25,7 +25,7 @@ class ReminderMethodChannelHandlerTest {
     // 方法：Fake Bridge/Scheduler 记录调用顺序，最终检查状态和 scheduledAt。
     @Test
     fun createReminderSuccessSchedulesAndMarksScheduled() {
-        val fakeBridge = FakeNativeEventBridge()
+        val fakeBridge = FakeNativeCalendarCoreBridge()
         val fakeScheduler = FakeReminderScheduler()
 
         val result = invoke(handler(fakeBridge, fakeScheduler), NativeMethodChannelHandler.MethodReminderCreate, createReminderArguments())
@@ -52,7 +52,7 @@ class ReminderMethodChannelHandlerTest {
             error = error("REMINDER_TARGET_NOT_FOUND", "Reminder target does not exist"),
             requestId = "create-failed",
         )
-        val fakeBridge = FakeNativeEventBridge(createReminderJson = NativeContractJsonCodec.encodeObject(nativeFailure))
+        val fakeBridge = FakeNativeCalendarCoreBridge(createReminderJson = NativeContractJsonCodec.encodeObject(nativeFailure))
         val fakeScheduler = FakeReminderScheduler()
 
         val result = invoke(handler(fakeBridge, fakeScheduler), NativeMethodChannelHandler.MethodReminderCreate, createReminderArguments())
@@ -65,7 +65,7 @@ class ReminderMethodChannelHandlerTest {
     // 目的：Android 调度失败后必须回写 failed；方法：Scheduler 返回失败并检查 markReminderFailed。
     @Test
     fun alarmScheduleFailureMarksReminderFailed() {
-        val fakeBridge = FakeNativeEventBridge()
+        val fakeBridge = FakeNativeCalendarCoreBridge()
         val fakeScheduler = FakeReminderScheduler(
             scheduleResult = ScheduleResult.Failure(
                 code = NativeErrorCodes.AlarmScheduleFailed,
@@ -87,7 +87,7 @@ class ReminderMethodChannelHandlerTest {
     // 目的：当前不支持的微信提醒不能被静默忽略；方法：提交 wechat method 并检查明确错误。
     @Test
     fun unsupportedWechatMethodIsNotSilentlyIgnored() {
-        val fakeBridge = FakeNativeEventBridge(
+        val fakeBridge = FakeNativeCalendarCoreBridge(
             createReminderJson = NativeContractJsonCodec.encodeObject(
                 nativeResult(
                     ok = true,
@@ -116,7 +116,7 @@ class ReminderMethodChannelHandlerTest {
     // 方法：Fake 记录两个边界调用并检查最终 cancelled 响应。
     @Test
     fun cancelReminderSuccessCancelsAlarmThenNativeSoftDelete() {
-        val fakeBridge = FakeNativeEventBridge()
+        val fakeBridge = FakeNativeCalendarCoreBridge()
         val fakeScheduler = FakeReminderScheduler()
 
         val result = invoke(handler(fakeBridge, fakeScheduler), NativeMethodChannelHandler.MethodReminderCancel, cancelReminderArguments())
@@ -133,7 +133,7 @@ class ReminderMethodChannelHandlerTest {
     // 目的：不存在的 Reminder 不应触碰系统 Alarm；方法：预查询返回空列表并检查未调用 cancel。
     @Test
     fun cancelMissingReminderReturnsNotFoundWithoutCancellingAlarm() {
-        val fakeBridge = FakeNativeEventBridge(
+        val fakeBridge = FakeNativeCalendarCoreBridge(
             listRemindersJson = NativeContractJsonCodec.encodeObject(
                 nativeResult(
                     ok = true,
@@ -155,7 +155,7 @@ class ReminderMethodChannelHandlerTest {
     // 目的：系统闹钟取消失败时不得继续软删除；方法：Scheduler 返回失败并检查 C++ cancel 未调用。
     @Test
     fun cancelAlarmFailureDoesNotSoftDeleteInNative() {
-        val fakeBridge = FakeNativeEventBridge()
+        val fakeBridge = FakeNativeCalendarCoreBridge()
         val fakeScheduler = FakeReminderScheduler(
             cancelResult = CancelResult.Failure(
                 code = NativeErrorCodes.AlarmCancelFailed,
@@ -180,7 +180,7 @@ class ReminderMethodChannelHandlerTest {
             error = error("STORAGE_IO_ERROR", "Storage input/output operation failed"),
             requestId = "cancel-storage-failed",
         )
-        val fakeBridge = FakeNativeEventBridge(cancelReminderJson = NativeContractJsonCodec.encodeObject(nativeFailure))
+        val fakeBridge = FakeNativeCalendarCoreBridge(cancelReminderJson = NativeContractJsonCodec.encodeObject(nativeFailure))
         val fakeScheduler = FakeReminderScheduler()
 
         val result = invoke(handler(fakeBridge, fakeScheduler), NativeMethodChannelHandler.MethodReminderCancel, cancelReminderArguments())
@@ -199,7 +199,7 @@ class ReminderMethodChannelHandlerTest {
             isEnabled = false,
             deletedAt = "2026-06-14T01:00:00Z",
         )
-        val fakeBridge = FakeNativeEventBridge(
+        val fakeBridge = FakeNativeCalendarCoreBridge(
             listRemindersJson = NativeContractJsonCodec.encodeObject(
                 nativeResult(
                     ok = true,
@@ -232,7 +232,7 @@ class ReminderMethodChannelHandlerTest {
     // 目的：未知 reminder 方法必须返回 notImplemented；方法：发送不存在的方法并检查结果探针。
     @Test
     fun unknownReminderMethodIsNotImplemented() {
-        val result = invoke(handler(FakeNativeEventBridge(), FakeReminderScheduler()), "reminder.delete", cancelReminderArguments())
+        val result = invoke(handler(FakeNativeCalendarCoreBridge(), FakeReminderScheduler()), "reminder.delete", cancelReminderArguments())
 
         assertTrue(result.notImplementedCalled)
         assertFalse(result.successCalled)
@@ -241,11 +241,11 @@ class ReminderMethodChannelHandlerTest {
 
     // 组装被测 Handler，并注入 Fake JNI Bridge 与 Fake Android Scheduler。
     private fun handler(
-        fakeBridge: FakeNativeEventBridge,
+        fakeBridge: FakeNativeCalendarCoreBridge,
         fakeScheduler: FakeReminderScheduler,
     ): NativeMethodChannelHandler {
         return NativeMethodChannelHandler(
-            nativeEventBridge = fakeBridge,
+            nativeCalendarCoreBridge = fakeBridge,
             reminderOrchestrator = ReminderNativeOrchestrator(
                 nativeBridge = fakeBridge,
                 scheduler = fakeScheduler,
@@ -317,7 +317,7 @@ class ReminderMethodChannelHandlerTest {
     }
 
     // C++ JNI 边界替身：为不同状态 API 返回预设 JSON，同时记录发生过的回写。
-    private class FakeNativeEventBridge(
+    private class FakeNativeCalendarCoreBridge(
         private val createReminderJson: String = NativeContractJsonCodec.encodeObject(
             nativeResult(ok = true, data = reminderResponse(status = "pending"), error = null, requestId = "create-reminder"),
         ),
@@ -337,7 +337,7 @@ class ReminderMethodChannelHandlerTest {
                 requestId = "list-reminders",
             ),
         ),
-    ) : NativeEventBridge {
+    ) : NativeCalendarCoreBridge {
         val markScheduledIds = mutableListOf<String>()
         val markFailedCalls = mutableListOf<Pair<String, String>>()
         val cancelReminderIds = mutableListOf<String>()

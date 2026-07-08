@@ -10,11 +10,11 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultCont
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderListResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderResponseContract
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeReminderBridge
 import java.time.Instant
 
 class ReminderNativeOrchestrator(
-    private val nativeBridge: NativeEventBridge,
+    private val nativeBridge: NativeReminderBridge,
     private val scheduler: ReminderScheduler,
     private val logger: ReminderOrchestrationLogger,
     private val nowUtc: () -> String = { Instant.now().toString() },

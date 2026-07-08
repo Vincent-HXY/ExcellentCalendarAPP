@@ -6,11 +6,11 @@ import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonC
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderListResponseContract
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeReminderBridge
 
 /** Cancels per-reminder PendingIntents left by the pre-dispatcher implementation. */
 object LegacyReminderAlarmMigration {
-    fun runIfNeeded(context: Context, nativeBridge: NativeEventBridge) {
+    fun runIfNeeded(context: Context, nativeBridge: NativeReminderBridge) {
         val appContext = context.applicationContext
         val preferences = appContext.getSharedPreferences(PreferencesName, Context.MODE_PRIVATE)
         if (preferences.getInt(MigrationKey, 0) >= MigrationVersion) return

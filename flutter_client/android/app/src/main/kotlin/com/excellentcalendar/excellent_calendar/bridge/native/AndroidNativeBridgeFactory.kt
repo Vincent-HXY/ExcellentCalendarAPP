@@ -1,30 +1,34 @@
 package com.excellentcalendar.excellent_calendar.bridge.native
 
 import android.content.Context
-import java.io.File
 
 object AndroidNativeBridgeFactory {
-    fun create(context: Context): JniNativeEventBridge {
-        val storageDirectory = File(
-            context.applicationContext.filesDir,
-            "local_storage/test_storage_json",
+    fun create(context: Context): NativeCalendarCoreBridge {
+        val storageDirectory = CalendarCoreStorageDirectoryResolver.resolve(
+            filesDir = context.applicationContext.filesDir,
         )
-        return JniNativeEventBridge(storageDirectory = storageDirectory.absolutePath)
+        return JniNativeCalendarCoreBridge(storageDirectory = storageDirectory.absolutePath)
     }
 }
 
 
 /*AndroidNativeBridgeFactory.create(context)
-→ 创建 JniNativeEventBridge，并指定 storageDirectory
+→ 创建 JniNativeCalendarCoreBridge，并指定 storageDirectory
 → 上层调用 createEvent / createReminder 等方法
-→ JniNativeEventBridge 加载 native 库
+→ JniNativeCalendarCoreBridge 加载 native 库
 → 初始化 C++ storage
 → 调用对应 JNI/C++ 函数
 
 NativeEventBridge.kt
-= 抽象能力接口，定义 Kotlin 可以向 C++ Core 请求哪些能力。
+= Event 模块能力接口，只定义 event 相关 JNI 调用。
 
-JniNativeEventBridge.kt
+NativeReminderBridge.kt / NativeNotificationBridge.kt
+= Reminder / Notification 模块能力接口。
+
+NativeCalendarCoreBridge.kt
+= 聚合接口，本身不新增方法，只继承各模块能力接口。
+
+JniNativeCalendarCoreBridge.kt
 = JNI 实现类，真正负责加载 native 库、初始化存储、调用 C++ 函数。
 
 AndroidNativeBridgeFactory.kt

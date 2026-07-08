@@ -25,7 +25,7 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.RequestNotificationPermissionContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.SchedulePendingRemindersContract
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderDeliveryResult
@@ -227,7 +227,8 @@ class NotificationReminderBridgeTest {
         val delivered = RecordingEventSink()
         eventHub.deliveredStreamHandler.onListen(null, delivered)
         val service = ReminderDeliveryService(
-            nativeBridge = bridge,
+            nativeReminderBridge = bridge,
+            nativeNotificationBridge = bridge,
             notifications = display,
             eventHub = eventHub,
             logger = { _, _, _ -> },
@@ -254,7 +255,8 @@ class NotificationReminderBridgeTest {
             ),
         )
         val service = ReminderDeliveryService(
-            nativeBridge = bridge,
+            nativeReminderBridge = bridge,
+            nativeNotificationBridge = bridge,
             notifications = display,
             eventHub = NotificationEventHub(),
             logger = { _, _, _ -> },
@@ -275,7 +277,8 @@ class NotificationReminderBridgeTest {
         val bridge = FakeNativeBridge(rejectMismatchedPlannedAt = true)
         val display = FakeDisplayService()
         val service = ReminderDeliveryService(
-            nativeBridge = bridge,
+            nativeReminderBridge = bridge,
+            nativeNotificationBridge = bridge,
             notifications = display,
             eventHub = NotificationEventHub(),
             logger = { _, _, _ -> },
@@ -343,12 +346,12 @@ class NotificationReminderBridgeTest {
     }
 
     private fun handler(
-        bridge: NativeEventBridge,
+        bridge: NativeCalendarCoreBridge,
         notification: NotificationMethodOrchestrator,
         pending: PendingReminderScheduleService,
     ): NativeMethodChannelHandler {
         return NativeMethodChannelHandler(
-            nativeEventBridge = bridge,
+            nativeCalendarCoreBridge = bridge,
             notificationOrchestrator = notification,
             pendingReminderScheduleService = pending,
             executor = Executor { it.run() },
@@ -447,7 +450,7 @@ class NotificationReminderBridgeTest {
     private class FakeNativeBridge(
         private val markScheduledSucceeds: Boolean = true,
         private val rejectMismatchedPlannedAt: Boolean = false,
-    ) : NativeEventBridge {
+    ) : NativeCalendarCoreBridge {
         var lastListSchedulableRequest: String? = null
         var lastGetReminderId: String? = null
         var lastConsumedReminderId: String? = null

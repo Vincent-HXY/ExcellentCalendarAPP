@@ -10,7 +10,8 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultCont
 import com.excellentcalendar.excellent_calendar.bridge.contract.NotificationResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderResponseContract
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeNotificationBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeReminderBridge
 import java.time.Instant
 
 sealed class ReminderDeliveryResult {
@@ -20,7 +21,8 @@ sealed class ReminderDeliveryResult {
 }
 
 class ReminderDeliveryService(
-    private val nativeBridge: NativeEventBridge,
+    private val nativeReminderBridge: NativeReminderBridge,
+    private val nativeNotificationBridge: NativeNotificationBridge,
     private val notifications: NotificationDisplayService,
     private val eventHub: NotificationEventHub,
     private val logger: ReminderOrchestrationLogger,
@@ -28,7 +30,7 @@ class ReminderDeliveryService(
 ) {
     fun deliver(reminderId: String, plannedAt: String?): ReminderDeliveryResult {
         val loaded = NativeResultContract.fromJson(
-            nativeBridge.getReminder(
+            nativeReminderBridge.getReminder(
                 NativeContractJsonCodec.encodeObject(linkedMapOf("id" to reminderId)),
             ),
             ReminderResponseContract::validate,
@@ -81,7 +83,7 @@ class ReminderDeliveryService(
             "delete_after_sent" to true,
         )
         val consumed = NativeResultContract.fromJson(
-            nativeBridge.consumeReminderAfterDelivery(NativeContractJsonCodec.encodeObject(request)),
+            nativeNotificationBridge.consumeReminderAfterDelivery(NativeContractJsonCodec.encodeObject(request)),
         ) { ConsumeReminderAfterDeliveryResponseContract.notification(it) }
         if (!consumed.ok) {
             notifications.cancel(content.reminderId)
@@ -114,7 +116,7 @@ class ReminderDeliveryService(
                 "failure_reason" to failureReason,
             )
             NativeResultContract.fromJson(
-                nativeBridge.createNotification(NativeContractJsonCodec.encodeObject(request)),
+                nativeNotificationBridge.createNotification(NativeContractJsonCodec.encodeObject(request)),
                 NotificationResponseContract::validate,
             )
         } catch (error: Throwable) {
@@ -128,7 +130,7 @@ class ReminderDeliveryService(
                 linkedMapOf("id" to reminderId, "failure_reason" to failureReason),
             )
             NativeResultContract.fromJson(
-                nativeBridge.markReminderFailed(request),
+                nativeReminderBridge.markReminderFailed(request),
                 ReminderResponseContract::validate,
             )
         } catch (error: Throwable) {

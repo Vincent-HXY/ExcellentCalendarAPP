@@ -27,7 +27,7 @@ import io.flutter.plugin.common.MethodChannel
  *
  * 本类的职责很小但很关键：
  * 1. 准备 C++ native 层需要的本地存储目录。
- * 2. 创建 `JniNativeEventBridge`，让 Kotlin 可以调用 JNI/C++。
+ * 2. 创建 `JniNativeCalendarCoreBridge`，让 Kotlin 可以调用 JNI/C++。
  * 3. 注册 `MethodChannel`，让 Dart 可以用方法名调用 Kotlin。
  */
 class MainActivity : FlutterActivity() {
@@ -97,7 +97,7 @@ class MainActivity : FlutterActivity() {
             },
         )
         val handler = NativeMethodChannelHandler(
-            nativeEventBridge = nativeBridge,
+            nativeCalendarCoreBridge = nativeBridge,
             reminderOrchestrator = reminderOrchestrator,
             notificationOrchestrator = notificationOrchestrator,
             pendingReminderScheduleService = pendingScheduleService,

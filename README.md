@@ -1497,6 +1497,29 @@ Kotlin Contract 负责：
 
 Kotlin 不应该擅自改字段命名，也不应该把跨层协议从 `snake_case` 改成 `camelCase` 后再传给 C++。
 
+Native Calendar Core Bridge 拆分约定：
+
+```text
+android/app/src/main/kotlin/.../bridge/native/
+├── NativeEventBridge.kt
+├── NativeReminderBridge.kt
+├── NativeNotificationBridge.kt
+├── NativeCalendarCoreBridge.kt
+├── JniNativeCalendarCoreBridge.kt
+├── CalendarCoreStorageDirectoryResolver.kt
+└── AndroidNativeBridgeFactory.kt
+```
+
+约定如下：
+
+1. 单个业务模块的 JNI 能力必须先放进独立接口文件，例如事件放在 `NativeEventBridge.kt`，提醒放在 `NativeReminderBridge.kt`。
+2. `NativeCalendarCoreBridge.kt` 是聚合接口，只继承各模块接口，不直接新增方法。
+3. `JniNativeCalendarCoreBridge.kt` 是聚合实现类，负责加载 native 库、初始化 C++ storage，并实现所有模块接口方法。
+4. `AndroidNativeBridgeFactory.kt` 是 Android 统一创建入口，文件名和职责保持稳定，并通过 `CalendarCoreStorageDirectoryResolver.kt` 指定正式数据目录。
+5. Android 运行时 Calendar Core JSON 目录是 `files/local_storage/calendar_core_storage_json`；历史 `files/local_storage/test_storage_json` 仅作为旧版本升级迁移来源，不再作为新代码的正式目录名。
+6. 后续新增模块时，例如纪念日模块，应该新增 `NativeAnniversaryBridge.kt`，再让 `NativeCalendarCoreBridge.kt` 继承它，并同步补齐 `JniNativeCalendarCoreBridge.kt`、C++ JNI 导出符号、contracts、Kotlin contract 校验和测试 fake。
+7. 只需要单模块能力的服务应依赖窄接口，例如 reminder 调度服务依赖 `NativeReminderBridge`；只有 MethodChannel 总入口或跨模块编排流程才依赖 `NativeCalendarCoreBridge`。
+
 ------
 
 ##### 12.3 C++ 侧

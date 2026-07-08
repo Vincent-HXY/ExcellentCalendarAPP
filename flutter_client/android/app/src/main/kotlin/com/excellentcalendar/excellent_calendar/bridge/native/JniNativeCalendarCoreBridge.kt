@@ -36,14 +36,14 @@ fun interface NativeLibraryLoader {
  *
  * Kotlin 初学点：
  * - `private val` 是构造函数参数同时声明为私有只读属性。
- * - `: NativeEventBridge` 表示这个类实现了接口，必须提供接口里的函数。
+ * - `: NativeCalendarCoreBridge` 表示这个类实现了聚合接口，必须提供接口里的函数。
  */
-class JniNativeEventBridge(
+class JniNativeCalendarCoreBridge(
     private val storageDirectory: String? = null,
     private val libraryLoader: NativeLibraryLoader = NativeLibraryLoader {
         System.loadLibrary(NativeLibraryName)
     },
-) : NativeEventBridge {
+) : NativeCalendarCoreBridge {
     /**
      * `@Volatile` 保证多线程下读取到的是最新值。
      *
@@ -318,7 +318,7 @@ class JniNativeEventBridge(
         }
         val failure = loadFailure
         if (failure != null) {
-            throw NativeBridgeUnavailableException("Native event library is unavailable.", failure)
+            throw NativeBridgeUnavailableException("Native calendar core library is unavailable.", failure)
         }
     }
 

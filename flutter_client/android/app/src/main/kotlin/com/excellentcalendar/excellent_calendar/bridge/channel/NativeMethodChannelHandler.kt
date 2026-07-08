@@ -26,7 +26,7 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.SchedulePendingR
 import com.excellentcalendar.excellent_calendar.bridge.contract.UpdateEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.UpdateReminderRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeBridgeUnavailableException
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
@@ -77,13 +77,13 @@ class AndroidNativeBridgeLogger : NativeBridgeLogger {
  * Flutter MethodChannel 的统一入口。
  *
  * 调用链：
- * Dart -> MethodChannel -> `onMethodCall` -> Kotlin 合约校验 -> `NativeEventBridge`
+ * Dart -> MethodChannel -> `onMethodCall` -> Kotlin 合约校验 -> `NativeCalendarCoreBridge`
  * -> JNI/C++ -> NativeResult JSON -> Kotlin 校验响应 -> Map 返回 Dart。
  *
  * 这里实现 `AutoCloseable`，说明它持有需要释放的资源：默认的单线程 executor。
  */
 class NativeMethodChannelHandler(
-    private val nativeEventBridge: NativeEventBridge,
+    private val nativeCalendarCoreBridge: NativeCalendarCoreBridge,
     private val reminderOrchestrator: ReminderNativeOrchestrator? = null,
     private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
     private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
@@ -139,7 +139,7 @@ class NativeMethodChannelHandler(
             return
         }
         executeNative(call.method, completion, EventResponseContract::validate) {
-            nativeEventBridge.createEvent(request.toJson())
+            nativeCalendarCoreBridge.createEvent(request.toJson())
         }
     }
 
@@ -152,7 +152,7 @@ class NativeMethodChannelHandler(
             return
         }
         executeNative(call.method, completion, EventResponseContract::validate) {
-            nativeEventBridge.updateEvent(request.toJson())
+            nativeCalendarCoreBridge.updateEvent(request.toJson())
         }
     }
 
@@ -164,7 +164,7 @@ class NativeMethodChannelHandler(
             return
         }
         executeNative(call.method, completion, EventResponseContract::validate) {
-            nativeEventBridge.deleteEvent(request.toJson())
+            nativeCalendarCoreBridge.deleteEvent(request.toJson())
         }
     }
 
@@ -176,7 +176,7 @@ class NativeMethodChannelHandler(
             return
         }
         executeNative(call.method, completion, EventListResponseContract::validate) {
-            nativeEventBridge.searchEvents(request.toJson())
+            nativeCalendarCoreBridge.searchEvents(request.toJson())
         }
     }
 
@@ -189,7 +189,7 @@ class NativeMethodChannelHandler(
             return
         }
         executeNative(call.method, completion, EventResponseContract::validate) {
-            nativeEventBridge.completeEvent(request.toJson())
+            nativeCalendarCoreBridge.completeEvent(request.toJson())
         }
     }
 
@@ -202,7 +202,7 @@ class NativeMethodChannelHandler(
             return
         }
         executeNative(call.method, completion, EventResponseContract::validate) {
-            nativeEventBridge.reopenEvent(request.toJson())
+            nativeCalendarCoreBridge.reopenEvent(request.toJson())
         }
     }
 
@@ -250,7 +250,7 @@ class NativeMethodChannelHandler(
             return
         }
         executeNative(call.method, completion, ReminderListResponseContract::validate) {
-            nativeEventBridge.listReminders(request.toJson())
+            nativeCalendarCoreBridge.listReminders(request.toJson())
         }
     }
 
@@ -473,7 +473,7 @@ class NativeMethodChannelHandler(
         logger.log(method, null, "native unavailable type=${error.javaClass.simpleName}")
         return NativeResultContract.failure(
             code = NativeErrorCodes.NativeInternalError,
-            message = "Native event bridge is unavailable.",
+            message = "Native calendar core bridge is unavailable.",
             details = linkedMapOf(
                 "method" to method,
                 "reason" to (error.message ?: error.javaClass.simpleName),
@@ -486,7 +486,7 @@ class NativeMethodChannelHandler(
         logger.log(method, null, "native call failed type=${error.javaClass.simpleName}")
         return NativeResultContract.failure(
             code = NativeErrorCodes.NativeInternalError,
-            message = "Native event bridge call failed.",
+            message = "Native calendar core bridge call failed.",
             details = linkedMapOf(
                 "method" to method,
                 "reason" to error.javaClass.simpleName,

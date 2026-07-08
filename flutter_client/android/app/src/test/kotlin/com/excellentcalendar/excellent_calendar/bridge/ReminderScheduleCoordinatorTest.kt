@@ -12,7 +12,8 @@ import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonC
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
-import com.excellentcalendar.excellent_calendar.bridge.native.NativeEventBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeNotificationBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeReminderBridge
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderDeliveryService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderScheduleCoordinator
 import org.junit.Assert.assertEquals
@@ -77,7 +78,8 @@ class ReminderScheduleCoordinatorTest {
         nativeBridge = bridge,
         alarmScheduler = scheduler,
         deliveryService = ReminderDeliveryService(
-            nativeBridge = bridge,
+            nativeReminderBridge = bridge,
+            nativeNotificationBridge = NoopNotificationBridge,
             notifications = NoopDisplayService,
             eventHub = NotificationEventHub(),
             logger = { _, _, _ -> },
@@ -121,7 +123,12 @@ private object NoopDisplayService : NotificationDisplayService {
     override fun cancel(reminderId: String) = Unit
 }
 
-private class QueueBridge(private val hasHead: Boolean) : NativeEventBridge {
+private object NoopNotificationBridge : NativeNotificationBridge {
+    override fun createNotification(requestJson: String) = throw UnsupportedOperationException()
+    override fun consumeReminderAfterDelivery(requestJson: String) = throw UnsupportedOperationException()
+}
+
+private class QueueBridge(private val hasHead: Boolean) : NativeReminderBridge {
     val markedScheduled = mutableListOf<String>()
     val markedFailed = mutableListOf<String>()
 
@@ -172,12 +179,6 @@ private class QueueBridge(private val hasHead: Boolean) : NativeEventBridge {
 
     private fun success(data: Any?): String = NativeContractJsonCodec.encodeObject(NativeResultContract.success(data).toMap())
 
-    override fun createEvent(requestJson: String) = unsupported()
-    override fun updateEvent(requestJson: String) = unsupported()
-    override fun deleteEvent(requestJson: String) = unsupported()
-    override fun searchEvents(requestJson: String) = unsupported()
-    override fun completeEvent(requestJson: String) = unsupported()
-    override fun reopenEvent(requestJson: String) = unsupported()
     override fun createReminder(requestJson: String) = unsupported()
     override fun updateReminder(requestJson: String) = unsupported()
     override fun cancelReminder(requestJson: String) = unsupported()
@@ -186,7 +187,5 @@ private class QueueBridge(private val hasHead: Boolean) : NativeEventBridge {
     override fun markReminderSent(requestJson: String) = unsupported()
     override fun enableReminder(requestJson: String) = unsupported()
     override fun disableReminder(requestJson: String) = unsupported()
-    override fun createNotification(requestJson: String) = unsupported()
-    override fun consumeReminderAfterDelivery(requestJson: String) = unsupported()
     private fun unsupported(): String = throw UnsupportedOperationException()
 }

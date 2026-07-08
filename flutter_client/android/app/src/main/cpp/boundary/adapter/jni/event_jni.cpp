@@ -70,7 +70,7 @@ jstring call_boundary(JNIEnv* env, jstring input, std::string (*function)(std::s
 
 // extern "C" 禁止 C++ 名字改编；JNIEXPORT/JNICALL 是 JNI 要求的导出宏和调用约定。
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeInitializeStorage(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeInitializeStorage(
     JNIEnv* env,
     jobject /* this */,
     jstring storage_directory) {
@@ -78,7 +78,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeCreateEvent(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeCreateEvent(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -86,7 +86,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeUpdateEvent(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeUpdateEvent(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -94,7 +94,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeDeleteEvent(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeDeleteEvent(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -102,7 +102,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeSearchEvents(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeSearchEvents(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -110,7 +110,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeCompleteEvent(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeCompleteEvent(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -118,7 +118,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeReopenEvent(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeReopenEvent(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -126,7 +126,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeCreateReminder(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeCreateReminder(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -134,7 +134,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeUpdateReminder(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeUpdateReminder(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -142,7 +142,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeCancelReminder(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeCancelReminder(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -150,7 +150,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeListReminders(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeListReminders(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -158,7 +158,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeGetReminder(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeGetReminder(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -166,7 +166,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeListSchedulableReminders(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeListSchedulableReminders(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -175,7 +175,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeMarkReminderScheduled(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeMarkReminderScheduled(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -183,7 +183,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeMarkReminderSent(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeMarkReminderSent(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -191,7 +191,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeMarkReminderFailed(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeMarkReminderFailed(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -199,7 +199,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeEnableReminder(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeEnableReminder(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -207,7 +207,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeDisableReminder(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeDisableReminder(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -215,7 +215,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeCreateNotification(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeCreateNotification(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
@@ -223,7 +223,7 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridg
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeEventBridge_nativeConsumeReminderAfterDelivery(
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeConsumeReminderAfterDelivery(
     JNIEnv* env,
     jobject /* this */,
     jstring request_json) {
