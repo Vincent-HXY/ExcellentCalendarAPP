@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/event_detail_response.schema.json",
+  "title": "EventDetailResponse",
+  "description": "Detail-page aggregate response containing event plus optional related recurrence, reminders, and category.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event"
+  ],
+  "properties": {
+    "event": {
+      "$ref": "./event_response.schema.json"
+    },
+    "recurrence": {
+      "oneOf": [
+        {
+          "$ref": "../recurrence/recurrence_response.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reminders": {
+      "type": "array",
+      "items": {
+        "$ref": "../reminder/reminder_response.schema.json"
+      }
+    },
+    "category": {
+      "oneOf": [
+        {
+          "$ref": "../category/category_response.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

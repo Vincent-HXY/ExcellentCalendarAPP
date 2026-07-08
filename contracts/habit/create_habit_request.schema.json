@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/create_habit_request.schema.json",
+  "title": "CreateHabitRequest",
+  "description": "Request payload for creating a habit definition. Check-in records are handled by HabitCheckIn contracts.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "start_date",
+    "recurrence",
+    "source"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recurrence": {
+      "$ref": "../recurrence/recurrence_rule.schema.json"
+    },
+    "target_count": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "unit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "ai_extraction",
+        "sync",
+        "import",
+        "wechat"
+      ]
+    }
+  }
+}

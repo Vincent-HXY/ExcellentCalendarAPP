@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/common/empty_request.schema.json",
+  "title": "EmptyRequest",
+  "description": "Explicit empty object for cross-language calls that take no business parameters.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false
+}

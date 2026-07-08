@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/mark_reminder_scheduled_request.schema.json",
+  "title": "MarkReminderScheduledRequest",
+  "description": "Internal Kotlin-to-C++ payload used after Kotlin successfully registers a reminder with Android AlarmManager or another delivery channel.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "scheduled_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

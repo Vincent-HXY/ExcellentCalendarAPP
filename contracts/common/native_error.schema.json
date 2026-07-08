@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/common/native_error.schema.json",
+  "title": "NativeError",
+  "description": "Unified error payload for every cross-language native call failure.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "code",
+    "message"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "enum": [
+        "NATIVE_INTERNAL_ERROR",
+        "CONTRACT_VALIDATION_FAILED",
+        "CONTRACT_VERSION_UNSUPPORTED",
+        "FEATURE_NOT_IMPLEMENTED",
+        "STORAGE_NOT_INITIALIZED",
+        "STORAGE_PATH_INVALID",
+        "STORAGE_IO_ERROR",
+        "STORAGE_DATA_CORRUPTED",
+        "EVENT_TITLE_EMPTY",
+        "EVENT_TIME_INVALID",
+        "EVENT_NOT_FOUND",
+        "EVENT_DELETE_SCOPE_INVALID",
+        "RECURRENCE_RULE_INVALID",
+        "RECURRENCE_TARGET_INVALID",
+        "REMINDER_TIME_INVALID",
+        "REMINDER_TARGET_NOT_FOUND",
+        "REMINDER_NOT_FOUND",
+        "REMINDER_METHOD_INVALID",
+        "NOTIFICATION_DELIVERY_FAILED",
+        "HABIT_TITLE_EMPTY",
+        "HABIT_NOT_FOUND",
+        "HABIT_CHECK_IN_DUPLICATED",
+        "CATEGORY_NAME_EMPTY",
+        "CATEGORY_NOT_FOUND",
+        "ANNIVERSARY_TITLE_EMPTY",
+        "ANNIVERSARY_DATE_INVALID",
+        "ANNIVERSARY_NOT_FOUND",
+        "SEARCH_QUERY_INVALID",
+        "AI_EXTRACTION_FAILED",
+        "SYNC_CONFLICT",
+        "SYNC_OPERATION_INVALID",
+        "USER_SETTINGS_INVALID",
+        "PERMISSION_DENIED",
+        "ALARM_SCHEDULE_FAILED",
+        "ALARM_CANCEL_FAILED",
+        "NOTIFICATION_PERMISSION_DENIED",
+        "EXACT_ALARM_PERMISSION_DENIED",
+        "UNSUPPORTED_REMINDER_METHOD",
+        "REMINDER_ALREADY_CONSUMED",
+        "REMINDER_NOT_DUE",
+        "REMINDER_NOT_DELIVERABLE",
+        "NOTIFICATION_INITIALIZATION_FAILED"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1
+    },
+    "details": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
+    "retryable": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

@@ -1,0 +1,77 @@
+import 'package:flutter/services.dart';
+
+import '../../native_contract/common/native_error_codes.dart';
+import '../../native_contract/common/native_result_dto.dart';
+import '../../native_contract/shared/native_invocation.dart';
+import '../../native_contract/shared/native_json_normalizer.dart';
+
+class NativeMethodChannelInvoker {
+  const NativeMethodChannelInvoker(this._channel);
+
+  final MethodChannel _channel;
+
+  Future<NativeInvocation<T>> invoke<T>({
+    required String method,
+    required Map<String, dynamic> arguments,
+    required T Function(Object? rawData) parseData,
+  }) async {
+    try {
+      final raw = await _channel.invokeMethod<Object?>(method, arguments);
+      final rawResponse = NativeJsonNormalizer.normalizeMap(raw);
+      final result = NativeResultDto<T>.fromJson(rawResponse, parseData);
+      return NativeInvocation<T>(
+        rawResponse: rawResponse,
+        result: result,
+        isNativeResult: true,
+      );
+    } on PlatformException catch (error) {
+      return _localChannelFailure<T>(
+        code: NativeErrorCodes.nativeInternalError,
+        message: error.message ?? 'MethodChannel PlatformException',
+        details: {
+          'platform_code': error.code,
+          'platform_details': error.details?.toString(),
+          'method': method,
+        },
+      );
+    } on MissingPluginException catch (error) {
+      return _localChannelFailure<T>(
+        code: NativeErrorCodes.nativeInternalError,
+        message: error.message ?? 'MethodChannel plugin is not registered',
+        details: {'method': method},
+      );
+    } on FormatException catch (error) {
+      return _localChannelFailure<T>(
+        code: NativeErrorCodes.contractValidationFailed,
+        message: error.message,
+        details: {'method': method},
+      );
+    }
+  }
+
+  NativeInvocation<T> _localChannelFailure<T>({
+    required String code,
+    required String message,
+    Map<String, dynamic>? details,
+  }) {
+    final rawResponse = <String, dynamic>{
+      'flutter_diagnostic': true,
+      'native_result_available': false,
+      'error': {
+        'code': code,
+        'message': message,
+        'details': details,
+        'retryable': false,
+      },
+    };
+    return NativeInvocation<T>(
+      rawResponse: rawResponse,
+      result: NativeResultDto.localFailure<T>(
+        code: code,
+        message: message,
+        details: details,
+      ),
+      isNativeResult: false,
+    );
+  }
+}

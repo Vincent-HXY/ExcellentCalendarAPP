@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/reconcile_reminder_schedule_request.schema.json",
+  "title": "ReconcileReminderScheduleRequest",
+  "description": "Requests reconciliation of the durable Reminder queue with Android's single dispatcher alarm.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["trigger_source"],
+  "properties": {
+    "trigger_source": {
+      "type": "string",
+      "enum": [
+        "app_start", "app_resume", "mutation", "boot_completed",
+        "package_replaced", "time_changed", "timezone_changed",
+        "periodic_worker", "alarm_fired", "manual_retry"
+      ]
+    },
+    "force": {"type": "boolean", "default": false}
+  }
+}

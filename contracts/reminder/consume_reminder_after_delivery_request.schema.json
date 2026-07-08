@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/consume_reminder_after_delivery_request.schema.json",
+  "title": "ConsumeReminderAfterDeliveryRequest",
+  "description": "Atomically records a successful Android notification delivery and consumes its one-time reminder.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reminder_id",
+    "method",
+    "title",
+    "planned_at",
+    "sent_at",
+    "delete_after_sent"
+  ],
+  "properties": {
+    "reminder_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "method": {
+      "type": "string",
+      "const": "popup"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "body": {
+      "type": ["string", "null"]
+    },
+    "planned_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "delete_after_sent": {
+      "type": "boolean",
+      "const": true,
+      "description": "Version 1 only supports consuming one-time reminders after successful delivery."
+    }
+  }
+}

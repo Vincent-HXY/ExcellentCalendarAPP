@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/schedule_pending_reminders_request.schema.json",
+  "title": "SchedulePendingRemindersRequest",
+  "description": "Deprecated compatibility request. New callers use reminder.reconcile_schedule and the single dispatcher queue.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["from_at", "to_at"],
+  "properties": {
+    "from_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "to_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500,
+      "default": 500
+    },
+    "force_reschedule": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

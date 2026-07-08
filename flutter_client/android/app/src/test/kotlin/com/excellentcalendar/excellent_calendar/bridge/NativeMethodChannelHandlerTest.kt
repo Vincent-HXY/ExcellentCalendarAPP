@@ -1,0 +1,785 @@
+﻿package com.excellentcalendar.excellent_calendar.bridge
+
+import com.excellentcalendar.excellent_calendar.bridge.channel.NativeBridgeLogger
+import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
+import com.excellentcalendar.excellent_calendar.bridge.channel.ResultDispatcher
+import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
+import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executor
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * NativeMethodChannelHandler 的单元测试。
+ *
+ * 这些测试不加载真实 C++ 动态库，而是用 FakeNativeCalendarCoreBridge 模拟 native 返回。
+ * 这样可以专注验证 Kotlin 层：请求校验、JSON 转换、响应合约校验、错误包装和回调行为。
+ */
+class NativeMethodChannelHandlerTest {
+    // 目的：验证 event.create 的 Map 会转换成 snake_case JSON，并把合法 NativeResult 返回 Flutter。
+    // 方法：Fake Bridge 记录 requestJson，RecordingResult 捕获 Handler 输出，再分别解析断言。
+    @Test
+    fun createEventSuccessForwardsSnakeCaseJsonAndNativeResult() {
+        val nativeResponse = nativeResult(
+            ok = true,
+            data = eventResponse(
+                id = "event-123",
+                title = "Design review",
+                content = "Room 8",
+            ),
+            error = null,
+            requestId = "native-request-1",
+        )
+        val fakeBridge = FakeNativeCalendarCoreBridge(createResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
+        val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventCreate, createEventArguments())
+
+        val sentJson = fakeBridge.lastCreateRequestJson
+        assertNotNull(sentJson)
+        assertTrue(sentJson!!.contains("\"start_at\""))
+        assertTrue(sentJson.contains("\"is_all_day\""))
+        assertFalse(sentJson.contains("startAt"))
+        assertFalse(sentJson.contains("isAllDay"))
+
+        val sent = NativeContractJsonCodec.decodeObject(sentJson)
+        assertEquals("Design review", sent["title"])
+        assertEquals(null, sent["content"])
+        assertEquals("2026-06-06T10:00:00Z", sent["start_at"])
+        assertEquals("2026-06-06T11:00:00Z", sent["end_at"])
+        assertEquals("manual", sent["source"])
+        assertEquals("important_urgent", sent["importance"])
+
+        @Suppress("UNCHECKED_CAST")
+        val recurrence = sent["recurrence"] as Map<String, Any?>
+        assertEquals("weekly", recurrence["frequency"])
+        assertEquals(listOf(1, 3), recurrence["days_of_week"])
+        assertEquals(null, recurrence["end_at"])
+
+        @Suppress("UNCHECKED_CAST")
+        val reminders = sent["reminders"] as List<Map<String, Any?>>
+        assertEquals(1, reminders.size)
+        assertEquals(null, reminders[0]["target_id"])
+        assertEquals(listOf("popup", "ring"), reminders[0]["methods"])
+
+        val returned = result.successMap()
+        assertEquals(nativeResponse["ok"], returned["ok"])
+        assertEquals(nativeResponse["data"], returned["data"])
+        assertEquals(nativeResponse["error"], returned["error"])
+        assertEquals(1, returned["contract_version"])
+        assertEquals("native-request-1", returned["request_id"])
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：确认 C++ 返回的业务错误信封不会被 Kotlin 改写或伪装成成功。
+    // 方法：Fake 返回失败 NativeResult，检查 Flutter 收到的 code、details 和 request_id。
+    @Test
+    fun createEventFailurePreservesBusinessErrorEnvelope() {
+        val nativeResponse = nativeResult(
+            ok = false,
+            data = null,
+            error = linkedMapOf(
+                "code" to "EVENT_TIME_INVALID",
+                "message" to "Event start time must be earlier than end time",
+                "details" to linkedMapOf("field" to "start_at"),
+                "retryable" to false,
+            ),
+            requestId = "native-request-2",
+        )
+        val fakeBridge = FakeNativeCalendarCoreBridge(createResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
+        val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventCreate, createEventArguments())
+        val returned = result.successMap()
+
+        assertEquals(false, returned["ok"])
+        assertNull(returned["data"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals("EVENT_TIME_INVALID", error["code"])
+        assertEquals("Event start time must be earlier than end time", error["message"])
+        assertEquals(linkedMapOf("field" to "start_at"), error["details"])
+        assertEquals(false, error["retryable"])
+        assertEquals("native-request-2", returned["request_id"])
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：验证空搜索结果仍包含正确 pagination；方法：Fake 返回空 items 并检查 Handler 输出。
+    @Test
+    fun searchEventsReturnsEmptyListWithPagination() {
+        val nativeResponse = nativeResult(
+            ok = true,
+            data = eventListResponse(emptyList(), pagination(total = 0, page = 1, pageSize = 20, hasMore = false)),
+            error = null,
+            requestId = "search-empty",
+        )
+        val fakeBridge = FakeNativeCalendarCoreBridge(searchResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
+        val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventSearch, searchArguments())
+
+        val sent = NativeContractJsonCodec.decodeObject(fakeBridge.lastSearchRequestJson!!)
+        assertEquals("2026-06-06T00:00:00Z", sent["start_at_from"])
+        assertEquals(listOf("completed"), sent["status"])
+        assertEquals(listOf("manual"), sent["source"])
+        @Suppress("UNCHECKED_CAST")
+        val sentPagination = sent["pagination"] as Map<String, Any?>
+        assertEquals(20, sentPagination["page_size"])
+
+        @Suppress("UNCHECKED_CAST")
+        val data = result.successMap()["data"] as Map<String, Any?>
+        assertEquals(emptyList<Any>(), data["items"])
+        assertEquals(pagination(total = 0, page = 1, pageSize = 20, hasMore = false), data["pagination"])
+    }
+
+    // 目的：验证列表中单项/多项及 null 可选字段都能安全跨过 Kotlin 边界。
+    // 方法：构造两种原生列表 JSON，调用 Handler 后比较项目数量与可选字段。
+    @Test
+    fun searchEventsReturnsSingleAndMultipleEventsWithNullOptionalFields() {
+        val singleEvent = eventResponse(id = "event-1", content = null, categoryId = null)
+        val multipleEvents = listOf(
+            singleEvent,
+            eventResponse(id = "event-2", title = "Coffee", importance = "important_noturgent"),
+        )
+        val nativeResponse = nativeResult(
+            ok = true,
+            data = eventListResponse(
+                items = multipleEvents,
+                pagination = pagination(total = 2, page = 1, pageSize = 2, hasMore = true, nextCursor = "cursor-2"),
+            ),
+            error = null,
+            requestId = "search-many",
+        )
+        val fakeBridge = FakeNativeCalendarCoreBridge(searchResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse))
+        val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventSearch, searchArguments(pageSize = 2))
+
+        @Suppress("UNCHECKED_CAST")
+        val data = result.successMap()["data"] as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val items = data["items"] as List<Map<String, Any?>>
+        assertEquals(2, items.size)
+        assertEquals(null, items[0]["content"])
+        assertEquals(null, items[0]["category_id"])
+        assertEquals("event-2", items[1]["id"])
+
+        @Suppress("UNCHECKED_CAST")
+        val returnedPagination = data["pagination"] as Map<String, Any?>
+        assertEquals(2, returnedPagination["total"])
+        assertEquals(2, returnedPagination["page_size"])
+        assertEquals(true, returnedPagination["has_more"])
+        assertEquals("cursor-2", returnedPagination["next_cursor"])
+    }
+
+    // 目的：避免损坏的原生搜索响应直接泄漏给 Flutter；方法：返回畸形 JSON 并检查归一化错误。
+    @Test
+    fun malformedNativeSearchResponseReturnsNormalizedFailure() {
+        val fakeBridge = FakeNativeCalendarCoreBridge(
+            searchResponseJson = NativeContractJsonCodec.encodeObject(
+                linkedMapOf(
+                    "ok" to true,
+                    "data" to null,
+                    "error" to linkedMapOf("code" to "EVENT_NOT_FOUND"),
+                    "contract_version" to 1,
+                    "request_id" to "bad-response",
+                ),
+            ),
+        )
+        val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventSearch, searchArguments())
+        val returned = result.successMap()
+
+        assertEquals(false, returned["ok"])
+        assertNull(returned["data"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.ContractValidationFailed, error["code"])
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：验证 event.complete 只转发单 Event Contract，并校验 EventResponse。
+    // 方法：记录发往 Fake Bridge 的 JSON，同时检查返回给 Flutter 的完成状态。
+    @Test
+    fun completeEventForwardsSingleEventRequestAndValidatesEventResponse() {
+        val nativeResponse = nativeResult(
+            ok = true,
+            data = eventResponse(
+                id = "event-123",
+                status = "completed",
+                completedAt = "2026-06-08T01:30:00Z",
+            ),
+            error = null,
+            requestId = "complete-event",
+        )
+        val fakeBridge = FakeNativeCalendarCoreBridge(
+            completeResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
+        )
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            completeEventArguments(),
+        )
+
+        val sent = NativeContractJsonCodec.decodeObject(fakeBridge.lastCompleteRequestJson!!)
+        assertEquals("event-123", sent["event_id"])
+        assertEquals("2026-06-08T01:30:00Z", sent["completed_at"])
+        assertEquals("manual", sent["source"])
+        assertEquals("Finished from widget", sent["note"])
+        assertFalse(sent.containsKey("occurrence_start_at"))
+
+        assertEquals(nativeResponse, result.successMap())
+        @Suppress("UNCHECKED_CAST")
+        val data = result.successMap()["data"] as Map<String, Any?>
+        assertEquals("completed", data["status"])
+        assertEquals("2026-06-08T01:30:00Z", data["completed_at"])
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：确认 complete 的 C++ 业务失败保持原样；方法：Fake 返回失败信封并比较错误字段。
+    @Test
+    fun completeEventForwardsNativeBusinessFailureWithoutRewritingIt() {
+        val nativeResponse = nativeResult(
+            ok = false,
+            data = null,
+            error = linkedMapOf(
+                "code" to NativeErrorCodes.EventNotFound,
+                "message" to "Event not found",
+                "details" to linkedMapOf("event_id" to "event-123"),
+                "retryable" to false,
+            ),
+            requestId = "complete-not-found",
+        )
+        val fakeBridge = FakeNativeCalendarCoreBridge(
+            completeResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
+        )
+
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            completeEventArguments(),
+        )
+
+        assertEquals(nativeResponse, result.successMap())
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：拒绝 Flutter 传入非 Map 参数；方法：传入错误类型并检查 Contract 失败 NativeResult。
+    @Test
+    fun completeEventRejectsNonMapArgumentsAsNativeResultFailure() {
+        val fakeBridge = FakeNativeCalendarCoreBridge()
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            "not-a-map",
+        )
+
+        val returned = result.successMap()
+        assertEquals(false, returned["ok"])
+        assertNull(returned["data"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.ContractValidationFailed, error["code"])
+        assertNull(fakeBridge.lastCompleteRequestJson)
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：防止已从 Contract 删除的 occurrence 字段继续被接受；方法：添加旧字段并期待校验失败。
+    @Test
+    fun completeEventRejectsOccurrenceFieldRemovedFromContract() {
+        val fakeBridge = FakeNativeCalendarCoreBridge()
+        val arguments = completeEventArguments() + (
+            "occurrence_start_at" to "2026-06-08T01:00:00Z"
+        )
+
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            arguments,
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val error = result.successMap()["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.ContractValidationFailed, error["code"])
+        assertNull(fakeBridge.lastCompleteRequestJson)
+    }
+
+    // 目的：验证 JNI 调用异常会被转换成稳定的内部错误，而不是让 MethodChannel 崩溃。
+    // 方法：让 Fake Bridge 抛异常并检查返回信封。
+    @Test
+    fun completeEventJniFailureReturnsNativeResultFailure() {
+        val fakeBridge = FakeNativeCalendarCoreBridge(
+            completeError = UnsatisfiedLinkError("missing nativeCompleteEvent"),
+        )
+
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventComplete,
+            completeEventArguments(),
+        )
+
+        val returned = result.successMap()
+        assertEquals(false, returned["ok"])
+        assertNull(returned["data"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.NativeInternalError, error["code"])
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：验证 event.reopen 的请求转发和响应解析；方法：记录 JSON 并检查 active 状态。
+    @Test
+    fun reopenEventForwardsSingleEventRequestAndValidatesEventResponse() {
+        val nativeResponse = nativeResult(
+            ok = true,
+            data = eventResponse(id = "event-123", status = "active", completedAt = null),
+            error = null,
+            requestId = "reopen-event",
+        )
+        val fakeBridge = FakeNativeCalendarCoreBridge(
+            reopenResponseJson = NativeContractJsonCodec.encodeObject(nativeResponse),
+        )
+        val result = invoke(
+            handler(fakeBridge),
+            NativeMethodChannelHandler.MethodEventReopen,
+            reopenEventArguments(),
+        )
+
+        val sent = NativeContractJsonCodec.decodeObject(fakeBridge.lastReopenRequestJson!!)
+        assertEquals("event-123", sent["event_id"])
+        assertFalse(sent.containsKey("occurrence_start_at"))
+
+        @Suppress("UNCHECKED_CAST")
+        val data = result.successMap()["data"] as Map<String, Any?>
+        assertEquals("active", data["status"])
+        assertEquals(null, data["completed_at"])
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：JNI 不可用时禁止生成假成功；方法：让 Bridge 抛链接错误并检查失败结果。
+    @Test
+    fun jniUnavailableReturnsFailureWithoutFakeSuccess() {
+        val fakeBridge = FakeNativeCalendarCoreBridge(createError = UnsatisfiedLinkError("missing nativeCreateEvent"))
+        val result = invoke(handler(fakeBridge), NativeMethodChannelHandler.MethodEventCreate, createEventArguments())
+        val returned = result.successMap()
+
+        assertEquals(false, returned["ok"])
+        assertNull(returned["data"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.NativeInternalError, error["code"])
+        assertEquals("Native calendar core bridge is unavailable.", error["message"])
+        assertFalse(result.errorCalled)
+    }
+
+    // 目的：未知方法应交回 Flutter 的标准 notImplemented；方法：发送不存在的方法并检查记录标志。
+    @Test
+    fun unknownMethodIsNotImplemented() {
+        val result = invoke(handler(FakeNativeCalendarCoreBridge()), "event.read_calendar", searchArguments())
+
+        assertTrue(result.notImplementedCalled)
+        assertFalse(result.successCalled)
+        assertFalse(result.errorCalled)
+    }
+
+    // 使用 Fake Bridge 构造被测 Handler，隔离真实 JNI 动态库。
+    private fun handler(fakeBridge: FakeNativeCalendarCoreBridge): NativeMethodChannelHandler {
+        return NativeMethodChannelHandler(
+            nativeCalendarCoreBridge = fakeBridge,
+            executor = Executor { command -> command.run() },
+            resultDispatcher = ResultDispatcher { block -> block() },
+            logger = NativeBridgeLogger { _, _, _ -> },
+        )
+    }
+
+    // 模拟 Flutter 发起 MethodCall，并返回可供测试读取的 RecordingResult。
+    private fun invoke(
+        handler: NativeMethodChannelHandler,
+        method: String,
+        arguments: Any?,
+    ): RecordingResult {
+        val result = RecordingResult()
+        handler.onMethodCall(MethodCall(method, arguments), result)
+        return result
+    }
+
+    private fun createEventArguments(): Map<String, Any?> {
+        return linkedMapOf(
+            "title" to "Design review",
+            "content" to null,
+            "start_at" to "2026-06-06T10:00:00Z",
+            "end_at" to "2026-06-06T11:00:00Z",
+            "is_all_day" to false,
+            "category_id" to "category-work",
+            "importance" to "important_urgent",
+            "location" to "Room 8",
+            "timezone" to "Asia/Shanghai",
+            "source" to "manual",
+            "recurrence" to linkedMapOf(
+                "frequency" to "weekly",
+                "interval" to 1,
+                "days_of_week" to listOf(1, 3),
+                "day_of_month" to null,
+                "month_of_year" to null,
+                "start_at" to "2026-06-06T10:00:00Z",
+                "end_at" to null,
+                "count" to null,
+                "timezone" to "Asia/Shanghai",
+                "rrule" to null,
+            ),
+            "reminders" to listOf(
+                linkedMapOf(
+                    "target_type" to "event",
+                    "target_id" to null,
+                    "remind_at" to null,
+                    "advance_minutes" to 30,
+                    "methods" to listOf("popup", "ring"),
+                    "message" to null,
+                    "is_enabled" to true,
+                    "source" to "manual",
+                ),
+            ),
+        )
+    }
+
+    private fun searchArguments(pageSize: Int = 20): Map<String, Any?> {
+        return linkedMapOf(
+            "keyword" to null,
+            "start_at_from" to "2026-06-06T00:00:00Z",
+            "start_at_to" to "2026-06-07T00:00:00Z",
+            "status" to listOf("completed"),
+            "category_ids" to listOf("category-work"),
+            "importance" to listOf("important_urgent"),
+            "location" to null,
+            "has_recurrence" to null,
+            "source" to listOf("manual"),
+            "include_deleted" to false,
+            "pagination" to linkedMapOf(
+                "page" to 1,
+                "page_size" to pageSize,
+                "cursor" to null,
+                "sort_by" to null,
+                "sort_direction" to "asc",
+            ),
+            "sort_by" to "start_at",
+            "sort_direction" to "asc",
+        )
+    }
+
+    private fun completeEventArguments(): Map<String, Any?> {
+        return linkedMapOf(
+            "event_id" to "event-123",
+            "completed_at" to "2026-06-08T01:30:00Z",
+            "source" to "manual",
+            "note" to "Finished from widget",
+        )
+    }
+
+    private fun reopenEventArguments(): Map<String, Any?> {
+        return linkedMapOf(
+            "event_id" to "event-123",
+        )
+    }
+
+    private fun nativeResult(
+        ok: Boolean,
+        data: Any?,
+        error: Map<String, Any?>?,
+        requestId: String?,
+    ): Map<String, Any?> {
+        return linkedMapOf(
+            "ok" to ok,
+            "data" to data,
+            "error" to error,
+            "contract_version" to 1,
+            "request_id" to requestId,
+        )
+    }
+
+    private fun occurrenceStateResponse(
+        deletedAt: String? = null,
+    ): Map<String, Any?> {
+        return linkedMapOf(
+            "id" to "state-123",
+            "event_id" to "event-123",
+            "occurrence_start_at" to "2026-06-08T01:00:00Z",
+            "status" to "completed",
+            "completed_at" to "2026-06-08T01:30:00Z",
+            "note" to "Finished from widget",
+            "source" to "manual",
+            "created_at" to "2026-06-08T01:30:00Z",
+            "updated_at" to "2026-06-08T01:30:00Z",
+            "deleted_at" to deletedAt,
+        )
+    }
+
+    private fun eventListResponse(
+        items: List<Map<String, Any?>>,
+        pagination: Map<String, Any?>,
+    ): Map<String, Any?> {
+        return linkedMapOf(
+            "items" to items,
+            "pagination" to pagination,
+        )
+    }
+
+    private fun eventResponse(
+        id: String,
+        title: String = "Design review",
+        content: String? = "Notes",
+        categoryId: String? = "category-work",
+        importance: String? = "important_urgent",
+        status: String = "active",
+        completedAt: String? = null,
+    ): Map<String, Any?> {
+        return linkedMapOf(
+            "id" to id,
+            "title" to title,
+            "content" to content,
+            "start_at" to "2026-06-06T10:00:00Z",
+            "end_at" to "2026-06-06T11:00:00Z",
+            "is_all_day" to false,
+            "has_recurrence" to false,
+            "status" to status,
+            "completed_at" to completedAt,
+            "recurrence_id" to null,
+            "category_id" to categoryId,
+            "importance" to importance,
+            "location" to "Room 8",
+            "timezone" to "Asia/Shanghai",
+            "source" to "manual",
+            "created_at" to "2026-06-06T09:00:00Z",
+            "updated_at" to "2026-06-06T09:00:00Z",
+            "deleted_at" to null,
+        )
+    }
+
+    private fun pagination(
+        total: Int,
+        page: Int,
+        pageSize: Int,
+        hasMore: Boolean,
+        nextCursor: String? = null,
+    ): Map<String, Any?> {
+        return linkedMapOf(
+            "total" to total,
+            "page" to page,
+            "page_size" to pageSize,
+            "has_more" to hasMore,
+            "next_cursor" to nextCursor,
+        )
+    }
+
+    /**
+     * 假 native bridge。
+     *
+     * 它记录 Kotlin 发给 native 的 JSON，并返回测试预设的 NativeResult JSON。
+     * 这是一种常见测试手法：用 fake 隔离外部依赖，让单元测试稳定、快速。
+     */
+    // JNI Bridge 替身：保存最后收到的 JSON，并按场景返回指定响应或抛出指定异常。
+    private class FakeNativeCalendarCoreBridge(
+        private val createResponseJson: String = NativeContractJsonCodec.encodeObject(
+            linkedMapOf(
+                "ok" to true,
+                "data" to eventResponseStatic(),
+                "error" to null,
+                "contract_version" to 1,
+                "request_id" to "default",
+            ),
+        ),
+        private val searchResponseJson: String = NativeContractJsonCodec.encodeObject(
+            linkedMapOf(
+                "ok" to true,
+                "data" to linkedMapOf(
+                    "items" to emptyList<Any>(),
+                    "pagination" to linkedMapOf(
+                        "total" to 0,
+                        "page" to 1,
+                        "page_size" to 20,
+                        "has_more" to false,
+                        "next_cursor" to null,
+                    ),
+                ),
+                "error" to null,
+                "contract_version" to 1,
+                "request_id" to "default",
+            ),
+        ),
+        private val completeResponseJson: String = NativeContractJsonCodec.encodeObject(
+            linkedMapOf(
+                "ok" to true,
+                "data" to eventResponseStatic(status = "completed", completedAt = "2026-06-08T01:30:00Z"),
+                "error" to null,
+                "contract_version" to 1,
+                "request_id" to "default",
+            ),
+        ),
+        private val reopenResponseJson: String = NativeContractJsonCodec.encodeObject(
+            linkedMapOf(
+                "ok" to true,
+                "data" to eventResponseStatic(status = "active", completedAt = null),
+                "error" to null,
+                "contract_version" to 1,
+                "request_id" to "default",
+            ),
+        ),
+        private val createError: Throwable? = null,
+        private val completeError: Throwable? = null,
+    ) : NativeCalendarCoreBridge {
+        var lastCreateRequestJson: String? = null
+            private set
+        var lastSearchRequestJson: String? = null
+            private set
+        var lastCompleteRequestJson: String? = null
+            private set
+        var lastReopenRequestJson: String? = null
+            private set
+
+        override fun createEvent(requestJson: String): String {
+            lastCreateRequestJson = requestJson
+            createError?.let { throw it }
+            return createResponseJson
+        }
+
+        override fun updateEvent(requestJson: String): String = createResponseJson
+
+        override fun deleteEvent(requestJson: String): String = createResponseJson
+
+        override fun searchEvents(requestJson: String): String {
+            lastSearchRequestJson = requestJson
+            return searchResponseJson
+        }
+
+        override fun completeEvent(requestJson: String): String {
+            lastCompleteRequestJson = requestJson
+            completeError?.let { throw it }
+            return completeResponseJson
+        }
+
+        override fun reopenEvent(requestJson: String): String {
+            lastReopenRequestJson = requestJson
+            return reopenResponseJson
+        }
+
+        override fun createReminder(requestJson: String): String {
+            return NativeContractJsonCodec.encodeObject(
+                linkedMapOf(
+                    "ok" to false,
+                    "data" to null,
+                    "error" to linkedMapOf(
+                        "code" to NativeErrorCodes.FeatureNotImplemented,
+                        "message" to "Reminder fake is not configured in this test.",
+                        "details" to null,
+                        "retryable" to false,
+                    ),
+                    "contract_version" to 1,
+                    "request_id" to "default",
+                ),
+            )
+        }
+
+        override fun updateReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun cancelReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun listReminders(requestJson: String): String = createReminder(requestJson)
+
+        override fun getReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun listSchedulableReminders(requestJson: String): String = createReminder(requestJson)
+
+        override fun markReminderScheduled(requestJson: String): String = createReminder(requestJson)
+
+        override fun markReminderSent(requestJson: String): String = createReminder(requestJson)
+
+        override fun markReminderFailed(requestJson: String): String = createReminder(requestJson)
+
+        override fun enableReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun disableReminder(requestJson: String): String = createReminder(requestJson)
+
+        override fun createNotification(requestJson: String): String = createReminder(requestJson)
+
+        override fun consumeReminderAfterDelivery(requestJson: String): String = createReminder(requestJson)
+
+        companion object {
+            private fun eventResponseStatic(
+                status: String = "active",
+                completedAt: String? = null,
+            ): Map<String, Any?> {
+                return linkedMapOf(
+                    "id" to "event-default",
+                    "title" to "Default",
+                    "content" to null,
+                    "start_at" to "2026-06-06T10:00:00Z",
+                    "end_at" to "2026-06-06T11:00:00Z",
+                    "is_all_day" to false,
+                    "has_recurrence" to false,
+                    "status" to status,
+                    "completed_at" to completedAt,
+                    "recurrence_id" to null,
+                    "category_id" to null,
+                    "importance" to null,
+                    "location" to null,
+                    "timezone" to null,
+                    "source" to "manual",
+                    "created_at" to "2026-06-06T09:00:00Z",
+                    "updated_at" to "2026-06-06T09:00:00Z",
+                    "deleted_at" to null,
+                )
+            }
+
+            private fun occurrenceStateResponseStatic(
+                deletedAt: String? = null,
+            ): Map<String, Any?> {
+                return linkedMapOf(
+                    "id" to "state-default",
+                    "event_id" to "event-default",
+                    "occurrence_start_at" to "2026-06-08T01:00:00Z",
+                    "status" to "completed",
+                    "completed_at" to "2026-06-08T01:30:00Z",
+                    "note" to null,
+                    "source" to "manual",
+                    "created_at" to "2026-06-08T01:30:00Z",
+                    "updated_at" to "2026-06-08T01:30:00Z",
+                    "deleted_at" to deletedAt,
+                )
+            }
+        }
+    }
+
+    /**
+     * 记录 MethodChannel.Result 回调情况。
+     *
+     * Flutter 的真实 result 会把数据送回 Dart；测试里只需要记录 success/error/notImplemented
+     * 哪个被调用，以及 success 的值是什么。
+     */
+    // MethodChannel.Result 测试探针：记录 success/error/notImplemented，代替真实 Flutter 引擎。
+    private class RecordingResult : MethodChannel.Result {
+        var successValue: Any? = null
+            private set
+        var successCalled = false
+            private set
+        var errorCalled = false
+            private set
+        var notImplementedCalled = false
+            private set
+
+        override fun success(result: Any?) {
+            successCalled = true
+            successValue = result
+        }
+
+        override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
+            errorCalled = true
+        }
+
+        override fun notImplemented() {
+            notImplementedCalled = true
+        }
+
+        fun successMap(): Map<String, Any?> {
+            assertTrue(successCalled)
+            @Suppress("UNCHECKED_CAST")
+            return successValue as Map<String, Any?>
+        }
+    }
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/user/user_data_response.schema.json",
+  "title": "UserDataResponse",
+  "description": "Transport representation of user-level settings, device preferences, and sync cursor.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "timezone",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "display_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1
+    },
+    "locale": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "default_reminder_methods": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ring",
+          "popup",
+          "wechat"
+        ]
+      }
+    },
+    "settings": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
+    "sync_cursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "last_sync_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

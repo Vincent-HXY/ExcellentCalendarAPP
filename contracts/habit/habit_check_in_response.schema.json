@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_check_in_response.schema.json",
+  "title": "HabitCheckInResponse",
+  "description": "Transport representation of one habit check-in record. This is the source for streak and completion-rate statistics.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "habit_id",
+    "check_date",
+    "status",
+    "source",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "habit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "check_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "done",
+        "partial",
+        "missed",
+        "skipped"
+      ]
+    },
+    "completed_count": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "target_count_snapshot": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "unit_snapshot": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "auto",
+        "ai_extraction",
+        "sync",
+        "import",
+        "wechat"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deleted_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

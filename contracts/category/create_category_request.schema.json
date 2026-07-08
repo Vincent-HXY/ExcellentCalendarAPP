@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/category/create_category_request.schema.json",
+  "title": "CreateCategoryRequest",
+  "description": "Request payload for creating a user-defined category.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "color": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "UI color token or hex string owned by presentation/design conventions."
+    },
+    "icon": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sort_order": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    }
+  }
+}

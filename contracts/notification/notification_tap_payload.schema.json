@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/notification/notification_tap_payload.schema.json",
+  "title": "NotificationTapPayload",
+  "description": "Small navigation payload created from Android notification PendingIntent extras. notification_id is the application-level tap deduplication id, not Android NotificationManager's runtime tag/id identity.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notification_id",
+    "reminder_id",
+    "target_type",
+    "target_id",
+    "opened_at"
+  ],
+  "properties": {
+    "notification_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Application-level notification/tap id used by Flutter for navigation deduplication. This is not Android's NotificationManager integer id."
+    },
+    "reminder_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "target_type": {
+      "type": "string",
+      "enum": ["event", "habit", "anniversary", "dated_message"]
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "route": {
+      "type": ["string", "null"]
+    },
+    "opened_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

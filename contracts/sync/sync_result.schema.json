@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_result.schema.json",
+  "title": "SyncResult",
+  "description": "Result payload for applying or uploading a sync operation.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operation",
+    "accepted",
+    "conflict"
+  ],
+  "properties": {
+    "operation": {
+      "$ref": "./sync_operation.schema.json"
+    },
+    "accepted": {
+      "type": "boolean"
+    },
+    "conflict": {
+      "type": "boolean"
+    },
+    "conflict_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

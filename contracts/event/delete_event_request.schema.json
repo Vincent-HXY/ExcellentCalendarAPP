@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/delete_event_request.schema.json",
+  "title": "DeleteEventRequest",
+  "description": "Request payload for deleting an event. Recurring event deletion scope is explicit and transport-safe.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "delete_mode"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "delete_mode": {
+      "type": "string",
+      "enum": [
+        "soft",
+        "hard"
+      ],
+      "default": "soft"
+    },
+    "recurrence_delete_scope": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "single_occurrence",
+        "future_occurrences",
+        "all_occurrences",
+        null
+      ]
+    },
+    "occurrence_start_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

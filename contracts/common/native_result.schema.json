@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/common/native_result.schema.json",
+  "title": "NativeResult",
+  "description": "Common result envelope for NativeResult<T> across Dart, Kotlin, C++, and future backend boundaries.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ok",
+    "data",
+    "error"
+  ],
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "data": {
+      "type": [
+        "object",
+        "array",
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ]
+    },
+    "error": {
+      "oneOf": [
+        {
+          "$ref": "./native_error.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "contract_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "request_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "then": {
+        "properties": {
+          "error": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "ok": {
+            "const": false
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "null"
+          },
+          "error": {
+            "$ref": "./native_error.schema.json"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+    }
+  ]
+}

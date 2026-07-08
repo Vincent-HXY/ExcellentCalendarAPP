@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/dated_message/dated_message_response.schema.json",
+  "title": "DatedMessageResponse",
+  "description": "Transport representation of a date-targeted message reserved for future local or cloud delivery.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "content",
+    "deliver_at",
+    "channel",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content": {
+      "type": "string"
+    },
+    "deliver_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expire_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "in_app",
+        "notification",
+        "wechat"
+      ]
+    },
+    "target_user_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "target_rule": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "scheduled",
+        "sent",
+        "cancelled"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

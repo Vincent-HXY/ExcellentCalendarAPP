@@ -24,6 +24,7 @@
 | 模型 | 当前阶段用途 | 数据性质 | 是否本地优先需要 |
 | --- | --- | --- | --- |
 | `Event` | 保存日程本身，例如会议、临时事项、规律事项 | 主业务数据 | 是 |
+| `EventOccurrenceState` | 保存重复日程某一次 occurrence 的完成、跳过、取消状态 | 稀疏状态记录 | 是 |
 | `Habit` | 保存习惯定义，例如每天阅读、每周运动 | 主业务数据 | 是 |
 | `HabitCheckIn` | 保存习惯每天是否完成、完成次数和打卡时间 | 行为记录 | 是 |
 | `Reminder` | 保存未来需要触发的提醒任务 | 调度任务 | 是 |
@@ -59,6 +60,31 @@
 | `important_noturgent` | 重要不紧急 |
 | `unimportant_urgent` | 不重要紧急 |
 | `important_urgent` | 重要且紧急 |
+
+### EventStatus
+
+整个日程或整个重复系列的生命周期状态。
+
+| 值 | 说明 |
+| --- | --- |
+| `active` | 正常存在，未完成或仍在进行 |
+| `completed` | 单次日程已完成，或重复系列彻底结束 |
+| `cancelled` | 整个日程或整个重复系列取消 |
+| `archived` | 归档，不参与普通列表展示 |
+
+注意：`EventStatus` 不包含 `today_completed`、`skipped`、`overdue`。它们不是整个 Event 的稳定状态。
+
+### EventOccurrenceStatus
+
+重复日程某一次 occurrence 的状态。
+
+| 值 | 说明 |
+| --- | --- |
+| `completed` | 这一轮已完成 |
+| `skipped` | 这一轮被用户跳过 |
+| `cancelled` | 这一轮被取消 |
+
+不建议存储 `pending`、`in_progress`、`overdue`。这些状态应根据当前时间和 occurrence 的计划开始/结束时间动态计算。
 
 ### RecurrenceFrequency
 
@@ -126,6 +152,9 @@
 - 全天日程表示这个日程只关心日期，不关心具体几点到几点。例如生日、放假、出差当天、某一天要办但没有固定时间的事项。
 - 日程本身不直接保存提醒方式和提醒时间。只要日程需要提醒，就在 `Reminder` 表中创建一条或多条提醒任务。
 - 如果一个日程有多个提醒时间，例如提前 1 天、提前 1 小时、开始时各提醒一次，则创建 3 条 `Reminder`，它们的 `targetType = event` 且 `targetId = Event.id`。
+- `Event.status` 表示整个 Event 或整个重复系列的生命周期状态，不表示“今天已完成”或“今天跳过”。
+- 单次非重复 Event 完成时，关联且尚未触发的 `pending` / `scheduled` / `failed` Reminder 会在同一 C++ workflow transaction 中自动取消，并写入 `cancellationReason = event_completed`；重新打开 Event 时，只自动恢复该原因且仍在未来的 Reminder。
+- 重复日程某一次 occurrence 的完成、跳过、取消状态保存到 `EventOccurrenceState`。
 - 软删除表示用户删除后先不从数据库物理移除，而是写入 `deletedAt`。这样方便撤销删除、同步删除状态、排查误删。正常查询默认只显示 `deletedAt` 为空的记录。
 
 | 字段 | 类型 | 必填 | 说明 |
@@ -139,6 +168,8 @@
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
 | `hasRecurrence` | `boolean` | 是 | 是否循环（控制单次/循环） |
+| `status` | `EventStatus` | 是 | 整个日程或整个重复系列的生命周期状态，默认 `active` |
+| `completedAt` | `datetime` | 否 | 单次日程完成时间，或整个重复系列彻底完成时间 |
 | `recurrenceId` | `string` | 否 | 重复规则 ID；仅当 `hasRecurrence = true` 时存在 |
 | `categoryId` | `string` | 否 | 分类 ID |
 | `importance` | `Importance` | 否 | 重要性 |
@@ -146,6 +177,34 @@
 | `timezone` | `string` | 否 | 时区，例如 `Asia/Shanghai` |
 | `source` | `string` | 是 | 来源，例如来自于微信，手动添加 |
 | `deletedAt` | `datetime` | 否 | 软删除时间 |
+
+## EventOccurrenceState：日程 occurrence 状态
+
+`EventOccurrenceState` 用于记录重复日程某一次 occurrence 的完成、跳过、取消状态。它不是提前生成所有未来 occurrence 的缓存表，而是用户产生明确行为后才写入的稀疏状态记录表。
+
+说明：
+
+- 普通日程完成时，直接更新 `Event.status = completed` 和 `Event.completedAt`。
+- 重复日程某一次完成时，不修改 `Event.status` 为“今天完成”，而是写入一条 `EventOccurrenceState`。
+- 如果某次 occurrence 没有状态记录，则根据当前时间和 occurrence 的计划开始/结束时间动态计算 `pending`、`in_progress` 或 `overdue`。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 是 | 状态记录 ID |
+| `eventId` | `string` | 是 | 关联日程 ID |
+| `occurrenceStartAt` | `datetime` | 是 | 某一次 occurrence 的计划开始时间 |
+| `status` | `EventOccurrenceStatus` | 是 | occurrence 状态 |
+| `completedAt` | `datetime` | 否 | 实际完成时间 |
+| `note` | `string` | 否 | 备注 |
+| `source` | `string` | 是 | 来源，例如 `manual`、`sync`、`auto` |
+| `createdAt` | `datetime` | 是 | 创建时间 |
+| `updatedAt` | `datetime` | 是 | 更新时间 |
+| `deletedAt` | `datetime` | 否 | 软删除时间 |
+
+建议约束：
+
+- 同一个 `eventId + occurrenceStartAt` 默认只保留一条有效状态记录。
+- 取消完成时，软删除对应的有效 `EventOccurrenceState`，让该 occurrence 回到动态计算状态。
 
 ## Habit：习惯
 
@@ -208,6 +267,9 @@
 - `Reminder` 回答“未来什么时候需要提醒、提醒谁、用什么方式提醒”。
 - `Reminder` 是待执行任务，适合被后台扫描、注册系统闹钟、失败重试。
 - `Reminder` 不负责记录通知最终有没有展示成功；投递结果由 `Notification` 记录。
+- Android 不再为每条 Reminder 分别注册 Alarm。调度器始终从本表按 `(remindAt, id)` 读取最早任务，使用一个 Dispatcher Alarm 覆盖该触发时刻；触发后排空所有到期 Reminder，再滚动到下一时刻。
+- `status = scheduled` 表示该 Reminder 的触发时刻已由当前 Dispatcher Alarm 覆盖，不表示 Android 中存在一条与 Reminder 一一对应的 Alarm。
+- 后续切换到 SQLite 时，调度查询应建立覆盖 `isEnabled / deletedAt / status / remindAt / id` 的索引；Notification 仍不得参与扫描。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
@@ -218,14 +280,15 @@
 | `methods` | `ReminderMethod[]` | 是 | 提醒方式 |
 | `advanceMinutes` | `number` | 否 | 提前提醒分钟数 |
 | `message` | `string` | 否 | 提醒文案 |
-| `isEnabled` | `boolean` | 是 | 是否启用 |
+| `isEnabled` | `boolean` | 是 | 是否启用，初始化为true |
 | `status` | `ReminderStatus` | 是 | 提醒任务状态 |
 | `scheduledAt` | `datetime` | 否 | 实际注册到系统闹钟或投递通道的时间 |
 | `lastTriggeredAt` | `datetime` | 否 | 最近一次触发时间 |
 | `failureReason` | `string` | 否 | 调度或发送失败原因 |
+| `cancellationReason` | `string` | 否 | 机器可读取消原因，例如 `user_cancelled`、`event_completed`；用于区分用户主动取消和完成日程后自动取消 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
-| `deleteAt` | `datetime` | 否 | 软删除时间 |
+| `deletedAt` | `datetime` | 否 | 软删除时间 |
 ## Category：分类
 
 分类用于组织日程、习惯、纪念日等对象。
@@ -270,6 +333,7 @@
 - `Notification` 是结果日志，不参与未来提醒扫描。
 - 本地系统通知、响铃、弹窗、微信提醒都可以生成 `Notification` 记录。
 - 由 `Reminder` 触发的通知必须关联 `reminderId`；未来如果 `DatedMessage` 也走通知投递，可以通过 `targetType` 和 `targetId` 关联消息本体。
+- Android 系统通知的运行时身份由 Android Native Layer 私有管理，当前使用 `(tag = reminder:<reminderId>, id = 1)`，不写入 `Notification` 领域模型；不同 `Reminder` 的 popup 通知应能同时展示，不应因系统通知 ID 碰撞互相覆盖。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
@@ -398,6 +462,7 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | --- | --- |
 | `Event.categoryId -> Category.id` | 日程可归属一个分类 |
 | `Event.recurrenceId -> Recurrence.id` | 循环日程关联一条重复规则 |
+| `EventOccurrenceState.eventId -> Event.id` | 重复日程某一次 occurrence 的状态归属某个 Event |
 | `Habit.categoryId -> Category.id` | 习惯可归属一个分类 |
 | `Habit.recurrenceId -> Recurrence.id` | 习惯通过重复规则描述执行频率 |
 | `HabitCheckIn.habitId -> Habit.id` | 习惯打卡记录归属某个习惯 |
@@ -417,6 +482,7 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 
 - `Reminder` 作为独立实体保存，通过 `targetType` 和 `targetId` 关联 `Event`、`Habit`、`Anniversary`。
 - `Event` 可以有多个提醒时间。概念上是提醒时间列表，存储上是多条 `Reminder`。
+- `Event.status` 只表达整个日程或整个重复系列的生命周期状态；重复日程单次 occurrence 状态使用 `EventOccurrenceState`。
 - `Habit` 的坚持日期、完成次数、连续天数统计来源于 `HabitCheckIn`，不直接塞进 `Habit` 本体。
 - 当前阶段先不上 SQL，优先保证项目整体可运行。
 - 当前先做好本地能力，AI 和云端同步暂缓，但保留相关接口和数据模型。

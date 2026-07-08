@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/get_reminder_request.schema.json",
+  "title": "GetReminderRequest",
+  "description": "Internal Kotlin-to-C++ request for loading a reminder when its Android alarm fires.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}
