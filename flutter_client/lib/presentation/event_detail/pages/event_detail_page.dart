@@ -18,13 +18,15 @@ class EventDetailPageArguments {
     this.onEdit,
     this.onComplete,
     this.onEditField,
+    this.canComplete = true,
   });
 
   final EventDetailUiState state;
   final VoidCallback? onMore;
   final VoidCallback? onEdit;
-  final FutureOr<void> Function()? onComplete;
+  final FutureOr<EventDetailCompletionResult> Function()? onComplete;
   final ValueChanged<EventDetailField>? onEditField;
+  final bool canComplete;
 }
 
 class EventDetailPage extends StatefulWidget {
@@ -34,6 +36,7 @@ class EventDetailPage extends StatefulWidget {
     this.onEdit,
     this.onComplete,
     this.onEditField,
+    this.canComplete = true,
     super.key,
   });
 
@@ -44,8 +47,9 @@ class EventDetailPage extends StatefulWidget {
   final EventDetailUiState state;
   final VoidCallback? onMore;
   final VoidCallback? onEdit;
-  final FutureOr<void> Function()? onComplete;
+  final FutureOr<EventDetailCompletionResult> Function()? onComplete;
   final ValueChanged<EventDetailField>? onEditField;
+  final bool canComplete;
 
   @override
   State<EventDetailPage> createState() => _EventDetailPageState();
@@ -54,12 +58,50 @@ class EventDetailPage extends StatefulWidget {
 class _EventDetailPageState extends State<EventDetailPage> {
   var _isCompleting = false;
 
+  void _handleEdit() {
+    final onEdit = widget.onEdit;
+    if (onEdit != null) {
+      onEdit();
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '\u7f16\u8f91\u529f\u80fd\u6682\u4e0d\u652f\u6301\uff0c\u540e\u7eed\u5f00\u53d1\u518d\u5b8c\u5584',
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleComplete() async {
     final complete = widget.onComplete;
-    if (complete == null || _isCompleting) return;
+    if (complete == null || !widget.canComplete || _isCompleting) return;
     setState(() => _isCompleting = true);
     try {
-      await complete();
+      final result = await complete();
+      if (!mounted) return;
+      if (!result.succeeded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.errorMessage ??
+                  '\u5b8c\u6210\u65e5\u7a0b\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5',
+            ),
+          ),
+        );
+        return;
+      }
+      await Navigator.maybePop(context, true);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              '\u5b8c\u6210\u65e5\u7a0b\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5',
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isCompleting = false);
     }
@@ -153,9 +195,12 @@ class _EventDetailPageState extends State<EventDetailPage> {
           ],
         ),
         bottomNavigationBar: EventDetailActionBar(
-          onEdit: widget.onEdit,
-          onComplete: _handleComplete,
+          onEdit: _handleEdit,
+          onComplete: widget.canComplete ? _handleComplete : null,
           isCompleting: _isCompleting,
+          isCompleted:
+              widget.state.displayStatus == EventDisplayStatus.completed,
+          isCompleteEnabled: widget.canComplete,
         ),
       ),
     );

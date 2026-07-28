@@ -42,6 +42,16 @@ calls:
       envelope: common/native_result.schema.json
       data: event/event_list_response.schema.json
 
+  event.detail:
+    module: event
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: event/get_event_detail_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_detail_response.schema.json
+
   event.complete:
     module: event
     visibility: internal

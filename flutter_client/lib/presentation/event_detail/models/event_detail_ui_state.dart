@@ -4,6 +4,21 @@ enum EventDisplayStatus { pending, inProgress, overdue, completed }
 
 enum EventDetailField { schedule, note, allDay }
 
+class EventDetailCompletionResult {
+  const EventDetailCompletionResult._({
+    required this.succeeded,
+    this.errorMessage,
+  });
+
+  const EventDetailCompletionResult.success() : this._(succeeded: true);
+
+  const EventDetailCompletionResult.failure(String message)
+    : this._(succeeded: false, errorMessage: message);
+
+  final bool succeeded;
+  final String? errorMessage;
+}
+
 class ReminderUiModel {
   const ReminderUiModel({this.advanceMinutes, this.remindAt});
 

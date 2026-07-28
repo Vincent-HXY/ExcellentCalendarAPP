@@ -7,13 +7,17 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "event"
+    "event",
+    "recurrence",
+    "reminders",
+    "category"
   ],
   "properties": {
     "event": {
       "$ref": "./event_response.schema.json"
     },
     "recurrence": {
+      "description": "The event recurrence rule, or null for a non-recurring event.",
       "oneOf": [
         {
           "$ref": "../recurrence/recurrence_response.schema.json"
@@ -25,11 +29,13 @@
     },
     "reminders": {
       "type": "array",
+      "description": "Current non-deleted reminder tasks associated with this event. An event with no reminders returns an empty array.",
       "items": {
         "$ref": "../reminder/reminder_response.schema.json"
       }
     },
     "category": {
+      "description": "The current category, or null when the event has no category.",
       "oneOf": [
         {
           "$ref": "../category/category_response.schema.json"

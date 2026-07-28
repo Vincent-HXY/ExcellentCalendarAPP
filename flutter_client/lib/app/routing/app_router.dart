@@ -25,21 +25,19 @@ class AppRouter {
       if ({'event', 'habit', 'anniversary'}.contains(type) && id.isNotEmpty) {
         if (type == 'event') {
           final arguments = settings.arguments;
-          return MaterialPageRoute<void>(
-            settings: settings,
-            builder: (_) {
-              if (arguments is EventDetailPageArguments) {
-                return EventDetailPage(
-                  state: arguments.state,
-                  onMore: arguments.onMore,
-                  onEdit: arguments.onEdit,
-                  onComplete: arguments.onComplete,
-                  onEditField: arguments.onEditField,
-                );
-              }
-              return EventDetailPage.preview(eventId: id);
-            },
-          );
+          if (arguments is EventDetailPageArguments) {
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => EventDetailPage(
+                state: arguments.state,
+                onMore: arguments.onMore,
+                onEdit: arguments.onEdit,
+                onComplete: arguments.onComplete,
+                onEditField: arguments.onEditField,
+                canComplete: arguments.canComplete,
+              ),
+            );
+          }
         }
         return MaterialPageRoute<void>(
           settings: settings,

@@ -18,6 +18,7 @@ class TaskListCard extends StatefulWidget {
     this.onTaskComplete,
     this.onTaskRemovalFinished,
     this.onCompletedExpandedChanged,
+    this.onTaskTap,
     super.key,
   });
 
@@ -30,6 +31,7 @@ class TaskListCard extends StatefulWidget {
   final TaskCompleteCallback? onTaskComplete;
   final ValueChanged<String>? onTaskRemovalFinished;
   final ValueChanged<bool>? onCompletedExpandedChanged;
+  final ValueChanged<InboxTaskViewData>? onTaskTap;
 
   @override
   State<TaskListCard> createState() => _TaskListCardState();
@@ -60,6 +62,7 @@ class _TaskListCardState extends State<TaskListCard> {
           completingIds: widget.completingIds,
           onTaskComplete: widget.onTaskComplete,
           onTaskRemovalFinished: widget.onTaskRemovalFinished,
+          onTaskTap: widget.onTaskTap,
           onHeaderTap: () {
             setState(() {
               _isIncompleteExpanded = !_isIncompleteExpanded;
@@ -75,6 +78,7 @@ class _TaskListCardState extends State<TaskListCard> {
           completingIds: widget.completingIds,
           onTaskComplete: widget.onTaskComplete,
           onTaskRemovalFinished: widget.onTaskRemovalFinished,
+          onTaskTap: widget.onTaskTap,
           onHeaderTap: () {
             setState(() {
               _isUpcomingExpanded = !_isUpcomingExpanded;
@@ -89,6 +93,7 @@ class _TaskListCardState extends State<TaskListCard> {
           isExpanded: _isCompletedExpanded,
           isLoading: widget.isLoadingCompleted,
           errorText: widget.completedError,
+          onTaskTap: widget.onTaskTap,
           emptyMessage: '暂无已完成日程',
           onHeaderTap: () {
             final nextValue = !_isCompletedExpanded;
@@ -116,6 +121,7 @@ class TaskGroupCard extends StatelessWidget {
     this.emptyMessage = '暂无日程',
     this.onTaskComplete,
     this.onTaskRemovalFinished,
+    this.onTaskTap,
     super.key,
   });
 
@@ -130,6 +136,7 @@ class TaskGroupCard extends StatelessWidget {
   final String emptyMessage;
   final TaskCompleteCallback? onTaskComplete;
   final ValueChanged<String>? onTaskRemovalFinished;
+  final ValueChanged<InboxTaskViewData>? onTaskTap;
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +256,7 @@ class TaskGroupCard extends StatelessWidget {
             onRemovalFinished: onTaskRemovalFinished == null
                 ? null
                 : () => onTaskRemovalFinished!(tasks[index].id),
+            onTap: onTaskTap == null ? null : () => onTaskTap!(tasks[index]),
           ),
       ],
     );

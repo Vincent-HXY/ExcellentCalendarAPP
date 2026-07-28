@@ -1,0 +1,1 @@
+不要随手执行 `flutter upgrade`、升级 Android Studio、升级 Android SDK/NDK/CMake。确实需要升级时，先在 `test_environment/flutter_native_smoke` 跑完整验证，再同步更新本节。

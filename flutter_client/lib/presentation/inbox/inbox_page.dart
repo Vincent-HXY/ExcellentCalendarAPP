@@ -6,6 +6,8 @@ import '../../application/event/complete_event_use_case.dart';
 import '../../application/event/create_event_use_case.dart';
 import '../../application/event/read_events_use_case.dart';
 import '../app_design_tokens.dart';
+import '../event_detail/models/event_detail_ui_state.dart';
+import '../event_detail/pages/event_detail_page.dart';
 import '../new_schedule/new_schedule_page.dart';
 import 'components/add_task_button.dart';
 import 'components/bottom_nav_bar.dart';
@@ -61,6 +63,61 @@ class _InboxPageState extends State<InboxPage> {
       ).showSnackBar(SnackBar(content: Text(result.errorMessage ?? '完成日程失败')));
     }
     return result.succeeded;
+  }
+
+  Future<EventDetailCompletionResult> _completeTaskFromDetail(
+    InboxTaskViewData task,
+  ) async {
+    final result = await _controller.completeTask(task);
+    if (!result.succeeded) {
+      return EventDetailCompletionResult.failure(
+        result.errorMessage ??
+            '\u5b8c\u6210\u65e5\u7a0b\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5',
+      );
+    }
+    return const EventDetailCompletionResult.success();
+  }
+
+  Future<void> _openEventDetail(InboxTaskViewData task) async {
+    final detailState = task.detailState;
+    if (detailState == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '\u6682\u65e0\u6cd5\u52a0\u8f7d\u65e5\u7a0b\u8be6\u60c5',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final didComplete = await Navigator.of(context).pushNamed<bool>(
+      '/event/detail/${task.id}',
+      arguments: EventDetailPageArguments(
+        state: detailState,
+        onEdit: _showEditUnavailable,
+        onComplete: () => _completeTaskFromDetail(task),
+        onEditField: (_) => _showEditUnavailable(),
+        canComplete: !task.isCompleted && !task.hasRecurrence,
+      ),
+    );
+    if (!mounted || didComplete != true) return;
+
+    _controller.finalizeCompletion(task.id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('\u65e5\u7a0b\u5df2\u5b8c\u6210')),
+    );
+  }
+
+  void _showEditUnavailable() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '\u7f16\u8f91\u529f\u80fd\u6682\u4e0d\u652f\u6301\uff0c\u540e\u7eed\u5f00\u53d1\u518d\u5b8c\u5584',
+        ),
+      ),
+    );
   }
 
   Future<void> _openNewSchedulePage() async {
@@ -165,6 +222,7 @@ class _InboxPageState extends State<InboxPage> {
       onTaskComplete: _completeTask,
       onTaskRemovalFinished: _controller.finalizeCompletion,
       onCompletedExpandedChanged: _controller.setCompletedExpanded,
+      onTaskTap: _openEventDetail,
     );
   }
 }

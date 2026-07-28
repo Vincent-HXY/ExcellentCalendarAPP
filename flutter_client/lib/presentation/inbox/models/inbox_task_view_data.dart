@@ -1,5 +1,7 @@
 // 文件作用：Inbox 首页专用的视图数据模型，屏蔽底层 Event/Habit/Reminder 的复杂字段。
 // 设计边界：这是 Presentation ViewData，不应承载核心领域规则。
+import '../../event_detail/models/event_detail_ui_state.dart';
+
 enum TaskImportance {
   unimportantNotUrgent('unimportant_noturgent'),
   importantNotUrgent('important_noturgent'),
@@ -25,6 +27,7 @@ class InboxTaskViewData {
     required this.isCompleted,
     this.hasRecurrence = false,
     this.dueDateLabel,
+    this.detailState,
   });
 
   // 数据块作用：任务唯一标识，后续用于完成、编辑、删除等交互回传。
@@ -38,4 +41,5 @@ class InboxTaskViewData {
   // 数据块作用：任务是否完成，决定所在分组和标题样式。
   final bool isCompleted;
   final bool hasRecurrence;
+  final EventDetailUiState? detailState;
 }

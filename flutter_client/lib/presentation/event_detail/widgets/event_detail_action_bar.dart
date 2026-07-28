@@ -9,12 +9,16 @@ class EventDetailActionBar extends StatelessWidget {
     this.onEdit,
     this.onComplete,
     this.isCompleting = false,
+    this.isCompleted = false,
+    this.isCompleteEnabled = true,
     super.key,
   });
 
   final VoidCallback? onEdit;
   final VoidCallback? onComplete;
   final bool isCompleting;
+  final bool isCompleted;
+  final bool isCompleteEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +65,22 @@ class EventDetailActionBar extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: _ActionButton(
-                        onTap: isCompleting ? null : onComplete,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF32B3C0), Color(0xFF36BEB8)],
-                        ),
+                        onTap: isCompleting || !isCompleteEnabled
+                            ? null
+                            : onComplete,
+                        background: isCompleteEnabled && !isCompleted
+                            ? null
+                            : EventDetailColors.disabledBlueGray,
+                        gradient: isCompleteEnabled && !isCompleted
+                            ? const LinearGradient(
+                                colors: [Color(0xFF32B3C0), Color(0xFF36BEB8)],
+                              )
+                            : null,
                         icon: Icons.check_circle_outline_rounded,
                         label: isCompleting
                             ? '\u5904\u7406\u4e2d'
+                            : isCompleted
+                            ? '\u5df2\u5b8c\u6210'
                             : '\u5b8c\u6210',
                         iconColor: Colors.white,
                         labelColor: Colors.white,
