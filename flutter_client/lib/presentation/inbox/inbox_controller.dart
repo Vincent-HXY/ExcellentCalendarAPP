@@ -8,6 +8,7 @@ import '../../native_contract/common/pagination_request_dto.dart';
 import '../../native_contract/event/complete_event_request_dto.dart';
 import '../../native_contract/event/event_response_dto.dart';
 import '../../native_contract/event/search_event_request_dto.dart';
+import '../event_detail/models/event_detail_ui_state.dart';
 import 'models/inbox_task_view_data.dart';
 
 class InboxCompletionResult {
@@ -39,7 +40,6 @@ class InboxController extends ChangeNotifier {
   bool _isLoadingActive = false;
   bool _isLoadingCompleted = false;
   bool _hasLoadedCompleted = false;
-  bool _isCompletedExpanded = false;
   bool _isDisposed = false;
   String? _activeError;
   String? _completedError;
@@ -98,7 +98,6 @@ class InboxController extends ChangeNotifier {
   }
 
   Future<void> setCompletedExpanded(bool expanded) async {
-    _isCompletedExpanded = expanded;
     if (expanded &&
         (!_hasLoadedCompleted || _completedError != null) &&
         !_isLoadingCompleted) {
@@ -188,9 +187,7 @@ class InboxController extends ChangeNotifier {
     }
     _notifyListeners();
 
-    if (_isCompletedExpanded) {
-      unawaited(loadCompleted());
-    }
+    unawaited(loadCompleted());
     return const InboxCompletionResult.success();
   }
 
@@ -210,6 +207,7 @@ class InboxController extends ChangeNotifier {
       importance: _mapImportance(event.importance),
       isCompleted: event.status == 'completed',
       hasRecurrence: event.hasRecurrence,
+      detailState: EventDetailUiState.fromEvent(event),
     );
   }
 

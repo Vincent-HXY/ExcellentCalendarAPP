@@ -55,9 +55,11 @@ schedule_generation
 expected_remind_at
 同一个 delivery_attempt_id 重复提交应返回之前结果，而不是 REMINDER_ALREADY_CONSUMED 错误。
 
-无法防止旧 Alarm 消费更新后的 Reminder
+~~ 无法防止旧 Alarm 消费更新后的 Reminder
 [get_reminder_request.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\get_reminder_request.schema.json:9) 只包含 ID。如果提醒从 08:00 修改到 09:00，而旧的 08:00 Alarm 仍然触发，它可能读取并消费已经更新的 Reminder。
-建议 Alarm PendingIntent 和后续请求携带 expected_remind_at 或 schedule_generation，C++ 必须验证它与当前 Reminder 一致。
+建议 Alarm PendingIntent 和后续请求携带 expected_remind_at 或 schedule_generation，C++ 必须验证它与当前 Reminder 一致。~~
+
+
 
 reminder.get 不足以生成实际通知内容
 [reminder_response.schema.json (line 20)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\reminder_response.schema.json:20) 只有目标 ID 和提醒 message，没有 Event/Habit/Anniversary 的标题。而 consume_after_delivery 又要求 Kotlin提供非空 title。
@@ -154,18 +156,23 @@ Flutter 将点击 payload 的 notification_id 只用于去重，不用于查询 
 [P1] 通知点击后没有进入可用页面。
 [notification_tap_router.dart (line 36)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/app/routing/notification_tap_router.dart:36) 将日程通知路由到详情页，但 [app_router.dart (line 20)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/app/routing/app_router.dart:20) 只是固定显示“日程不存在或已删除”，没有读取日程，也没有进入用户描述的主页面。当前闭环在最后一步实际中断。
 
-[P1] 部分提醒可能永远没有注册 Android Alarm。
+~~ [P1] 部分提醒可能永远没有注册 Android Alarm。
 [schedule_pending_reminders_use_case.dart (line 5)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/reminder/schedule_pending_reminders_use_case.dart:5) 每次只扫描未来 7 天、最多 128 条，并且不处理返回结果中的 has_more。[BootCompletedReceiver.kt (line 19)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/android/alarm/BootCompletedReceiver.kt:19) 同样只执行一次，没有发现周期扫描机制。因此：
 7 天内超过 128 条时，后续提醒不会注册。
-超过 7 天的提醒进入窗口后，如果用户没有重新打开 App、重启手机或修改日程，也不会注册。
+超过 7 天的提醒进入窗口后，如果用户没有重新打开 App、重启手机或修改日程，也不会注册。~~
 
 已修复：Android 改为由 Reminder 持久队列驱动的单 Dispatcher Alarm；C++ 调度查询支持无界 keyset cursor，Alarm/Boot/前台与 WorkManager 看门狗统一进入 `ReminderScheduleCoordinator`，不再依赖 7 天窗口或 128 条批次。
 
-[P1] 过期 Alarm 会先显示错误通知，再由 C++ 拒绝。
-[ReminderDeliveryService.kt (line 51)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/reminder/ReminderDeliveryService.kt:51) 使用 Alarm 中的旧 plannedAt 直接弹通知，到第 83 行才调用 C++ 消费；而 C++ 在 [notification_service.cpp (line 236)](/A:/calendar/ExcellentCalendarAPP/cpp_core/src/application/notification_service.cpp:236) 才检查时间是否仍匹配。用户可能看到或听到本不应该触发的旧提醒。
+~~ [P1] 过期 Alarm 会先显示错误通知，再由 C++ 拒绝。
+[ReminderDeliveryService.kt (line 51)](/A:/calendar/ExcellentCalendarAPP/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excellent_calendar/bridge/reminder/ReminderDeliveryService.kt:51) 使用 Alarm 中的旧 plannedAt 直接弹通知，到第 83 行才调用 C++ 消费；而 C++ 在 [notification_service.cpp (line 236)](/A:/calendar/ExcellentCalendarAPP/cpp_core/src/application/notification_service.cpp:236) 才检查时间是否仍匹配。用户可能看到或听到本不应该触发的旧提醒。~~
 
-[P1] 完成日程不会处理尚未触发的提醒。
-[complete_event_use_case.dart (line 11)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/event/complete_event_use_case.dart:11) 只完成 Event；C++ 的 [event_service.cpp (line 326)](/A:/calendar/ExcellentCalendarAPP/cpp_core/src/application/event_service.cpp:326) 也只修改 Event 状态。关联 Reminder 仍然是 scheduled，因此用户提前完成日程后，提醒依然可能照常弹出。
+这个并不是一个大问题，首先我们到点之后，不是直接触发一个通知，而是说先进入一个dispatcher，先reconcile这表里面是否有我需要存在的通知还没有提醒。所以哪怕我们修改了通知提醒时间，旧的Alarm依旧不会触发一个通知。
+所以我们日后的开发时，如果涉及到了要修改一个提醒时间，我们需要在修改后的时间重新设立一个reconcile。
+
+~~ [P1] 完成日程不会处理尚未触发的提醒。
+[complete_event_use_case.dart (line 11)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/event/complete_event_use_case.dart:11) 只完成 Event；C++ 的 [event_service.cpp (line 326)](/A:/calendar/ExcellentCalendarAPP/cpp_core/src/application/event_service.cpp:326) 也只修改 Event 状态。关联 Reminder 仍然是 scheduled，因此用户提前完成日程后，提醒依然可能照常弹出。 ~~
+已经着手修复
+
 
 ~~ [P2] 创建日程成功会掩盖提醒调度失败。
 [create_event_use_case.dart (line 19)](/A:/calendar/ExcellentCalendarAPP/flutter_client/lib/application/event/create_event_use_case.dart:19) 等待调度调用，但最终始终返回日程创建结果。无论 schedule_pending 整体失败，还是返回 failed_count > 0，上层看到的仍是创建成功。~~

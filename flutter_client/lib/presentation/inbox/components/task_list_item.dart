@@ -14,6 +14,7 @@ class TaskListItem extends StatefulWidget {
     this.isCompleting = false,
     this.onComplete,
     this.onRemovalFinished,
+    this.onTap,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class TaskListItem extends StatefulWidget {
   final bool isCompleting;
   final Future<bool> Function()? onComplete;
   final VoidCallback? onRemovalFinished;
+  final VoidCallback? onTap;
 
   @override
   State<TaskListItem> createState() => _TaskListItemState();
@@ -162,46 +164,70 @@ class _TaskListItemState extends State<TaskListItem>
                   ),
                   const SizedBox(width: InboxSpacing.checkboxGap),
                   Expanded(
-                    child: AnimatedBuilder(
-                      animation: _strikeController,
-                      builder: (context, child) {
-                        return CustomPaint(
-                          foregroundPainter: _StrikeRevealPainter(
-                            text: task.title,
-                            style: titleStyle,
-                            textDirection: Directionality.of(context),
-                            progress: _strikeController.value,
+                    child: Semantics(
+                      button: widget.onTap != null,
+                      label: '\u67e5\u770b\u65e5\u7a0b\u8be6\u60c5',
+                      child: SizedBox.expand(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: widget.onTap,
+                            splashFactory: NoSplash.splashFactory,
+                            overlayColor: const WidgetStatePropertyAll(
+                              Colors.transparent,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: AnimatedBuilder(
+                                    animation: _strikeController,
+                                    builder: (context, child) {
+                                      return CustomPaint(
+                                        foregroundPainter: _StrikeRevealPainter(
+                                          text: task.title,
+                                          style: titleStyle,
+                                          textDirection: Directionality.of(
+                                            context,
+                                          ),
+                                          progress: _strikeController.value,
+                                        ),
+                                        child: child,
+                                      );
+                                    },
+                                    child: Text(
+                                      task.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: titleStyle,
+                                    ),
+                                  ),
+                                ),
+                                if (task.dueDateLabel != null) ...[
+                                  const SizedBox(width: InboxSpacing.dateGap),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: InboxSizes.dateMaxWidth,
+                                    ),
+                                    child: Text(
+                                      task.dueDateLabel!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.right,
+                                      style: task.isCompleted
+                                          ? InboxTextStyles.dueDate.copyWith(
+                                              color: InboxColors.mutedText,
+                                            )
+                                          : InboxTextStyles.dueDate,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
-                          child: child,
-                        );
-                      },
-                      child: Text(
-                        task.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: titleStyle,
+                        ),
                       ),
                     ),
                   ),
-                  if (task.dueDateLabel != null) ...[
-                    const SizedBox(width: InboxSpacing.dateGap),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: InboxSizes.dateMaxWidth,
-                      ),
-                      child: Text(
-                        task.dueDateLabel!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.right,
-                        style: task.isCompleted
-                            ? InboxTextStyles.dueDate.copyWith(
-                                color: InboxColors.mutedText,
-                              )
-                            : InboxTextStyles.dueDate,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),

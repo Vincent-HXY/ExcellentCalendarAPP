@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../presentation/event_detail/pages/event_detail_page.dart';
+
 class AppRouter {
   const AppRouter._();
 
@@ -21,6 +23,22 @@ class AppRouter {
       final type = segments[0];
       final id = segments[2];
       if ({'event', 'habit', 'anniversary'}.contains(type) && id.isNotEmpty) {
+        if (type == 'event') {
+          final arguments = settings.arguments;
+          if (arguments is EventDetailPageArguments) {
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => EventDetailPage(
+                state: arguments.state,
+                onMore: arguments.onMore,
+                onEdit: arguments.onEdit,
+                onComplete: arguments.onComplete,
+                onEditField: arguments.onEditField,
+                canComplete: arguments.canComplete,
+              ),
+            );
+          }
+        }
         return MaterialPageRoute<void>(
           settings: settings,
           builder: (_) =>
