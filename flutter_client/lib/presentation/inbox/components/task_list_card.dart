@@ -58,7 +58,7 @@ class _TaskListCardState extends State<TaskListCard> {
           title: '未完成',
           tasks: activeTasks,
           isExpanded: _isIncompleteExpanded,
-          emptyMessage: '暂无未完成日程',
+          emptyMessage: '暂无未完成日程，真是太棒了捏😘',
           completingIds: widget.completingIds,
           onTaskComplete: widget.onTaskComplete,
           onTaskRemovalFinished: widget.onTaskRemovalFinished,
@@ -74,7 +74,7 @@ class _TaskListCardState extends State<TaskListCard> {
           title: '即将到期',
           tasks: dueSoonTasks,
           isExpanded: _isUpcomingExpanded,
-          emptyMessage: '暂无即将到期日程',
+          emptyMessage: '暂无即将到期日程哦宝宝，你好棒呀~😘',
           completingIds: widget.completingIds,
           onTaskComplete: widget.onTaskComplete,
           onTaskRemovalFinished: widget.onTaskRemovalFinished,
@@ -94,7 +94,7 @@ class _TaskListCardState extends State<TaskListCard> {
           isLoading: widget.isLoadingCompleted,
           errorText: widget.completedError,
           onTaskTap: widget.onTaskTap,
-          emptyMessage: '暂无已完成日程',
+          emptyMessage: '暂无已完成日程，继续加油喵🐱',
           onHeaderTap: () {
             final nextValue = !_isCompletedExpanded;
             setState(() {
