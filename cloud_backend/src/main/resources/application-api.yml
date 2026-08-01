@@ -1,0 +1,10 @@
+spring:
+  config:
+    activate:
+      on-profile: api
+  main:
+    web-application-type: servlet
+
+excellent-calendar:
+  runtime:
+    role: api
