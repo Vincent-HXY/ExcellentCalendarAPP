@@ -91,6 +91,46 @@ SyncOperationType:
     - delete
     - restore
 
+UserAccountStatus:
+  values:
+    - pending_verification
+    - active
+    - disabled
+    - deleted
+
+VerificationCredentialType:
+  values:
+    - code
+    - link_token
+
+EmailActionPurpose:
+  values:
+    - registration_verification
+    - email_change
+    - password_reset
+
+EmailChangeStatus:
+  values:
+    - pending
+    - verified
+    - expired
+    - cancelled
+
+SessionRevocationReason:
+  values:
+    - logout
+    - logout_all
+    - password_changed
+    - password_reset
+    - email_changed
+    - refresh_token_reused
+    - account_disabled
+    - expired
+
+ClientPlatform:
+  values:
+    - android
+
 DataSource:
   values:
     - manual
@@ -117,7 +157,7 @@ EntityType:
     - notification
     - category
     - recurrence
-    - user_data
+    - user_preferences
     - dated_message
     - anniversary
 

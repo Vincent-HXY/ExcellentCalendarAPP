@@ -41,62 +41,6 @@ A:\Android\AndroidStudio\jbr
 openjdk version "21.0.10" 2026-01-20
 ```
 
-不推荐把 `A:\Android\jdk-17` 作为本项目主 JDK。该 JDK 的版本输出是 `java version "17"`，在当前 Android 命令行工具中可能被误判为低于 Java 17。Java 17 本身不是问题；如果必须使用 Java 17，请使用版本输出为 `17.0.x` 的 JDK 17，并在团队内统一更新配置。
-
-### 环境变量
-
-当前主开发机参考配置：
-
-```text
-ANDROID_HOME=A:\Android\sdk
-ANDROID_SDK_ROOT=A:\Android\sdk
-FLUTTER_ROOT=A:\flutter\flutter
-JAVA_HOME=A:\Android\AndroidStudio\jbr
-```
-
-Path 至少需要包含：
-
-```text
-A:\flutter\flutter\bin
-A:\Android\sdk\platform-tools
-A:\Android\sdk\cmdline-tools\latest\bin
-A:\Android\sdk\emulator
-A:\Android\sdk\cmake\3.22.1\bin
-A:\Android\AndroidStudio\jbr\bin
-```
-
-如果团队成员安装到了其他目录，只需要替换成自己的实际路径，例如：
-
-```powershell
-flutter config --android-sdk "C:\Users\<用户名>\AppData\Local\Android\Sdk"
-flutter config --jdk-dir "C:\Program Files\Android\Android Studio\jbr"
-```
-
-### Flutter 配置
-
-当前主开发机执行过：
-
-```powershell
-flutter config --android-sdk A:\Android\sdk
-flutter config --jdk-dir A:\Android\AndroidStudio\jbr
-flutter doctor --android-licenses
-```
-
-团队成员配置完成后执行：
-
-```powershell
-flutter doctor -v
-```
-
-期望：
-
-- Flutter 为 `3.41.9 stable`；
-- Android toolchain 为绿色；
-- Android licenses 已接受；
-- JDK 指向 Android Studio JBR 21.0.10；
-- Connected device 至少能看到真机或模拟器；
-- Chrome 红叉可以暂时忽略，因为本项目当前主目标是 Android。
-
 ### Android SDK 组件安装参考
 
 如果缺少 SDK 组件，可执行：
@@ -114,28 +58,6 @@ sdkmanager --sdk_root=A:\Android\sdk `
   "emulator"
 ```
 
-然后接受 licenses：
-
-```powershell
-flutter doctor --android-licenses
-```
-
-### 真机验证
-
-手机端开启开发者选项和 USB 调试后，电脑执行：
-
-```powershell
-adb devices
-```
-
-正常应看到：
-
-```text
-设备序列号    device
-```
-
-如果显示 `unauthorized`，需要在手机上点击允许 USB 调试。
-
 ### C++ Core 构建与测试
 
 从仓库根目录执行以下命令。`excellent_calendar_check` 会先构建当前源码对应的测试程序，再运行 CTest；编译或测试任一步失败都会返回失败。
@@ -147,42 +69,6 @@ cmake --build cpp_core/build-ninja --target excellent_calendar_check
 
 不要把单独执行 `ctest --test-dir cpp_core/build-ninja` 作为完整验收，因为 CTest 不负责编译，构建失败时可能运行目录中遗留的旧测试程序。
 
-### Smoke test 验证流程
-
-```powershell
-cd A:\calendar\ExcellentCalendarAPP\test_environment\flutter_native_smoke
-flutter test
-flutter analyze
-flutter build apk --debug
-flutter run
-```
-
-如果有多个设备：
-
-```powershell
-flutter devices
-flutter run -d <device-id>
-```
-
-运行成功后，页面显示：
-
-```text
-pong from C++ via Kotlin JNI
-```
-
-可选检查 APK 是否包含 C++ so：
-
-```powershell
-A:\Android\AndroidStudio\jbr\bin\jar.exe tf build\app\outputs\flutter-apk\app-debug.apk | Select-String native_smoke
-```
-
-期望看到：
-
-```text
-lib/arm64-v8a/libnative_smoke.so
-lib/armeabi-v7a/libnative_smoke.so
-lib/x86_64/libnative_smoke.so
-```
 
 ## 功能需求分析
 

@@ -5,5 +5,8 @@
   "description": "Explicit empty object for cross-language calls that take no business parameters.",
   "x-contract-version": 1,
   "type": "object",
-  "additionalProperties": false
+  "additionalProperties": false,
+  "examples": [
+    {}
+  ]
 }

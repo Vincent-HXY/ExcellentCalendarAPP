@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/confirm_email_change_request.schema.json",
+  "title": "ConfirmEmailChangeRequest",
+  "description": "Confirms the pending new email, revokes other sessions, and rotates the current session.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["email_change_request_id", "credential"],
+  "properties": {
+    "email_change_request_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "credential": {
+      "$ref": "./verification_credential.schema.json"
+    }
+  },
+  "examples": [
+    {
+      "email_change_request_id": "5cf0a9ad-dce4-4c96-b4a4-363353b076e1",
+      "credential": {
+        "credential_type": "link_token",
+        "link_token": "opaque-email-link-token-value-at-least-32-characters"
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/store_refresh_token_request.schema.json",
+  "title": "StoreRefreshTokenRequest",
+  "description": "Sensitive Flutter-to-Android request for encrypted Refresh Token storage. Never log this payload.",
+  "x-contract-domain": "native_method_channel",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["refresh_token", "session_id", "expires_at"],
+  "properties": {
+    "refresh_token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 8192,
+      "writeOnly": true
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    }
+  },
+  "examples": [
+    {
+      "refresh_token": "opaque-refresh-token-value-at-least-32-characters",
+      "session_id": "62732653-c76a-40e7-bf72-bccabb54f06a",
+      "expires_at": "2026-08-31T01:00:00Z"
+    }
+  ]
+}
