@@ -15,7 +15,8 @@
 
 - 当前先不实现 SQL schema，优先保证项目整体可运行。
 - 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
-- `AIExtraction`、`SyncOperation`、`UserData` 等模型先作为未来能力预留，字段可先保持文档级设计。
+- `AIExtraction`、`SyncOperation` 等模型先作为未来能力预留，字段可先保持文档级设计。
+- 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
 - `Reminder` 作为独立实体保存，不嵌入 `Event`、`Habit`、`Anniversary`。
 - 一个 `Event`、`Habit` 或 `Anniversary` 可以关联多条 `Reminder`。业务上可以理解为“提醒时间列表”，存储上是多条提醒记录。
 
@@ -34,7 +35,17 @@
 | `SearchIndex` | 保存搜索用的冗余文本 | 索引数据 | 可以后置 |
 | `AIExtraction` | 保存 AI 从文本、图片中解析出的候选结果 | 未来预留 | 暂缓实现 |
 | `SyncOperation` | 保存本地与云端同步操作记录 | 未来预留 | 暂缓实现 |
-| `UserData` | 保存用户设置、默认提醒方式、同步游标 | 用户配置 | 先做本地设置 |
+| `UserAccount` | 保存邮箱、验证状态和账号生命周期 | 云端账号事实 | Backend |
+| `PasswordCredential` | 保存不可逆密码哈希和修改时间 | 云端敏感凭证 | Backend-only |
+| `UserProfile` | 保存用户名、昵称和头像引用 | 云端个人资料 | Backend |
+| `UserPreferences` | 保存语言、时区和用户级设置 | 用户配置 | Backend + 本地缓存 |
+| `UserSyncState` | 保存同步游标和最近同步时间 | 同步内部状态 | 后续同步阶段 |
+| `UserAvatarAsset` | 保存头像对象存储元数据 | 云端媒体资产 | Backend |
+| `UserSession` | 保存一个设备登录会话的生命周期 | 云端安全状态 | Backend-only |
+| `RefreshTokenGrant` | 保存 Refresh Token 轮换链的哈希记录 | 云端敏感凭证 | Backend-only |
+| `EmailActionChallenge` | 保存邮箱验证、改邮箱和密码重置挑战 | 云端安全状态 | Backend-only |
+| `EmailChangeRequest` | 保存新邮箱验证前的临时变更申请 | 云端安全状态 | Backend-only |
+| `UserAgreementAcceptance` | 保存用户协议版本和接受时间 | 云端审计事实 | Backend-only |
 | `DatedMessage` | 保存指定日期投送给用户的消息 | 未来预留 | 暂缓实现 |
 | `Anniversary` | 保存生日、纪念日等年度事件 | 主业务数据 | 是 |
 
@@ -142,6 +153,54 @@
 | `update` | 更新 |
 | `delete` | 删除 |
 | `restore` | 恢复 |
+
+### UserAccountStatus
+
+用户账号的服务端生命周期状态。
+
+| 值 | 说明 |
+| --- | --- |
+| `pending_verification` | 已注册但登录邮箱尚未验证 |
+| `active` | 邮箱已验证且账号可正常使用 |
+| `disabled` | 账号被服务端禁用 |
+| `deleted` | 账号已进入删除状态，不再允许认证 |
+
+### VerificationCredentialType
+
+| 值 | 说明 |
+| --- | --- |
+| `code` | 用户手动输入的 6 位数字验证码 |
+| `link_token` | 邮件深度链接携带的不透明验证 Token |
+
+### EmailActionPurpose
+
+| 值 | 说明 |
+| --- | --- |
+| `registration_verification` | 注册邮箱验证 |
+| `email_change` | 新登录邮箱验证 |
+| `password_reset` | 忘记密码后的重置验证 |
+
+### EmailChangeStatus
+
+| 值 | 说明 |
+| --- | --- |
+| `pending` | 新邮箱等待验证，原邮箱仍然有效 |
+| `verified` | 新邮箱已验证并完成替换 |
+| `expired` | 申请或验证挑战已过期 |
+| `cancelled` | 用户或服务端取消申请 |
+
+### SessionRevocationReason
+
+| 值 | 说明 |
+| --- | --- |
+| `logout` | 当前设备主动退出 |
+| `logout_all` | 用户主动退出所有设备 |
+| `password_changed` | 修改密码后撤销其他设备 |
+| `password_reset` | 密码重置后撤销全部设备 |
+| `email_changed` | 登录邮箱变更后撤销其他设备 |
+| `refresh_token_reused` | 检测到已消费 Refresh Token 重放 |
+| `account_disabled` | 账号被禁用 |
+| `expired` | 会话自然过期 |
 
 ## Event：日程
 
@@ -403,22 +462,178 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `syncedAt` | `datetime` | 否 | 同步完成时间 |
 
-## UserData：用户数据
+## UserAccount：用户账号
 
-用户数据保存用户级配置、设备信息和同步游标等内容。
+`UserAccount` 只保存登录身份和账号生命周期。它不保存密码哈希、头像文件、用户偏好或 Refresh Token。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `id` | `string` | 是 | 用户 ID |
-| `displayName` | `string` | 否 | 昵称 |
-| `timezone` | `string` | 是 | 默认时区 |
-| `locale` | `string` | 否 | 语言区域 |
-| `defaultReminderMethods` | `ReminderMethod[]` | 否 | 默认提醒方式 |
-| `settings` | `object` | 否 | 用户设置 |
-| `syncCursor` | `string` | 否 | 同步游标 |
-| `lastSyncAt` | `datetime` | 否 | 最近同步时间 |
+| `id` | `string` | 是 | 用户 UUID |
+| `email` | `string` | 是 | 当前生效的登录邮箱，最大 254 字符 |
+| `normalizedEmail` | `string` | 是 | 用于唯一索引和登录匹配的规范化邮箱，不进入公开响应 |
+| `status` | `UserAccountStatus` | 是 | 账号生命周期状态 |
+| `emailVerifiedAt` | `datetime` | 否 | 当前登录邮箱验证完成时间 |
+| `disabledAt` | `datetime` | 否 | 账号被禁用的时间 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
+| `deletedAt` | `datetime` | 否 | 账号软删除时间 |
+
+约束：
+
+- `normalizedEmail` 在未软删除账号中大小写不敏感唯一；跨层只返回 `email`。
+- 注册创建 `pending_verification` 账号；验证成功后原子切换为 `active` 并写入 `emailVerifiedAt`。
+- `disabled` 与 `deleted` 账号不能登录或刷新会话。
+
+## PasswordCredential：密码凭证
+
+`PasswordCredential` 是 Backend-only 安全模型，只保存不可逆密码哈希。它不得进入 API 响应、Flutter 缓存、Android 安全记录或日志。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `userId` | `string` | 是 | 关联 `UserAccount.id` |
+| `passwordHash` | `string` | 是 | 包含算法、盐和参数的 Argon2id PHC 编码字符串 |
+| `algorithm` | `string` | 是 | 当前固定为 `argon2id`，用于算法迁移审计 |
+| `passwordChangedAt` | `datetime` | 是 | 最近一次设置或修改密码的时间 |
+
+密码规则为 8 至 128 个 Unicode 字符，不强制字符组合；服务端还必须拒绝常见或已泄露密码。注册、修改密码和密码重置使用同一规则。
+
+## UserProfile：个人资料
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `userId` | `string` | 是 | 与 `UserAccount` 一对一 |
+| `username` | `string` | 是 | 公开用户名，匹配 `[a-z0-9_]{3,24}` |
+| `normalizedUsername` | `string` | 是 | 用于唯一索引的规范化用户名，不进入公开响应 |
+| `displayName` | `string` | 是 | 1 至 40 个 Unicode 字符的昵称 |
+| `avatarAssetId` | `string` | 否 | 当前头像资产 ID；为空表示客户端使用默认头像 |
+| `createdAt` | `datetime` | 是 | 创建时间 |
+| `updatedAt` | `datetime` | 是 | 更新时间 |
+
+`normalizedUsername` 在未删除用户中大小写不敏感唯一。资料更新采用最后写入胜出；客户端提交成功后必须使用服务端返回的完整当前用户资料更新正式状态。
+
+## UserPreferences：用户偏好
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `userId` | `string` | 是 | 与 `UserAccount` 一对一 |
+| `locale` | `string` | 是 | BCP 47 语言标签，例如 `zh-CN` |
+| `timezone` | `string` | 是 | IANA 时区 ID，例如 `Asia/Shanghai` |
+| `defaultReminderMethods` | `ReminderMethod[]` | 是 | 默认提醒方式；没有默认值时返回空数组 |
+| `settings` | `object` | 是 | 非敏感扩展设置；没有设置时返回空对象 |
+| `createdAt` | `datetime` | 是 | 创建时间 |
+| `updatedAt` | `datetime` | 是 | 更新时间 |
+
+`settings` 只接受最多 64 个 `snake_case` 键和字符串、数字或布尔标量值；认证凭证、安全状态和未版本化的嵌套对象不得借此字段跨层传输。
+
+## UserSyncState：用户同步状态
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `userId` | `string` | 是 | 关联用户 ID |
+| `syncCursor` | `string` | 否 | 服务端增量同步游标 |
+| `lastSyncAt` | `datetime` | 否 | 最近一次成功同步时间 |
+| `updatedAt` | `datetime` | 是 | 状态更新时间 |
+
+该模型属于同步内部状态，不进入当前用户资料响应，也不参与认证判断。
+
+## UserAvatarAsset：头像资产
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 是 | 头像资产 UUID |
+| `userId` | `string` | 是 | 资产所有者 |
+| `storageKey` | `string` | 是 | 对象存储内部键，不进入公开响应 |
+| `mimeType` | `string` | 是 | `image/jpeg`、`image/png` 或 `image/webp` |
+| `sizeBytes` | `number` | 是 | 原始上传最大 5 MiB |
+| `width` | `number` | 是 | 服务端处理后图片宽度 |
+| `height` | `number` | 是 | 服务端处理后图片高度，必须等于宽度 |
+| `etag` | `string` | 是 | 客户端头像缓存失效标识 |
+| `createdAt` | `datetime` | 是 | 创建时间 |
+| `deletedAt` | `datetime` | 否 | 被替换或删除时间 |
+
+公开响应只暴露 `assetId`、可访问 URL、缩略图 URL、`etag` 和 `updatedAt`。删除头像后 `UserProfile.avatarAssetId = null`，不保存默认头像 URL。
+
+## UserSession：用户会话
+
+`UserSession` 表示一个设备登录会话和一个 Refresh Token family。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 是 | 会话 UUID |
+| `userId` | `string` | 是 | 关联用户 |
+| `tokenFamilyId` | `string` | 是 | Refresh Token 轮换族 ID |
+| `platform` | `string` | 是 | 当前为 `android` |
+| `deviceName` | `string` | 否 | 用户可识别的设备名称 |
+| `appVersion` | `string` | 否 | 创建或最近刷新会话的客户端版本 |
+| `expiresAt` | `datetime` | 是 | 会话最长有效时间，默认 30 天 |
+| `lastUsedAt` | `datetime` | 是 | 最近一次成功刷新或认证请求时间 |
+| `revokedAt` | `datetime` | 否 | 会话撤销时间 |
+| `revocationReason` | `SessionRevocationReason` | 否 | 机器可读撤销原因 |
+| `createdAt` | `datetime` | 是 | 创建时间 |
+
+修改密码和确认邮箱变更只保留并轮换当前会话，撤销其他会话；密码重置和“退出所有设备”撤销全部会话。
+
+## RefreshTokenGrant：Refresh Token 轮换记录
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 是 | Grant UUID |
+| `sessionId` | `string` | 是 | 关联 `UserSession.id` |
+| `tokenHash` | `string` | 是 | Refresh Token 的不可逆哈希，不保存明文 |
+| `parentGrantId` | `string` | 否 | 上一次轮换 Grant ID |
+| `issuedAt` | `datetime` | 是 | 签发时间 |
+| `expiresAt` | `datetime` | 是 | 过期时间 |
+| `consumedAt` | `datetime` | 否 | 成功换取下一组 Token 的时间 |
+| `revokedAt` | `datetime` | 否 | 主动撤销时间 |
+
+每次刷新在同一事务中消费当前 Grant、创建子 Grant 并签发新 Token。再次使用已消费 Grant 时撤销整个 `tokenFamilyId`，返回 `AUTH_REFRESH_TOKEN_REUSED`。
+
+## EmailActionChallenge：邮箱动作挑战
+
+同一个 Challenge 可以同时签发 6 位验证码和邮件链接 Token；两者只保存哈希，任一凭证验证成功都会消费整个 Challenge 并使另一种凭证失效。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 是 | Challenge UUID |
+| `userId` | `string` | 是 | 关联用户 |
+| `purpose` | `EmailActionPurpose` | 是 | 注册验证、改邮箱或密码重置 |
+| `targetEmail` | `string` | 是 | 本次动作接收邮件的地址 |
+| `codeHash` | `string` | 否 | 6 位验证码哈希 |
+| `linkTokenHash` | `string` | 否 | 深度链接不透明 Token 哈希 |
+| `failedAttemptCount` | `number` | 是 | 验证失败次数，初始为 0 |
+| `maxAttempts` | `number` | 是 | 固定为 5 |
+| `expiresAt` | `datetime` | 是 | 注册/改邮箱 10 分钟，密码重置 15 分钟 |
+| `resendAvailableAt` | `datetime` | 是 | 创建后 60 秒 |
+| `consumedAt` | `datetime` | 否 | 验证成功时间 |
+| `invalidatedAt` | `datetime` | 否 | 重发、取消或安全事件导致的失效时间 |
+| `createdAt` | `datetime` | 是 | 创建时间 |
+
+## EmailChangeRequest：邮箱变更申请
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 是 | 申请 UUID |
+| `userId` | `string` | 是 | 关联用户 |
+| `oldEmail` | `string` | 是 | 申请时的当前邮箱快照 |
+| `newEmail` | `string` | 是 | 等待验证的新邮箱 |
+| `challengeId` | `string` | 是 | 关联 `EmailActionChallenge.id` |
+| `status` | `EmailChangeStatus` | 是 | 申请状态 |
+| `expiresAt` | `datetime` | 是 | 申请过期时间 |
+| `completedAt` | `datetime` | 否 | 新邮箱正式生效时间 |
+| `createdAt` | `datetime` | 是 | 创建时间 |
+
+`pending` 阶段原邮箱继续作为唯一有效登录邮箱。验证成功时，在同一事务中替换账号邮箱、更新验证时间、完成申请并轮换当前会话 Token。
+
+## UserAgreementAcceptance：用户协议接受记录
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 是 | 接受记录 UUID |
+| `userId` | `string` | 是 | 关联用户 |
+| `agreementVersion` | `string` | 是 | 用户明确同意的协议版本 |
+| `acceptedAt` | `datetime` | 是 | 服务端记录的接受时间 |
+
+注册请求只提交 `agreement_version` 和固定为 `true` 的 `agreement_accepted`；客户端时间不能作为审计事实。
 
 ## DatedMessage：投送消息
 
@@ -471,12 +686,22 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | `SearchIndex.targetId -> Event/Habit/Anniversary.id` | 搜索索引映射到被索引对象 |
 | `AIExtraction.candidateEventId -> Event.id` | AI 可生成待确认的候选日程 |
 | `SyncOperation.targetId -> any entity id` | 同步操作记录任意实体的变更 |
+| `UserProfile.userId -> UserAccount.id` | 账号与公开资料一对一 |
+| `UserPreferences.userId -> UserAccount.id` | 账号与用户偏好一对一 |
+| `PasswordCredential.userId -> UserAccount.id` | 密码凭证只属于一个账号且不跨层暴露 |
+| `UserProfile.avatarAssetId -> UserAvatarAsset.id` | 个人资料可引用一个当前头像资产 |
+| `UserSession.userId -> UserAccount.id` | 一个账号可以存在多个设备会话 |
+| `RefreshTokenGrant.sessionId -> UserSession.id` | 一个会话保留连续的 Token 轮换链 |
+| `EmailActionChallenge.userId -> UserAccount.id` | 邮箱动作挑战归属账号 |
+| `EmailChangeRequest.challengeId -> EmailActionChallenge.id` | 邮箱变更申请使用独立挑战确认新邮箱 |
+| `UserAgreementAcceptance.userId -> UserAccount.id` | 一个用户可保留多个协议版本的接受记录 |
 
 ## 未来待确认问题
 
 - `Recurrence` 未来是否需要兼容 iCalendar RRULE 标准。
 - `DatedMessage` 未来是只做本地投送，还是也需要云端运营投放能力。
 - `AIExtraction.extractedData` 未来是否需要拆成强类型表，还是先以 JSON 保存。
+- 后续加入 MFA 时是否把 V1 的 8 位密码下限提升到单因素认证推荐基线。
 
 ## 已确认决策
 
@@ -486,6 +711,12 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 - `Habit` 的坚持日期、完成次数、连续天数统计来源于 `HabitCheckIn`，不直接塞进 `Habit` 本体。
 - 当前阶段先不上 SQL，优先保证项目整体可运行。
 - 当前先做好本地能力，AI 和云端同步暂缓，但保留相关接口和数据模型。
+- 旧 `UserData` 草案拆分为 `UserAccount`、`UserProfile`、`UserPreferences` 和 `UserSyncState`；认证安全状态使用独立 Backend-only 模型。
+- 登录标识只允许邮箱；用户名只作为大小写不敏感唯一的公开资料标识。
+- 邮箱验证和密码重置同时支持手动验证码与邮件链接 Token。
+- 当前用户资料更新采用最后写入胜出，客户端以服务端成功响应为准。
+- Access Token 只保存在 Flutter 内存；Refresh Token 只在刷新请求期间短暂进入 Flutter，并由 Android 安全存储长期保存。
+- 密码重置撤销全部会话且要求重新登录；修改密码与确认邮箱变更保留并轮换当前会话、撤销其他设备。
 
 ## 数据类型评审
 

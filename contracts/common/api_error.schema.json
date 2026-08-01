@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/common/api_error.schema.json",
+  "title": "ApiError",
+  "description": "Unified safe error returned by Flutter-to-Backend HTTP APIs.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "message", "retryable", "field_errors", "retry_after_seconds"],
+  "properties": {
+    "code": {
+      "type": "string",
+      "enum": [
+        "API_VALIDATION_FAILED",
+        "API_UNAUTHENTICATED",
+        "API_FORBIDDEN",
+        "API_RATE_LIMITED",
+        "API_INTERNAL_ERROR",
+        "AUTH_INVALID_CREDENTIALS",
+        "AUTH_EMAIL_UNVERIFIED",
+        "AUTH_ACCOUNT_DISABLED",
+        "AUTH_EMAIL_ALREADY_EXISTS",
+        "AUTH_USERNAME_ALREADY_EXISTS",
+        "AUTH_VERIFICATION_INVALID",
+        "AUTH_VERIFICATION_EXPIRED",
+        "AUTH_VERIFICATION_USED",
+        "AUTH_PASSWORD_POLICY_VIOLATION",
+        "AUTH_CURRENT_PASSWORD_INVALID",
+        "AUTH_PASSWORD_UNCHANGED",
+        "AUTH_REFRESH_TOKEN_INVALID",
+        "AUTH_REFRESH_TOKEN_REUSED",
+        "AUTH_SESSION_EXPIRED",
+        "USER_PROFILE_INVALID",
+        "AVATAR_TYPE_UNSUPPORTED",
+        "AVATAR_TOO_LARGE",
+        "AVATAR_UPLOAD_FAILED"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "field_errors": {
+      "type": "array",
+      "items": {
+        "$ref": "./api_field_error.schema.json"
+      }
+    },
+    "retry_after_seconds": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "context": {
+      "oneOf": [
+        {
+          "$ref": "./api_error_context.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "code": "AUTH_INVALID_CREDENTIALS",
+      "message": "The email or password is incorrect.",
+      "retryable": false,
+      "field_errors": [],
+      "retry_after_seconds": null
+    }
+  ]
+}

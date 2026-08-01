@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/registration_pending_response.schema.json",
+  "title": "RegistrationPendingResponse",
+  "description": "Registration succeeded but authentication is blocked until email verification completes.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["account_id", "challenge"],
+  "properties": {
+    "account_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "challenge": {
+      "$ref": "./email_challenge_response.schema.json"
+    }
+  },
+  "examples": [
+    {
+      "account_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+      "challenge": {
+        "challenge_id": "0ca1897b-2a49-4767-b673-53d9c8b39516",
+        "action_id": null,
+        "purpose": "registration_verification",
+        "masked_email": "u***@example.com",
+        "credential_types": ["code", "link_token"],
+        "expires_at": "2026-08-01T01:10:00Z",
+        "resend_available_at": "2026-08-01T01:01:00Z"
+      }
+    }
+  ]
+}

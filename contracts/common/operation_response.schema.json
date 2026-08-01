@@ -16,5 +16,11 @@
       "description": "Optional human-readable operation note for debugging or UI fallback."
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "examples": [
+    {
+      "performed": true,
+      "message": null
+    }
+  ]
 }

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/verify_registration_request.schema.json",
+  "title": "VerifyRegistrationRequest",
+  "description": "Consumes a registration-verification challenge and returns an authenticated session.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["challenge_id", "credential"],
+  "properties": {
+    "challenge_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "credential": {
+      "$ref": "./verification_credential.schema.json"
+    }
+  },
+  "examples": [
+    {
+      "challenge_id": "0ca1897b-2a49-4767-b673-53d9c8b39516",
+      "credential": {
+        "credential_type": "code",
+        "code": "123456"
+      }
+    }
+  ]
+}

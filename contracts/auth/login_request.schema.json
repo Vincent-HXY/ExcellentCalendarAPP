@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/login_request.schema.json",
+  "title": "LoginRequest",
+  "description": "Email-only password login request.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["email", "password"],
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "password": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "writeOnly": true
+    }
+  },
+  "examples": [
+    {
+      "email": "user@example.com",
+      "password": "example-password"
+    }
+  ]
+}

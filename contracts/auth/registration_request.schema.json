@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/registration_request.schema.json",
+  "title": "RegistrationRequest",
+  "description": "Creates a pending-verification account. Password confirmation is client-only and is not transmitted.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "email",
+    "username",
+    "display_name",
+    "password",
+    "locale",
+    "timezone",
+    "agreement_version",
+    "agreement_accepted"
+  ],
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "username": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]{3,24}$"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "password": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "writeOnly": true
+    },
+    "locale": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+      "maxLength": 35
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "IANA timezone identifier."
+    },
+    "agreement_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "agreement_accepted": {
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "examples": [
+    {
+      "email": "user@example.com",
+      "username": "calendar_user",
+      "display_name": "Calendar User",
+      "password": "example-password",
+      "locale": "zh-CN",
+      "timezone": "Asia/Shanghai",
+      "agreement_version": "placeholder-v1",
+      "agreement_accepted": true
+    }
+  ]
+}

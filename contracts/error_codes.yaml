@@ -161,9 +161,134 @@ errors:
     message: "Sync operation is invalid"
     retryable: false
 
-  USER_SETTINGS_INVALID:
+  API_VALIDATION_FAILED:
+    module: api
+    message: "Backend API request does not match the contract"
+    retryable: false
+
+  API_UNAUTHENTICATED:
+    module: api
+    message: "Authentication is required"
+    retryable: false
+
+  API_FORBIDDEN:
+    module: api
+    message: "The authenticated user is not allowed to perform this operation"
+    retryable: false
+
+  API_RATE_LIMITED:
+    module: api
+    message: "Too many requests"
+    retryable: true
+
+  API_INTERNAL_ERROR:
+    module: api
+    message: "Backend service failed to process the request"
+    retryable: true
+
+  AUTH_INVALID_CREDENTIALS:
+    module: auth
+    message: "The email or password is incorrect"
+    retryable: false
+
+  AUTH_EMAIL_UNVERIFIED:
+    module: auth
+    message: "The login email has not been verified"
+    retryable: false
+
+  AUTH_ACCOUNT_DISABLED:
+    module: auth
+    message: "The account is disabled"
+    retryable: false
+
+  AUTH_EMAIL_ALREADY_EXISTS:
+    module: auth
+    message: "The email is already associated with an account"
+    retryable: false
+
+  AUTH_USERNAME_ALREADY_EXISTS:
+    module: auth
+    message: "The username is already in use"
+    retryable: false
+
+  AUTH_VERIFICATION_INVALID:
+    module: auth
+    message: "The verification credential is invalid"
+    retryable: false
+
+  AUTH_VERIFICATION_EXPIRED:
+    module: auth
+    message: "The verification challenge has expired"
+    retryable: false
+
+  AUTH_VERIFICATION_USED:
+    module: auth
+    message: "The verification challenge has already been used"
+    retryable: false
+
+  AUTH_PASSWORD_POLICY_VIOLATION:
+    module: auth
+    message: "The password does not meet the active password policy"
+    retryable: false
+
+  AUTH_CURRENT_PASSWORD_INVALID:
+    module: auth
+    message: "The current password is incorrect"
+    retryable: false
+
+  AUTH_PASSWORD_UNCHANGED:
+    module: auth
+    message: "The new password must differ from the current password"
+    retryable: false
+
+  AUTH_REFRESH_TOKEN_INVALID:
+    module: auth
+    message: "The refresh token is invalid or revoked"
+    retryable: false
+
+  AUTH_REFRESH_TOKEN_REUSED:
+    module: auth
+    message: "A consumed refresh token was reused and the session family was revoked"
+    retryable: false
+
+  AUTH_SESSION_EXPIRED:
+    module: auth
+    message: "The authenticated session has expired"
+    retryable: false
+
+  USER_PROFILE_INVALID:
     module: user
-    message: "User settings are invalid"
+    message: "The user profile is invalid"
+    retryable: false
+
+  AVATAR_TYPE_UNSUPPORTED:
+    module: user
+    message: "The avatar file type is unsupported"
+    retryable: false
+
+  AVATAR_TOO_LARGE:
+    module: user
+    message: "The avatar file exceeds the 5 MiB limit"
+    retryable: false
+
+  AVATAR_UPLOAD_FAILED:
+    module: user
+    message: "The avatar could not be stored or processed"
+    retryable: true
+
+  SECURE_TOKEN_NOT_FOUND:
+    module: android
+    message: "No Refresh Token record exists in Android secure storage"
+    retryable: false
+
+  SECURE_TOKEN_STORAGE_FAILED:
+    module: android
+    message: "Android secure storage could not persist or delete the Refresh Token"
+    retryable: true
+
+  SECURE_TOKEN_CORRUPTED:
+    module: android
+    message: "The encrypted Refresh Token record cannot be decoded safely"
     retryable: false
 
   PERMISSION_DENIED:

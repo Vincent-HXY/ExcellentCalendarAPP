@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/user/avatar_info.schema.json",
+  "title": "AvatarInfo",
+  "description": "Public avatar metadata. Object-storage keys are never exposed.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["asset_id", "url", "thumbnail_url", "etag", "updated_at"],
+  "properties": {
+    "asset_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "etag": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    }
+  },
+  "examples": [
+    {
+      "asset_id": "ad2169d0-d6da-48f1-9952-f94d952231b8",
+      "url": "https://cdn.example.com/avatar/ad2169d0",
+      "thumbnail_url": "https://cdn.example.com/avatar/ad2169d0/thumb",
+      "etag": "avatar-v1",
+      "updated_at": "2026-08-01T02:00:00Z"
+    }
+  ]
+}

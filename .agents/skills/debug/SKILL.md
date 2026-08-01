@@ -1,5 +1,5 @@
 ---
-name: excellent-calendar-evidence-driven-debug
+name: debug
 description: 使用可复现、证据驱动的工作流，诊断并修复 ExcellentCalendarAPP 现有代码中的错误、回归、崩溃、卡死、数据异常、跨语言协议问题、提醒调度故障、并发问题和性能退化。适用于失败测试、错误行为、崩溃堆栈、Sanitizer 输出、可疑日志、MethodChannel/JNI/C++/SQLite 链路故障，以及用户要求定位并修复缺陷的场景。不用于没有已观察故障的新功能开发、大范围重构或纯代码风格审查。
 
 ---

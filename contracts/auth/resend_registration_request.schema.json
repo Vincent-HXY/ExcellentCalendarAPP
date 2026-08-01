@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/resend_registration_request.schema.json",
+  "title": "ResendRegistrationRequest",
+  "description": "Invalidates the previous registration challenge and sends a replacement after the cooldown.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["challenge_id"],
+  "properties": {
+    "challenge_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  },
+  "examples": [
+    {
+      "challenge_id": "0ca1897b-2a49-4767-b673-53d9c8b39516"
+    }
+  ]
+}
