@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/user/cached_current_user.schema.json",
+  "title": "CachedCurrentUser",
+  "description": "Flutter ordinary-cache format. Session credentials and authentication challenges are forbidden.",
+  "x-contract-domain": "local_profile_cache",
+  "x-storage-format-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["storage_format_version", "current_user", "cached_at"],
+  "properties": {
+    "storage_format_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "current_user": {
+      "$ref": "./current_user_response.schema.json"
+    },
+    "cached_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    }
+  },
+  "examples": [
+    {
+      "storage_format_version": 1,
+      "current_user": {
+        "account": {
+          "id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+          "email": "user@example.com",
+          "status": "active",
+          "email_verified_at": "2026-08-01T01:00:00Z",
+          "created_at": "2026-08-01T00:55:00Z",
+          "updated_at": "2026-08-01T01:00:00Z"
+        },
+        "profile": {
+          "user_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+          "username": "calendar_user",
+          "display_name": "Calendar User",
+          "avatar": null,
+          "created_at": "2026-08-01T00:55:00Z",
+          "updated_at": "2026-08-01T00:55:00Z"
+        },
+        "preferences": {
+          "user_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+          "locale": "zh-CN",
+          "timezone": "Asia/Shanghai",
+          "default_reminder_methods": ["popup"],
+          "settings": {
+            "theme": "system"
+          },
+          "created_at": "2026-08-01T00:55:00Z",
+          "updated_at": "2026-08-01T00:55:00Z"
+        }
+      },
+      "cached_at": "2026-08-01T01:05:00Z"
+    }
+  ]
+}

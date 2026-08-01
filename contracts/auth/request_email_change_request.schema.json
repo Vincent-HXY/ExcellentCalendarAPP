@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/request_email_change_request.schema.json",
+  "title": "RequestEmailChangeRequest",
+  "description": "Creates a pending email-change request after verifying the current password.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["new_email", "current_password"],
+  "properties": {
+    "new_email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "current_password": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "writeOnly": true
+    }
+  },
+  "examples": [
+    {
+      "new_email": "new-address@example.com",
+      "current_password": "current-example-password"
+    }
+  ]
+}

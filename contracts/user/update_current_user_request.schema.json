@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/user/update_current_user_request.schema.json",
+  "title": "UpdateCurrentUserRequest",
+  "description": "Last-write-wins partial update for non-security profile and preference fields.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 1,
+  "properties": {
+    "username": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]{3,24}$"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "locale": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+      "maxLength": 35
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "IANA timezone identifier."
+    },
+    "default_reminder_methods": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["ring", "popup", "wechat"]
+      }
+    },
+    "settings": {
+      "$ref": "./user_settings.schema.json"
+    }
+  },
+  "examples": [
+    {
+      "display_name": "New Name",
+      "locale": "zh-CN",
+      "timezone": "Asia/Shanghai",
+      "default_reminder_methods": ["popup"],
+      "settings": {
+        "theme": "system"
+      }
+    }
+  ]
+}

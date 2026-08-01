@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/common/api_result.schema.json",
+  "title": "ApiResult",
+  "description": "Backend API result envelope. backend_api.yaml supplies the concrete data schema for each endpoint.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "data", "error", "contract_version", "request_id"],
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "data": {
+      "type": ["object", "array", "string", "number", "boolean", "null"]
+    },
+    "error": {
+      "oneOf": [
+        {
+          "$ref": "./api_error.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "contract_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        },
+        "required": ["ok"]
+      },
+      "then": {
+        "properties": {
+          "error": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "ok": {
+            "const": false
+          }
+        },
+        "required": ["ok"]
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "null"
+          },
+          "error": {
+            "$ref": "./api_error.schema.json"
+          }
+        }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "ok": false,
+      "data": null,
+      "error": {
+        "code": "AUTH_INVALID_CREDENTIALS",
+        "message": "The email or password is incorrect.",
+        "retryable": false,
+        "field_errors": [],
+        "retry_after_seconds": null
+      },
+      "contract_version": 1,
+      "request_id": "request-20260801-0001"
+    }
+  ]
+}

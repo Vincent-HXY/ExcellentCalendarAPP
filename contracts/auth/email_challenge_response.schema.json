@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/email_challenge_response.schema.json",
+  "title": "EmailChallengeResponse",
+  "description": "Non-secret state needed to render and continue an email challenge.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "challenge_id",
+    "action_id",
+    "purpose",
+    "masked_email",
+    "credential_types",
+    "expires_at",
+    "resend_available_at"
+  ],
+  "properties": {
+    "challenge_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "action_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Email-change request ID for purpose=email_change; otherwise null."
+    },
+    "purpose": {
+      "type": "string",
+      "enum": ["registration_verification", "email_change", "password_reset"]
+    },
+    "masked_email": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 254
+    },
+    "credential_types": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["code", "link_token"]
+      }
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "resend_available_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    }
+  },
+  "examples": [
+    {
+      "challenge_id": "0ca1897b-2a49-4767-b673-53d9c8b39516",
+      "action_id": null,
+      "purpose": "registration_verification",
+      "masked_email": "u***@example.com",
+      "credential_types": ["code", "link_token"],
+      "expires_at": "2026-08-01T01:10:00Z",
+      "resend_available_at": "2026-08-01T01:01:00Z"
+    }
+  ]
+}

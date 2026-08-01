@@ -1,0 +1,384 @@
+version: 1
+contract_domain: backend_api
+version_domain: backend_api/v1
+base_path: /api/v1
+transport: https
+default_content_type: application/json
+default_result_envelope: common/api_result.schema.json
+implementation_status: planned
+
+security_defaults:
+  access_token_ttl_seconds: 900
+  refresh_token_ttl_seconds: 2592000
+  rotate_refresh_token_on_every_use: true
+  refresh_token_reuse_action: revoke_token_family
+  registration_and_email_change_challenge_ttl_seconds: 600
+  password_reset_challenge_ttl_seconds: 900
+  challenge_resend_interval_seconds: 60
+  challenge_max_failed_attempts: 5
+
+endpoints:
+  auth.register:
+    method: POST
+    path: /auth/register
+    content_type: application/json
+    authentication: public
+    implementation_status: planned
+    idempotency:
+      required: true
+      header: Idempotency-Key
+    request: auth/registration_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/registration_pending_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_EMAIL_ALREADY_EXISTS
+      - AUTH_USERNAME_ALREADY_EXISTS
+      - AUTH_PASSWORD_POLICY_VIOLATION
+
+  auth.registration.verify:
+    method: POST
+    path: /auth/registration/verify
+    content_type: application/json
+    authentication: public
+    implementation_status: planned
+    idempotency:
+      required: false
+      behavior: one_time_challenge
+    request: auth/verify_registration_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/authentication_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_VERIFICATION_INVALID
+      - AUTH_VERIFICATION_EXPIRED
+      - AUTH_VERIFICATION_USED
+
+  auth.registration.resend:
+    method: POST
+    path: /auth/registration/resend
+    content_type: application/json
+    authentication: public
+    implementation_status: planned
+    idempotency:
+      required: true
+      header: Idempotency-Key
+    request: auth/resend_registration_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/email_challenge_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_VERIFICATION_INVALID
+      - AUTH_VERIFICATION_EXPIRED
+      - AUTH_VERIFICATION_USED
+
+  auth.login:
+    method: POST
+    path: /auth/login
+    content_type: application/json
+    authentication: public
+    implementation_status: planned
+    idempotency:
+      required: false
+    request: auth/login_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/authentication_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_INVALID_CREDENTIALS
+      - AUTH_EMAIL_UNVERIFIED
+      - AUTH_ACCOUNT_DISABLED
+
+  auth.token.refresh:
+    method: POST
+    path: /auth/token/refresh
+    content_type: application/json
+    authentication: refresh_token
+    implementation_status: planned
+    idempotency:
+      required: false
+      behavior: atomic_refresh_token_rotation
+    request: auth/refresh_session_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/token_pair_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_REFRESH_TOKEN_INVALID
+      - AUTH_REFRESH_TOKEN_REUSED
+      - AUTH_SESSION_EXPIRED
+
+  auth.logout:
+    method: POST
+    path: /auth/logout
+    content_type: application/json
+    authentication: refresh_token
+    implementation_status: planned
+    session_policy: revoke_current
+    idempotency:
+      required: false
+      behavior: natural
+    request: auth/logout_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: common/operation_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_INTERNAL_ERROR
+
+  auth.logout_all:
+    method: POST
+    path: /auth/logout-all
+    content_type: application/json
+    authentication: bearer
+    implementation_status: planned
+    session_policy: revoke_all
+    idempotency:
+      required: false
+      behavior: natural
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: common/operation_response.schema.json
+    errors:
+      - API_UNAUTHENTICATED
+      - API_FORBIDDEN
+      - API_INTERNAL_ERROR
+      - AUTH_SESSION_EXPIRED
+
+  auth.password_reset.request:
+    method: POST
+    path: /auth/password-reset/request
+    content_type: application/json
+    authentication: public
+    implementation_status: planned
+    privacy: identical_result_for_existing_and_unknown_email
+    idempotency:
+      required: true
+      header: Idempotency-Key
+    request: auth/password_reset_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/password_reset_dispatch_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+
+  auth.password_reset.confirm:
+    method: POST
+    path: /auth/password-reset/confirm
+    content_type: application/json
+    authentication: public
+    implementation_status: planned
+    session_policy: revoke_all_without_new_tokens
+    idempotency:
+      required: false
+      behavior: one_time_challenge
+    request: auth/confirm_password_reset_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: common/operation_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_VERIFICATION_INVALID
+      - AUTH_VERIFICATION_EXPIRED
+      - AUTH_VERIFICATION_USED
+      - AUTH_PASSWORD_POLICY_VIOLATION
+
+  auth.password.change:
+    method: POST
+    path: /auth/password/change
+    content_type: application/json
+    authentication: bearer
+    implementation_status: planned
+    session_policy: rotate_current_and_revoke_others
+    idempotency:
+      required: false
+    request: auth/change_password_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/authentication_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_UNAUTHENTICATED
+      - API_FORBIDDEN
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_CURRENT_PASSWORD_INVALID
+      - AUTH_PASSWORD_UNCHANGED
+      - AUTH_PASSWORD_POLICY_VIOLATION
+      - AUTH_SESSION_EXPIRED
+
+  auth.email_change.request:
+    method: POST
+    path: /auth/email-change/request
+    content_type: application/json
+    authentication: bearer
+    implementation_status: planned
+    idempotency:
+      required: true
+      header: Idempotency-Key
+    request: auth/request_email_change_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/email_challenge_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_UNAUTHENTICATED
+      - API_FORBIDDEN
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_CURRENT_PASSWORD_INVALID
+      - AUTH_EMAIL_ALREADY_EXISTS
+      - AUTH_SESSION_EXPIRED
+
+  auth.email_change.confirm:
+    method: POST
+    path: /auth/email-change/confirm
+    content_type: application/json
+    authentication: bearer
+    implementation_status: planned
+    session_policy: rotate_current_and_revoke_others
+    idempotency:
+      required: false
+      behavior: one_time_challenge
+    request: auth/confirm_email_change_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/authentication_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_UNAUTHENTICATED
+      - API_FORBIDDEN
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_EMAIL_ALREADY_EXISTS
+      - AUTH_VERIFICATION_INVALID
+      - AUTH_VERIFICATION_EXPIRED
+      - AUTH_VERIFICATION_USED
+      - AUTH_SESSION_EXPIRED
+
+  user.get_current:
+    method: GET
+    path: /users/me
+    content_type: application/json
+    authentication: bearer
+    implementation_status: planned
+    idempotency:
+      required: false
+      behavior: read_only
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: user/current_user_response.schema.json
+    errors:
+      - API_UNAUTHENTICATED
+      - API_FORBIDDEN
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_SESSION_EXPIRED
+
+  user.update_current:
+    method: PATCH
+    path: /users/me
+    content_type: application/json
+    authentication: bearer
+    implementation_status: planned
+    conflict_policy: last_write_wins
+    idempotency:
+      required: false
+      behavior: patch_is_idempotent_for_same_payload
+    request: user/update_current_user_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: user/current_user_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_UNAUTHENTICATED
+      - API_FORBIDDEN
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_USERNAME_ALREADY_EXISTS
+      - AUTH_SESSION_EXPIRED
+      - USER_PROFILE_INVALID
+
+  user.avatar.upload:
+    method: POST
+    path: /users/me/avatar
+    authentication: bearer
+    content_type: multipart/form-data
+    implementation_status: planned
+    failure_policy: preserve_existing_avatar
+    idempotency:
+      required: true
+      header: Idempotency-Key
+    upload_constraints:
+      part_name: file
+      accepted_mime_types:
+        - image/jpeg
+        - image/png
+        - image/webp
+      max_size_bytes: 5242880
+      validate_actual_mime: true
+      output_shape: square
+    request: user/avatar_upload_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: user/current_user_response.schema.json
+      example_index: 1
+    errors:
+      - API_VALIDATION_FAILED
+      - API_UNAUTHENTICATED
+      - API_FORBIDDEN
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_SESSION_EXPIRED
+      - AVATAR_TYPE_UNSUPPORTED
+      - AVATAR_TOO_LARGE
+      - AVATAR_UPLOAD_FAILED
+
+  user.avatar.delete:
+    method: DELETE
+    path: /users/me/avatar
+    content_type: application/json
+    authentication: bearer
+    implementation_status: planned
+    idempotency:
+      required: false
+      behavior: natural
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: user/current_user_response.schema.json
+      example_index: 0
+    errors:
+      - API_UNAUTHENTICATED
+      - API_FORBIDDEN
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_SESSION_EXPIRED
+      - AVATAR_UPLOAD_FAILED

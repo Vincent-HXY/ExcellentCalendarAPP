@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/common/native_result.schema.json",
   "title": "NativeResult",
-  "description": "Common result envelope for NativeResult<T> across Dart, Kotlin, C++, and future backend boundaries.",
+  "description": "Common result envelope for NativeResult<T> across Dart, Kotlin, and C++ native boundaries. Backend HTTP APIs use ApiResult<T> instead.",
   "x-contract-version": 1,
   "type": "object",
   "additionalProperties": false,

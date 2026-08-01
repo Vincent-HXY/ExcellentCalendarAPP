@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/token_pair_response.schema.json",
+  "title": "TokenPairResponse",
+  "description": "Short-lived access token plus rotating refresh token. Both are sensitive and must never be logged.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "token_type",
+    "access_token",
+    "access_token_expires_at",
+    "refresh_token",
+    "refresh_token_expires_at",
+    "session_id"
+  ],
+  "properties": {
+    "token_type": {
+      "type": "string",
+      "const": "Bearer"
+    },
+    "access_token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 8192,
+      "writeOnly": true
+    },
+    "access_token_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "refresh_token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 8192,
+      "writeOnly": true
+    },
+    "refresh_token_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  },
+  "examples": [
+    {
+      "token_type": "Bearer",
+      "access_token": "opaque-access-token-value-at-least-32-characters",
+      "access_token_expires_at": "2026-08-01T01:15:00Z",
+      "refresh_token": "opaque-refresh-token-value-at-least-32-characters",
+      "refresh_token_expires_at": "2026-08-31T01:00:00Z",
+      "session_id": "62732653-c76a-40e7-bf72-bccabb54f06a"
+    }
+  ]
+}

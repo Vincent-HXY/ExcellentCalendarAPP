@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/user/current_user_response.schema.json",
+  "title": "CurrentUserResponse",
+  "description": "Authenticated-user aggregate. It must never contain password, token, challenge, or storage-key fields.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["account", "profile", "preferences"],
+  "properties": {
+    "account": {
+      "$ref": "./user_account_response.schema.json"
+    },
+    "profile": {
+      "$ref": "./user_profile_response.schema.json"
+    },
+    "preferences": {
+      "$ref": "./user_preferences_response.schema.json"
+    }
+  },
+  "examples": [
+    {
+      "account": {
+        "id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+        "email": "user@example.com",
+        "status": "active",
+        "email_verified_at": "2026-08-01T01:00:00Z",
+        "created_at": "2026-08-01T00:55:00Z",
+        "updated_at": "2026-08-01T01:00:00Z"
+      },
+      "profile": {
+        "user_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+        "username": "calendar_user",
+        "display_name": "Calendar User",
+        "avatar": null,
+        "created_at": "2026-08-01T00:55:00Z",
+        "updated_at": "2026-08-01T00:55:00Z"
+      },
+      "preferences": {
+        "user_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+        "locale": "zh-CN",
+          "timezone": "Asia/Shanghai",
+          "default_reminder_methods": ["popup"],
+          "settings": {
+            "theme": "system"
+          },
+          "created_at": "2026-08-01T00:55:00Z",
+        "updated_at": "2026-08-01T00:55:00Z"
+      }
+    },
+    {
+      "account": {
+        "id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+        "email": "user@example.com",
+        "status": "active",
+        "email_verified_at": "2026-08-01T01:00:00Z",
+        "created_at": "2026-08-01T00:55:00Z",
+        "updated_at": "2026-08-01T02:00:00Z"
+      },
+      "profile": {
+        "user_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+        "username": "calendar_user",
+        "display_name": "Calendar User",
+        "avatar": {
+          "asset_id": "ad2169d0-d6da-48f1-9952-f94d952231b8",
+          "url": "https://cdn.example.com/avatar/ad2169d0",
+          "thumbnail_url": "https://cdn.example.com/avatar/ad2169d0/thumb",
+          "etag": "avatar-v1",
+          "updated_at": "2026-08-01T02:00:00Z"
+        },
+        "created_at": "2026-08-01T00:55:00Z",
+        "updated_at": "2026-08-01T02:00:00Z"
+      },
+      "preferences": {
+        "user_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+        "locale": "zh-CN",
+        "timezone": "Asia/Shanghai",
+        "default_reminder_methods": ["popup"],
+        "settings": {
+          "theme": "system"
+        },
+        "created_at": "2026-08-01T00:55:00Z",
+        "updated_at": "2026-08-01T00:55:00Z"
+      }
+    }
+  ]
+}

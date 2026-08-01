@@ -33,13 +33,14 @@
       "type": "string",
       "enum": [
         "event",
+        "event_occurrence_state",
         "habit",
         "habit_check_in",
         "reminder",
         "notification",
         "category",
         "recurrence",
-        "user_data",
+        "user_preferences",
         "dated_message",
         "anniversary"
       ]

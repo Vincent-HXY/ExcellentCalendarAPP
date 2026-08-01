@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/refresh_session_request.schema.json",
+  "title": "RefreshSessionRequest",
+  "description": "Exchanges the current refresh token for a rotated token pair.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["refresh_token"],
+  "properties": {
+    "refresh_token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 8192,
+      "writeOnly": true
+    }
+  },
+  "examples": [
+    {
+      "refresh_token": "opaque-refresh-token-value-at-least-32-characters"
+    }
+  ]
+}

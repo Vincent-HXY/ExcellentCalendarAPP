@@ -203,12 +203,47 @@ methods:
       data: sync/sync_result.schema.json
     event_stream: false
 
-  user.update_settings:
-    module: user
-    request: user/update_user_settings_request.schema.json
+  auth.refresh_token.store:
+    module: auth
+    implementation: kotlin_local
+    implementation_status: planned
+    sensitive_payload: true
+    request: auth/store_refresh_token_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: user/user_data_response.schema.json
+      data: common/operation_response.schema.json
+    event_stream: false
+
+  auth.refresh_token.read:
+    module: auth
+    implementation: kotlin_local
+    implementation_status: planned
+    sensitive_payload: true
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: auth/secure_refresh_token_record_response.schema.json
+    event_stream: false
+
+  auth.refresh_token.delete:
+    module: auth
+    implementation: kotlin_local
+    implementation_status: planned
+    sensitive_payload: true
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: common/operation_response.schema.json
+    event_stream: false
+
+  auth.refresh_token.exists:
+    module: auth
+    implementation: kotlin_local
+    implementation_status: planned
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: auth/refresh_token_presence_response.schema.json
     event_stream: false
 
 event_channels:
