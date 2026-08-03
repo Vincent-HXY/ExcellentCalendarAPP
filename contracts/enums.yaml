@@ -1,4 +1,4 @@
-version: 1
+version: 2
 
 Importance:
   values:
@@ -16,6 +16,7 @@ EventStatus:
 
 EventOccurrenceStatus:
   values:
+    - scheduled
     - completed
     - skipped
     - cancelled
@@ -42,12 +43,49 @@ ReminderStatus:
     - failed
     - cancelled
 
+ReminderCancellationReason:
+  values:
+    - user_cancelled
+    - event_completed
+    - occurrence_completed
+    - occurrence_skipped
+    - occurrence_cancelled
+    - series_completed
+    - series_cancelled
+    - series_deleted
+    - series_updated
+
 NotificationStatus:
   values:
-    - pending
+    - prepared
     - sent
     - failed
-    - cancelled
+
+NotificationKind:
+  values:
+    - reminder
+    - recovery_summary
+
+NotificationFailureClass:
+  values:
+    - retryable
+    - permanent
+
+DeliveryFinalizeOutcome:
+  values:
+    - sent
+    - failed
+
+ReminderRecoveryTriggerSource:
+  values:
+    - app_start
+    - device_boot
+    - alarm_reconcile
+
+ReminderRecoveryBatchStatus:
+  values:
+    - in_progress
+    - completed
 
 NotificationPermissionStatus:
   values:
@@ -146,6 +184,7 @@ TargetType:
     - habit
     - anniversary
     - dated_message
+    - reminder_recovery_batch
 
 EntityType:
   values:
@@ -157,6 +196,7 @@ EntityType:
     - notification
     - category
     - recurrence
+    - reminder_recovery_batch
     - user_preferences
     - dated_message
     - anniversary
@@ -168,8 +208,6 @@ DeleteMode:
 
 RecurrenceDeleteScope:
   values:
-    - single_occurrence
-    - future_occurrences
     - all_occurrences
 
 SortDirection:

@@ -3,13 +3,14 @@
   "$id": "https://excellent-calendar.local/contracts/common/native_result.schema.json",
   "title": "NativeResult",
   "description": "Common result envelope for NativeResult<T> across Dart, Kotlin, and C++ native boundaries. Backend HTTP APIs use ApiResult<T> instead.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [
     "ok",
     "data",
-    "error"
+    "error",
+    "contract_version"
   ],
   "properties": {
     "ok": {
@@ -37,7 +38,7 @@
     },
     "contract_version": {
       "type": "integer",
-      "const": 1
+      "const": 2
     },
     "request_id": {
       "type": [

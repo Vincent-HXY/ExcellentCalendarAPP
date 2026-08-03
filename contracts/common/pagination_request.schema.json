@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/common/pagination_request.schema.json",
   "title": "PaginationRequest",
   "description": "Common pagination request fragment for list and search methods.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "properties": {

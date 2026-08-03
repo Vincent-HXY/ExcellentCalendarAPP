@@ -1,0 +1,68 @@
+version: 2
+release_status: design_only
+
+canonical_json:
+  encoding: UTF-8
+  container: array
+  whitespace: none
+  string_escaping: RFC_8259
+  integer_format: base_10_without_leading_zero
+  array_order: significant
+  method_normalization: unique_then_sort_by_unicode_code_point
+  note: >-
+    UUID names are the UTF-8 bytes of the exact compact JSON arrays below.
+    Object-key sorting is intentionally avoided. All UUID text is lowercase.
+
+namespaces:
+  occurrence:
+    uuid: 2fa8ebd0-958e-5eae-83d1-1aa5da893415
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/occurrence")
+  reminder:
+    uuid: 57b84799-6049-567e-8f29-ae597c333140
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/reminder")
+  delivery:
+    uuid: 74f9acf9-a4ce-59d1-9934-5cd7ce796976
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/delivery")
+
+identities:
+  occurrence:
+    algorithm: UUIDv5
+    namespace: occurrence
+    timed_name: '[event_id, recurrence_revision, original_local_start_datetime]'
+    all_day_name: '[event_id, recurrence_revision, original_local_start_date]'
+    notes:
+      - original_local_start_datetime has second precision and no UTC offset.
+      - The timed value is captured before DST gap/fold resolution.
+      - C++ is the only producer; Dart and Kotlin only transport the result.
+  recurring_reminder:
+    algorithm: UUIDv5
+    namespace: reminder
+    name: '[target_id, recurrence_revision, occurrence_key, advance_minutes, canonical_methods]'
+    notes:
+      - message is not part of identity.
+      - Contract v2 recurring reminders require canonical_methods to equal ["popup"].
+  reminder_delivery:
+    algorithm: UUIDv5
+    namespace: delivery
+    name: '[reminder_id, method]'
+  recovery_summary_delivery:
+    algorithm: UUIDv5
+    namespace: delivery
+    name: '["recovery_summary", recovery_batch_id, "popup"]'
+
+test_vectors:
+  timed_occurrence:
+    canonical_name: '["11111111-1111-4111-8111-111111111111",1,"2026-03-29T01:30:00"]'
+    uuid: 24c7eda2-669c-5400-bf21-b8291b40395e
+  all_day_occurrence:
+    canonical_name: '["11111111-1111-4111-8111-111111111111",2,"2026-08-02"]'
+    uuid: 04672597-dc86-5658-87dd-5fdc99030f02
+  recurring_reminder:
+    canonical_name: '["11111111-1111-4111-8111-111111111111",1,"24c7eda2-669c-5400-bf21-b8291b40395e",15,["popup"]]'
+    uuid: a5c24834-aa63-5130-a5f7-3fbcec2468c0
+  reminder_delivery:
+    canonical_name: '["a5c24834-aa63-5130-a5f7-3fbcec2468c0","popup"]'
+    uuid: b35d3bf5-f666-54e6-8340-423379f37a77
+  recovery_summary_delivery:
+    canonical_name: '["recovery_summary","22222222-2222-4222-8222-222222222222","popup"]'
+    uuid: 0cb2958b-7c4a-5e0e-b4a7-8fd7eb048c87

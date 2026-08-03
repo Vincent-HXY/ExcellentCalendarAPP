@@ -2,78 +2,49 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/event/event_occurrence_state_response.schema.json",
   "title": "EventOccurrenceStateResponse",
-  "description": "Sparse state record for one generated occurrence of a recurring event.",
-  "x-contract-version": 1,
+  "description": "Persisted sparse state for an occurrence that has been operated on by the user.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "id",
     "event_id",
+    "recurrence_revision",
+    "occurrence_key",
     "occurrence_start_at",
+    "occurrence_start_date",
     "status",
-    "source",
+    "state_changed_at",
+    "reopened_at",
     "created_at",
     "updated_at"
   ],
   "properties": {
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "event_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "occurrence_start_at": {
-      "type": "string",
-      "format": "date-time"
-    },
+    "event_id": {"type": "string", "format": "uuid"},
+    "recurrence_revision": {"type": "integer", "minimum": 1},
+    "occurrence_key": {"type": "string", "format": "uuid"},
+    "occurrence_start_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "occurrence_start_date": {"type": ["string", "null"], "format": "date"},
     "status": {
       "type": "string",
-      "enum": [
-        "completed",
-        "skipped",
-        "cancelled"
-      ]
+      "enum": ["scheduled", "completed", "skipped", "cancelled"]
     },
-    "completed_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
+    "state_changed_at": {"type": "string", "format": "date-time"},
+    "reopened_at": {"type": ["string", "null"], "format": "date-time"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "occurrence_start_at": {"type": "string", "format": "date-time"},
+        "occurrence_start_date": {"type": "null"}
+      }
     },
-    "note": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "source": {
-      "type": "string",
-      "enum": [
-        "manual",
-        "auto",
-        "ai_extraction",
-        "sync",
-        "import",
-        "wechat"
-      ]
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "updated_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "deleted_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
+    {
+      "properties": {
+        "occurrence_start_at": {"type": "null"},
+        "occurrence_start_date": {"type": "string", "format": "date"}
+      }
     }
-  }
+  ]
 }

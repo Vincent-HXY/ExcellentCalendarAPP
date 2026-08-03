@@ -6,7 +6,27 @@
 
 当前有 `reminder.cancel`，可实现取消链路。
 
-但缺少按 id 查询单条 Reminder 的正式方法；现在只能用 `reminder.list` 做预检并在前 200 条内查找。建议补 `reminder.get` 或让 `list_reminders_request` 支持 id 过滤。
+design-only v2 已在 `native_calls.yaml` 声明 Kotlin→C++ 内部 `reminder.get(reminder_id)`，供 Alarm/Notification 调度链按 ID 读取；它不暴露给 Flutter。现有 v1 运行时代码若仍通过 `reminder.list` 在前 200 条内预检，必须在 v2 实施时切到该内部调用。若未来 Flutter 也需要直接按 ID 读取，再单独评审是否增加公开 MethodChannel，而不是复用调度接口。
+
+### [P0] Native Contract v2 已定稿但运行时代码仍是 v1
+
+根因：重复 Event、滚动 Reminder、两阶段 Notification、72 小时恢复和 JSON 事务必须跨 Dart、Kotlin、JNI、C++ 与 Storage 同步切换，无法安全拆成允许 v1/v2 混读的中间版本。
+
+触发条件：任何一层提前发送/接受 v2 payload，或在全部 v2 reader/writer 就绪前归档 v1 正式目录、创建 v2 writer。
+
+影响：字段解释漂移、all-day 时间丢失、重复 Reminder 重复投递、旧数据不可读，最坏情况下会把正式 v1 数据误当作 v2 重写。
+
+当前处理：`method_channels.yaml`、`native_calls.yaml`、身份和 Storage map 均标记 `release_status: design_only`；v1 只允许完整归档，不迁移、不混读、不双写。2026-08-03 已完成 Schema/YAML/引用/固定向量静态审计，但没有执行运行时代码或真机验证。
+
+剩余实施门禁：
+
+- 需求指定的 Howard Hinnant `date v3.0.5` 不存在于官方 release 列表；必须选择真实 release（当前最新 v3.0.4）或经审核的固定 commit，不能由实现者静默替换。
+- 现有 all-day Event 仍依赖 `start_at/end_at`，必须与 DTO、Boundary、Domain、Repository 和测试原子切换到 v2 互斥时间结构。
+- Habit/Anniversary 的重复语义不能套用 Event v2；通用旧 recurrence schema 只保留为 planned。
+- `ReminderStatus.expired` 的外部协议尚未合入；v2 不增加替代枚举，也不改写早于恢复窗口的旧滚动 Reminder。
+- JSON Repository 尚未实现跨文件 prepare/commit journal；v1 归档和 v2 初始化失败时必须停止，不能部分清理。
+
+解除条件：同一发布包完成 C++ TZDB/Clock/Workflow/Storage v2、JNI/Kotlin、Dart DTO/Gateway、Contract 正反例、C++ check、Flutter/Kotlin 测试、Android Debug 与 native smoke test 后，才能移除 `design_only`。
 
 ### ~~创建EVENT CPP部分存在问题~~
 
@@ -60,17 +80,17 @@
 
 [notification_tap_payload.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\notification\\notification_tap_payload.schema.json:9) 要求点击 PendingIntent 必须包含 `notification_id`。
 
-但 [consume_reminder_after_delivery_request.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\consume_reminder_after_delivery_request.schema.json:9) 和 [create_notification_request.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\notification\\create_notification_request.schema.json:9) 都不接收预先生成的 `notification_id`。
+v1 的 `consume_reminder_after_delivery` 与 `notification.create` 协议都不接收预先生成的 `notification_id`。这两个 v1 Schema 已在 design-only Contract v2 中移除并由 `reminder.prepare_delivery/finalize_delivery` 替代，但现有 Dart/Kotlin/JNI/C++ 实现尚未切换，因此运行时问题仍未关闭。
 
 这会产生顺序矛盾：
 
 - 先弹系统通知：构造 PendingIntent 时还没有 Notification ID。
 - 先调用 consume：数据库已经记录 sent，但系统通知可能随后展示失败。
 
-建议增加两阶段协议：
+design-only v2 已采用两阶段协议：
 
 ```text
-notification.prepare_delivery
+reminder.prepare_delivery
 → 返回 notification_id / delivery_attempt_id / tap_payload
 → Android NotificationManager.notify
 → reminder.finalize_delivery
@@ -82,10 +102,10 @@ notification.prepare_delivery
 
 Alarm Receiver 可能因为进程重启、系统重投或异常恢复重复执行。当前 consume_after_delivery 只有 reminder_id，无法准确区分同一次投递重试。
 
-建议增加：
+design-only v2 已增加：
 
+- `delivery_id`
 - `delivery_attempt_id`
-- `schedule_generation`
 - `expected_remind_at`
 
 同一个 `delivery_attempt_id` 重复提交应返回之前结果，而不是 `REMINDER_ALREADY_CONSUMED` 错误。
@@ -100,13 +120,13 @@ Alarm Receiver 可能因为进程重启、系统重投或异常恢复重复执�
 
 [reminder_response.schema.json (line 20)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\reminder_response.schema.json:20) 只有目标 ID 和提醒 message，没有 Event/Habit/Anniversary 的标题。而 consume_after_delivery 又要求 Kotlin提供非空 title。
 
-建议增加内部聚合接口：
+design-only v2 不再让 Kotlin 用 `reminder.get` 拼装正文；`reminder.prepare_delivery` 由 C++ 返回已持久化的 Notification、展示内容和 PreparedNotificationPayload：
 
 ```text
-reminder.get_delivery_context
+reminder.prepare_delivery
 ```
 
-返回 Reminder、目标标题、通知正文、目标类型和 ID。它只是 Boundary DTO，不应把标题冗余写进 Reminder 领域模型。
+标题仍不冗余写进 Reminder 领域模型。现有 v1 运行时在切换前仍有本问题。
 
 ### 通知点击只读一次并立即清除，不够可靠
 
@@ -125,19 +145,17 @@ payload 增加 `tap_id`，Flutter 完成导航后再确认消费。
 
 ### 启动恢复来源没有进入协议
 
-reminder.schedule_pending 不仅会由 App 启动触发，还应由这些 Android 场景触发：
+v1 `reminder.schedule_pending` 不仅会由 App 启动触发，还会涉及 Android 重启、包替换、时间/时区调整和手动重试。design-only v2 已删除该方法并增加 `reminder.plan_recovery(recovery_request_id, trigger_source)`；稳定来源为：
 
-- `BOOT_COMPLETED`
-- `MY_PACKAGE_REPLACED`
-- 系统时间调整
-- 时区调整
-- 手动重试
+- `app_start`
+- `device_boot`
+- `alarm_reconcile`
 
-建议请求增加 trigger_source。同时 Kotlin 应复用同一个调度服务，不能依赖 Flutter MethodChannel 才能恢复提醒。
+Kotlin 把包替换、时间/时区变化和手动重试统一编排到 `alarm_reconcile`，并持久化 `recovery_request_id`；该内部能力不依赖 Flutter MethodChannel。运行时实现尚未落地。
 
 ### 批量调度错误信息不足
 
-[schedule_pending_reminders_response.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\schedule_pending_reminders_response.schema.json:9) 只有失败 ID 和数量，没有每条失败的错误码、原因及可重试状态。
+v1 `schedule_pending_reminders` 返回只有失败 ID 和数量，没有每条失败的错误码、原因及可重试状态。该 Schema 已从 design-only v2 删除；v2 通过逐次 `prepare_delivery/finalize_delivery` 的稳定错误码与 `failure_class` 表达，但运行时代码仍待实现。
 
 建议改成：
 
@@ -167,9 +185,9 @@ reminder.schedule_pending 不仅会由 App 启动触发，还应由这些 Androi
 
 ### 重复提醒尚未进入消费闭环
 
-delete_after_sent 当前固定为 true，[consume_reminder_after_delivery_request.schema.json (line 41)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\reminder\\consume_reminder_after_delivery_request.schema.json:41)，所以 V1 只覆盖一次性 Reminder。
+v1 `consume_reminder_after_delivery` 的 `delete_after_sent` 当前固定为 true，所以已实现链路只覆盖一次性 Reminder。design-only v2 删除物理消费语义，改为保留历史并在 finalize workflow 原子生成 successor；在 C++/Storage 实现落地前，本问题仍然存在。
 
-如果要支持重复日程，消费成功后还需要由 C++ 生成下一条 Reminder，或者响应中返回 next_reminder。当前流程还没有定义。
+v2 已定义 finalize 在同一 C++ workflow transaction 中保留当前历史并创建确定性 successor；当前缺口是实现与验证，而不是继续新增另一套 `next_reminder` 协议。
 
 ## 三、`notification_id` 的生成时机冲突
 
@@ -206,24 +224,25 @@ C++ 生成 notification_id 的时间
 
 当前 V1 是一次性提醒，且 delete_after_sent=true，所以短期风险较低。
 
-### 推荐的长期解决方案
+### v2 已定稿的长期解决方案
 
-建议在 contract 中把两个概念分开：
+design-only v2 已在 Contract 中把三个概念分开：
 
 ```json
 {
   "delivery_id": "稳定的单次投递去重键",
-  "notification_id": "C++ NotificationResponse.id，可为 null"
+  "delivery_attempt_id": "每次实际尝试唯一",
+  "notification_id": "本次 Notification attempt 的真实 ID"
 }
 ```
 
-更完整的方案是增加原生两阶段流程：
+已定稿的原生两阶段流程为：
 
 ```text
-notification.prepare_delivery
-→ C++ 提前生成 notification_id / delivery_id
+reminder.prepare_delivery
+→ C++ 提前生成 notification_id / delivery_id / delivery_attempt_id
 → Kotlin 展示系统通知
-→ reminder.consume_after_delivery 使用同一个 ID 完成持久化
+→ reminder.finalize_delivery 使用同一 attempt 完成持久化
 ```
 
 这样可以同时保证：

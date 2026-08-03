@@ -2,97 +2,139 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/notification/notification_response.schema.json",
   "title": "NotificationResponse",
-  "description": "Transport representation of a delivered or attempted notification log. Notification is not scanned for future reminder scheduling.",
-  "x-contract-version": 1,
+  "description": "Contract v2 record for one prepared or finalized delivery attempt. Notification is an audit log, never a scheduling queue.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "id",
+    "notification_id",
+    "delivery_id",
+    "delivery_attempt_id",
+    "kind",
+    "reminder_id",
+    "recovery_batch_id",
     "target_type",
     "target_id",
+    "occurrence_key",
     "method",
     "title",
+    "body",
     "planned_at",
     "status",
+    "failure_class",
+    "error_code",
+    "prepared_at",
+    "finalized_at",
+    "sent_at",
     "created_at",
     "updated_at"
   ],
   "properties": {
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "reminder_id": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "minLength": 1
-    },
+    "notification_id": {"type": "string", "format": "uuid"},
+    "delivery_id": {"type": "string", "format": "uuid"},
+    "delivery_attempt_id": {"type": "string", "format": "uuid"},
+    "kind": {"type": "string", "enum": ["reminder", "recovery_summary"]},
+    "reminder_id": {"type": ["string", "null"], "format": "uuid"},
+    "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
     "target_type": {
       "type": "string",
-      "enum": [
-        "event",
-        "habit",
-        "anniversary",
-        "dated_message"
-      ]
+      "enum": ["event", "habit", "anniversary", "reminder_recovery_batch"]
     },
-    "target_id": {
-      "type": "string",
-      "minLength": 1
+    "target_id": {"type": "string", "format": "uuid"},
+    "occurrence_key": {"type": ["string", "null"], "format": "uuid"},
+    "method": {"type": "string", "enum": ["ring", "popup", "wechat"]},
+    "title": {"type": "string", "minLength": 1},
+    "body": {"type": ["string", "null"]},
+    "planned_at": {"type": "string", "format": "date-time"},
+    "status": {"type": "string", "enum": ["prepared", "sent", "failed"]},
+    "failure_class": {
+      "type": ["string", "null"],
+      "enum": ["retryable", "permanent", null]
     },
-    "method": {
-      "type": "string",
-      "enum": [
-        "ring",
-        "popup",
-        "wechat"
-      ]
+    "error_code": {"type": ["string", "null"], "minLength": 1},
+    "prepared_at": {"type": "string", "format": "date-time"},
+    "finalized_at": {"type": ["string", "null"], "format": "date-time"},
+    "sent_at": {"type": ["string", "null"], "format": "date-time"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"kind": {"const": "reminder"}},
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "reminder_id": {"type": "string", "format": "uuid"},
+          "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
+          "target_type": {"enum": ["event", "habit", "anniversary"]}
+        }
+      },
+      "else": {
+        "properties": {
+          "reminder_id": {"type": "null"},
+          "recovery_batch_id": {"type": "string", "format": "uuid"},
+          "target_type": {"const": "reminder_recovery_batch"},
+          "method": {"const": "popup"},
+          "occurrence_key": {"type": "null"}
+        }
+      }
     },
-    "title": {
-      "type": "string",
-      "minLength": 1
+    {
+      "if": {
+        "properties": {"status": {"const": "prepared"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "failure_class": {"type": "null"},
+          "error_code": {"type": "null"},
+          "finalized_at": {"type": "null"},
+          "sent_at": {"type": "null"}
+        }
+      }
     },
-    "body": {
-      "type": [
-        "string",
-        "null"
-      ]
+    {
+      "if": {
+        "properties": {"status": {"const": "sent"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "failure_class": {"type": "null"},
+          "error_code": {"type": "null"},
+          "finalized_at": {"type": "string", "format": "date-time"},
+          "sent_at": {"type": "string", "format": "date-time"}
+        }
+      }
     },
-    "planned_at": {
-      "type": "string",
-      "format": "date-time"
+    {
+      "if": {
+        "properties": {"status": {"const": "failed"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "failure_class": {"type": "string", "enum": ["retryable", "permanent"]},
+          "error_code": {"type": "string", "minLength": 1},
+          "finalized_at": {"type": "string", "format": "date-time"},
+          "sent_at": {"type": "null"}
+        }
+      }
     },
-    "sent_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "pending",
-        "sent",
-        "failed",
-        "cancelled"
-      ]
-    },
-    "failure_reason": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "updated_at": {
-      "type": "string",
-      "format": "date-time"
+    {
+      "if": {
+        "properties": {
+          "target_type": {"enum": ["habit", "anniversary"]}
+        },
+        "required": ["target_type"]
+      },
+      "then": {
+        "properties": {
+          "occurrence_key": {"type": "null"}
+        }
+      }
     }
-  }
+  ]
 }

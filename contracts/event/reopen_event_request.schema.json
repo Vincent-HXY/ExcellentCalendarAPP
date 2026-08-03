@@ -2,17 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/event/reopen_event_request.schema.json",
   "title": "ReopenEventRequest",
-  "description": "Input payload for undoing completion on a single non-recurring event. Reopening also restores future Reminder tasks that were cancelled because the Event was completed. This does not restore cancelled, archived, or deleted events.",
-  "x-contract-version": 1,
+  "description": "Reopens one completed non-recurring Event and restores only future Reminder tasks cancelled with event_completed.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "event_id"
-  ],
+  "required": ["event_id"],
   "properties": {
-    "event_id": {
-      "type": "string",
-      "minLength": 1
-    }
+    "event_id": {"type": "string", "format": "uuid"}
   }
 }

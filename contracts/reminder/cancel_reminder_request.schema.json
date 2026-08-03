@@ -2,23 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/cancel_reminder_request.schema.json",
   "title": "CancelReminderRequest",
-  "description": "Request payload for cancelling a reminder task. Kotlin cancels any Android system alarm first; C++ then sets status=cancelled, is_enabled=false, and updated_at while keeping the storage record.",
-  "x-contract-version": 1,
+  "description": "User cancellation of an ordinary Reminder. Recurring lifecycle changes use occurrence or series operations so successor invariants remain transactional.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "id"
-  ],
+  "required": ["reminder_id"],
   "properties": {
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "reason": {
-      "type": [
-        "string",
-        "null"
-      ]
-    }
+    "reminder_id": {"type": "string", "format": "uuid"}
   }
 }

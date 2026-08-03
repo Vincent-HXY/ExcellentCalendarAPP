@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/common/empty_request.schema.json",
   "title": "EmptyRequest",
-  "description": "Explicit empty object for cross-language calls that take no business parameters.",
+  "description": "Explicit empty object retained for Backend API v1. Native v2 uses native_empty_request.schema.json so version domains do not share metadata.",
   "x-contract-version": 1,
   "type": "object",
   "additionalProperties": false,

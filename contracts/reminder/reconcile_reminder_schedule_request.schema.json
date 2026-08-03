@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/reminder/reconcile_reminder_schedule_request.schema.json",
   "title": "ReconcileReminderScheduleRequest",
   "description": "Requests reconciliation of the durable Reminder queue with Android's single dispatcher alarm.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": ["trigger_source"],

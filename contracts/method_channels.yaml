@@ -1,4 +1,5 @@
-version: 1
+version: 2
+release_status: design_only
 channel: excellent_calendar/native
 
 methods:
@@ -58,6 +59,70 @@ methods:
       data: event/event_response.schema.json
     event_stream: false
 
+  event.list_occurrences:
+    module: event
+    request: event/list_event_occurrences_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_occurrence_list_response.schema.json
+    event_stream: false
+
+  event_occurrence.complete:
+    module: event
+    request: event/event_occurrence_operation_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_occurrence_state_response.schema.json
+    event_stream: false
+
+  event_occurrence.reopen:
+    module: event
+    request: event/event_occurrence_operation_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_occurrence_state_response.schema.json
+    event_stream: false
+
+  event_occurrence.skip:
+    module: event
+    request: event/event_occurrence_operation_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_occurrence_state_response.schema.json
+    event_stream: false
+
+  event_occurrence.cancel:
+    module: event
+    request: event/event_occurrence_operation_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_occurrence_state_response.schema.json
+    event_stream: false
+
+  event.complete_series:
+    module: event
+    request: event/event_series_operation_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.reopen_series:
+    module: event
+    request: event/event_series_operation_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.cancel_series:
+    module: event
+    request: event/event_series_operation_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
   reminder.create:
     module: reminder
     request: reminder/create_reminder_request.schema.json
@@ -90,15 +155,6 @@ methods:
       data: reminder/reminder_list_response.schema.json
     event_stream: false
 
-  reminder.schedule_pending:
-    module: reminder
-    deprecated: true
-    request: reminder/schedule_pending_reminders_request.schema.json
-    result:
-      envelope: common/native_result.schema.json
-      data: reminder/schedule_pending_reminders_response.schema.json
-    event_stream: false
-
   reminder.reconcile_schedule:
     module: reminder
     request: reminder/reconcile_reminder_schedule_request.schema.json
@@ -109,7 +165,7 @@ methods:
 
   notification.initialize:
     module: notification
-    request: common/empty_request.schema.json
+    request: common/native_empty_request.schema.json
     result:
       envelope: common/native_result.schema.json
       data: notification/notification_initialize_response.schema.json
@@ -117,7 +173,7 @@ methods:
 
   notification.permission_status:
     module: notification
-    request: common/empty_request.schema.json
+    request: common/native_empty_request.schema.json
     result:
       envelope: common/native_result.schema.json
       data: notification/notification_permission_status_response.schema.json
@@ -136,12 +192,12 @@ methods:
     request: notification/open_notification_settings_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: common/operation_response.schema.json
+      data: common/native_operation_response.schema.json
     event_stream: false
 
   notification.get_initial_tap_payload:
     module: notification
-    request: common/empty_request.schema.json
+    request: common/native_empty_request.schema.json
     result:
       envelope: common/native_result.schema.json
       data: notification/notification_tap_payload_response.schema.json
@@ -211,7 +267,7 @@ methods:
     request: auth/store_refresh_token_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: common/operation_response.schema.json
+      data: common/native_operation_response.schema.json
     event_stream: false
 
   auth.refresh_token.read:
@@ -219,7 +275,7 @@ methods:
     implementation: kotlin_local
     implementation_status: planned
     sensitive_payload: true
-    request: common/empty_request.schema.json
+    request: common/native_empty_request.schema.json
     result:
       envelope: common/native_result.schema.json
       data: auth/secure_refresh_token_record_response.schema.json
@@ -230,17 +286,17 @@ methods:
     implementation: kotlin_local
     implementation_status: planned
     sensitive_payload: true
-    request: common/empty_request.schema.json
+    request: common/native_empty_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: common/operation_response.schema.json
+      data: common/native_operation_response.schema.json
     event_stream: false
 
   auth.refresh_token.exists:
     module: auth
     implementation: kotlin_local
     implementation_status: planned
-    request: common/empty_request.schema.json
+    request: common/native_empty_request.schema.json
     result:
       envelope: common/native_result.schema.json
       data: auth/refresh_token_presence_response.schema.json

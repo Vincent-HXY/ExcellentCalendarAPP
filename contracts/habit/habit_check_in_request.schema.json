@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/habit/habit_check_in_request.schema.json",
   "title": "HabitCheckInRequest",
   "description": "Request payload for recording one local-date habit completion state.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

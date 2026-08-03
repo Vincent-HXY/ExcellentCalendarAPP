@@ -2,51 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/event/delete_event_request.schema.json",
   "title": "DeleteEventRequest",
-  "description": "Request payload for deleting an event. Recurring event deletion scope is explicit and transport-safe.",
-  "x-contract-version": 1,
+  "description": "Deletes an Event. A recurring Event requires delete_mode=soft, recurrence_delete_scope=all_occurrences, and the expected current revision; individual occurrences use event_occurrence.cancel.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "id",
-    "delete_mode"
-  ],
+  "required": ["id", "delete_mode", "recurrence_delete_scope", "expected_recurrence_revision"],
   "properties": {
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "delete_mode": {
-      "type": "string",
-      "enum": [
-        "soft",
-        "hard"
-      ],
-      "default": "soft"
-    },
+    "id": {"type": "string", "format": "uuid"},
+    "delete_mode": {"type": "string", "enum": ["soft", "hard"]},
     "recurrence_delete_scope": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "enum": [
-        "single_occurrence",
-        "future_occurrences",
-        "all_occurrences",
-        null
-      ]
+      "type": ["string", "null"],
+      "enum": ["all_occurrences", null]
     },
-    "occurrence_start_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "reason": {
-      "type": [
-        "string",
-        "null"
-      ]
-    }
+    "expected_recurrence_revision": {"type": ["integer", "null"], "minimum": 1},
+    "reason": {"type": ["string", "null"]}
   }
 }

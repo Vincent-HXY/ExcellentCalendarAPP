@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/reminder/list_reminders_request.schema.json",
   "title": "ListRemindersRequest",
   "description": "Request payload for viewing reminder tasks with optional filtering, sorting, and pagination.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -24,6 +24,14 @@
         "string",
         "null"
       ]
+    },
+    "recurrence_revision": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "occurrence_key": {
+      "type": ["string", "null"],
+      "format": "uuid"
     },
     "remind_at_from": {
       "type": [

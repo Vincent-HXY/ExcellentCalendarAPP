@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/habit/habit_response.schema.json",
   "title": "HabitResponse",
   "description": "Transport representation of a habit definition. Derived statistics are intentionally excluded.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

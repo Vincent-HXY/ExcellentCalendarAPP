@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/ai/ai_extraction_request.schema.json",
   "title": "AIExtractionRequest",
   "description": "Request payload for extracting candidate events from text, image, WeChat message, or imported content.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/event/search_event_request.schema.json",
   "title": "SearchEventRequest",
   "description": "Request payload for event search and filtering.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -26,6 +26,20 @@
         "null"
       ],
       "format": "date-time"
+    },
+    "start_date_from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "start_date_to": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
     },
     "status": {
       "type": "array",
@@ -90,7 +104,7 @@
         "null"
       ],
       "enum": [
-        "start_at",
+        "start",
         "created_at",
         "updated_at",
         "importance",

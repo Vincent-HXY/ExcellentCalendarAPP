@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/anniversary/create_anniversary_request.schema.json",
   "title": "CreateAnniversaryRequest",
   "description": "Request payload for creating an anniversary, birthday, or yearly date-based event.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -3,16 +3,16 @@
   "$id": "https://excellent-calendar.local/contracts/reminder/disable_reminder_request.schema.json",
   "title": "DisableReminderRequest",
   "description": "Internal Kotlin-to-C++ payload for temporarily disabling a reminder without business cancellation.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "id"
+    "reminder_id"
   ],
   "properties": {
-    "id": {
+    "reminder_id": {
       "type": "string",
-      "minLength": 1
+      "format": "uuid"
     }
   }
 }

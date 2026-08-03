@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json",
+  "title": "ReminderRecoveryBatchResponse",
+  "description": "Persisted idempotent recovery batch for the fixed 72-hour window and global 20-detail limit. C++ additionally enforces disjoint detail/summary IDs and window_overflow_count == summary_reminder_ids.length.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "recovery_batch_id",
+    "recovery_request_id",
+    "trigger_source",
+    "started_at",
+    "window_start_at",
+    "detail_reminder_ids",
+    "summary_reminder_ids",
+    "older_skipped_occurrence_count",
+    "older_skipped_reminder_count",
+    "window_overflow_count",
+    "summary_delivery_id",
+    "status",
+    "completed_at"
+  ],
+  "properties": {
+    "recovery_batch_id": {"type": "string", "format": "uuid"},
+    "recovery_request_id": {"type": "string", "format": "uuid"},
+    "trigger_source": {
+      "type": "string",
+      "enum": ["app_start", "device_boot", "alarm_reconcile"]
+    },
+    "started_at": {"type": "string", "format": "date-time"},
+    "window_start_at": {"type": "string", "format": "date-time"},
+    "detail_reminder_ids": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"type": "string", "format": "uuid"}
+    },
+    "summary_reminder_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "format": "uuid"}
+    },
+    "older_skipped_occurrence_count": {"type": "integer", "minimum": 0},
+    "older_skipped_reminder_count": {"type": "integer", "minimum": 0},
+    "window_overflow_count": {"type": "integer", "minimum": 0},
+    "summary_delivery_id": {"type": ["string", "null"], "format": "uuid"},
+    "status": {"type": "string", "enum": ["in_progress", "completed"]},
+    "completed_at": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "completed"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {"completed_at": {"type": "string", "format": "date-time"}}
+      },
+      "else": {
+        "properties": {"completed_at": {"type": "null"}}
+      }
+    },
+    {
+      "if": {
+        "anyOf": [
+          {"properties": {"summary_reminder_ids": {"minItems": 1}}},
+          {"properties": {"older_skipped_occurrence_count": {"minimum": 1}}},
+          {"properties": {"older_skipped_reminder_count": {"minimum": 1}}}
+        ]
+      },
+      "then": {
+        "properties": {
+          "summary_delivery_id": {"type": "string", "format": "uuid"}
+        }
+      },
+      "else": {
+        "properties": {
+          "summary_delivery_id": {"type": "null"}
+        }
+      }
+    }
+  ]
+}

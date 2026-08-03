@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/notification/request_notification_permission_request.schema.json",
   "title": "RequestNotificationPermissionRequest",
   "description": "User-initiated request to ask for notification permission and/or open exact-alarm access settings.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/prepare_delivery_request.schema.json",
+  "title": "PrepareDeliveryRequest",
+  "description": "Starts or idempotently reuses one prepared delivery attempt. expected_remind_at must exactly match the current Reminder; past values are accepted only for detail Reminders bound to a valid recovery batch. C++ supplies IDs, content, payload, and timestamps.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "reminder_id", "recovery_batch_id", "method", "expected_remind_at"],
+  "properties": {
+    "kind": {"type": "string", "enum": ["reminder", "recovery_summary"]},
+    "reminder_id": {"type": ["string", "null"], "format": "uuid"},
+    "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
+    "method": {"type": "string", "enum": ["ring", "popup", "wechat"]},
+    "expected_remind_at": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "kind": {"const": "reminder"},
+        "reminder_id": {"type": "string", "format": "uuid"},
+        "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
+        "expected_remind_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    {
+      "properties": {
+        "kind": {"const": "recovery_summary"},
+        "reminder_id": {"type": "null"},
+        "recovery_batch_id": {"type": "string", "format": "uuid"},
+        "method": {"const": "popup"},
+        "expected_remind_at": {"type": "null"}
+      }
+    }
+  ]
+}

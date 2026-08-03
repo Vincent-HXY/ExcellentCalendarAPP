@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/common/native_empty_request.schema.json",
+  "title": "NativeEmptyRequest",
+  "description": "Explicit empty object for a Native Contract v2 call that takes no business parameters.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "examples": [
+    {}
+  ]
+}

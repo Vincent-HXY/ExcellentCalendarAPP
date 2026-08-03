@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/event_occurrence_operation_request.schema.json",
+  "title": "EventOccurrenceOperationRequest",
+  "description": "Identity request shared by complete, reopen, skip, and cancel occurrence operations. The planned start bounds recurrence validation; C++ recomputes and verifies occurrence_key. Operation timestamps come from the C++ Clock.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "recurrence_revision",
+    "occurrence_key",
+    "occurrence_start_at",
+    "occurrence_start_date"
+  ],
+  "properties": {
+    "event_id": {"type": "string", "format": "uuid"},
+    "recurrence_revision": {"type": "integer", "minimum": 1},
+    "occurrence_key": {"type": "string", "format": "uuid"},
+    "occurrence_start_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "occurrence_start_date": {"type": ["string", "null"], "format": "date"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "occurrence_start_at": {"type": "string", "format": "date-time"},
+        "occurrence_start_date": {"type": "null"}
+      }
+    },
+    {
+      "properties": {
+        "occurrence_start_at": {"type": "null"},
+        "occurrence_start_date": {"type": "string", "format": "date"}
+      }
+    }
+  ]
+}

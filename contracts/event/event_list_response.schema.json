@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/event/event_list_response.schema.json",
   "title": "EventListResponse",
   "description": "Paginated event list response for search and calendar queries.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

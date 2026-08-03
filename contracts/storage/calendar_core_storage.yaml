@@ -1,0 +1,109 @@
+version: 2
+release_status: design_only
+format_name: excellent_calendar_core_json
+storage_format_version: 2
+
+directories:
+  active_android: files/local_storage/calendar_core_storage_json
+  legacy_discovery_only: files/local_storage/test_storage_json
+  archive_name_pattern: calendar_core_storage_json.v1.archived.<UTC_YYYYMMDDTHHMMSSZ>
+
+compatibility:
+  reads_v1: false
+  migrates_v1: false
+  writes_v1: false
+  mixed_read: forbidden
+  rollback: >-
+    Keep the v1 archive and v2 directory separate. A rollback requires an explicit
+    restore choice; neither version may reinterpret or overwrite the other.
+
+upgrade_from_v1:
+  - validate that the source is the confirmed v1 Calendar Core directory
+  - atomically rename the complete v1 directory to the timestamped archive name
+  - create and initialize an empty v2 directory
+  - stop initialization if validation, archive, or v2 initialization fails
+  - never delete, partially copy, or silently reset v1 user data
+
+logical_stores:
+  events: events.json
+  recurrence_versions: recurrence_versions.json
+  event_occurrence_states: event_occurrence_states.json
+  reminders: reminders.json
+  notifications: notifications.json
+  reminder_recovery_batches: reminder_recovery_batches.json
+  workflow_transactions: workflow_transactions.json
+
+root_envelopes:
+  events: {version_field: storage_version, version: 2, collection_field: events}
+  recurrence_versions: {version_field: storage_version, version: 2, collection_field: recurrence_versions}
+  event_occurrence_states: {version_field: storage_version, version: 2, collection_field: event_occurrence_states}
+  reminders: {version_field: storage_version, version: 2, collection_field: reminders}
+  notifications: {version_field: storage_version, version: 2, collection_field: notifications}
+  reminder_recovery_batches: {version_field: storage_version, version: 2, collection_field: reminder_recovery_batches}
+  workflow_transactions: {version_field: storage_version, version: 2, collection_field: transactions}
+
+file_invariants:
+  - every store root declares storage_version equal to 2
+  - every write validates the complete new snapshot before atomic replacement
+  - unknown storage_version values fail initialization
+  - no repository may create a v1-shaped file inside the v2 directory
+
+required_uniques:
+  events:
+    - [id]
+  recurrence_versions:
+    - [recurrence_id, revision]
+  event_occurrence_states:
+    - [event_id, recurrence_revision, occurrence_key]
+  reminders:
+    - [reminder_id]
+  reminder_recovery_batches:
+    - [recovery_batch_id]
+    - [recovery_request_id]
+  notification_attempts:
+    - [notification_id]
+    - [delivery_attempt_id]
+  workflow_transactions:
+    - [transaction_id]
+
+conditional_uniques:
+  recurring_reminder_identity:
+    fields: [target_id, recurrence_revision, occurrence_key, advance_minutes, canonical_methods]
+    where: recurrence_revision != null
+  notification_prepared_by_delivery:
+    fields: [delivery_id]
+    where: status == prepared
+  notification_sent_by_delivery:
+    fields: [delivery_id]
+    where: status == sent
+  single_in_progress_recovery_batch:
+    fields: [status]
+    where: status == in_progress
+
+workflow_journal:
+  states: [prepared, committed]
+  recovery: replay_prepared_idempotently_then_commit
+  record_fields:
+    transaction_id: required_uuid_v4
+    operation: required_stable_string
+    intent_version: required_positive_integer
+    intent: required_operation_specific_object
+    affected_stores: required_unique_logical_store_names
+    state: required_prepared_or_committed
+    prepared_at: required_utc_instant
+    committed_at: nullable_utc_instant
+  operations:
+    - event_recurrence_and_first_reminder_create_or_update
+    - occurrence_state_and_reminder_transition
+    - delivery_finalize_notification_reminder_and_successor
+    - recovery_batch_reminders_and_summary
+    - series_complete_cancel_delete_or_reopen
+  invariants:
+    - each operation plus intent_version has a strict storage-internal codec; unknown fields, operations, or versions fail recovery
+    - intent contains all deterministic IDs, expected revisions, Clock timestamps, and after-state needed for idempotent replay
+    - write and fsync prepared intent before applying repository changes
+    - every repository mutation is idempotent under transaction_id
+    - write and fsync commit only after all repository changes succeed
+    - replay all prepared uncommitted transactions during runtime.initialize
+    - committed records may be compacted only after all affected store snapshots are durable
+    - corrupted or unverifiable journal data fails initialization without resetting storage

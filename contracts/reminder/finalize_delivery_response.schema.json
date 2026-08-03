@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/finalize_delivery_response.schema.json",
+  "title": "FinalizeDeliveryResponse",
+  "description": "Atomic result of finalizing a reminder delivery or recovery summary. Bulk Reminder mutations caused by a recovery summary are represented by recovery_batch and can be reloaded by ID; reminder/successor describe only a single kind=reminder delivery.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["notification", "reminder", "successor", "recovery_batch", "idempotent_replay"],
+  "properties": {
+    "notification": {"$ref": "https://excellent-calendar.local/contracts/notification/notification_response.schema.json"},
+    "reminder": {
+      "oneOf": [
+        {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "successor": {
+      "oneOf": [
+        {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "recovery_batch": {
+      "oneOf": [
+        {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "idempotent_replay": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "notification": {
+            "properties": {"kind": {"const": "recovery_summary"}},
+            "required": ["kind"]
+          }
+        },
+        "required": ["notification"]
+      },
+      "then": {
+        "properties": {
+          "reminder": {"type": "null"},
+          "successor": {"type": "null"},
+          "recovery_batch": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json"}
+        }
+      },
+      "else": {
+        "properties": {
+          "reminder": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "notification": {
+            "properties": {"recovery_batch_id": {"type": "string"}},
+            "required": ["recovery_batch_id"]
+          }
+        },
+        "required": ["notification"]
+      },
+      "then": {
+        "properties": {
+          "recovery_batch": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json"}
+        }
+      },
+      "else": {
+        "properties": {
+          "recovery_batch": {"type": "null"}
+        }
+      }
+    }
+  ]
+}

@@ -2,40 +2,17 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/event/complete_event_request.schema.json",
   "title": "CompleteEventRequest",
-  "description": "Input payload for marking a single non-recurring event as completed. Completing an Event also atomically cancels its pending/scheduled/failed untriggered Reminder tasks. Recurring event occurrences are out of scope for the current stage.",
-  "x-contract-version": 1,
+  "description": "Completes one non-recurring Event. Recurring series and occurrences use their explicit v2 methods. The completion time comes from the C++ Clock.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "event_id",
-    "completed_at",
-    "source"
-  ],
+  "required": ["event_id", "source"],
   "properties": {
-    "event_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "completed_at": {
-      "type": "string",
-      "format": "date-time"
-    },
+    "event_id": {"type": "string", "format": "uuid"},
     "source": {
       "type": "string",
-      "enum": [
-        "manual",
-        "auto",
-        "ai_extraction",
-        "sync",
-        "import",
-        "wechat"
-      ]
+      "enum": ["manual", "auto", "ai_extraction", "sync", "import", "wechat"]
     },
-    "note": {
-      "type": [
-        "string",
-        "null"
-      ]
-    }
+    "note": {"type": ["string", "null"]}
   }
 }

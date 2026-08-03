@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/runtime/initialize_runtime_response.schema.json",
+  "title": "InitializeRuntimeResponse",
+  "description": "Successful C++ runtime initialization after storage recovery and bundled TZDB validation.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["initialized", "storage_format_version", "tzdb_version"],
+  "properties": {
+    "initialized": {
+      "type": "boolean",
+      "const": true
+    },
+    "storage_format_version": {
+      "type": "integer",
+      "const": 2
+    },
+    "tzdb_version": {
+      "type": "string",
+      "const": "2026c"
+    }
+  }
+}

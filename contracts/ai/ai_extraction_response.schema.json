@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/ai/ai_extraction_response.schema.json",
   "title": "AIExtractionResponse",
   "description": "Transport representation of an AI extraction record. Field names are the snake_case mapping of DATA_MODEL.md AIExtraction.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

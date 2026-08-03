@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/event/event_detail_response.schema.json",
   "title": "EventDetailResponse",
   "description": "Detail-page aggregate response containing event plus optional related recurrence, reminders, and category.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -29,7 +29,7 @@
     },
     "reminders": {
       "type": "array",
-      "description": "Current non-deleted reminder tasks associated with this event. An event with no reminders returns an empty array.",
+      "description": "Current non-deleted Reminder tasks associated with this Event. For a recurring Event this is the current rolling set, not an infinite expansion.",
       "items": {
         "$ref": "../reminder/reminder_response.schema.json"
       }

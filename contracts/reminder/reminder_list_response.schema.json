@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/reminder/reminder_list_response.schema.json",
   "title": "ReminderListResponse",
   "description": "Paginated reminder response.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

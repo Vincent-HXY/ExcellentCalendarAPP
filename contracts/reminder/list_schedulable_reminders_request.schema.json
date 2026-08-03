@@ -2,8 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/list_schedulable_reminders_request.schema.json",
   "title": "ListSchedulableRemindersRequest",
-  "description": "Internal scheduler query. C++ returns enabled, non-deleted reminders in the time window with pending/failed status, plus scheduled status only when include_scheduled is true.",
-  "x-contract-version": 1,
+  "description": "Internal scheduler query. C++ returns enabled, non-deleted pending reminders, plus scheduled status only when include_scheduled is true. Permanent failed reminders are terminal and never retried here.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": ["supported_methods"],
@@ -22,24 +22,20 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["remind_at", "id"],
+          "required": ["remind_at", "reminder_id"],
           "properties": {
             "remind_at": {"type": "string", "format": "date-time"},
-            "id": {"type": "string", "minLength": 1}
+            "reminder_id": {"type": "string", "format": "uuid"}
           }
         }
       ],
-      "description": "Exclusive keyset cursor ordered by (remind_at, id)."
+      "description": "Exclusive keyset cursor ordered by (remind_at, reminder_id)."
     },
     "limit": {
       "type": "integer",
       "minimum": 1,
       "maximum": 500,
       "default": 500
-    },
-    "include_failed": {
-      "type": "boolean",
-      "default": true
     },
     "include_scheduled": {
       "type": "boolean",

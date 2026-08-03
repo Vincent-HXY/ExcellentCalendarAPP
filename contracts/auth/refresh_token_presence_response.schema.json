@@ -4,7 +4,7 @@
   "title": "RefreshTokenPresenceResponse",
   "description": "Reports only whether Android secure storage currently contains a Refresh Token record.",
   "x-contract-domain": "native_method_channel",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": ["exists"],

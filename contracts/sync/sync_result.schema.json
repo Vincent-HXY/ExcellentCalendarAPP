@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/sync/sync_result.schema.json",
   "title": "SyncResult",
   "description": "Result payload for applying or uploading a sync operation.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

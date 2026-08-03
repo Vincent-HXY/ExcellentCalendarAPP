@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/dated_message/dated_message_response.schema.json",
   "title": "DatedMessageResponse",
   "description": "Transport representation of a date-targeted message reserved for future local or cloud delivery.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

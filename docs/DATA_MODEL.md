@@ -1,37 +1,53 @@
-# Excellent Calendar 数据结构模型草案
+# Excellent Calendar 数据结构模型（Native Contract v2）
 
-> 本文档用于审阅核心业务对象的数据结构。字段类型、枚举值和命名后续可根据实现语言、数据库 schema 或 API 协议再统一调整。
+> 本文档是本地核心领域语义的真相源。Contract 使用 `snake_case`，本文领域字段使用 `camelCase`；两者的语义、可空性和时间单位必须一一对应。
 
 ## 通用约定
 
-- `id`：实体唯一标识，建议使用 UUID。
-- `createdAt`：创建时间。
-- `updatedAt`：最后更新时间。
-- `deletedAt`：软删除时间，可空。
+- 随机实体 ID 使用 UUIDv4；需要跨重试保持稳定的 occurrence、滚动 Reminder 和 delivery ID 使用 Contract v2 指定的 UUIDv5 算法。
+- `createdAt`、`updatedAt`、`deletedAt`、完成、取消、恢复和投递时间均为 ISO 8601 UTC Instant，序列化时必须带 `Z`。
+- 参与 recurrence/occurrence 身份的 Event 计划 `startAt/endAt` 固定到整秒，并序列化为 `YYYY-MM-DDTHH:mm:ssZ`；禁止 offset 或小数秒造成跨语言规范化分歧。
+- `date` 使用 `YYYY-MM-DD` 本地日期，不得转换成 UTC 午夜保存。
+- 普通时间区间和全天日期区间统一使用半开区间 `[start, end)`。
+- `timezone` 使用由捆绑 TZDB 校验的 IANA timezone ID；不得保存 `CST` 等缩写或仅保存固定 offset。
 - `source`：数据来源，例如 `manual`、`ai_extraction`、`sync`、`import`。
-- 时间字段建议统一存储为 ISO 8601 字符串或 UTC 时间戳，展示时再按用户时区转换。
+- 缺失字段、显式 `null`、空字符串与空数组含义不同；边界层不得用默认值掩盖 malformed data。
 
 ## 当前阶段约定
 
-- 当前先不实现 SQL schema，优先保证项目整体可运行。
+- 当前正式本地持久化仍是 JSON；SQLite 是后续目标，不与 JSON 同时作为可写真相源。
+- Calendar Core JSON Storage format 升级为 `2`。v1 不读取、不迁移；首次切换只允许先原子归档已确认的 v1 正式目录，再初始化空 v2，归档失败必须停止初始化。
+- Native Contract v2 是一次协调发布的 breaking change。本文与 `contracts/` 先完成设计；Dart、Kotlin、JNI、C++ 和 JSON Storage 在后续同一发行版本中同步实施前，v2 不得对外宣称可用。
 - 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
 - `AIExtraction`、`SyncOperation` 等模型先作为未来能力预留，字段可先保持文档级设计。
 - 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
 - `Reminder` 作为独立实体保存，不嵌入 `Event`、`Habit`、`Anniversary`。
 - 一个 `Event`、`Habit` 或 `Anniversary` 可以关联多条 `Reminder`。业务上可以理解为“提醒时间列表”，存储上是多条提醒记录。
+- 本轮重复展开、occurrence 状态和滚动 Reminder 只定义 Event 闭环。Habit/Anniversary 的重复规则仍为计划态，不能直接复用 Event v2 的派生锚点语义。
+
+## 时区解析与运行时门禁
+
+- C++ Domain 只依赖抽象端口 `LocalTimeResolver`；基础设施使用 `TzdbLocalTimeResolver` 实现 IANA ID 校验、UTC→本地、以及本地→UTC 解析。Dart/Kotlin 不得自行展开 recurrence 或重新计算 occurrence 身份。
+- Daily/Weekly/Monthly 必须先在 Event 原时区做本地日历运算，再解析 UTC，禁止用固定 24 小时或固定 7×24 小时累加替代日历语义。
+- 本地时间落入 DST gap 时移动到 gap 后第一个合法 Instant；落入 fold 时选择较早 Instant。`occurrenceKey` 仍使用解析前的原始计划本地值，因此 TZDB 解析策略不会改变身份。
+- 定时 Event 的本地开始与本地结束分别推进、分别解析，以保持 wall-clock 起止时间。写入前还必须验证原始本地区间为正，不能只验证解析后的 UTC 顺序。
+- Windows 测试与 Android 发行包必须使用同一份捆绑 IANA tzdata 2026c，禁止运行时下载或回退到平台自带、版本未知的时区数据。
+- `runtime.initialize(storage_directory, tzdb_directory)` 必须先完成 Storage 恢复和 TZDB 完整性/版本校验。TZDB 缺失、损坏、版本错误或 IANA ID 无效时初始化失败，失败进程不得接受 Event 写入。
+- Howard Hinnant `date` 的具体 release/commit 尚未通过实施门禁；Contract 只固定可验证的 `tzdb_version = 2026c`，不能把不存在的依赖版本写成已落地事实。
 
 ## 模型职责总览
 
 | 模型 | 当前阶段用途 | 数据性质 | 是否本地优先需要 |
 | --- | --- | --- | --- |
 | `Event` | 保存日程本身，例如会议、临时事项、规律事项 | 主业务数据 | 是 |
-| `EventOccurrenceState` | 保存重复日程某一次 occurrence 的完成、跳过、取消状态 | 稀疏状态记录 | 是 |
+| `EventOccurrenceState` | 保存重复日程某一次 occurrence 的完成、跳过、取消或重开状态 | 稀疏状态记录 | 是 |
 | `Habit` | 保存习惯定义，例如每天阅读、每周运动 | 主业务数据 | 是 |
 | `HabitCheckIn` | 保存习惯每天是否完成、完成次数和打卡时间 | 行为记录 | 是 |
 | `Reminder` | 保存未来需要触发的提醒任务 | 调度任务 | 是 |
 | `Notification` | 保存提醒触发后的投递结果 | 投递日志 | 是 |
 | `Category` | 保存分类、颜色和排序 | 配置数据 | 是 |
-| `Recurrence` | 保存重复规则，例如每天、每周、每月 | 规则数据 | 是 |
+| `Recurrence` | 保存 Event 重复规则的不可变 revision | 规则版本数据 | 是 |
+| `ReminderRecoveryBatch` | 保存一次 72 小时恢复计划、摘要范围和幂等状态 | 恢复工作流数据 | 是 |
 | `SearchIndex` | 保存搜索用的冗余文本 | 索引数据 | 可以后置 |
 | `AIExtraction` | 保存 AI 从文本、图片中解析出的候选结果 | 未来预留 | 暂缓实现 |
 | `SyncOperation` | 保存本地与云端同步操作记录 | 未来预留 | 暂缓实现 |
@@ -91,11 +107,12 @@
 
 | 值 | 说明 |
 | --- | --- |
+| `scheduled` | 曾被用户操作后又重新打开，恢复为计划状态 |
 | `completed` | 这一轮已完成 |
 | `skipped` | 这一轮被用户跳过 |
 | `cancelled` | 这一轮被取消 |
 
-不建议存储 `pending`、`in_progress`、`overdue`。这些状态应根据当前时间和 occurrence 的计划开始/结束时间动态计算。
+未被用户操作的 occurrence 不创建状态记录；其 `pending`、`in_progress`、`overdue` 等展示状态根据当前时间动态计算。`scheduled` 只出现在已存在且后来被 reopen 的稀疏状态记录中。
 
 ### RecurrenceFrequency
 
@@ -115,10 +132,9 @@
 
 | 值 | 说明 |
 | --- | --- |
-| `pending` | 待投递 |
+| `prepared` | 已由 C++ 创建投递 attempt，等待 Kotlin 调用系统投递 |
 | `sent` | 已投递 |
-| `failed` | 投递失败 |
-| `cancelled` | 已取消 |
+| `failed` | 本次 attempt 已失败；是否重试由 `failureClass` 决定 |
 
 ### ReminderStatus
 
@@ -127,10 +143,49 @@
 | 值 | 说明 |
 | --- | --- |
 | `pending` | 待调度，尚未注册到系统闹钟 |
-| `scheduled` | 已调度，已经注册到 Android AlarmManager 或其他投递通道 |
+| `scheduled` | 已被当前 Dispatcher Alarm 的触发时刻覆盖，不表示一条独立系统 Alarm |
 | `sent` | 已触发或已发送 |
-| `failed` | 调度或发送失败 |
+| `failed` | 不可重试的永久失败 |
 | `cancelled` | 已取消 |
+
+`failed` 只表示不可重试的永久失败。可重试投递失败只写入 `Notification` attempt，当前 `Reminder` 保持 `pending`。`expired` 不属于当前 v2 枚举；在外部过期协议合入前不得自行新增同名或替代状态。
+
+### ReminderCancellationReason
+
+| 值 | 可恢复 | 说明 |
+| --- | --- | --- |
+| `user_cancelled` | 否 | 用户直接取消普通单次 Reminder |
+| `event_completed` | 是 | 普通单次 Event 完成后自动取消 |
+| `occurrence_completed` | 是 | 某次 occurrence 完成 |
+| `occurrence_skipped` | 是 | 某次 occurrence 跳过 |
+| `occurrence_cancelled` | 是 | 某次 occurrence 取消 |
+| `series_completed` | 是 | 整个重复系列完成 |
+| `series_cancelled` | 否 | 整个重复系列取消 |
+| `series_deleted` | 否 | 整个重复系列软删除 |
+| `series_updated` | 否 | 新 revision 替换旧 revision |
+
+恢复仅适用于 `remindAt > reopenedAt` 的同一条 Reminder；不得生成新 ID，也不执行 72 小时补发。
+
+### NotificationKind
+
+| 值 | 说明 |
+| --- | --- |
+| `reminder` | 某条 Reminder 的某个渠道投递 |
+| `recovery_summary` | 一次恢复批次的聚合摘要投递 |
+
+### NotificationFailureClass
+
+| 值 | 说明 |
+| --- | --- |
+| `retryable` | 允许使用同一 `deliveryId` 创建新的 attempt；Reminder 保持 `pending` |
+| `permanent` | 当前 Reminder 进入 `failed`；重复 Reminder 同事务创建 successor |
+
+### ReminderRecoveryBatchStatus
+
+| 值 | 说明 |
+| --- | --- |
+| `in_progress` | 恢复计划已持久化，仍有摘要或明细投递未终结 |
+| `completed` | 本批次所有需要的投递均已达到终结状态 |
 
 ### HabitCheckInStatus
 
@@ -204,16 +259,28 @@
 
 ## Event：日程
 
-日程是日历中的核心事项，可以设置分类、重复规则和重要性。日程分两种，一种是临时日程，用于记录突发临时时间；一个是规律日程，用于记录相对规律的事件。
+日程是日历中的核心事项。普通定时 Event 与全天 Event 使用互斥时间结构；重复 Event 只保存系列定义和当前 Recurrence revision，不预生成无限 occurrence。
 
 说明：
 
-- 全天日程表示这个日程只关心日期，不关心具体几点到几点。例如生日、放假、出差当天、某一天要办但没有固定时间的事项。
+- 普通定时 Event 使用 `startAt/endAt` UTC Instant；`startDate/endDate` 必须为空。
+- 全天 Event 使用 `startDate/endDate` 本地日期；`startAt/endAt` 必须为空。单日全天 Event 示例为 `[2026-08-02, 2026-08-03)`。
+- `timezone` 对两类 Event 都必填，并在创建或更新写入前由 C++ 使用捆绑 TZDB 校验。
 - 日程本身不直接保存提醒方式和提醒时间。只要日程需要提醒，就在 `Reminder` 表中创建一条或多条提醒任务。
 - 如果一个日程有多个提醒时间，例如提前 1 天、提前 1 小时、开始时各提醒一次，则创建 3 条 `Reminder`，它们的 `targetType = event` 且 `targetId = Event.id`。
 - `Event.status` 表示整个 Event 或整个重复系列的生命周期状态，不表示“今天已完成”或“今天跳过”。
-- 单次非重复 Event 完成时，关联且尚未触发的 `pending` / `scheduled` / `failed` Reminder 会在同一 C++ workflow transaction 中自动取消，并写入 `cancellationReason = event_completed`；重新打开 Event 时，只自动恢复该原因且仍在未来的 Reminder。
+- 单次非重复 Event 完成时，关联且尚未触发的 `pending` / `scheduled` Reminder 会在同一 C++ workflow transaction 中自动取消，并写入 `lastCancellationReason = event_completed`；重新打开 Event 时，只恢复该原因且仍在未来的 Reminder。
 - 重复日程某一次 occurrence 的完成、跳过、取消状态保存到 `EventOccurrenceState`。
+- `recurrenceId + recurrenceRevision` 必须同时为空或同时存在；两者存在时指向当前不可变 Recurrence revision。
+- `hasRecurrence` 是 Contract 查询投影中的派生布尔值，不是独立持久化事实。
+- 重复 Event 的时间、时区、规则或实际 Reminder 模板变化时创建新 revision；标题只有在会改变 Reminder `message` 时才属于模板变化。旧 revision 的 occurrence 状态保留为历史。
+- `event.update` 对重复 Event 始终修改整个系列：`reminders` 省略表示保留模板，空数组表示清空，非空数组表示完整替换；不得把部分数组解释成增量 patch。
+- 更新已存在的重复 Event 必须携带与当前值相等的 `expectedRecurrenceRevision`；缺失、过期或指向历史 revision 都返回 `RECURRENCE_REVISION_CONFLICT`，不得在旧读结果上静默覆盖新系列。
+- `recurrence` 省略表示保留当前规则；v2 不接受含义不明确的 `recurrence = null`。停止重复应使用显式系列取消/删除流程，而不是把更新请求解释成静默拆系。
+- 新 revision 提交时，旧 revision 的所有非终结 Reminder 在同一事务以 `series_updated` 取消；新的滚动 Reminder 只能引用新 revision。
+- `completeSeries` 后允许 `reopenSeries`，并只恢复未来且因 `series_completed` 取消的 Reminder；已 `cancelled` 或已软删除系列不得 reopen。
+- 重复 Event 删除只允许 `all_occurrences + soft delete`；单次 occurrence 使用显式 occurrence cancel，不复用 Event 删除范围。
+- 全天非重复 Event 可以继续使用绝对 `remindAt`；全天重复 Event 不允许 Reminder，返回 `ALL_DAY_RECURRING_REMINDER_NOT_SUPPORTED`。
 - 软删除表示用户删除后先不从数据库物理移除，而是写入 `deletedAt`。这样方便撤销删除、同步删除状态、排查误删。正常查询默认只显示 `deletedAt` 为空的记录。
 
 | 字段 | 类型 | 必填 | 说明 |
@@ -221,19 +288,21 @@
 | `id` | `string` | 是 | 日程 ID |
 | `title` | `string` | 是 | 标题 |
 | `content` | `string` | 否 | 内容、备注或详情 |
-| `startAt` | `datetime` | 是 | 日程开始时间 |
-| `endAt` | `datetime` | 是 | 日程结束时间 |
+| `startAt` | `datetime` | 条件必填 | 普通 Event 的 UTC 开始 Instant；全天 Event 必须为空 |
+| `endAt` | `datetime` | 条件必填 | 普通 Event 的 UTC 结束 Instant；全天 Event 必须为空 |
+| `startDate` | `date` | 条件必填 | 全天 Event 的本地开始日期；普通 Event 必须为空 |
+| `endDate` | `date` | 条件必填 | 全天 Event 的本地右开结束日期；普通 Event 必须为空 |
 | `isAllDay` | `boolean` | 是 | 是否全天日程 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
-| `hasRecurrence` | `boolean` | 是 | 是否循环（控制单次/循环） |
 | `status` | `EventStatus` | 是 | 整个日程或整个重复系列的生命周期状态，默认 `active` |
 | `completedAt` | `datetime` | 否 | 单次日程完成时间，或整个重复系列彻底完成时间 |
-| `recurrenceId` | `string` | 否 | 重复规则 ID；仅当 `hasRecurrence = true` 时存在 |
+| `recurrenceId` | `string` | 否 | 当前重复规则族 ID；非重复 Event 为空 |
+| `recurrenceRevision` | `integer` | 否 | 当前不可变规则 revision；非重复 Event 为空 |
 | `categoryId` | `string` | 否 | 分类 ID |
 | `importance` | `Importance` | 否 | 重要性 |
 | `location` | `string` | 否 | 地点 |
-| `timezone` | `string` | 否 | 时区，例如 `Asia/Shanghai` |
+| `timezone` | `string` | 是 | 有效 IANA timezone ID，例如 `Asia/Shanghai` |
 | `source` | `string` | 是 | 来源，例如来自于微信，手动添加 |
 | `deletedAt` | `datetime` | 否 | 软删除时间 |
 
@@ -243,27 +312,32 @@
 
 说明：
 
-- 普通日程完成时，直接更新 `Event.status = completed` 和 `Event.completedAt`。
-- 重复日程某一次完成时，不修改 `Event.status` 为“今天完成”，而是写入一条 `EventOccurrenceState`。
-- 如果某次 occurrence 没有状态记录，则根据当前时间和 occurrence 的计划开始/结束时间动态计算 `pending`、`in_progress` 或 `overdue`。
+- `occurrenceKey` 由 C++ 按 `contracts/identity.yaml` 生成，客户端只能原样透传，其他层不得重新计算。
+- occurrence 操作请求同时回传查询结果中的计划开始 Instant 或本地日期，C++ 以该值做有界展开并重新校验 `occurrenceKey`；不得仅凭不可逆 UUID 在无限规则中搜索。
+- 定时 occurrence 的身份输入使用 DST 解析前的原始计划本地日期时间；全天 occurrence 使用本地日期。
+- 普通日程完成时直接更新 `Event.status`；重复日程单次操作不得污染整个 Event 状态。
+- 如果某次 occurrence 没有状态记录，则根据 Recurrence 展开结果和当前时间动态计算展示状态。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `id` | `string` | 是 | 状态记录 ID |
 | `eventId` | `string` | 是 | 关联日程 ID |
-| `occurrenceStartAt` | `datetime` | 是 | 某一次 occurrence 的计划开始时间 |
+| `recurrenceRevision` | `integer` | 是 | 产生该 occurrence 的规则 revision |
+| `occurrenceKey` | `string` | 是 | 稳定 UUIDv5 occurrence 身份 |
+| `occurrenceStartAt` | `datetime` | 条件必填 | 定时 occurrence 的 UTC 计划开始 Instant |
+| `occurrenceStartDate` | `date` | 条件必填 | 全天 occurrence 的本地计划开始日期 |
 | `status` | `EventOccurrenceStatus` | 是 | occurrence 状态 |
-| `completedAt` | `datetime` | 否 | 实际完成时间 |
-| `note` | `string` | 否 | 备注 |
-| `source` | `string` | 是 | 来源，例如 `manual`、`sync`、`auto` |
+| `stateChangedAt` | `datetime` | 是 | 最近一次状态操作时间，由 C++ Clock 生成 |
+| `reopenedAt` | `datetime` | 否 | 最近一次 reopen 时间，由 C++ Clock 生成 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
-| `deletedAt` | `datetime` | 否 | 软删除时间 |
 
 建议约束：
 
-- 同一个 `eventId + occurrenceStartAt` 默认只保留一条有效状态记录。
-- 取消完成时，软删除对应的有效 `EventOccurrenceState`，让该 occurrence 回到动态计算状态。
+- 唯一键为 `(eventId, recurrenceRevision, occurrenceKey)`。
+- `occurrenceStartAt` 与 `occurrenceStartDate` 必须恰有一个非空，并与 Event 的时间类型一致。
+- complete/skip/cancel 在同一 workflow transaction 中更新状态、以对应原因取消本 occurrence 的非终结 Reminder，并确保下一个合法滚动 Reminder 存在。
+- reopen 把状态改为 `scheduled`，仅恢复 `remindAt > reopenedAt` 且取消原因可逆的原 Reminder；不执行 72 小时补发。
+- occurrence 查询投影另外计算 `occurrenceEndAt` 或 `occurrenceEndDate`，结束值不是状态表字段。
 
 ## Habit：习惯
 
@@ -282,7 +356,7 @@
 | `title` | `string` | 是 | 习惯名称 |
 | `description` | `string` | 否 | 习惯说明 |
 | `categoryId` | `string` | 否 | 分类 ID |
-| `recurrenceId` | `string` | 是 | 执行频率或打卡规则 |
+| `recurrenceId` | `string` | 是 | 计划中的 Habit 专用规则引用；不得指向本轮 Event Recurrence revision |
 | `targetCount` | `number` | 否 | 目标次数，例如每天喝水 8 次 |
 | `unit` | `string` | 否 | 目标单位，例如次、分钟、页 |
 | `startDate` | `date` | 是 | 开始日期 |
@@ -319,22 +393,26 @@
 
 ## Reminder：提醒
 
-提醒是独立实体，也是提醒扫描和调度的主表。创建日程、习惯、纪念日时，如果用户选择需要提醒，就在这里创建提醒任务。后续后台任务只扫描这张表，把即将到来的提醒交给 Android Alarm Scheduler、微信推送或应用内通知。
+提醒是独立实体，也是未来调度任务的唯一领域真相源。普通单次 Reminder 与重复 Event 的滚动 Reminder 共用实体，但身份和生成规则不同。
 
 职责边界：
 
 - `Reminder` 回答“未来什么时候需要提醒、提醒谁、用什么方式提醒”。
-- `Reminder` 是待执行任务，适合被后台扫描、注册系统闹钟、失败重试。
+- `Reminder` 是待执行任务，适合被后台扫描、注册系统闹钟和失败重试。
 - `Reminder` 不负责记录通知最终有没有展示成功；投递结果由 `Notification` 记录。
-- Android 不再为每条 Reminder 分别注册 Alarm。调度器始终从本表按 `(remindAt, id)` 读取最早任务，使用一个 Dispatcher Alarm 覆盖该触发时刻；触发后排空所有到期 Reminder，再滚动到下一时刻。
+- Android 不再为每条 Reminder 分别注册 Alarm。调度器始终从本表按 `(remindAt, reminderId)` 读取最早任务，使用一个 Dispatcher Alarm 覆盖该触发时刻；触发后排空所有到期 Reminder，再滚动到下一时刻。
 - `status = scheduled` 表示该 Reminder 的触发时刻已由当前 Dispatcher Alarm 覆盖，不表示 Android 中存在一条与 Reminder 一一对应的 Alarm。
-- 后续切换到 SQLite 时，调度查询应建立覆盖 `isEnabled / deletedAt / status / remindAt / id` 的索引；Notification 仍不得参与扫描。
+- 后续切换到 SQLite 时，调度查询应建立覆盖 `isEnabled / deletedAt / status / remindAt / reminderId` 的索引；Notification 仍不得参与扫描。
+- 普通单次 Reminder 使用 UUIDv4，不创建 successor；重复 Reminder 使用 Contract 指定的确定性 UUIDv5，并在成功投递或永久失败后滚动创建下一个合法 occurrence 的 Reminder。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `id` | `string` | 是 | 提醒 ID |
+| `reminderId` | `string` | 是 | 提醒 ID；Contract 字段为 `reminder_id` |
 | `targetType` | `string` | 是 | 关联对象类型，例如 `event`、`habit`、`anniversary` |
 | `targetId` | `string` | 是 | 关联对象 ID |
+| `recurrenceRevision` | `integer` | 否 | 重复 Event 当前 Reminder 所属 revision；普通 Reminder 为空 |
+| `occurrenceKey` | `string` | 否 | 重复 Event occurrence 的稳定 UUIDv5；普通 Reminder 为空 |
+| `occurrenceStartAt` | `datetime` | 否 | 重复定时 occurrence 的 UTC 开始 Instant；普通 Reminder 为空 |
 | `remindAt` | `datetime` | 是 | 提醒触发时间 |
 | `methods` | `ReminderMethod[]` | 是 | 提醒方式 |
 | `advanceMinutes` | `number` | 否 | 提前提醒分钟数 |
@@ -344,10 +422,26 @@
 | `scheduledAt` | `datetime` | 否 | 实际注册到系统闹钟或投递通道的时间 |
 | `lastTriggeredAt` | `datetime` | 否 | 最近一次触发时间 |
 | `failureReason` | `string` | 否 | 调度或发送失败原因 |
-| `cancellationReason` | `string` | 否 | 机器可读取消原因，例如 `user_cancelled`、`event_completed`；用于区分用户主动取消和完成日程后自动取消 |
+| `lastCancellationReason` | `ReminderCancellationReason` | 否 | 最近一次机器可读取消原因 |
+| `lastCancelledAt` | `datetime` | 否 | 最近一次取消时间 |
+| `reactivatedAt` | `datetime` | 否 | 最近一次恢复为 `pending` 的时间 |
+| `reactivationCount` | `integer` | 是 | 恢复次数，初始为 `0` |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
 | `deletedAt` | `datetime` | 否 | 软删除时间 |
+
+身份与模板不变量：
+
+- 普通 Reminder 的 `recurrenceRevision/occurrenceKey/occurrenceStartAt` 必须全部为空，`reminderId` 使用 UUIDv4，原有绝对 `remindAt`、多渠道和历史保留行为不变。
+- 重复 Reminder 的三个 occurrence 字段必须全部存在；由于全天重复 Event 不支持 Reminder，`occurrenceStartAt` 始终是 UTC Instant。
+- 重复 Reminder draft 只提交 `advanceMinutes`，不得提交绝对 `remindAt`；`advanceMinutes = 0` 合法。
+- v2 重复 Reminder 的 `methods` 必须规范化为 `['popup']`。同一 revision 中 `(advanceMinutes, canonicalMethods)` 模板唯一，`message` 不参与身份计算。
+- 重复 Reminder 唯一键为 `(targetId, recurrenceRevision, occurrenceKey, advanceMinutes, canonicalMethods)`；`reminderId` 的 UUIDv5 输入与固定测试向量见 `contracts/identity.yaml`。
+- 除 `planRecovery` 外，首次创建、revision 更新、投递终结和 occurrence/series 状态变化只能选择 `remindAt > workflow Clock` 的最早合法 occurrence；不得为了补历史而在普通 workflow 中创建过去 Reminder。
+- 重试遇到相同 ID 且业务内容一致时幂等返回原记录；内容冲突返回 `REMINDER_IDEMPOTENCY_CONFLICT`。
+- `series_updated`、`series_cancelled`、`series_deleted` 和 `user_cancelled` 不可恢复；其他可逆原因仅能恢复同一条仍在未来的 Reminder。
+- 取消时写入/覆盖 `lastCancellationReason` 与 `lastCancelledAt`；恢复时把同一记录改回 `pending`、重新启用、写入 `reactivatedAt` 并递增 `reactivationCount`，但不清空最近取消审计字段。
+- 可重试投递失败只追加 `Notification` attempt，Reminder 保持 `pending`。永久失败把当前 Reminder 标记 `failed`，并在同一事务创建 successor，避免无限系列中断。
 ## Category：分类
 
 分类用于组织日程、习惯、纪念日等对象。
@@ -365,50 +459,114 @@
 
 ## Recurrence：重复规则
 
-重复规则用于描述日程、习惯或纪念日的循环方式。如果后面需要涉及到重复与节假日呢？
+本节只定义 Event v2 的重复规则。客户端输入 `EventRecurrenceRuleInput` 与持久化 `Recurrence` revision 必须分离：客户端只能表达意图，锚点、时区和展开字段由 C++ 从 Event 派生。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `id` | `string` | 是 | 重复规则 ID |
+| `recurrenceId` | `string` | 是 | 重复规则族 ID |
+| `revision` | `integer` | 是 | 不可变版本号，首版为 `1` |
 | `frequency` | `RecurrenceFrequency` | 是 | 重复频率 |
-| `interval` | `number` | 是 | 间隔，例如每 2 周 |
-| `daysOfWeek` | `number[]` | 否 | 周几重复，取值建议 `1-7` |
-| `dayOfMonth` | `number` | 否 | 每月第几天 |
-| `monthOfYear` | `number` | 否 | 每年第几月 |
-| `startAt` | `datetime` | 是 | 规则生效时间 |
-| `endAt` | `datetime` | 否 | 规则结束时间 |
-| `count` | `number` | 否 | 最大重复次数 |
-| `timezone` | `string` | 否 | 时区 |
+| `interval` | `integer` | 是 | v2 固定为 `1` |
+| `startAt` | `datetime` | 条件必填 | 定时 Event 的首个 UTC Instant；全天 Event 为空 |
+| `startDate` | `date` | 条件必填 | 全天 Event 的首个本地日期；定时 Event 为空 |
+| `timezone` | `string` | 是 | 从 Event 派生的有效 IANA ID |
+| `dayOfMonth` | `integer` | 否 | Monthly 的初始本地日号；月份截断不能修改该锚点 |
+| `daysOfWeek` | `integer[]` | 否 | Weekly 恰好一个 ISO weekday，Monday=1、Sunday=7 |
+| `monthOfYear` | `integer` | 否 | v2 始终为空，预留给未来 Yearly |
+| `endAt` | `datetime` | 否 | v2 始终为空，预留结束边界 |
+| `count` | `integer` | 否 | v2 始终为空，预留最大 occurrence 数 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
-| `updatedAt` | `datetime` | 是 | 更新时间 |
+
+约束：
+
+- 主键和唯一键均为 `(recurrenceId, revision)`；revision 不可覆盖、不可软删除改写。
+- Event 保存当前 `recurrenceId + recurrenceRevision`，Recurrence 不再保存 `targetType/targetId`，避免双重关系真相源。
+- v2 客户端只允许提交 `frequency/interval/endAt/count`。`interval = 1`、`endAt = null`、`count = null`；`daily/weekly/monthly` 可执行，`yearly/custom` 通过 schema 后由 C++ 返回 `FEATURE_NOT_IMPLEMENTED`。
+- `startAt/startDate/timezone/dayOfMonth/daysOfWeek/monthOfYear` 均不得由客户端提交；`rrule` 和客户端自定义锚点必须被 schema 拒绝。
+- `daysOfWeek` 在 Weekly 中恰好一个元素，在 Daily/Monthly 中返回空数组；`dayOfMonth` 仅 Monthly 非空。
+- Daily/Weekly/Monthly 先在原时区做本地日历运算，再把每个 occurrence 的本地开始和结束分别解析为 UTC。DST gap 前移到 gap 后首个合法 Instant，DST fold 选择较早 Instant。
+- 不预生成无限 occurrence。查询必须带有界半开窗口，并按原始计划本地开始值稳定排序。
 
 ## Notification：通知
 
-通知是提醒被触发后的投递记录，用于记录某一次弹窗、响铃、微信消息或系统通知是否成功。扫描提醒时不应该以这张表为入口。
+Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用 `prepare_delivery -> Kotlin 系统投递 -> finalize_delivery` 两阶段流程，绝不作为未来 Reminder 扫描入口。
 
 职责边界：
 
-- `Notification` 回答“某一次提醒是否真的投递了、什么时候投递、失败原因是什么”。
+- `Notification` 回答“哪个逻辑 delivery 的哪次 attempt 是否真的投递、什么时候终结、失败是否可重试”。
 - `Notification` 是结果日志，不参与未来提醒扫描。
 - 本地系统通知、响铃、弹窗、微信提醒都可以生成 `Notification` 记录。
-- 由 `Reminder` 触发的通知必须关联 `reminderId`；未来如果 `DatedMessage` 也走通知投递，可以通过 `targetType` 和 `targetId` 关联消息本体。
-- Android 系统通知的运行时身份由 Android Native Layer 私有管理，当前使用 `(tag = reminder:<reminderId>, id = 1)`，不写入 `Notification` 领域模型；不同 `Reminder` 的 popup 通知应能同时展示，不应因系统通知 ID 碰撞互相覆盖。
+- 一条 Reminder 的每个 `method` 都是独立逻辑 delivery；部分成功通过各自 Notification attempt 表达，不把渠道结果压成自由文本。
+- Android 固定使用 `NotificationManager.notify(tag = deliveryId, id = 0, ...)`。同一逻辑 delivery 重试覆盖同一通知栏条目，不会制造重复条目。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `id` | `string` | 是 | 通知 ID |
-| `reminderId` | `string` | 否 | 关联提醒 ID；由提醒触发时必填 |
-| `targetType` | `string` | 是 | 关联对象类型 |
-| `targetId` | `string` | 是 | 关联对象 ID |
+| `notificationId` | `string` | 是 | Notification attempt 记录 UUID |
+| `deliveryId` | `string` | 是 | 逻辑投递的稳定 UUIDv5 幂等 ID |
+| `deliveryAttemptId` | `string` | 是 | 每次实际尝试唯一的 UUID |
+| `kind` | `NotificationKind` | 是 | Reminder 投递或恢复摘要 |
+| `reminderId` | `string` | 否 | `kind = reminder` 时必填 |
+| `recoveryBatchId` | `string` | 否 | 恢复摘要时必填；恢复批次内的明细 Reminder attempt 也携带该值 |
+| `targetType` | `string` | 是 | 业务目标类型；恢复摘要使用 `reminder_recovery_batch` |
+| `targetId` | `string` | 是 | 业务目标 ID；恢复摘要等于 batch ID |
+| `occurrenceKey` | `string` | 否 | 重复 Reminder 的 occurrence 身份；普通 Reminder/摘要为空 |
 | `method` | `ReminderMethod` | 是 | 通知渠道 |
 | `title` | `string` | 是 | 通知标题 |
 | `body` | `string` | 否 | 通知正文 |
 | `plannedAt` | `datetime` | 是 | 原计划投递时间 |
+| `preparedAt` | `datetime` | 是 | C++ 创建或复用 attempt 的时间 |
+| `finalizedAt` | `datetime` | 否 | attempt 终结时间 |
 | `sentAt` | `datetime` | 否 | 实际发送时间 |
 | `status` | `NotificationStatus` | 是 | 通知状态 |
-| `failureReason` | `string` | 否 | 失败原因 |
+| `failureClass` | `NotificationFailureClass` | 否 | 失败是否可重试；非失败状态为空 |
+| `errorCode` | `string` | 否 | 失败的稳定 Contract 错误码；非失败状态为空 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
+
+两阶段与渠道聚合不变量：
+
+- `prepare_delivery` 由 C++ 校验 Reminder 仍可投递且 `expectedRemindAt` 与当前记录严格相等，并创建或复用唯一 `prepared` attempt；普通调度还必须已到期，绑定有效恢复批次的明细 Reminder 才允许使用窗口内的历史 `remindAt`。响应同时提供真实 Notification ID、展示内容和点击 payload。
+- 已存在 `sent` attempt 的 `deliveryId` 不得再次 prepare；C++ 返回 `REMINDER_ALREADY_CONSUMED` 或等价已声明错误，Kotlin 不展示重复通知。
+- 同一 `deliveryId` 同时最多一个 `prepared` attempt，历史上最多一个 `sent` attempt。相同 attempt 的相同 finalize 幂等返回，冲突 finalize 返回 `DELIVERY_ATTEMPT_INVALID`。
+- `deliveryId` 按 `contracts/identity.yaml` 使用 UUIDv5；`notificationId` 与新建的 `deliveryAttemptId` 由 C++ 使用 UUIDv4 生成，幂等复用 prepared attempt 时必须返回原值。
+- `sent` 要求 `finalizedAt/sentAt` 非空且失败字段为空；`failed` 要求 `finalizedAt/failureClass/errorCode` 非空且 `sentAt` 为空。
+- 多渠道 Reminder 只有当所有方法均已有 `sent` attempt 时才进入 `sent`。任何可重试失败使 Reminder 保持 `pending`，已成功渠道不重复投递；任一永久失败使 Reminder 进入 `failed`。v2 重复 Reminder 仅允许 popup，因此 successor 生成没有多渠道歧义。
+- `prepare_delivery` 返回的 PendingIntent payload 必须携带 `notificationId/deliveryId/deliveryAttemptId/reminderId/targetId/occurrenceKey`；不适用的字段显式为 `null`。Android 收到点击后才追加非空 `openedAt`，再作为 `NotificationTapPayload` 发给 Flutter。
+
+## ReminderRecoveryBatch：提醒恢复批次
+
+恢复批次把 App 启动、设备重启和 Alarm reconcile 的 72 小时补发计划持久化，使崩溃重启可以复用同一批次和 delivery ID。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `recoveryBatchId` | `string` | 是 | 批次 UUID |
+| `recoveryRequestId` | `string` | 是 | Kotlin 持久化的幂等请求 ID |
+| `triggerSource` | `string` | 是 | `app_start`、`device_boot` 或 `alarm_reconcile` |
+| `startedAt` | `datetime` | 是 | C++ Clock 生成的开始时间 |
+| `windowStartAt` | `datetime` | 是 | `startedAt - 72h`；恰好边界计入窗口 |
+| `detailReminderIds` | `string[]` | 是 | 全局最近 20 条明细 Reminder ID |
+| `summaryReminderIds` | `string[]` | 是 | 窗口内其余通过摘要投递的 Reminder ID |
+| `olderSkippedOccurrenceCount` | `integer` | 是 | 72 小时以前未展开的 occurrence 数 |
+| `olderSkippedReminderCount` | `integer` | 是 | 72 小时以前未生成的 Reminder 数 |
+| `windowOverflowCount` | `integer` | 是 | 窗口内超过 20 条上限的 Reminder 数 |
+| `summaryDeliveryId` | `string` | 否 | 有摘要时的稳定 delivery UUIDv5 |
+| `status` | `ReminderRecoveryBatchStatus` | 是 | 批次状态 |
+| `completedAt` | `datetime` | 否 | 批次完成时间 |
+
+约束：
+
+- `recoveryRequestId` 唯一；重复调用返回同一批次。同一时间最多一个 `in_progress` 批次，否则返回 `RECOVERY_BATCH_CONFLICT`。
+- `detailReminderIds` 与 `summaryReminderIds` 必须互斥，`windowOverflowCount` 必须等于 `summaryReminderIds.length`；`planRecovery.detailReminders` 必须与 `detailReminderIds` 同序且一一对应。
+- 只要摘要列表非空或任一 older skipped 计数大于 `0`，`summaryDeliveryId` 就必须存在；三者都为空/为 `0` 时必须为 `null`。
+- 只为 `[windowStartAt, startedAt]` 内的合法 occurrence 生成真实 Reminder；72 小时以前只记计数，不批量生成对象。
+- `planRecovery` workflow 是唯一允许创建 `remindAt <= startedAt` 历史到期 Reminder 的入口；普通 Reminder create/update 仍拒绝过去时间，且恢复 Reminder 必须绑定当前批次。
+- 全局先按 `remindAt` 降序、`reminderId` 降序选择最近 20 条，再按 `(remindAt, reminderId)` 升序投递。较早项目摘要先于 20 条明细投递。
+- 摘要成功后，`summaryReminderIds` 对应 Reminder 标记为通过摘要送达，而不是 `expired`；批次记录提供审计关联。
+- 摘要成功时这些 Reminder 进入 `sent`，`lastTriggeredAt` 使用摘要 finalize 的 C++ Clock 时间；不得逐条再弹出。
+- 摘要可重试失败时，覆盖的 Reminder 保持 `pending`、批次保持 `in_progress`；永久失败时，每条覆盖的 Reminder 按普通永久失败规则进入 `failed`，重复 Reminder 在同一事务生成 successor。批量变更通过 batch ID 审计，不要求 `finalizeDelivery` 回传所有对象。
+- 当摘要（如有）和全部明细逻辑 delivery 都已 `sent` 或永久失败时批次进入 `completed`；仍有 prepared/可重试失败时保持 `in_progress`。没有任何 delivery 的空批次在计划事务内直接完成。
+- 恢复摘要 Notification 的 `plannedAt = startedAt`，`targetType = reminder_recovery_batch`，`targetId = recoveryBatchId`；标题和正文由 C++ 根据持久化计数生成。
+- v2 不修改已存在且早于窗口的旧滚动 Reminder 状态，直到外部 `expired` 协议另行合入。
 
 ## SearchIndex：搜索索引
 
@@ -664,7 +822,7 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | `date` | `date` | 是 | 纪念日日期 |
 | `calendarType` | `string` | 否 | 日历类型，例如 `solar`、`lunar` |
 | `categoryId` | `string` | 否 | 分类 ID |
-| `recurrenceId` | `string` | 否 | 重复规则 ID，通常为每年 |
+| `recurrenceId` | `string` | 否 | 计划中的 Anniversary 专用规则引用；不复用 Event v2 Recurrence revision |
 | `note` | `string` | 否 | 备注 |
 | `importance` | `Importance` | 否 | 重要性 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
@@ -676,13 +834,15 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | 关系 | 说明 |
 | --- | --- |
 | `Event.categoryId -> Category.id` | 日程可归属一个分类 |
-| `Event.recurrenceId -> Recurrence.id` | 循环日程关联一条重复规则 |
+| `(Event.recurrenceId, Event.recurrenceRevision) -> (Recurrence.recurrenceId, Recurrence.revision)` | 循环日程指向当前不可变规则 revision |
 | `EventOccurrenceState.eventId -> Event.id` | 重复日程某一次 occurrence 的状态归属某个 Event |
 | `Habit.categoryId -> Category.id` | 习惯可归属一个分类 |
-| `Habit.recurrenceId -> Recurrence.id` | 习惯通过重复规则描述执行频率 |
+| `Habit.recurrenceId -> planned Habit recurrence model` | 非 Event 重复语义尚待独立设计，不指向 Event v2 Recurrence |
 | `HabitCheckIn.habitId -> Habit.id` | 习惯打卡记录归属某个习惯 |
 | `Reminder.targetId -> Event/Habit/Anniversary.id` | 提醒可以绑定到不同业务对象；一个业务对象可以有多条提醒 |
-| `Notification.reminderId -> Reminder.id` | 通知由提醒触发后生成，用于记录投递结果 |
+| `Notification.reminderId -> Reminder.reminderId` | 通知由提醒触发后生成，用于记录投递结果 |
+| `Notification.recoveryBatchId -> ReminderRecoveryBatch.recoveryBatchId` | 恢复摘要或批次内明细 attempt 归属一个恢复批次 |
+| `ReminderRecoveryBatch.detailReminderIds/summaryReminderIds -> Reminder.reminderId` | 恢复批次记录明细与摘要覆盖范围 |
 | `SearchIndex.targetId -> Event/Habit/Anniversary.id` | 搜索索引映射到被索引对象 |
 | `AIExtraction.candidateEventId -> Event.id` | AI 可生成待确认的候选日程 |
 | `SyncOperation.targetId -> any entity id` | 同步操作记录任意实体的变更 |
@@ -698,7 +858,10 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 
 ## 未来待确认问题
 
-- `Recurrence` 未来是否需要兼容 iCalendar RRULE 标准。
+- Event v3 是否需要支持 `interval > 1`、有界 `endAt/count`、Yearly/Custom 或 iCalendar RRULE；这些能力不得静默塞入 v2。
+- Habit/Anniversary 的重复规则、锚点与 Reminder 生成语义需要独立设计，不能直接照搬 Event v2。
+- `ReminderStatus.expired` 的外部协议、触发者和历史保留规则尚未合入；当前 v2 明确不定义该状态。
+- C++ 时区库版本仍需实施前确认：方案写的 Howard Hinnant `date v3.0.5` 在官方发布列表中不存在；TZDB `2026c` 已确认可获取。
 - `DatedMessage` 未来是只做本地投送，还是也需要云端运营投放能力。
 - `AIExtraction.extractedData` 未来是否需要拆成强类型表，还是先以 JSON 保存。
 - 后续加入 MFA 时是否把 V1 的 8 位密码下限提升到单因素认证推荐基线。
@@ -708,6 +871,12 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 - `Reminder` 作为独立实体保存，通过 `targetType` 和 `targetId` 关联 `Event`、`Habit`、`Anniversary`。
 - `Event` 可以有多个提醒时间。概念上是提醒时间列表，存储上是多条 `Reminder`。
 - `Event.status` 只表达整个日程或整个重复系列的生命周期状态；重复日程单次 occurrence 状态使用 `EventOccurrenceState`。
+- Native Contract 主版本为 `2`，v1 payload 和 v1 Calendar Core JSON 不兼容；旧正式目录先归档、后初始化空 v2，不做字段迁移或静默混读。
+- Event 使用互斥的 UTC Instant / 本地 date 时间结构，且所有 Event 必须保存有效 IANA timezone。
+- Event Recurrence 使用不可变 `(recurrenceId, revision)`；occurrence、滚动 Reminder 和 delivery 使用固定 UUIDv5 身份规范，不增加 `reminderChainId`。
+- 普通单次 Reminder 保持 UUIDv4、绝对触发、历史保留且不创建 successor；重复 Reminder v2 仅支持 popup。
+- Notification 使用 prepare/finalize 两阶段 attempt，Android 系统通知以 `deliveryId` 作为稳定 tag。
+- 恢复窗口固定为 72 小时、明细全局上限 20 条；更早 occurrence 只计数，不批量生成 Reminder。
 - `Habit` 的坚持日期、完成次数、连续天数统计来源于 `HabitCheckIn`，不直接塞进 `Habit` 本体。
 - 当前阶段先不上 SQL，优先保证项目整体可运行。
 - 当前先做好本地能力，AI 和云端同步暂缓，但保留相关接口和数据模型。
@@ -740,10 +909,10 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | --- | --- | --- |
 | 核心问题 | 未来什么时候要提醒 | 某一次提醒是否投递成功 |
 | 数据性质 | 待执行任务 | 执行结果日志 |
-| 创建时机 | 用户创建或更新日程、习惯、纪念日后生成 | 提醒触发、系统通知展示、微信投递后生成 |
+| 创建时机 | 用户创建或更新业务对象后生成；重复 Event 只滚动生成当前合法实例 | `prepare_delivery` 时先创建 attempt，系统投递后 finalize |
 | 谁会扫描 | Reminder Engine / Alarm Scheduler | 一般不扫描，只用于历史、排错、统计 |
 | 是否影响未来提醒 | 是 | 否 |
-| 典型状态 | `pending`、`scheduled`、`failed`、`cancelled` | `pending`、`sent`、`failed`、`cancelled` |
+| 典型状态 | `pending`、`scheduled`、`sent`、`failed`、`cancelled` | `prepared`、`sent`、`failed` |
 | 例子 | 明天 9:00 提醒我开会 | 明天 9:00 的会议提醒已经弹窗成功 |
 
 一句话：`Reminder` 是“待办的提醒任务”，`Notification` 是“提醒投递后的回执”。
@@ -758,15 +927,38 @@ FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE,FR
 
 上面的意思是每周一、周三、周五重复。
 
-暂时不需要强制兼容 RRULE。当前可以先用 `Recurrence` 表里的结构化字段表达常见重复规则，例如每天、每周、每月、每年、自定义间隔。未来如果要和系统日历、Google Calendar、Outlook 等外部日历互通，再考虑增加 `rrule` 字段保存标准字符串。
+Native Contract v2 明确拒绝客户端 `rrule` 字段，只执行 interval=1 的 Daily/Weekly/Monthly。Yearly/Custom 枚举仅作为稳定入口保留并返回 `FEATURE_NOT_IMPLEMENTED`。未来若要和系统日历、Google Calendar、Outlook 等互通，必须提升协议版本并定义导入、导出、冲突和历史数据策略。
 
 ## 提醒调度建议
 
-建议采用 `业务对象 -> Reminder -> Android Alarm Scheduler -> Notification` 的流程。
+采用 `业务对象/Recurrence -> 滚动 Reminder -> Dispatcher Alarm -> Notification attempt` 的流程。
 
 1. 用户创建 `Event`、`Habit` 或 `Anniversary`。
-2. 如果需要提醒，Reminder Engine 根据业务对象时间、提前量、重复规则生成一条或多条 `Reminder`。
-3. 后台扫描 `Reminder` 表，只取 `isEnabled = true`、`status in (pending, failed)`、`remindAt` 在未来扫描窗口内的记录。
+2. 单次业务对象创建普通 Reminder；重复 Event 根据模板只确保当前或下一条合法滚动 Reminder 存在。
+3. 后台扫描 `Reminder`，只取 `isEnabled = true`、未软删除且 `status = pending` 的记录；永久 `failed` 不进入重试扫描。
 4. Android Alarm Scheduler 将这些提醒注册到系统闹钟，并把成功注册的提醒标记为 `scheduled`。
-5. 到点后原生侧触发提醒，Notification Service 展示通知，并写入一条 `Notification` 投递记录。
-6. 如果是重复日程、习惯或纪念日，Reminder Engine 再计算下一次提醒，并创建新的 `Reminder`。
+5. 到点后 C++ `prepare_delivery` 先创建或复用 attempt，Kotlin 再展示系统通知，最后 C++ `finalize_delivery` 原子更新 Notification、当前 Reminder 和 successor。
+6. 领域 transaction 提交后 Android 只执行 reconcile；AlarmManager 不是第二真相源。
+
+## Contract v2、Storage v2 与事务边界
+
+| 版本域 | v1 reader 读 v2 | v2 reader 读 v1 | 升级策略 |
+| --- | --- | --- | --- |
+| Native Contract | 拒绝 | 拒绝 | Flutter、Kotlin、JNI、C++ 在同一发行版本同步升级 |
+| Calendar Core JSON | 不支持 | 不支持 | 原子归档 v1 正式目录，创建空 v2；不迁移业务数据 |
+| Backend API | 不受影响 | 不受影响 | 继续使用独立 Backend Contract v1 |
+| 导入/导出/备份 | 不复用 Native 版本 | 不复用 Native 版本 | 后续使用独立文件格式版本和迁移链 |
+
+首次升级只允许对解析并确认属于 v1 Calendar Core 的正式目录执行重命名，归档名包含 UTC 时间戳。归档或新目录初始化任一步失败都返回错误并保持旧数据可恢复；不得清空、覆盖、逐文件半迁移或把 v1 当 v2 解释。回滚到旧 App 时也必须显式选择只读 v1 归档，不能让旧 App 打开 v2 目录。
+
+每个 v2 JSON store 根对象必须显式包含 `storage_version = 2` 和该 store 的唯一集合字段；未知版本、未知根字段或任一损坏记录都使整个 store 加载失败。Storage record 使用独立 codec，不得直接把 Contract Response Schema 当作数据库实体。
+
+`workflow_transactions.json` 的 prepared 记录至少保存 `transactionId/operation/intentVersion/intent/affectedStores/state/preparedAt/committedAt`。每个 `operation + intentVersion` 必须有严格的内部 codec，intent 要包含确定性 ID、expected revision、C++ Clock 时间和幂等重放所需的完整 after-state；未知字段或版本不得用默认值恢复。
+
+以下操作必须是单个 C++ workflow transaction，并通过 `prepare -> 幂等应用各 Repository -> commit` journal 在启动时重放未完成事务：
+
+- Event + Recurrence revision + 首个滚动 Reminder 的创建或系列更新；
+- occurrence 状态变化 + Reminder 取消/恢复 + successor 创建；
+- delivery finalize + Notification attempt + 当前 Reminder + successor；
+- recovery batch + 窗口内 Reminder + 摘要覆盖状态；
+- 系列完成、取消、软删除和重新打开。

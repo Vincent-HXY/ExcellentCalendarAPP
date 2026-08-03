@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/habit/habit_check_in_response.schema.json",
   "title": "HabitCheckInResponse",
   "description": "Transport representation of one habit check-in record. This is the source for streak and completion-rate statistics.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

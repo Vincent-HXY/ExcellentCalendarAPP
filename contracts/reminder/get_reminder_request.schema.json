@@ -3,14 +3,14 @@
   "$id": "https://excellent-calendar.local/contracts/reminder/get_reminder_request.schema.json",
   "title": "GetReminderRequest",
   "description": "Internal Kotlin-to-C++ request for loading a reminder when its Android alarm fires.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": ["id"],
+  "required": ["reminder_id"],
   "properties": {
-    "id": {
+    "reminder_id": {
       "type": "string",
-      "minLength": 1
+      "format": "uuid"
     }
   }
 }

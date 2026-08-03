@@ -2,50 +2,24 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/event/update_event_request.schema.json",
   "title": "UpdateEventRequest",
-  "description": "Partial update payload for an existing event. It carries only transport fields, not database or domain model internals.",
-  "x-contract-version": 1,
+  "description": "Contract v2 partial Event update. Any time-field change submits the complete atomic time group. Updating a stored recurring Event requires expected_recurrence_revision to equal its current revision. For recurring Events, reminders omitted means keep, [] means clear, and a non-empty array is a complete template replacement that creates a new revision when changed. recurrence omitted means keep; Contract v2 does not assign an ambiguous clear-series meaning to recurrence=null. When recurrence is omitted but the stored Event is recurring, C++ still validates every supplied reminder against RecurringReminderDraftRequest.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "id"
-  ],
+  "required": ["id"],
   "properties": {
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "title": {
-      "type": "string",
-      "minLength": 1
-    },
-    "content": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "start_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "end_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "is_all_day": {
-      "type": "boolean"
-    },
-    "category_id": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
+    "id": {"type": "string", "format": "uuid"},
+    "expected_recurrence_revision": {"type": ["integer", "null"], "minimum": 1},
+    "title": {"type": "string", "minLength": 1},
+    "content": {"type": ["string", "null"]},
+    "start_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "end_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "start_date": {"type": ["string", "null"], "format": "date"},
+    "end_date": {"type": ["string", "null"], "format": "date"},
+    "is_all_day": {"type": "boolean"},
+    "category_id": {"type": ["string", "null"]},
     "importance": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": ["string", "null"],
       "enum": [
         "unimportant_noturgent",
         "important_noturgent",
@@ -54,43 +28,68 @@
         null
       ]
     },
-    "location": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "timezone": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
+    "location": {"type": ["string", "null"]},
+    "timezone": {"type": "string", "minLength": 1},
     "source": {
       "type": "string",
-      "enum": [
-        "manual",
-        "ai_extraction",
-        "sync",
-        "import",
-        "wechat"
-      ]
+      "enum": ["manual", "ai_extraction", "sync", "import", "wechat"]
     },
-    "recurrence": {
-      "oneOf": [
-        {
-          "$ref": "../recurrence/recurrence_rule.schema.json"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
+    "recurrence": {"$ref": "../recurrence/event_recurrence_rule_input.schema.json"},
     "reminders": {
       "type": "array",
-      "items": {
-        "$ref": "../reminder/reminder_draft_request.schema.json"
+      "items": {"$ref": "../reminder/reminder_draft_request.schema.json"}
+    }
+  },
+  "dependentRequired": {
+    "start_at": ["end_at", "start_date", "end_date", "is_all_day", "timezone"],
+    "end_at": ["start_at", "start_date", "end_date", "is_all_day", "timezone"],
+    "start_date": ["start_at", "end_at", "end_date", "is_all_day", "timezone"],
+    "end_date": ["start_at", "end_at", "start_date", "is_all_day", "timezone"],
+    "is_all_day": ["start_at", "end_at", "start_date", "end_date", "timezone"],
+    "timezone": ["start_at", "end_at", "start_date", "end_date", "is_all_day"]
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"is_all_day": {"const": false}},
+        "required": ["is_all_day"]
+      },
+      "then": {
+        "properties": {
+          "start_at": {"type": "string", "format": "date-time"},
+          "end_at": {"type": "string", "format": "date-time"},
+          "start_date": {"type": "null"},
+          "end_date": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"is_all_day": {"const": true}},
+        "required": ["is_all_day"]
+      },
+      "then": {
+        "properties": {
+          "start_at": {"type": "null"},
+          "end_at": {"type": "null"},
+          "start_date": {"type": "string", "format": "date"},
+          "end_date": {"type": "string", "format": "date"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"recurrence": {"type": "object"}},
+        "required": ["recurrence"]
+      },
+      "then": {
+        "properties": {
+          "reminders": {
+            "type": "array",
+            "items": {"$ref": "../reminder/recurring_reminder_draft_request.schema.json"}
+          }
+        }
       }
     }
-  }
+  ]
 }

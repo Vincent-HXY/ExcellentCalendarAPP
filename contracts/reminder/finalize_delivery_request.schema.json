@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/finalize_delivery_request.schema.json",
+  "title": "FinalizeDeliveryRequest",
+  "description": "Finalizes one prepared attempt. Finalized and sent timestamps come from the C++ Clock; Kotlin supplies only the system outcome.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["delivery_attempt_id", "outcome", "failure_class", "error_code"],
+  "properties": {
+    "delivery_attempt_id": {"type": "string", "format": "uuid"},
+    "outcome": {"type": "string", "enum": ["sent", "failed"]},
+    "failure_class": {"type": ["string", "null"], "enum": ["retryable", "permanent", null]},
+    "error_code": {"type": ["string", "null"], "minLength": 1}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "outcome": {"const": "sent"},
+        "failure_class": {"type": "null"},
+        "error_code": {"type": "null"}
+      }
+    },
+    {
+      "properties": {
+        "outcome": {"const": "failed"},
+        "failure_class": {"type": "string", "enum": ["retryable", "permanent"]},
+        "error_code": {"type": "string", "minLength": 1}
+      }
+    }
+  ]
+}

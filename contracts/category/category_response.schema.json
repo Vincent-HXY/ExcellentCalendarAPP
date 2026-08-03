@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/category/category_response.schema.json",
   "title": "CategoryResponse",
   "description": "Transport representation of an event or habit category.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

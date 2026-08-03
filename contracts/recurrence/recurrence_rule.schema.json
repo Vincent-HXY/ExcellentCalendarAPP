@@ -1,9 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/recurrence/recurrence_rule.schema.json",
-  "title": "RecurrenceRule",
-  "description": "Structured recurrence rule used by event and habit creation contracts.",
-  "x-contract-version": 1,
+  "title": "PlannedNonEventRecurrenceRuleInput",
+  "description": "Planned Habit/Anniversary recurrence input retained to avoid silently applying Event v2 anchor semantics to non-Event targets. Event contracts must use event_recurrence_rule_input.schema.json instead.",
+  "x-contract-version": 2,
+  "x-implementation-status": "planned",
   "type": "object",
   "additionalProperties": false,
   "required": [

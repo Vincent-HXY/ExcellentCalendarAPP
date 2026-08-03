@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/notification/request_notification_permission_response.schema.json",
   "title": "RequestNotificationPermissionResponse",
   "description": "Fresh Android permission state after a user-initiated permission request or settings redirect.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/prepare_delivery_response.schema.json",
+  "title": "PrepareDeliveryResponse",
+  "description": "Prepared Notification attempt and the exact tap payload Kotlin must attach to the system notification.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["notification", "tap_payload", "idempotent_replay"],
+  "properties": {
+    "notification": {"$ref": "../notification/notification_response.schema.json"},
+    "tap_payload": {"$ref": "../notification/prepared_notification_payload.schema.json"},
+    "idempotent_replay": {"type": "boolean"}
+  }
+}

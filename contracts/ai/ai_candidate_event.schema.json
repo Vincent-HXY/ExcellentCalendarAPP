@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/ai/ai_candidate_event.schema.json",
   "title": "AICandidateEvent",
   "description": "Candidate event extracted by AI and waiting for user confirmation before becoming a real event.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -2,73 +2,27 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/update_reminder_request.schema.json",
   "title": "UpdateReminderRequest",
-  "description": "Partial update payload for an existing reminder task. It updates reminder content and timing only; scheduling state changes must use explicit native calls such as reminder.mark_scheduled, reminder.mark_sent, reminder.mark_failed, reminder.enable, reminder.disable, or reminder.cancel.",
-  "x-contract-version": 1,
+  "description": "Partial update for an ordinary one-time Reminder. Recurring Event template changes must use event.update and create a new recurrence revision.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "id"
-  ],
+  "required": ["reminder_id"],
   "properties": {
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "target_type": {
-      "type": "string",
-      "enum": [
-        "event",
-        "habit",
-        "anniversary"
-      ]
-    },
-    "target_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "remind_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "advance_minutes": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "minimum": 0
-    },
+    "reminder_id": {"type": "string", "format": "uuid"},
+    "target_type": {"type": "string", "enum": ["event", "habit", "anniversary"]},
+    "target_id": {"type": "string", "format": "uuid"},
+    "remind_at": {"type": ["string", "null"], "format": "date-time"},
+    "advance_minutes": {"type": ["integer", "null"], "minimum": 0},
     "methods": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "enum": [
-          "ring",
-          "popup",
-          "wechat"
-        ]
-      }
+      "items": {"type": "string", "enum": ["ring", "popup", "wechat"]}
     },
-    "message": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
+    "message": {"type": ["string", "null"]},
     "source": {
       "type": "string",
-      "enum": [
-        "manual",
-        "auto",
-        "ai_extraction",
-        "sync",
-        "import",
-        "wechat"
-      ]
+      "enum": ["manual", "auto", "ai_extraction", "sync", "import", "wechat"]
     }
   }
 }

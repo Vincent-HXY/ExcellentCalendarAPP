@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/plan_recovery_request.schema.json",
+  "title": "PlanRecoveryRequest",
+  "description": "Idempotent request to plan the fixed reminder recovery window. Current time is supplied by the C++ Clock.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recovery_request_id", "trigger_source"],
+  "properties": {
+    "recovery_request_id": {"type": "string", "format": "uuid"},
+    "trigger_source": {
+      "type": "string",
+      "enum": ["app_start", "device_boot", "alarm_reconcile"]
+    }
+  }
+}

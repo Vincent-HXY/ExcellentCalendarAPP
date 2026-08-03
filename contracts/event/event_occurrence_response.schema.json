@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/event_occurrence_response.schema.json",
+  "title": "EventOccurrenceResponse",
+  "description": "Dynamically expanded occurrence projection plus optional sparse user state.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "recurrence_revision",
+    "occurrence_key",
+    "occurrence_start_at",
+    "occurrence_end_at",
+    "occurrence_start_date",
+    "occurrence_end_date",
+    "timezone",
+    "state"
+  ],
+  "properties": {
+    "event_id": {"type": "string", "format": "uuid"},
+    "recurrence_revision": {"type": "integer", "minimum": 1},
+    "occurrence_key": {"type": "string", "format": "uuid"},
+    "occurrence_start_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "occurrence_end_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "occurrence_start_date": {"type": ["string", "null"], "format": "date"},
+    "occurrence_end_date": {"type": ["string", "null"], "format": "date"},
+    "timezone": {"type": "string", "minLength": 1},
+    "state": {
+      "oneOf": [
+        {"$ref": "./event_occurrence_state_response.schema.json"},
+        {"type": "null"}
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "occurrence_start_at": {"type": "string", "format": "date-time"},
+        "occurrence_end_at": {"type": "string", "format": "date-time"},
+        "occurrence_start_date": {"type": "null"},
+        "occurrence_end_date": {"type": "null"}
+      }
+    },
+    {
+      "properties": {
+        "occurrence_start_at": {"type": "null"},
+        "occurrence_end_at": {"type": "null"},
+        "occurrence_start_date": {"type": "string", "format": "date"},
+        "occurrence_end_date": {"type": "string", "format": "date"}
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/notification/prepared_notification_payload.schema.json",
+  "title": "PreparedNotificationPayload",
+  "description": "Exact immutable payload C++ returns during prepare_delivery for Kotlin to place in the system notification PendingIntent. Android adds opened_at only when a tap is received.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notification_id",
+    "delivery_id",
+    "delivery_attempt_id",
+    "kind",
+    "reminder_id",
+    "recovery_batch_id",
+    "target_type",
+    "target_id",
+    "occurrence_key",
+    "route"
+  ],
+  "properties": {
+    "notification_id": {"type": "string", "format": "uuid"},
+    "delivery_id": {"type": "string", "format": "uuid"},
+    "delivery_attempt_id": {"type": "string", "format": "uuid"},
+    "kind": {"type": "string", "enum": ["reminder", "recovery_summary"]},
+    "reminder_id": {"type": ["string", "null"], "format": "uuid"},
+    "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
+    "target_type": {
+      "type": "string",
+      "enum": ["event", "habit", "anniversary", "reminder_recovery_batch"]
+    },
+    "target_id": {"type": "string", "format": "uuid"},
+    "occurrence_key": {"type": ["string", "null"], "format": "uuid"},
+    "route": {"type": ["string", "null"]}
+  },
+  "if": {
+    "properties": {"kind": {"const": "reminder"}},
+    "required": ["kind"]
+  },
+  "then": {
+    "properties": {
+      "reminder_id": {"type": "string", "format": "uuid"},
+      "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
+      "target_type": {"enum": ["event", "habit", "anniversary"]}
+    }
+  },
+  "else": {
+    "properties": {
+      "reminder_id": {"type": "null"},
+      "recovery_batch_id": {"type": "string", "format": "uuid"},
+      "target_type": {"const": "reminder_recovery_batch"},
+      "occurrence_key": {"type": "null"}
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "target_type": {"enum": ["habit", "anniversary"]}
+        },
+        "required": ["target_type"]
+      },
+      "then": {
+        "properties": {
+          "occurrence_key": {"type": "null"}
+        }
+      }
+    }
+  ]
+}

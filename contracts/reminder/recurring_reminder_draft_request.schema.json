@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/recurring_reminder_draft_request.schema.json",
+  "title": "RecurringReminderDraftRequest",
+  "description": "Complete replacement template for a recurring timed Event. C++ derives remind_at and all occurrence identity fields.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["target_type", "advance_minutes", "methods", "message", "is_enabled", "source"],
+  "properties": {
+    "target_type": {
+      "type": "string",
+      "const": "event"
+    },
+    "target_id": {
+      "type": ["string", "null"]
+    },
+    "advance_minutes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "methods": {
+      "type": "array",
+      "const": ["popup"]
+    },
+    "message": {
+      "type": ["string", "null"]
+    },
+    "is_enabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "source": {
+      "type": "string",
+      "enum": ["manual", "auto", "ai_extraction", "sync", "import", "wechat"]
+    }
+  }
+}

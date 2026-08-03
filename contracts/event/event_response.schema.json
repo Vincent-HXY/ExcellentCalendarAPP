@@ -2,85 +2,53 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/event/event_response.schema.json",
   "title": "EventResponse",
-  "description": "Transport representation returned after event create, update, query, or delete operations.",
-  "x-contract-version": 1,
+  "description": "Contract v2 Event projection. Nullable fields are always present so readers never infer time or recurrence shape from omission.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [
     "id",
     "title",
+    "content",
     "start_at",
     "end_at",
+    "start_date",
+    "end_date",
     "is_all_day",
     "has_recurrence",
     "status",
+    "completed_at",
+    "recurrence_id",
+    "recurrence_revision",
+    "category_id",
+    "importance",
+    "location",
+    "timezone",
     "source",
     "created_at",
-    "updated_at"
+    "updated_at",
+    "deleted_at"
   ],
   "properties": {
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "title": {
-      "type": "string",
-      "minLength": 1
-    },
-    "content": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "start_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "end_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "is_all_day": {
-      "type": "boolean"
-    },
-    "has_recurrence": {
-      "type": "boolean"
-    },
+    "id": {"type": "string", "format": "uuid"},
+    "title": {"type": "string", "minLength": 1},
+    "content": {"type": ["string", "null"]},
+    "start_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "end_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "start_date": {"type": ["string", "null"], "format": "date"},
+    "end_date": {"type": ["string", "null"], "format": "date"},
+    "is_all_day": {"type": "boolean"},
+    "has_recurrence": {"type": "boolean"},
     "status": {
       "type": "string",
-      "default": "active",
-      "enum": [
-        "active",
-        "completed",
-        "cancelled",
-        "archived"
-      ]
+      "enum": ["active", "completed", "cancelled", "archived"]
     },
-    "completed_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "recurrence_id": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "category_id": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
+    "completed_at": {"type": ["string", "null"], "format": "date-time"},
+    "recurrence_id": {"type": ["string", "null"], "format": "uuid"},
+    "recurrence_revision": {"type": ["integer", "null"], "minimum": 1},
+    "category_id": {"type": ["string", "null"]},
     "importance": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": ["string", "null"],
       "enum": [
         "unimportant_noturgent",
         "important_noturgent",
@@ -89,42 +57,62 @@
         null
       ]
     },
-    "location": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "timezone": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
+    "location": {"type": ["string", "null"]},
+    "timezone": {"type": "string", "minLength": 1},
     "source": {
       "type": "string",
-      "enum": [
-        "manual",
-        "ai_extraction",
-        "sync",
-        "import",
-        "wechat"
-      ]
+      "enum": ["manual", "ai_extraction", "sync", "import", "wechat"]
     },
-    "created_at": {
-      "type": "string",
-      "format": "date-time"
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "deleted_at": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"is_all_day": {"const": false}},
+        "required": ["is_all_day"]
+      },
+      "then": {
+        "properties": {
+          "start_at": {"type": "string", "format": "date-time"},
+          "end_at": {"type": "string", "format": "date-time"},
+          "start_date": {"type": "null"},
+          "end_date": {"type": "null"}
+        }
+      }
     },
-    "updated_at": {
-      "type": "string",
-      "format": "date-time"
+    {
+      "if": {
+        "properties": {"is_all_day": {"const": true}},
+        "required": ["is_all_day"]
+      },
+      "then": {
+        "properties": {
+          "start_at": {"type": "null"},
+          "end_at": {"type": "null"},
+          "start_date": {"type": "string", "format": "date"},
+          "end_date": {"type": "string", "format": "date"}
+        }
+      }
     },
-    "deleted_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
+    {
+      "if": {
+        "properties": {"has_recurrence": {"const": true}},
+        "required": ["has_recurrence"]
+      },
+      "then": {
+        "properties": {
+          "recurrence_id": {"type": "string", "format": "uuid"},
+          "recurrence_revision": {"type": "integer", "minimum": 1}
+        }
+      },
+      "else": {
+        "properties": {
+          "recurrence_id": {"type": "null"},
+          "recurrence_revision": {"type": "null"}
+        }
+      }
     }
-  }
+  ]
 }

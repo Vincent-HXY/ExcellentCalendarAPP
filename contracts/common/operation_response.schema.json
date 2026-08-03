@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/common/operation_response.schema.json",
   "title": "OperationResponse",
-  "description": "Business result for a successfully handled call that does not return a domain object.",
+  "description": "Business result retained for Backend API v1. Native v2 uses native_operation_response.schema.json so version domains do not share metadata.",
   "x-contract-version": 1,
   "type": "object",
   "required": ["performed"],

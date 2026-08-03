@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/event_occurrence_list_response.schema.json",
+  "title": "EventOccurrenceListResponse",
+  "description": "Stable ascending occurrence page within the requested expansion window.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "has_more", "next_cursor"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {"$ref": "./event_occurrence_response.schema.json"}
+    },
+    "has_more": {"type": "boolean"},
+    "next_cursor": {"type": ["string", "null"]}
+  }
+}

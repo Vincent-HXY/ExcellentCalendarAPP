@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/search/search_index_response.schema.json",
   "title": "SearchIndexResponse",
   "description": "Transport representation of a search index record. Field names are the snake_case mapping of DATA_MODEL.md SearchIndex.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

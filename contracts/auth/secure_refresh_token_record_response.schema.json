@@ -4,7 +4,7 @@
   "title": "SecureRefreshTokenRecordResponse",
   "description": "Sensitive record returned to Flutter only for the duration of a refresh or revocation request.",
   "x-contract-domain": "native_method_channel",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": ["refresh_token", "session_id", "expires_at"],

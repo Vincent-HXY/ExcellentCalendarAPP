@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/common/pagination_response.schema.json",
   "title": "PaginationResponse",
   "description": "Common pagination response fragment for list and search results.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

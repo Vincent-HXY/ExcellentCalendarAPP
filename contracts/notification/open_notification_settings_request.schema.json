@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/notification/open_notification_settings_request.schema.json",
   "title": "OpenNotificationSettingsRequest",
   "description": "Selects the Android settings surface to open after an explicit user action.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": ["settings_target"],

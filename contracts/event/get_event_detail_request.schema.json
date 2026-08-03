@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/event/get_event_detail_request.schema.json",
   "title": "GetEventDetailRequest",
   "description": "Request for the current detail-page aggregate of one non-deleted event.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": ["id"],

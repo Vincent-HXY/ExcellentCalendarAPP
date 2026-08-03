@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/recurrence/event_recurrence_rule_input.schema.json",
+  "title": "EventRecurrenceRuleInput",
+  "description": "Client intent for an Event recurrence. Anchors, weekdays, month days, timezone, and RRULE are derived by C++ and therefore rejected here.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["frequency", "interval", "end_at", "count"],
+  "properties": {
+    "frequency": {
+      "type": "string",
+      "enum": ["daily", "weekly", "monthly", "yearly", "custom"]
+    },
+    "interval": {
+      "type": "integer",
+      "const": 1
+    },
+    "end_at": {
+      "type": "null"
+    },
+    "count": {
+      "type": "null"
+    }
+  }
+}

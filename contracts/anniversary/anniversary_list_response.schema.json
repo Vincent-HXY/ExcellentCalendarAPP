@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_list_response.schema.json",
   "title": "AnniversaryListResponse",
   "description": "Paginated anniversary list response.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

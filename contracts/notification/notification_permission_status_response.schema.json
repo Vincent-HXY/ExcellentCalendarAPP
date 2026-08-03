@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/notification/notification_permission_status_response.schema.json",
   "title": "NotificationPermissionStatusResponse",
   "description": "Read-only snapshot of Android notification and exact-alarm access.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

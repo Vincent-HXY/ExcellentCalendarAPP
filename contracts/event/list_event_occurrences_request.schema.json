@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/list_event_occurrences_request.schema.json",
+  "title": "ListEventOccurrencesRequest",
+  "description": "Bounded half-open recurrence expansion query. The time shape must match the Event type.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "recurrence_revision",
+    "is_all_day",
+    "range_start_at",
+    "range_end_at",
+    "range_start_date",
+    "range_end_date",
+    "cursor",
+    "limit"
+  ],
+  "properties": {
+    "event_id": {"type": "string", "format": "uuid"},
+    "recurrence_revision": {"type": "integer", "minimum": 1},
+    "is_all_day": {"type": "boolean"},
+    "range_start_at": {"type": ["string", "null"], "format": "date-time"},
+    "range_end_at": {"type": ["string", "null"], "format": "date-time"},
+    "range_start_date": {"type": ["string", "null"], "format": "date"},
+    "range_end_date": {"type": ["string", "null"], "format": "date"},
+    "cursor": {"type": ["string", "null"]},
+    "limit": {"type": "integer", "minimum": 1, "maximum": 200}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"is_all_day": {"const": false}},
+        "required": ["is_all_day"]
+      },
+      "then": {
+        "properties": {
+          "range_start_at": {"type": "string", "format": "date-time"},
+          "range_end_at": {"type": "string", "format": "date-time"},
+          "range_start_date": {"type": "null"},
+          "range_end_date": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"is_all_day": {"const": true}},
+        "required": ["is_all_day"]
+      },
+      "then": {
+        "properties": {
+          "range_start_at": {"type": "null"},
+          "range_end_at": {"type": "null"},
+          "range_start_date": {"type": "string", "format": "date"},
+          "range_end_date": {"type": "string", "format": "date"}
+        }
+      }
+    }
+  ]
+}

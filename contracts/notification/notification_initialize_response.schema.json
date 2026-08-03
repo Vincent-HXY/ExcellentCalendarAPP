@@ -3,7 +3,7 @@
   "$id": "https://excellent-calendar.local/contracts/notification/notification_initialize_response.schema.json",
   "title": "NotificationInitializeResponse",
   "description": "Result of preparing Android notification channels and tap handling. Initialization must be idempotent and must not request permissions or schedule reminders.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [

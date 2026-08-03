@@ -2,59 +2,136 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/recurrence/recurrence_response.schema.json",
   "title": "RecurrenceResponse",
-  "description": "Transport representation of a persisted recurrence rule.",
-  "x-contract-version": 1,
+  "description": "Transport representation of one immutable Event recurrence revision. The Event owns the current recurrence_id + recurrence_revision reference.",
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "id",
-    "target_type",
-    "target_id",
-    "rule",
-    "created_at",
-    "updated_at"
+    "recurrence_id",
+    "revision",
+    "frequency",
+    "interval",
+    "start_at",
+    "start_date",
+    "timezone",
+    "day_of_month",
+    "days_of_week",
+    "month_of_year",
+    "end_at",
+    "count",
+    "created_at"
   ],
   "properties": {
-    "id": {
+    "recurrence_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "frequency": {
+      "type": "string",
+      "enum": ["daily", "weekly", "monthly"]
+    },
+    "interval": {
+      "type": "integer",
+      "const": 1
+    },
+    "start_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "start_date": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "timezone": {
       "type": "string",
       "minLength": 1
     },
-    "target_type": {
-      "type": "string",
-      "enum": [
-        "event",
-        "habit",
-        "anniversary"
-      ]
+    "day_of_month": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "maximum": 31
     },
-    "target_id": {
-      "type": "string",
-      "minLength": 1
+    "days_of_week": {
+      "type": "array",
+      "maxItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 7
+      }
     },
-    "rule": {
-      "$ref": "./recurrence_rule.schema.json"
+    "month_of_year": {
+      "type": "null"
     },
-    "last_expanded_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
+    "end_at": {
+      "type": "null"
+    },
+    "count": {
+      "type": "null"
     },
     "created_at": {
       "type": "string",
       "format": "date-time"
-    },
-    "updated_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "deleted_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
     }
-  }
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {
+          "properties": {
+            "start_at": {"type": "string", "format": "date-time"},
+            "start_date": {"type": "null"}
+          }
+        },
+        {
+          "properties": {
+            "start_at": {"type": "null"},
+            "start_date": {"type": "string", "format": "date"}
+          }
+        }
+      ]
+    },
+    {
+      "if": {
+        "properties": {"frequency": {"const": "daily"}},
+        "required": ["frequency"]
+      },
+      "then": {
+        "properties": {
+          "day_of_month": {"type": "null"},
+          "days_of_week": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"frequency": {"const": "weekly"}},
+        "required": ["frequency"]
+      },
+      "then": {
+        "properties": {
+          "day_of_month": {"type": "null"},
+          "days_of_week": {"minItems": 1, "maxItems": 1}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"frequency": {"const": "monthly"}},
+        "required": ["frequency"]
+      },
+      "then": {
+        "properties": {
+          "day_of_month": {"type": "integer", "minimum": 1, "maximum": 31},
+          "days_of_week": {"maxItems": 0}
+        }
+      }
+    }
+  ]
 }

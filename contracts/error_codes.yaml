@@ -1,4 +1,4 @@
-version: 1
+version: 2
 
 errors:
   NATIVE_INTERNAL_ERROR:
@@ -41,6 +41,16 @@ errors:
     message: "Storage data is corrupted"
     retryable: false
 
+  TIMEZONE_ID_INVALID:
+    module: runtime
+    message: "Timezone ID is not present in the bundled IANA database"
+    retryable: false
+
+  TIMEZONE_DATABASE_UNAVAILABLE:
+    module: runtime
+    message: "Bundled timezone database is missing, corrupted, or has the wrong version"
+    retryable: false
+
   EVENT_TITLE_EMPTY:
     module: event
     message: "Event title cannot be empty"
@@ -71,6 +81,26 @@ errors:
     message: "Recurrence target is invalid"
     retryable: false
 
+  ALL_DAY_RECURRING_REMINDER_NOT_SUPPORTED:
+    module: recurrence
+    message: "Recurring all-day Events do not support Reminder templates in Contract v2"
+    retryable: false
+
+  OCCURRENCE_NOT_FOUND:
+    module: recurrence
+    message: "Occurrence does not exist in the requested recurrence revision"
+    retryable: false
+
+  OCCURRENCE_OPERATION_INVALID:
+    module: recurrence
+    message: "Occurrence state transition is invalid"
+    retryable: false
+
+  RECURRENCE_REVISION_CONFLICT:
+    module: recurrence
+    message: "Expected recurrence revision does not match the Event current revision"
+    retryable: false
+
   REMINDER_TIME_INVALID:
     module: reminder
     message: "Reminder time is invalid"
@@ -90,6 +120,21 @@ errors:
     module: reminder
     message: "Reminder method is invalid"
     retryable: false
+
+  REMINDER_IDEMPOTENCY_CONFLICT:
+    module: reminder
+    message: "Deterministic Reminder ID already exists with different business content"
+    retryable: false
+
+  DELIVERY_ATTEMPT_INVALID:
+    module: notification
+    message: "Delivery attempt is missing, not prepared, or finalized with a conflicting outcome"
+    retryable: false
+
+  RECOVERY_BATCH_CONFLICT:
+    module: reminder
+    message: "Another incomplete recovery batch conflicts with this request"
+    retryable: true
 
   NOTIFICATION_DELIVERY_FAILED:
     module: notification

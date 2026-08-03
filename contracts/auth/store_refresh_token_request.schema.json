@@ -4,7 +4,7 @@
   "title": "StoreRefreshTokenRequest",
   "description": "Sensitive Flutter-to-Android request for encrypted Refresh Token storage. Never log this payload.",
   "x-contract-domain": "native_method_channel",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": ["refresh_token", "session_id", "expires_at"],

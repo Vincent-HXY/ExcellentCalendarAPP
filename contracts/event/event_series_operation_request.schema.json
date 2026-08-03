@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/event/event_series_operation_request.schema.json",
+  "title": "EventSeriesOperationRequest",
+  "description": "Optimistic-concurrency identity for complete, reopen, or cancel of an entire recurring Event series.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "recurrence_revision"],
+  "properties": {
+    "event_id": {"type": "string", "format": "uuid"},
+    "recurrence_revision": {"type": "integer", "minimum": 1}
+  }
+}
