@@ -15,16 +15,26 @@ object NativeErrorCodes {
     const val StoragePathInvalid = "STORAGE_PATH_INVALID"
     const val StorageIoError = "STORAGE_IO_ERROR"
     const val StorageDataCorrupted = "STORAGE_DATA_CORRUPTED"
+    const val TimezoneIdInvalid = "TIMEZONE_ID_INVALID"
+    const val TimezoneDatabaseUnavailable = "TIMEZONE_DATABASE_UNAVAILABLE"
     const val EventTitleEmpty = "EVENT_TITLE_EMPTY"
     const val EventTimeInvalid = "EVENT_TIME_INVALID"
     const val EventNotFound = "EVENT_NOT_FOUND"
     const val EventDeleteScopeInvalid = "EVENT_DELETE_SCOPE_INVALID"
     const val RecurrenceRuleInvalid = "RECURRENCE_RULE_INVALID"
     const val RecurrenceTargetInvalid = "RECURRENCE_TARGET_INVALID"
+    const val AllDayRecurringReminderNotSupported = "ALL_DAY_RECURRING_REMINDER_NOT_SUPPORTED"
+    const val OccurrenceNotFound = "OCCURRENCE_NOT_FOUND"
+    const val OccurrenceOperationInvalid = "OCCURRENCE_OPERATION_INVALID"
+    const val RecurrenceRevisionConflict = "RECURRENCE_REVISION_CONFLICT"
     const val ReminderTimeInvalid = "REMINDER_TIME_INVALID"
     const val ReminderTargetNotFound = "REMINDER_TARGET_NOT_FOUND"
     const val ReminderNotFound = "REMINDER_NOT_FOUND"
     const val ReminderMethodInvalid = "REMINDER_METHOD_INVALID"
+    const val ReminderIdempotencyConflict = "REMINDER_IDEMPOTENCY_CONFLICT"
+    const val ReminderScheduleConflict = "REMINDER_SCHEDULE_CONFLICT"
+    const val DeliveryAttemptInvalid = "DELIVERY_ATTEMPT_INVALID"
+    const val RecoveryBatchConflict = "RECOVERY_BATCH_CONFLICT"
     const val NotificationDeliveryFailed = "NOTIFICATION_DELIVERY_FAILED"
     const val HabitTitleEmpty = "HABIT_TITLE_EMPTY"
     const val HabitNotFound = "HABIT_NOT_FOUND"
@@ -38,7 +48,9 @@ object NativeErrorCodes {
     const val AiExtractionFailed = "AI_EXTRACTION_FAILED"
     const val SyncConflict = "SYNC_CONFLICT"
     const val SyncOperationInvalid = "SYNC_OPERATION_INVALID"
-    const val UserSettingsInvalid = "USER_SETTINGS_INVALID"
+    const val SecureTokenNotFound = "SECURE_TOKEN_NOT_FOUND"
+    const val SecureTokenStorageFailed = "SECURE_TOKEN_STORAGE_FAILED"
+    const val SecureTokenCorrupted = "SECURE_TOKEN_CORRUPTED"
     const val PermissionDenied = "PERMISSION_DENIED"
     const val AlarmScheduleFailed = "ALARM_SCHEDULE_FAILED"
     const val AlarmCancelFailed = "ALARM_CANCEL_FAILED"
@@ -60,16 +72,26 @@ object NativeErrorCodes {
         StoragePathInvalid,
         StorageIoError,
         StorageDataCorrupted,
+        TimezoneIdInvalid,
+        TimezoneDatabaseUnavailable,
         EventTitleEmpty,
         EventTimeInvalid,
         EventNotFound,
         EventDeleteScopeInvalid,
         RecurrenceRuleInvalid,
         RecurrenceTargetInvalid,
+        AllDayRecurringReminderNotSupported,
+        OccurrenceNotFound,
+        OccurrenceOperationInvalid,
+        RecurrenceRevisionConflict,
         ReminderTimeInvalid,
         ReminderTargetNotFound,
         ReminderNotFound,
         ReminderMethodInvalid,
+        ReminderIdempotencyConflict,
+        ReminderScheduleConflict,
+        DeliveryAttemptInvalid,
+        RecoveryBatchConflict,
         NotificationDeliveryFailed,
         HabitTitleEmpty,
         HabitNotFound,
@@ -83,7 +105,9 @@ object NativeErrorCodes {
         AiExtractionFailed,
         SyncConflict,
         SyncOperationInvalid,
-        UserSettingsInvalid,
+        SecureTokenNotFound,
+        SecureTokenStorageFailed,
+        SecureTokenCorrupted,
         PermissionDenied,
         AlarmScheduleFailed,
         AlarmCancelFailed,
@@ -122,7 +146,14 @@ data class NativeErrorContract(
 
     companion object {
         /** 从 native 返回的 Map 构造错误对象，并校验字段类型和值域。 */
-        fun fromMap(map: Map<String, Any?>): NativeErrorContract {
+        fun fromMap(map: Map<String, Any?>, strict: Boolean = false): NativeErrorContract {
+            if (strict) {
+                ContractValidators.rejectUnknownFields(
+                    map,
+                    setOf("code", "message", "details", "retryable"),
+                    "NativeError",
+                )
+            }
             val code = map["code"]
             val message = map["message"]
             val details = map["details"]

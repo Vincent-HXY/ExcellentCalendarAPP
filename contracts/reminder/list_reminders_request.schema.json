@@ -67,7 +67,8 @@
           "scheduled",
           "sent",
           "failed",
-          "cancelled"
+          "cancelled",
+          "expired"
         ]
       }
     },

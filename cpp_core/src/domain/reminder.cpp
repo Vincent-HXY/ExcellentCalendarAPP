@@ -23,12 +23,21 @@ bool is_valid_reminder_status(std::string_view value) {
          value == kReminderStatusScheduled ||
          value == kReminderStatusSent ||
          value == kReminderStatusFailed ||
-         value == kReminderStatusCancelled;
+         value == kReminderStatusCancelled ||
+         value == kReminderStatusExpired;
 }
 
 bool is_valid_reminder_cancellation_reason(std::string_view value) {
   return value == kReminderCancellationReasonUserCancelled ||
-         value == kReminderCancellationReasonEventCompleted;
+         value == kReminderCancellationReasonEventCompleted ||
+         value == kReminderCancellationReasonOccurrenceCompleted ||
+         value == kReminderCancellationReasonOccurrenceSkipped ||
+         value == kReminderCancellationReasonOccurrenceCancelled ||
+         value == kReminderCancellationReasonOccurrenceReopened ||
+         value == kReminderCancellationReasonSeriesCompleted ||
+         value == kReminderCancellationReasonSeriesCancelled ||
+         value == kReminderCancellationReasonSeriesDeleted ||
+         value == kReminderCancellationReasonSeriesUpdated;
 }
 
 bool is_valid_reminder_source(std::string_view value) {

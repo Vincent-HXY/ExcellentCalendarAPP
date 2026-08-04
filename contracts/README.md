@@ -41,6 +41,10 @@
 18. Native v2 的 Reminder 主键字段统一为 `reminder_id`；v1 的通用 `id` 不得在 Reminder request/response 或调度游标中继续接受。
 19. `event.update.recurrence` 省略表示保留，传对象表示设置或修改；v2 不接受含义不明确的 `null` 拆系操作。
 20. `prepare_delivery` 返回 `PreparedNotificationPayload`，其中没有 `opened_at`；Android 收到点击后追加非空 `opened_at`，才形成 EventChannel 使用的 `NotificationTapPayload`。
+21. `reminder.mark_scheduled` 必须携带 Kotlin 本次注册所依据的 `expected_remind_at`；C++ 仅在持久化 `remind_at` 仍严格相等时写入 `scheduled`，否则返回可重试的 `REMINDER_SCHEDULE_CONFLICT` 且不得修改 Reminder。
+22. `prepared` Notification 的投递内容和 PendingIntent payload 一经返回即冻结。Recovery 只能通过 `resolved_by_recovery_batch_id` 接管原 attempt，或把它终结为 `abandoned`；禁止改写原 `recovery_batch_id` 来伪造新 payload。
+23. `plan_recovery` 是唯一可写入 `ReminderStatus.expired` 的 workflow：只处理严格早于 72 小时窗口的 open `pending/scheduled` Reminder，原子禁用并清空 `scheduled_at`；重复 Reminder 同一事务保证未来 successor。
+24. occurrence reopen 若遇到同模板的后继滚动 Reminder，必须以 `occurrence_reopened` 暂存后继并恢复原 Reminder；滚动链随后复用确定性 ID，任何时刻同模板最多一条 open Reminder。
 
 ## Directory
 
@@ -78,7 +82,7 @@ contracts/
 Native Contract 已设计为 breaking v2，Backend API 继续使用独立的 v1。JSON Schema 使用 Draft 2020-12，并通过 `x-contract-domain`、`x-contract-version` 或独立的 `x-storage-format-version` 标明所属版本。MethodChannel、Backend API、错误码和枚举文件保留顶层 `version`。
 `common/native_empty_request.schema.json` 与 `common/native_operation_response.schema.json` 属于 Native v2；未带 `native_` 前缀的同名通用文件继续服务 Backend API v1，禁止跨版本域复用其版本元数据。
 
-`method_channels.yaml` 与 `native_calls.yaml` 当前标记为 `release_status: design_only`。只有 Dart、Kotlin、JNI、C++、JSON Storage 与测试在同一发行版本同步完成后，才可切换为 active；现有 v1 实现不能被描述为已经支持 v2。
+`method_channels.yaml`、`native_calls.yaml` 与 Calendar Core JSON v2 当前仍标记为 `release_status: design_only`。C++ Domain/Boundary、JSON Storage 与 native_calls 中对应的 C++ 入口已经实现，但 Flutter、Kotlin、JNI 和 Android 调度尚未切换到 v2，因此只能标记 `implementation_status: cpp_core_complete_unintegrated`，不能描述为 APK 已支持或把 writer 指向用户正式目录。只有 Dart、Kotlin、JNI、C++、JSON Storage 与全链路测试在同一发行版本同步完成后，才可切换为 active。
 
 | 版本域 | 真相源 | 当前版本 | 兼容策略 |
 | --- | --- | --- | --- |
@@ -136,12 +140,12 @@ Contract v2 固定返回 `tzdb_version = 2026c`，该版本可从 [IANA Time Zon
 
 | 层 | 本轮结果 | 后续实施要求 |
 | --- | --- | --- |
-| Data Model | v2 领域语义已设计 | 保持与 Contract 字段、状态机和事务一致 |
-| Contract | schema、方法、枚举、错误、身份和 Storage 规则已设计 | 激活前移除 `design_only` 并通过契约测试 |
+| Data Model | v2 领域语义已定稿并同步本轮恢复/竞态规则 | 后续实现必须保持字段、状态机和事务一致 |
+| Contract | schema、方法、枚举、错误、身份和 Storage 规则已同步 | 激活前通过 Dart/Kotlin/C++ 契约与全链路测试，再移除 `design_only` |
 | Dart | 未修改 | DTO/Gateway 必须拒绝 v1 与 malformed v2 |
-| Kotlin/JNI | 未修改 | 新增 v2 validator/bridge；Kotlin 只编排系统能力 |
-| C++ Domain/Boundary | 未修改 | 实现 TZDB、本地日历展开、UUIDv5、workflow 与 Clock |
-| JSON Storage | 仅设计 v2 格式与归档规则 | 实现原子 v1 归档、空 v2 初始化和 journal 重放 |
+| Kotlin/JNI | 仍为 v1，未接入本轮 v2 | 新增 v2 validator/bridge、CAS Alarm acknowledgement 与 prepared attempt 串行仲裁；Kotlin 只编排系统能力 |
+| C++ Domain/Boundary | 已实现但未接入 APK | 保持 Core 测试通过，并在 JNI 接入后做 native smoke |
+| JSON Storage | v2 codec、v1 归档、空目录初始化和 journal 重放已实现但未激活 | 接入 APK 前验证真实 Android 路径、崩溃恢复与回滚隔离 |
 | Import/Backup/Backend | 不受 Native v2 版本驱动 | 继续使用各自独立版本域 |
 
 ### UserData 预发布纠正

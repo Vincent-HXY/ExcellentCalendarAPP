@@ -42,6 +42,7 @@ ReminderStatus:
     - sent
     - failed
     - cancelled
+    - expired
 
 ReminderCancellationReason:
   values:
@@ -50,16 +51,22 @@ ReminderCancellationReason:
     - occurrence_completed
     - occurrence_skipped
     - occurrence_cancelled
+    - occurrence_reopened
     - series_completed
     - series_cancelled
     - series_deleted
     - series_updated
+
+ReminderExpirationReason:
+  values:
+    - recovery_window_elapsed
 
 NotificationStatus:
   values:
     - prepared
     - sent
     - failed
+    - abandoned
 
 NotificationKind:
   values:
@@ -75,6 +82,17 @@ DeliveryFinalizeOutcome:
   values:
     - sent
     - failed
+
+DeliveryAbandonReason:
+  values:
+    - recovery_window_elapsed
+    - recovery_summary_superseded
+
+PreparedAttemptRecoveryResolution:
+  values:
+    - adopted_detail
+    - abandoned_to_summary
+    - abandoned_outside_window
 
 ReminderRecoveryTriggerSource:
   values:

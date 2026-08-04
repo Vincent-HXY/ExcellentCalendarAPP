@@ -64,8 +64,12 @@ object ReminderWorkScheduler {
     }
 
     fun enqueueContinuation(context: Context) {
+        enqueue(context, ReminderScheduleTrigger.AlarmFired)
+    }
+
+    fun enqueue(context: Context, trigger: ReminderScheduleTrigger) {
         val request = OneTimeWorkRequestBuilder<ReminderQueueWorker>()
-            .setInputData(workDataOf(ReminderQueueWorker.InputTrigger to ReminderScheduleTrigger.AlarmFired.wireValue))
+            .setInputData(workDataOf(ReminderQueueWorker.InputTrigger to trigger.wireValue))
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES)
             .build()
         WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(

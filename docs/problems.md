@@ -16,17 +16,54 @@ design-only v2 已在 `native_calls.yaml` 声明 Kotlin→C++ 内部 `reminder.g
 
 影响：字段解释漂移、all-day 时间丢失、重复 Reminder 重复投递、旧数据不可读，最坏情况下会把正式 v1 数据误当作 v2 重写。
 
-当前处理：`method_channels.yaml`、`native_calls.yaml`、身份和 Storage map 均标记 `release_status: design_only`；v1 只允许完整归档，不迁移、不混读、不双写。2026-08-03 已完成 Schema/YAML/引用/固定向量静态审计，但没有执行运行时代码或真机验证。
+当前处理：`method_channels.yaml`、`native_calls.yaml` 和 Storage map 仍标记 `release_status: design_only`，同时标记 `implementation_status: cpp_core_complete_unintegrated`。C++ Core、Boundary、JSON Storage v2 和原生回归已于 2026-08-04 完成；v1 仍只允许完整归档，不迁移、不混读、不双写。Dart、Kotlin、JNI 和真机链路尚未接入。
 
 剩余实施门禁：
 
-- 需求指定的 Howard Hinnant `date v3.0.5` 不存在于官方 release 列表；必须选择真实 release（当前最新 v3.0.4）或经审核的固定 commit，不能由实现者静默替换。
-- 现有 all-day Event 仍依赖 `start_at/end_at`，必须与 DTO、Boundary、Domain、Repository 和测试原子切换到 v2 互斥时间结构。
+- C++ 已锁定可获得的 Howard Hinnant `date v3.0.4`；Kotlin/JNI/Dart 仍需与 C++ 的 timed/all-day、时区和 recurrence v2 结构原子切换。
 - Habit/Anniversary 的重复语义不能套用 Event v2；通用旧 recurrence schema 只保留为 planned。
-- `ReminderStatus.expired` 的外部协议尚未合入；v2 不增加替代枚举，也不改写早于恢复窗口的旧滚动 Reminder。
-- JSON Repository 尚未实现跨文件 prepare/commit journal；v1 归档和 v2 初始化失败时必须停止，不能部分清理。
+- Android 调度尚未传递 `expected_remind_at`、处理可重试 CAS 冲突，也尚未消费 `prepared_attempt_resolutions` 来取消废弃的 delivery tag。
+- Flutter/Kotlin 测试、Android Debug、native smoke 与正式数据目录升级演练尚未执行。
 
 解除条件：同一发布包完成 C++ TZDB/Clock/Workflow/Storage v2、JNI/Kotlin、Dart DTO/Gateway、Contract 正反例、C++ check、Flutter/Kotlin 测试、Android Debug 与 native smoke test 后，才能移除 `design_only`。
+
+### ~~重复 Reminder v2 的五个冻结语义缺口~~
+
+根因：最初 Contract 只描述主流程，没有冻结异步 Alarm 确认、occurrence reopen、恢复窗口淘汰和已 prepared 投递跨 Recovery 的并发裁决；同时把“发布可用”和“某一层已实现”混为一个状态。
+
+触发条件包括旧 Alarm 在 Reminder 改时后回写、reopen 时已有同模板 successor、已物化 Reminder 严格落到 72 小时窗口外，以及 frozen prepared attempt 在 Recovery 重新分流。
+
+影响是旧调度覆盖新时间、同模板出现两条 open Reminder、窗口外记录永久滞留调度队列，或 Android 继续 finalize 已被恢复摘要取代的旧 payload。
+
+已于 2026-08-04 修复：
+
+- `reminder.mark_scheduled` 强制携带 `expected_remind_at` 并在事务内 CAS；不匹配返回可重试 `REMINDER_SCHEDULE_CONFLICT`，不产生写入。
+- 新增 `occurrence_reopened` 取消原因；reopen 原子暂存较晚 open successor，再恢复原 Reminder，后续滚动复用确定性 ID。
+- 新增 `ReminderStatus.expired`、`recovery_window_elapsed` 和 `expired_at`；仅 `planRecovery` 可终结严格早于窗口的已物化 open Reminder，重复项在同一事务确保首个未来 successor。
+- prepared payload 保持冻结；Recovery 通过 `adopted_detail`、`abandoned_to_summary`、`abandoned_outside_window` 原子接管或废弃 attempt。被废弃 attempt 的旧 finalize 返回 `DELIVERY_ATTEMPT_INVALID` 且不修改状态。
+- v2 保持 `release_status: design_only`，另以 `implementation_status: cpp_core_complete_unintegrated` 表达 C++/Storage 完成但跨端未接入。
+
+验证：C++ `excellent_calendar_check` 3/3 通过；CAS 无写入、reopen 单 open、expired 边界/计数/successor、attempt 幂等裁决/旧 finalize 拒绝、Boundary JSON 和 journal 逻辑 store 名均有回归测试。本项剩余风险集中在 JNI/Kotlin/Dart/Android 集成门禁，不能据此激活 v2。
+
+### ~~adopted attempt finalize 被 Kotlin 误判失败~~
+
+根因：`finalize_delivery_response` 与 Kotlin validator 只用 `notification.recovery_batch_id` 判断 response 是否必须携带 `recovery_batch`，遗漏了 frozen prepared attempt 通过 `resolved_by_recovery_batch_id` 归属 Recovery 的既定语义。
+
+触发条件：Recovery 接管旧 prepared attempt 后，C++ 成功 finalize 并返回 RecoveryBatch；此时旧 attempt 保持 `recovery_batch_id = null`，同时写入 `resolved_by_recovery_batch_id`。
+
+影响：C++ 事务已经提交为成功，但 Kotlin 将合法 response 转成不可重试的 `CONTRACT_VALIDATION_FAILED`，造成领域状态与 Android 编排状态分裂，并可能阻止 Recovery request 正常清理。
+
+已于 2026-08-04 修复：Contract 和 Kotlin 统一把 `recovery_batch_id` 或 `resolved_by_recovery_batch_id` 任一非空视为 Recovery 归属；两者都为空时仍强制 `recovery_batch = null`。新增 validator 与 delivery pipeline 回归，覆盖 adopted attempt 返回 completed RecoveryBatch，并保留不一致 response 的拒绝行为。
+
+### ~~`expired` 在 Reminder Contract 内部不一致~~
+
+根因：`ReminderStatus`、response 和 C++ 已支持 `expired`，但 `list_reminders_request.status` 与 Kotlin v2 request validator 仍保留旧的五状态集合。
+
+触发条件：调用 `reminder.list` 并显式传入 `status = ["expired"]`。
+
+影响：请求在 JNI 前被拒绝，恢复历史、过期统计和 Recovery 审计无法精确查询，但不影响 Dispatcher 调度。
+
+已于 2026-08-04 修复：list request Schema 增加 `expired`；Kotlin 改为复用统一的 `ContractEnums.ReminderStatus`，并新增接受 `expired`、拒绝未知状态的回归测试。该变更只放宽合法查询输入，不改变持久化数据、状态机或默认列表行为。
 
 ### ~~创建EVENT CPP部分存在问题~~
 
@@ -80,7 +117,7 @@ design-only v2 已在 `native_calls.yaml` 声明 Kotlin→C++ 内部 `reminder.g
 
 [notification_tap_payload.schema.json (line 9)](A:\\calendar\\ExcellentCalendarAPP\\contracts\\notification\\notification_tap_payload.schema.json:9) 要求点击 PendingIntent 必须包含 `notification_id`。
 
-v1 的 `consume_reminder_after_delivery` 与 `notification.create` 协议都不接收预先生成的 `notification_id`。这两个 v1 Schema 已在 design-only Contract v2 中移除并由 `reminder.prepare_delivery/finalize_delivery` 替代，但现有 Dart/Kotlin/JNI/C++ 实现尚未切换，因此运行时问题仍未关闭。
+v1 的 `consume_reminder_after_delivery` 与 `notification.create` 协议都不接收预先生成的 `notification_id`。这两个 v1 Schema 已在 design-only Contract v2 中移除并由 `reminder.prepare_delivery/finalize_delivery` 替代；C++/Storage v2 已实现，但现有 Dart/Kotlin/JNI 与 Android 投递链仍未切换，因此 APK 运行时问题仍未关闭。
 
 这会产生顺序矛盾：
 
@@ -185,9 +222,9 @@ v1 `schedule_pending_reminders` 返回只有失败 ID 和数量，没有每条�
 
 ### 重复提醒尚未进入消费闭环
 
-v1 `consume_reminder_after_delivery` 的 `delete_after_sent` 当前固定为 true，所以已实现链路只覆盖一次性 Reminder。design-only v2 删除物理消费语义，改为保留历史并在 finalize workflow 原子生成 successor；在 C++/Storage 实现落地前，本问题仍然存在。
+v1 `consume_reminder_after_delivery` 的 `delete_after_sent` 当前固定为 true，所以 APK 已接入链路只覆盖一次性 Reminder。design-only v2 删除物理消费语义，改为保留历史并在 finalize workflow 原子生成 successor；C++/Storage 已实现该行为，但 JNI/Kotlin/Dart 尚未接入，因此运行时问题仍然存在。
 
-v2 已定义 finalize 在同一 C++ workflow transaction 中保留当前历史并创建确定性 successor；当前缺口是实现与验证，而不是继续新增另一套 `next_reminder` 协议。
+v2 已在同一 C++ workflow transaction 中实现保留当前历史并创建确定性 successor；当前缺口是跨端接入与 Android/native smoke 验证，而不是继续新增另一套 `next_reminder` 协议。
 
 ## 三、`notification_id` 的生成时机冲突
 

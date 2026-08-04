@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/prepared_attempt_recovery_resolution.schema.json",
+  "title": "PreparedAttemptRecoveryResolution",
+  "description": "Immutable recovery arbitration for an attempt that was already prepared before plan_recovery. Kotlin must serialize recovery against normal delivery, reuse adopted_detail attempts, and cancel the Android notification tag for abandoned resolutions without calling finalize_delivery.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "delivery_attempt_id",
+    "delivery_id",
+    "reminder_id",
+    "resolution",
+    "replacement_delivery_id"
+  ],
+  "properties": {
+    "delivery_attempt_id": {"type": "string", "format": "uuid"},
+    "delivery_id": {"type": "string", "format": "uuid"},
+    "reminder_id": {"type": "string", "format": "uuid"},
+    "resolution": {
+      "type": "string",
+      "enum": ["adopted_detail", "abandoned_to_summary", "abandoned_outside_window"]
+    },
+    "replacement_delivery_id": {"type": ["string", "null"], "format": "uuid"}
+  },
+  "if": {
+    "properties": {"resolution": {"const": "adopted_detail"}},
+    "required": ["resolution"]
+  },
+  "then": {
+    "properties": {"replacement_delivery_id": {"type": "null"}}
+  },
+  "else": {
+    "properties": {"replacement_delivery_id": {"type": "string", "format": "uuid"}}
+  }
+}

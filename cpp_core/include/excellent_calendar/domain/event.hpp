@@ -22,6 +22,9 @@ struct Event {
   std::string start_at;
   /** UTC ISO 8601 结束时间，必须晚于 start_at。 */
   std::string end_at;
+  /** Contract v2 全天 Event 的本地右开日期区间。 */
+  std::optional<std::string> start_date;
+  std::optional<std::string> end_date;
   /** 是否为全天事件。 */
   bool is_all_day = false;
   /** 是否有关联的重复规则；当前阶段创建接口尚未持久化 recurrence。 */
@@ -32,6 +35,8 @@ struct Event {
   std::optional<std::string> completed_at;
   /** 重复规则 id，可选。 */
   std::optional<std::string> recurrence_id;
+  /** 当前不可变重复规则 revision；与 recurrence_id 同时存在或同时为空。 */
+  std::optional<int> recurrence_revision;
   /** 分类 id，可选。 */
   std::optional<std::string> category_id;
   /** 重要程度，可选，取值见 importance.hpp。 */

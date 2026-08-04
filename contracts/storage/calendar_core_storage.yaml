@@ -1,5 +1,6 @@
 version: 2
 release_status: design_only
+implementation_status: cpp_core_complete_unintegrated
 format_name: excellent_calendar_core_json
 storage_format_version: 2
 
@@ -80,6 +81,23 @@ conditional_uniques:
     fields: [status]
     where: status == in_progress
 
+lifecycle_invariants:
+  reminder_expiration:
+    - only recovery_batch_reminders_and_summary may transition an open Reminder to expired
+    - expired requires is_enabled false, scheduled_at null, expiration_reason recovery_window_elapsed, and expired_at UTC
+    - a recurring expired Reminder is committed with at most one open future successor for the same template
+  prepared_attempt_resolution:
+    - a prepared Notification payload is immutable after it is returned to Kotlin
+    - recovery_batch_id and resolved_by_recovery_batch_id are mutually exclusive
+    - adopted attempts remain prepared and reference the batch only through resolved_by_recovery_batch_id
+    - abandoned attempts require resolved_by_recovery_batch_id, abandon_reason, and finalized_at; stale finalize is rejected
+  scheduler_acknowledgement:
+    - mark_scheduled compares expected_remind_at with the persisted remind_at inside the Reminder write transaction
+    - a mismatch returns REMINDER_SCHEDULE_CONFLICT and writes no Reminder fields
+  v1_archive_recognition:
+    - the v1 Reminder status and cancellation-reason allow-lists are frozen independently from v2 domain validators
+    - v2-only expired and occurrence_reopened values never qualify a directory for automatic v1 archival
+
 workflow_journal:
   states: [prepared, committed]
   recovery: replay_prepared_idempotently_then_commit
@@ -87,7 +105,7 @@ workflow_journal:
     transaction_id: required_uuid_v4
     operation: required_stable_string
     intent_version: required_positive_integer
-    intent: required_operation_specific_object
+    intent: required_strict_object_for_operation_and_intent_version
     affected_stores: required_unique_logical_store_names
     state: required_prepared_or_committed
     prepared_at: required_utc_instant
@@ -98,9 +116,19 @@ workflow_journal:
     - delivery_finalize_notification_reminder_and_successor
     - recovery_batch_reminders_and_summary
     - series_complete_cancel_delete_or_reopen
+  intent_codecs:
+    version_1:
+      applies_to: all_declared_operations
+      exact_fields: [after_stores]
+      after_stores: >-
+        Complete, already validated v2 root snapshots keyed by the six logical
+        data-store names. File names are storage-adapter details and are forbidden
+        as keys in affected_stores or after_stores.
   invariants:
-    - each operation plus intent_version has a strict storage-internal codec; unknown fields, operations, or versions fail recovery
-    - intent contains all deterministic IDs, expected revisions, Clock timestamps, and after-state needed for idempotent replay
+    - each operation plus intent_version selects a strict storage-internal codec; unknown fields, operations, or versions fail recovery
+    - intent_version 1 uses the same exact full-after-state codec for every declared operation; operation remains a required audited discriminator
+    - affected_stores contains exactly the six logical data-store names represented by intent.after_stores
+    - the complete after-state, transaction_id, operation, and prepared_at contain everything needed for deterministic idempotent replay
     - write and fsync prepared intent before applying repository changes
     - every repository mutation is idempotent under transaction_id
     - write and fsync commit only after all repository changes succeed

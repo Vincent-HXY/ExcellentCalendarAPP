@@ -23,4 +23,10 @@ interface NativeReminderBridge {
     fun enableReminder(requestJson: String): String
 
     fun disableReminder(requestJson: String): String
+
+    fun prepareReminderDelivery(requestJson: String): String = throw UnsupportedOperationException("reminder.prepare_delivery is unavailable")
+
+    fun finalizeReminderDelivery(requestJson: String): String = throw UnsupportedOperationException("reminder.finalize_delivery is unavailable")
+
+    fun planReminderRecovery(requestJson: String): String = throw UnsupportedOperationException("reminder.plan_recovery is unavailable")
 }

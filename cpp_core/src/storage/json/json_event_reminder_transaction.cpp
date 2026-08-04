@@ -97,10 +97,17 @@ common::Result<common::Unit> restore_snapshot(AtomicJsonFileStore& store, const 
 
 }  // namespace
 
-JsonEventReminderTransaction::JsonEventReminderTransaction(std::filesystem::path storage_directory)
-    : store_(std::move(storage_directory)) {}
+JsonEventReminderTransaction::JsonEventReminderTransaction(
+    std::filesystem::path storage_directory,
+    std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
+    : store_(std::move(storage_directory)), runtime_lease_(std::move(runtime_lease)) {}
 
 common::Result<common::Unit> JsonEventReminderTransaction::initialize() {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<common::Unit>::failure(
+        storage::runtime_storage_revoked_error("event_reminder_transaction.initialize"));
+  }
   auto lock = store_.acquire_directory_lock();
   auto initialized = store_.initialize();
   if (!initialized.ok()) {
@@ -110,6 +117,11 @@ common::Result<common::Unit> JsonEventReminderTransaction::initialize() {
 }
 
 common::Result<common::Unit> JsonEventReminderTransaction::execute(const Operation& operation) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<common::Unit>::failure(
+        storage::runtime_storage_revoked_error("event_reminder_transaction.execute"));
+  }
   auto lock = store_.acquire_directory_lock();
   auto recovered = recover_locked();
   if (!recovered.ok()) {

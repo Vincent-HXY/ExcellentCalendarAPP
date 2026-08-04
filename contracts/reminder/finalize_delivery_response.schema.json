@@ -57,8 +57,16 @@
       "if": {
         "properties": {
           "notification": {
-            "properties": {"recovery_batch_id": {"type": "string"}},
-            "required": ["recovery_batch_id"]
+            "anyOf": [
+              {
+                "properties": {"recovery_batch_id": {"type": "string"}},
+                "required": ["recovery_batch_id"]
+              },
+              {
+                "properties": {"resolved_by_recovery_batch_id": {"type": "string"}},
+                "required": ["resolved_by_recovery_batch_id"]
+              }
+            ]
           }
         },
         "required": ["notification"]

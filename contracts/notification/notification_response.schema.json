@@ -13,6 +13,7 @@
     "kind",
     "reminder_id",
     "recovery_batch_id",
+    "resolved_by_recovery_batch_id",
     "target_type",
     "target_id",
     "occurrence_key",
@@ -23,6 +24,7 @@
     "status",
     "failure_class",
     "error_code",
+    "abandon_reason",
     "prepared_at",
     "finalized_at",
     "sent_at",
@@ -36,6 +38,7 @@
     "kind": {"type": "string", "enum": ["reminder", "recovery_summary"]},
     "reminder_id": {"type": ["string", "null"], "format": "uuid"},
     "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
+    "resolved_by_recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
     "target_type": {
       "type": "string",
       "enum": ["event", "habit", "anniversary", "reminder_recovery_batch"]
@@ -46,12 +49,16 @@
     "title": {"type": "string", "minLength": 1},
     "body": {"type": ["string", "null"]},
     "planned_at": {"type": "string", "format": "date-time"},
-    "status": {"type": "string", "enum": ["prepared", "sent", "failed"]},
+    "status": {"type": "string", "enum": ["prepared", "sent", "failed", "abandoned"]},
     "failure_class": {
       "type": ["string", "null"],
       "enum": ["retryable", "permanent", null]
     },
     "error_code": {"type": ["string", "null"], "minLength": 1},
+    "abandon_reason": {
+      "type": ["string", "null"],
+      "enum": ["recovery_window_elapsed", "recovery_summary_superseded", null]
+    },
     "prepared_at": {"type": "string", "format": "date-time"},
     "finalized_at": {"type": ["string", "null"], "format": "date-time"},
     "sent_at": {"type": ["string", "null"], "format": "date-time"},
@@ -59,6 +66,25 @@
     "updated_at": {"type": "string", "format": "date-time"}
   },
   "allOf": [
+    {
+      "not": {
+        "properties": {
+          "recovery_batch_id": {"type": "string"},
+          "resolved_by_recovery_batch_id": {"type": "string"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "resolved_by_recovery_batch_id": {"type": "string"}
+        },
+        "required": ["resolved_by_recovery_batch_id"]
+      },
+      "then": {
+        "properties": {"kind": {"const": "reminder"}}
+      }
+    },
     {
       "if": {
         "properties": {"kind": {"const": "reminder"}},
@@ -90,6 +116,7 @@
         "properties": {
           "failure_class": {"type": "null"},
           "error_code": {"type": "null"},
+          "abandon_reason": {"type": "null"},
           "finalized_at": {"type": "null"},
           "sent_at": {"type": "null"}
         }
@@ -104,6 +131,7 @@
         "properties": {
           "failure_class": {"type": "null"},
           "error_code": {"type": "null"},
+          "abandon_reason": {"type": "null"},
           "finalized_at": {"type": "string", "format": "date-time"},
           "sent_at": {"type": "string", "format": "date-time"}
         }
@@ -118,6 +146,26 @@
         "properties": {
           "failure_class": {"type": "string", "enum": ["retryable", "permanent"]},
           "error_code": {"type": "string", "minLength": 1},
+          "abandon_reason": {"type": "null"},
+          "finalized_at": {"type": "string", "format": "date-time"},
+          "sent_at": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"const": "abandoned"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "resolved_by_recovery_batch_id": {"type": "string", "format": "uuid"},
+          "failure_class": {"type": "null"},
+          "error_code": {"type": "null"},
+          "abandon_reason": {
+            "type": "string",
+            "enum": ["recovery_window_elapsed", "recovery_summary_superseded"]
+          },
           "finalized_at": {"type": "string", "format": "date-time"},
           "sent_at": {"type": "null"}
         }

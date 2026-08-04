@@ -274,16 +274,28 @@ picojson::value reminder_to_storage_json(const domain::Reminder& reminder) {
 
 }  // namespace
 
-JsonReminderRepository::JsonReminderRepository(std::filesystem::path storage_directory)
-    : store_(std::move(storage_directory)) {}
+JsonReminderRepository::JsonReminderRepository(
+    std::filesystem::path storage_directory,
+    std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
+    : store_(std::move(storage_directory)), runtime_lease_(std::move(runtime_lease)) {}
 
 common::Result<common::Unit> JsonReminderRepository::initialize() {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<common::Unit>::failure(
+        storage::runtime_storage_revoked_error("reminder_repository.initialize"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   return store_.initialize();
 }
 
 common::Result<domain::Reminder> JsonReminderRepository::create(const domain::Reminder& reminder) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<domain::Reminder>::failure(
+        storage::runtime_storage_revoked_error("reminder_repository.create"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -308,6 +320,11 @@ common::Result<domain::Reminder> JsonReminderRepository::create(const domain::Re
 }
 
 common::Result<std::optional<domain::Reminder>> JsonReminderRepository::find_by_id(std::string_view id) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<std::optional<domain::Reminder>>::failure(
+        storage::runtime_storage_revoked_error("reminder_repository.find_by_id"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -324,6 +341,11 @@ common::Result<std::optional<domain::Reminder>> JsonReminderRepository::find_by_
 }
 
 common::Result<domain::Reminder> JsonReminderRepository::update(const domain::Reminder& reminder) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<domain::Reminder>::failure(
+        storage::runtime_storage_revoked_error("reminder_repository.update"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -352,6 +374,11 @@ common::Result<domain::Reminder> JsonReminderRepository::update(const domain::Re
 }
 
 common::Result<std::vector<domain::Reminder>> JsonReminderRepository::find_all() {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<std::vector<domain::Reminder>>::failure(
+        storage::runtime_storage_revoked_error("reminder_repository.find_all"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   return load_reminders_locked();

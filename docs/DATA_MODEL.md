@@ -17,7 +17,7 @@
 
 - 当前正式本地持久化仍是 JSON；SQLite 是后续目标，不与 JSON 同时作为可写真相源。
 - Calendar Core JSON Storage format 升级为 `2`。v1 不读取、不迁移；首次切换只允许先原子归档已确认的 v1 正式目录，再初始化空 v2，归档失败必须停止初始化。
-- Native Contract v2 是一次协调发布的 breaking change。本文与 `contracts/` 先完成设计；Dart、Kotlin、JNI、C++ 和 JSON Storage 在后续同一发行版本中同步实施前，v2 不得对外宣称可用。
+- Native Contract v2 是一次协调发布的 breaking change。C++ Domain/Boundary 与 JSON Storage v2 已进入实现和本机测试阶段，但 Dart、Kotlin、Android JNI/调度和正式数据目录尚未切换；同一发行版本全链路完成前，v2 仍不得对外宣称可用。
 - 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
 - `AIExtraction`、`SyncOperation` 等模型先作为未来能力预留，字段可先保持文档级设计。
 - 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
@@ -135,6 +135,7 @@
 | `prepared` | 已由 C++ 创建投递 attempt，等待 Kotlin 调用系统投递 |
 | `sent` | 已投递 |
 | `failed` | 本次 attempt 已失败；是否重试由 `failureClass` 决定 |
+| `abandoned` | Recovery 已原子废弃该 attempt；Android 必须取消旧 delivery tag，旧 attempt 不再允许 finalize |
 
 ### ReminderStatus
 
@@ -147,8 +148,9 @@
 | `sent` | 已触发或已发送 |
 | `failed` | 不可重试的永久失败 |
 | `cancelled` | 已取消 |
+| `expired` | 已物化 Reminder 严格早于恢复窗口，未补发并保留为终结历史 |
 
-`failed` 只表示不可重试的永久失败。可重试投递失败只写入 `Notification` attempt，当前 `Reminder` 保持 `pending`。`expired` 不属于当前 v2 枚举；在外部过期协议合入前不得自行新增同名或替代状态。
+`failed` 只表示不可重试的永久失败。可重试投递失败只写入 `Notification` attempt，当前 `Reminder` 保持 `pending`。`expired` 只能由 `planRecovery` 在同一恢复事务中写入：对象必须启用、未删除、处于 `pending/scheduled`，且 `remindAt < windowStartAt`；恰好位于 72 小时边界仍属于恢复窗口。
 
 ### ReminderCancellationReason
 
@@ -159,12 +161,21 @@
 | `occurrence_completed` | 是 | 某次 occurrence 完成 |
 | `occurrence_skipped` | 是 | 某次 occurrence 跳过 |
 | `occurrence_cancelled` | 是 | 某次 occurrence 取消 |
+| `occurrence_reopened` | 仅滚动链 | 较早 occurrence reopen 时，暂存同模板的后继滚动 Reminder |
 | `series_completed` | 是 | 整个重复系列完成 |
 | `series_cancelled` | 否 | 整个重复系列取消 |
 | `series_deleted` | 否 | 整个重复系列软删除 |
 | `series_updated` | 否 | 新 revision 替换旧 revision |
 
 恢复仅适用于 `remindAt > reopenedAt` 的同一条 Reminder；不得生成新 ID，也不执行 72 小时补发。
+
+`occurrence_reopened` 不能由普通 `reminder.enable` 恢复。原 occurrence 再次终结，或其 Reminder 成功投递/永久失败时，滚动 workflow 仅在该后继仍在未来时恢复同一确定性 ID；已经过去则保留取消审计并寻找首个未来 occurrence。系列更新、完成、取消或删除可以用相应系列原因覆盖它。
+
+### ReminderExpirationReason
+
+| 值 | 说明 |
+| --- | --- |
+| `recovery_window_elapsed` | `planRecovery` 判定已物化 Reminder 严格早于 72 小时恢复窗口 |
 
 ### NotificationKind
 
@@ -179,6 +190,21 @@
 | --- | --- |
 | `retryable` | 允许使用同一 `deliveryId` 创建新的 attempt；Reminder 保持 `pending` |
 | `permanent` | 当前 Reminder 进入 `failed`；重复 Reminder 同事务创建 successor |
+
+### DeliveryAbandonReason
+
+| 值 | 说明 |
+| --- | --- |
+| `recovery_window_elapsed` | attempt 对应 Reminder 已严格落到 72 小时窗口外并进入 `expired` |
+| `recovery_summary_superseded` | attempt 对应 Reminder 改由当前恢复摘要覆盖 |
+
+### PreparedAttemptRecoveryResolution
+
+| 值 | 说明 |
+| --- | --- |
+| `adopted_detail` | 保留原 frozen attempt，由当前恢复批次接管为明细投递 |
+| `abandoned_to_summary` | 废弃原 attempt，改由恢复摘要投递 |
+| `abandoned_outside_window` | 废弃原 attempt，Reminder 因窗口已过进入 `expired` |
 
 ### ReminderRecoveryBatchStatus
 
@@ -424,6 +450,8 @@
 | `failureReason` | `string` | 否 | 调度或发送失败原因 |
 | `lastCancellationReason` | `ReminderCancellationReason` | 否 | 最近一次机器可读取消原因 |
 | `lastCancelledAt` | `datetime` | 否 | 最近一次取消时间 |
+| `expirationReason` | `ReminderExpirationReason` | 否 | `expired` 时固定为 `recovery_window_elapsed`，其他状态为空 |
+| `expiredAt` | `datetime` | 否 | Recovery 把已物化 Reminder 终结为 `expired` 的 C++ Clock 时间 |
 | `reactivatedAt` | `datetime` | 否 | 最近一次恢复为 `pending` 的时间 |
 | `reactivationCount` | `integer` | 是 | 恢复次数，初始为 `0` |
 | `createdAt` | `datetime` | 是 | 创建时间 |
@@ -441,6 +469,8 @@
 - 重试遇到相同 ID 且业务内容一致时幂等返回原记录；内容冲突返回 `REMINDER_IDEMPOTENCY_CONFLICT`。
 - `series_updated`、`series_cancelled`、`series_deleted` 和 `user_cancelled` 不可恢复；其他可逆原因仅能恢复同一条仍在未来的 Reminder。
 - 取消时写入/覆盖 `lastCancellationReason` 与 `lastCancelledAt`；恢复时把同一记录改回 `pending`、重新启用、写入 `reactivatedAt` 并递增 `reactivationCount`，但不清空最近取消审计字段。
+- occurrence reopen 恢复较早 Reminder 前，必须把同 event/revision/模板且时间更晚的 open successor 以 `occurrence_reopened` 暂存；滚动链随后只恢复仍在未来的确定性 successor，同模板任何时刻最多一条 open Reminder。
+- `expired` 是仅由 `planRecovery` 写入的终结状态：严格满足 `remindAt < windowStartAt` 的 open `pending/scheduled` Reminder 被禁用、清空 `scheduledAt` 并保留原 `remindAt` 与审计历史；普通 Reminder 不生成 successor，重复 Reminder 在同一事务确保首个未来 successor。
 - 可重试投递失败只追加 `Notification` attempt，Reminder 保持 `pending`。永久失败把当前 Reminder 标记 `failed`，并在同一事务创建 successor，避免无限系列中断。
 ## Category：分类
 
@@ -506,7 +536,8 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | `deliveryAttemptId` | `string` | 是 | 每次实际尝试唯一的 UUID |
 | `kind` | `NotificationKind` | 是 | Reminder 投递或恢复摘要 |
 | `reminderId` | `string` | 否 | `kind = reminder` 时必填 |
-| `recoveryBatchId` | `string` | 否 | 恢复摘要时必填；恢复批次内的明细 Reminder attempt 也携带该值 |
+| `recoveryBatchId` | `string` | 否 | 恢复摘要时必填；由 Recovery 新建的明细 attempt 也携带该值。Recovery 接管既有 frozen attempt 时保持原值（通常为空），改用 `resolvedByRecoveryBatchId` 记录裁决归属 |
+| `resolvedByRecoveryBatchId` | `string` | 否 | Recovery 对既有 frozen attempt 的裁决归属；与 `recoveryBatchId` 互斥且不进入原 PendingIntent payload |
 | `targetType` | `string` | 是 | 业务目标类型；恢复摘要使用 `reminder_recovery_batch` |
 | `targetId` | `string` | 是 | 业务目标 ID；恢复摘要等于 batch ID |
 | `occurrenceKey` | `string` | 否 | 重复 Reminder 的 occurrence 身份；普通 Reminder/摘要为空 |
@@ -520,6 +551,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | `status` | `NotificationStatus` | 是 | 通知状态 |
 | `failureClass` | `NotificationFailureClass` | 否 | 失败是否可重试；非失败状态为空 |
 | `errorCode` | `string` | 否 | 失败的稳定 Contract 错误码；非失败状态为空 |
+| `abandonReason` | `DeliveryAbandonReason` | 否 | `abandoned` 时说明由窗口过期或恢复摘要替代；其他状态为空 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
 
@@ -528,6 +560,8 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 - `prepare_delivery` 由 C++ 校验 Reminder 仍可投递且 `expectedRemindAt` 与当前记录严格相等，并创建或复用唯一 `prepared` attempt；普通调度还必须已到期，绑定有效恢复批次的明细 Reminder 才允许使用窗口内的历史 `remindAt`。响应同时提供真实 Notification ID、展示内容和点击 payload。
 - 已存在 `sent` attempt 的 `deliveryId` 不得再次 prepare；C++ 返回 `REMINDER_ALREADY_CONSUMED` 或等价已声明错误，Kotlin 不展示重复通知。
 - 同一 `deliveryId` 同时最多一个 `prepared` attempt，历史上最多一个 `sent` attempt。相同 attempt 的相同 finalize 幂等返回，冲突 finalize 返回 `DELIVERY_ATTEMPT_INVALID`。
+- `prepared` attempt 的 Notification 内容、delivery identity 和 PendingIntent payload 一经返回即冻结。Recovery detail 接管时只写 `resolvedByRecoveryBatchId` 并复用原 attempt；不得改写原 `recoveryBatchId` 或展示 payload。
+- Recovery 把既有 attempt 归入摘要或窗口外时，必须在同一事务写为 `abandoned`、记录 `abandonReason/resolvedByRecoveryBatchId/finalizedAt`。Kotlin 取消旧 `deliveryId` 的 Android notification tag，且旧 attempt 的任何 finalize 都返回 `DELIVERY_ATTEMPT_INVALID` 而不修改状态。
 - `deliveryId` 按 `contracts/identity.yaml` 使用 UUIDv5；`notificationId` 与新建的 `deliveryAttemptId` 由 C++ 使用 UUIDv4 生成，幂等复用 prepared attempt 时必须返回原值。
 - `sent` 要求 `finalizedAt/sentAt` 非空且失败字段为空；`failed` 要求 `finalizedAt/failureClass/errorCode` 非空且 `sentAt` 为空。
 - 多渠道 Reminder 只有当所有方法均已有 `sent` attempt 时才进入 `sent`。任何可重试失败使 Reminder 保持 `pending`，已成功渠道不重复投递；任一永久失败使 Reminder 进入 `failed`。v2 重复 Reminder 仅允许 popup，因此 successor 生成没有多渠道歧义。
@@ -547,7 +581,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | `detailReminderIds` | `string[]` | 是 | 全局最近 20 条明细 Reminder ID |
 | `summaryReminderIds` | `string[]` | 是 | 窗口内其余通过摘要投递的 Reminder ID |
 | `olderSkippedOccurrenceCount` | `integer` | 是 | 72 小时以前未展开的 occurrence 数 |
-| `olderSkippedReminderCount` | `integer` | 是 | 72 小时以前未生成的 Reminder 数 |
+| `olderSkippedReminderCount` | `integer` | 是 | 72 小时以前未生成的 Reminder 数，加上本事务终结为 `expired` 的已物化 open Reminder 数 |
 | `windowOverflowCount` | `integer` | 是 | 窗口内超过 20 条上限的 Reminder 数 |
 | `summaryDeliveryId` | `string` | 否 | 有摘要时的稳定 delivery UUIDv5 |
 | `status` | `ReminderRecoveryBatchStatus` | 是 | 批次状态 |
@@ -557,8 +591,10 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 
 - `recoveryRequestId` 唯一；重复调用返回同一批次。同一时间最多一个 `in_progress` 批次，否则返回 `RECOVERY_BATCH_CONFLICT`。
 - `detailReminderIds` 与 `summaryReminderIds` 必须互斥，`windowOverflowCount` 必须等于 `summaryReminderIds.length`；`planRecovery.detailReminders` 必须与 `detailReminderIds` 同序且一一对应。
+- `planRecovery.preparedAttemptResolutions` 必须完整、稳定地返回本批次裁决的既有 prepared attempts：最近 20 条为 `adopted_detail`，窗口内其余为 `abandoned_to_summary`，严格早于窗口为 `abandoned_outside_window`。后两者的 `replacementDeliveryId` 等于 `summaryDeliveryId`。
 - 只要摘要列表非空或任一 older skipped 计数大于 `0`，`summaryDeliveryId` 就必须存在；三者都为空/为 `0` 时必须为 `null`。
 - 只为 `[windowStartAt, startedAt]` 内的合法 occurrence 生成真实 Reminder；72 小时以前只记计数，不批量生成对象。
+- 已经物化且严格早于 `windowStartAt` 的 open Reminder 不再留在调度队列：同一计划事务把它终结为 `expired` 并计入 `olderSkippedReminderCount`；恰好等于边界的 Reminder 仍参加窗口内明细/摘要选择。
 - `planRecovery` workflow 是唯一允许创建 `remindAt <= startedAt` 历史到期 Reminder 的入口；普通 Reminder create/update 仍拒绝过去时间，且恢复 Reminder 必须绑定当前批次。
 - 全局先按 `remindAt` 降序、`reminderId` 降序选择最近 20 条，再按 `(remindAt, reminderId)` 升序投递。较早项目摘要先于 20 条明细投递。
 - 摘要成功后，`summaryReminderIds` 对应 Reminder 标记为通过摘要送达，而不是 `expired`；批次记录提供审计关联。
@@ -566,7 +602,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 - 摘要可重试失败时，覆盖的 Reminder 保持 `pending`、批次保持 `in_progress`；永久失败时，每条覆盖的 Reminder 按普通永久失败规则进入 `failed`，重复 Reminder 在同一事务生成 successor。批量变更通过 batch ID 审计，不要求 `finalizeDelivery` 回传所有对象。
 - 当摘要（如有）和全部明细逻辑 delivery 都已 `sent` 或永久失败时批次进入 `completed`；仍有 prepared/可重试失败时保持 `in_progress`。没有任何 delivery 的空批次在计划事务内直接完成。
 - 恢复摘要 Notification 的 `plannedAt = startedAt`，`targetType = reminder_recovery_batch`，`targetId = recoveryBatchId`；标题和正文由 C++ 根据持久化计数生成。
-- v2 不修改已存在且早于窗口的旧滚动 Reminder 状态，直到外部 `expired` 协议另行合入。
+- `expired` 重复 Reminder 不补发，但必须在同一事务通过滚动规则确保首个未来 successor；不得因此生成第二条同模板 open Reminder。
 
 ## SearchIndex：搜索索引
 
@@ -841,7 +877,8 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | `HabitCheckIn.habitId -> Habit.id` | 习惯打卡记录归属某个习惯 |
 | `Reminder.targetId -> Event/Habit/Anniversary.id` | 提醒可以绑定到不同业务对象；一个业务对象可以有多条提醒 |
 | `Notification.reminderId -> Reminder.reminderId` | 通知由提醒触发后生成，用于记录投递结果 |
-| `Notification.recoveryBatchId -> ReminderRecoveryBatch.recoveryBatchId` | 恢复摘要或批次内明细 attempt 归属一个恢复批次 |
+| `Notification.recoveryBatchId -> ReminderRecoveryBatch.recoveryBatchId` | 恢复摘要或由 Recovery 新建的明细 attempt 归属一个恢复批次；被接管的既有 frozen attempt 不回填该字段 |
+| `Notification.resolvedByRecoveryBatchId -> ReminderRecoveryBatch.recoveryBatchId` | Recovery 对既有 frozen attempt 的接管或废弃裁决归属一个恢复批次 |
 | `ReminderRecoveryBatch.detailReminderIds/summaryReminderIds -> Reminder.reminderId` | 恢复批次记录明细与摘要覆盖范围 |
 | `SearchIndex.targetId -> Event/Habit/Anniversary.id` | 搜索索引映射到被索引对象 |
 | `AIExtraction.candidateEventId -> Event.id` | AI 可生成待确认的候选日程 |
@@ -860,7 +897,6 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 
 - Event v3 是否需要支持 `interval > 1`、有界 `endAt/count`、Yearly/Custom 或 iCalendar RRULE；这些能力不得静默塞入 v2。
 - Habit/Anniversary 的重复规则、锚点与 Reminder 生成语义需要独立设计，不能直接照搬 Event v2。
-- `ReminderStatus.expired` 的外部协议、触发者和历史保留规则尚未合入；当前 v2 明确不定义该状态。
 - C++ 时区库版本仍需实施前确认：方案写的 Howard Hinnant `date v3.0.5` 在官方发布列表中不存在；TZDB `2026c` 已确认可获取。
 - `DatedMessage` 未来是只做本地投送，还是也需要云端运营投放能力。
 - `AIExtraction.extractedData` 未来是否需要拆成强类型表，还是先以 JSON 保存。
@@ -877,6 +913,7 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 - 普通单次 Reminder 保持 UUIDv4、绝对触发、历史保留且不创建 successor；重复 Reminder v2 仅支持 popup。
 - Notification 使用 prepare/finalize 两阶段 attempt，Android 系统通知以 `deliveryId` 作为稳定 tag。
 - 恢复窗口固定为 72 小时、明细全局上限 20 条；更早 occurrence 只计数，不批量生成 Reminder。
+- 严格早于恢复窗口的已物化 open Reminder 进入 `expired`；prepared attempt 由 `planRecovery` 原子接管或废弃，投递 payload 保持冻结。
 - `Habit` 的坚持日期、完成次数、连续天数统计来源于 `HabitCheckIn`，不直接塞进 `Habit` 本体。
 - 当前阶段先不上 SQL，优先保证项目整体可运行。
 - 当前先做好本地能力，AI 和云端同步暂缓，但保留相关接口和数据模型。
@@ -912,7 +949,7 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | 创建时机 | 用户创建或更新业务对象后生成；重复 Event 只滚动生成当前合法实例 | `prepare_delivery` 时先创建 attempt，系统投递后 finalize |
 | 谁会扫描 | Reminder Engine / Alarm Scheduler | 一般不扫描，只用于历史、排错、统计 |
 | 是否影响未来提醒 | 是 | 否 |
-| 典型状态 | `pending`、`scheduled`、`sent`、`failed`、`cancelled` | `prepared`、`sent`、`failed` |
+| 典型状态 | `pending`、`scheduled`、`sent`、`failed`、`cancelled`、`expired` | `prepared`、`sent`、`failed`、`abandoned` |
 | 例子 | 明天 9:00 提醒我开会 | 明天 9:00 的会议提醒已经弹窗成功 |
 
 一句话：`Reminder` 是“待办的提醒任务”，`Notification` 是“提醒投递后的回执”。
@@ -936,7 +973,7 @@ Native Contract v2 明确拒绝客户端 `rrule` 字段，只执行 interval=1 �
 1. 用户创建 `Event`、`Habit` 或 `Anniversary`。
 2. 单次业务对象创建普通 Reminder；重复 Event 根据模板只确保当前或下一条合法滚动 Reminder 存在。
 3. 后台扫描 `Reminder`，只取 `isEnabled = true`、未软删除且 `status = pending` 的记录；永久 `failed` 不进入重试扫描。
-4. Android Alarm Scheduler 将这些提醒注册到系统闹钟，并把成功注册的提醒标记为 `scheduled`。
+4. Android Alarm Scheduler 注册 Dispatcher Alarm 后，以本次读取的 `expectedRemindAt` 调用 `mark_scheduled`；C++ 仅在当前 `remindAt` 仍相等时标记为 `scheduled`，否则返回 `REMINDER_SCHEDULE_CONFLICT` 并由 Kotlin 重新 reconcile。
 5. 到点后 C++ `prepare_delivery` 先创建或复用 attempt，Kotlin 再展示系统通知，最后 C++ `finalize_delivery` 原子更新 Notification、当前 Reminder 和 successor。
 6. 领域 transaction 提交后 Android 只执行 reconcile；AlarmManager 不是第二真相源。
 
@@ -953,7 +990,7 @@ Native Contract v2 明确拒绝客户端 `rrule` 字段，只执行 interval=1 �
 
 每个 v2 JSON store 根对象必须显式包含 `storage_version = 2` 和该 store 的唯一集合字段；未知版本、未知根字段或任一损坏记录都使整个 store 加载失败。Storage record 使用独立 codec，不得直接把 Contract Response Schema 当作数据库实体。
 
-`workflow_transactions.json` 的 prepared 记录至少保存 `transactionId/operation/intentVersion/intent/affectedStores/state/preparedAt/committedAt`。每个 `operation + intentVersion` 必须有严格的内部 codec，intent 要包含确定性 ID、expected revision、C++ Clock 时间和幂等重放所需的完整 after-state；未知字段或版本不得用默认值恢复。
+`workflow_transactions.json` 的 prepared 记录至少保存 `transactionId/operation/intentVersion/intent/affectedStores/state/preparedAt/committedAt`。每个 `operation + intentVersion` 必须选择严格的内部 codec；当前 intent v1 对所有已声明 operation 使用同一个精确的完整 after-state codec，`afterStores/affectedStores` 只允许六个逻辑 store 名，不允许文件名。完整验证后的 after-state 与外层 transaction/operation/Clock 字段共同支持幂等重放；未知字段、operation 或版本不得用默认值恢复。
 
 以下操作必须是单个 C++ workflow transaction，并通过 `prepare -> 幂等应用各 Repository -> commit` journal 在启动时重放未完成事务：
 

@@ -1,5 +1,6 @@
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
 
+#include <cerrno>
 #include <fstream>
 #include <map>
 #include <memory>
@@ -12,6 +13,9 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#else
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 namespace excellent_calendar::storage::json {
@@ -53,11 +57,9 @@ common::Error storage_io_error(std::string operation, std::string reason) {
 common::Result<common::Unit> replace_file_atomically(const std::filesystem::path& source,
                                                      const std::filesystem::path& target) {
 #if defined(_WIN32)
-  const auto source_string = source.string();
-  const auto target_string = target.string();
-  if (!MoveFileExA(
-          source_string.c_str(),
-          target_string.c_str(),
+  if (!MoveFileExW(
+          source.c_str(),
+          target.c_str(),
           MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
     return common::Result<common::Unit>::failure(
         storage_io_error("rename", "MoveFileEx failed with code " + std::to_string(GetLastError())));
@@ -70,6 +72,59 @@ common::Result<common::Unit> replace_file_atomically(const std::filesystem::path
   }
 #endif
   return common::Result<common::Unit>::success(common::Unit{});
+}
+
+common::Result<common::Unit> sync_file_to_disk(const std::filesystem::path& path) {
+#if defined(_WIN32)
+  const auto handle = CreateFileW(
+      path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
+      FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (handle == INVALID_HANDLE_VALUE) {
+    return common::Result<common::Unit>::failure(storage_io_error(
+        "open_for_sync", "CreateFile failed with code " + std::to_string(GetLastError())));
+  }
+  const bool flushed = FlushFileBuffers(handle) != 0;
+  const auto error = flushed ? ERROR_SUCCESS : GetLastError();
+  CloseHandle(handle);
+  return flushed ? common::Result<common::Unit>::success(common::Unit{})
+                 : common::Result<common::Unit>::failure(storage_io_error(
+                       "fsync", "FlushFileBuffers failed with code " + std::to_string(error)));
+#else
+  const int descriptor = ::open(path.c_str(), O_RDONLY);
+  if (descriptor < 0) {
+    return common::Result<common::Unit>::failure(
+        storage_io_error("open_for_sync", std::system_category().message(errno)));
+  }
+  const int result = ::fsync(descriptor);
+  const int error = errno;
+  ::close(descriptor);
+  return result == 0 ? common::Result<common::Unit>::success(common::Unit{})
+                     : common::Result<common::Unit>::failure(
+                           storage_io_error("fsync", std::system_category().message(error)));
+#endif
+}
+
+common::Result<common::Unit> sync_directory_to_disk(const std::filesystem::path& path) {
+#if defined(_WIN32)
+  static_cast<void>(path);
+  return common::Result<common::Unit>::success(common::Unit{});
+#else
+  int flags = O_RDONLY;
+#if defined(O_DIRECTORY)
+  flags |= O_DIRECTORY;
+#endif
+  const int descriptor = ::open(path.c_str(), flags);
+  if (descriptor < 0) {
+    return common::Result<common::Unit>::failure(
+        storage_io_error("open_directory_for_sync", std::system_category().message(errno)));
+  }
+  const int result = ::fsync(descriptor);
+  const int error = errno;
+  ::close(descriptor);
+  return result == 0 ? common::Result<common::Unit>::success(common::Unit{})
+                     : common::Result<common::Unit>::failure(
+                           storage_io_error("fsync_directory", std::system_category().message(error)));
+#endif
 }
 
 }  // namespace
@@ -180,13 +235,20 @@ common::Result<common::Unit> AtomicJsonFileStore::write_json_file(const std::str
     }
   }
 
+  auto synced = sync_file_to_disk(tmp_path);
+  if (!synced.ok()) {
+    std::error_code remove_error;
+    std::filesystem::remove(tmp_path, remove_error);
+    return synced;
+  }
+
   auto replaced = replace_file_atomically(tmp_path, target_path);
   if (!replaced.ok()) {
     std::error_code remove_error;
     std::filesystem::remove(tmp_path, remove_error);
     return replaced;
   }
-  return common::Result<common::Unit>::success(common::Unit{});
+  return sync_directory_to_disk(storage_directory_);
 }
 
 common::Result<common::Unit> AtomicJsonFileStore::remove_file(const std::string& file_name) const {

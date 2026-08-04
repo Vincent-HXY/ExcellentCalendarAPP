@@ -2,18 +2,23 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/mark_reminder_scheduled_request.schema.json",
   "title": "MarkReminderScheduledRequest",
-  "description": "Internal Kotlin-to-C++ payload used after Kotlin successfully registers a reminder with Android AlarmManager or another delivery channel.",
+  "description": "Internal Kotlin-to-C++ compare-and-set acknowledgement used after Android registration succeeds. C++ updates the Reminder only when expected_remind_at still equals the persisted remind_at; a mismatch returns REMINDER_SCHEDULE_CONFLICT without changing state.",
   "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
   "required": [
     "reminder_id",
+    "expected_remind_at",
     "scheduled_at"
   ],
   "properties": {
     "reminder_id": {
       "type": "string",
       "format": "uuid"
+    },
+    "expected_remind_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "scheduled_at": {
       "type": "string",

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string_view>
@@ -8,12 +9,15 @@
 
 #include "excellent_calendar/repository/reminder_repository.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/runtime_storage_lease.hpp"
 
 namespace excellent_calendar::storage::json {
 
 class JsonReminderRepository final : public repository::ReminderRepository {
  public:
-  explicit JsonReminderRepository(std::filesystem::path storage_directory);
+  explicit JsonReminderRepository(
+      std::filesystem::path storage_directory,
+      std::shared_ptr<storage::RuntimeStorageLease> runtime_lease = {});
 
   common::Result<common::Unit> initialize();
 
@@ -33,6 +37,7 @@ class JsonReminderRepository final : public repository::ReminderRepository {
   common::Result<common::Unit> save_reminders_locked(const std::vector<domain::Reminder>& reminders);
 
   AtomicJsonFileStore store_;
+  std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
   mutable std::mutex mutex_;
 };
 

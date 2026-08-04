@@ -1,5 +1,6 @@
 version: 2
 release_status: design_only
+implementation_status: cpp_core_complete_unintegrated
 channel: excellent_calendar/native
 
 methods:

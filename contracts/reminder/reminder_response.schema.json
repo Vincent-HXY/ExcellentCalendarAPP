@@ -24,6 +24,8 @@
     "failure_reason",
     "last_cancellation_reason",
     "last_cancelled_at",
+    "expiration_reason",
+    "expired_at",
     "reactivated_at",
     "reactivation_count",
     "created_at",
@@ -52,7 +54,7 @@
     "is_enabled": {"type": "boolean"},
     "status": {
       "type": "string",
-      "enum": ["pending", "scheduled", "sent", "failed", "cancelled"]
+      "enum": ["pending", "scheduled", "sent", "failed", "cancelled", "expired"]
     },
     "scheduled_at": {"type": ["string", "null"], "format": "date-time"},
     "last_triggered_at": {"type": ["string", "null"], "format": "date-time"},
@@ -65,6 +67,7 @@
         "occurrence_completed",
         "occurrence_skipped",
         "occurrence_cancelled",
+        "occurrence_reopened",
         "series_completed",
         "series_cancelled",
         "series_deleted",
@@ -73,12 +76,39 @@
       ]
     },
     "last_cancelled_at": {"type": ["string", "null"], "format": "date-time"},
+    "expiration_reason": {
+      "type": ["string", "null"],
+      "enum": ["recovery_window_elapsed", null]
+    },
+    "expired_at": {"type": ["string", "null"], "format": "date-time"},
     "reactivated_at": {"type": ["string", "null"], "format": "date-time"},
     "reactivation_count": {"type": "integer", "minimum": 0},
     "created_at": {"type": "string", "format": "date-time"},
     "updated_at": {"type": "string", "format": "date-time"},
     "deleted_at": {"type": ["string", "null"], "format": "date-time"}
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "expired"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "is_enabled": {"const": false},
+          "scheduled_at": {"type": "null"},
+          "expiration_reason": {"const": "recovery_window_elapsed"},
+          "expired_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "else": {
+        "properties": {
+          "expiration_reason": {"type": "null"},
+          "expired_at": {"type": "null"}
+        }
+      }
+    }
+  ],
   "oneOf": [
     {
       "properties": {

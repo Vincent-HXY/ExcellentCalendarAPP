@@ -210,11 +210,18 @@ picojson::value event_to_storage_json(const domain::Event& event) {
 }  // namespace
 
 /** 保存存储目录路径，实际目录创建放在 initialize()。 */
-JsonEventRepository::JsonEventRepository(std::filesystem::path storage_directory)
-    : store_(std::move(storage_directory)) {}
+JsonEventRepository::JsonEventRepository(
+    std::filesystem::path storage_directory,
+    std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
+    : store_(std::move(storage_directory)), runtime_lease_(std::move(runtime_lease)) {}
 
 /** 初始化目录并做一次写入探测，确认路径可用。 */
 common::Result<common::Unit> JsonEventRepository::initialize() {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<common::Unit>::failure(
+        storage::runtime_storage_revoked_error("event_repository.initialize"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   // lock_guard 是 RAII 锁：构造时加锁，离开作用域自动解锁，即使中途 return 也安全。
   std::lock_guard<std::mutex> lock(mutex_);
@@ -223,6 +230,11 @@ common::Result<common::Unit> JsonEventRepository::initialize() {
 
 /** 创建事件：加载全量事件 -> 追加 -> 保存全量事件。 */
 common::Result<domain::Event> JsonEventRepository::create(const domain::Event& event) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<domain::Event>::failure(
+        storage::runtime_storage_revoked_error("event_repository.create"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -241,6 +253,11 @@ common::Result<domain::Event> JsonEventRepository::create(const domain::Event& e
 }
 
 common::Result<domain::Event> JsonEventRepository::update(const domain::Event& event) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<domain::Event>::failure(
+        storage::runtime_storage_revoked_error("event_repository.update"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -270,6 +287,11 @@ common::Result<domain::Event> JsonEventRepository::update(const domain::Event& e
 
 /** 按 id 查找事件。 */
 common::Result<std::optional<domain::Event>> JsonEventRepository::find_by_id(std::string_view id) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<std::optional<domain::Event>>::failure(
+        storage::runtime_storage_revoked_error("event_repository.find_by_id"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -287,6 +309,11 @@ common::Result<std::optional<domain::Event>> JsonEventRepository::find_by_id(std
 
 /** 读取所有事件。mutex 保证不会和 create/save 同时读写同一个文件。 */
 common::Result<std::vector<domain::Event>> JsonEventRepository::find_all() {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<std::vector<domain::Event>>::failure(
+        storage::runtime_storage_revoked_error("event_repository.find_all"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   return load_events_locked();

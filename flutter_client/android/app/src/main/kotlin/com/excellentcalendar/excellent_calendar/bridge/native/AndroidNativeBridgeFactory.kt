@@ -3,11 +3,24 @@ package com.excellentcalendar.excellent_calendar.bridge.native
 import android.content.Context
 
 object AndroidNativeBridgeFactory {
+    @Volatile private var v2Bridge: NativeCalendarCoreBridge? = null
+
     fun create(context: Context): NativeCalendarCoreBridge {
+        if (NativeContractRuntimeProfile.current == NativeContractProfile.V2) {
+            return v2Bridge ?: synchronized(this) {
+                v2Bridge ?: JniNativeCalendarCoreBridge(
+                    profile = NativeContractProfile.V2,
+                    runtimeRequestProvider = CalendarCoreV2RuntimeRequestProvider(context.applicationContext),
+                ).also { v2Bridge = it }
+            }
+        }
         val storageDirectory = CalendarCoreStorageDirectoryResolver.resolve(
             filesDir = context.applicationContext.filesDir,
         )
-        return JniNativeCalendarCoreBridge(storageDirectory = storageDirectory.absolutePath)
+        return JniNativeCalendarCoreBridge(
+            profile = NativeContractProfile.V1,
+            storageDirectory = storageDirectory.absolutePath,
+        )
     }
 }
 

@@ -11,6 +11,8 @@ import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChann
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
 import com.excellentcalendar.excellent_calendar.bridge.native.AndroidNativeBridgeFactory
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeContractProfile
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeContractRuntimeProfile
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
@@ -49,6 +51,16 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         AndroidNotificationRuntime.handleIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (NativeContractRuntimeProfile.current == NativeContractProfile.V2) {
+            com.excellentcalendar.excellent_calendar.android.alarm.ReminderWorkScheduler.enqueue(
+                applicationContext,
+                ReminderScheduleTrigger.AppResume,
+            )
+        }
     }
 
     /**
@@ -102,6 +114,12 @@ class MainActivity : FlutterActivity() {
             notificationOrchestrator = notificationOrchestrator,
             pendingReminderScheduleService = pendingScheduleService,
             reminderScheduleCoordinator = reminderScheduleCoordinator,
+            contractProfile = NativeContractRuntimeProfile.current,
+            reconcileRetryEnqueuer = {
+                com.excellentcalendar.excellent_calendar.android.alarm.ReminderWorkScheduler.enqueueContinuation(
+                    applicationContext,
+                )
+            },
         )
         nativeMethodChannelHandler = handler
         // MethodChannel 是 Flutter 的“方法调用通道”：

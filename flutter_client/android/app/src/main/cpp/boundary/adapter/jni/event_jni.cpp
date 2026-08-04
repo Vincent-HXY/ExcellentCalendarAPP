@@ -7,7 +7,9 @@
 #include "excellent_calendar/boundary/api/event_api.hpp"
 #include "excellent_calendar/boundary/api/notification_api.hpp"
 #include "excellent_calendar/boundary/api/reminder_api.hpp"
+#include "excellent_calendar/boundary/api/recurring_v2_api.hpp"
 #include "excellent_calendar/boundary/contract/native_result.hpp"
+#include "excellent_calendar/boundary/contract/recurring_v2_json.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/common/result.hpp"
 
@@ -230,3 +232,63 @@ Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCo
   return call_boundary(
       env, request_json, excellent_calendar::boundary::api::consume_reminder_after_delivery);
 }
+
+jstring internal_error_result_v2(JNIEnv* env, const char* reason) {
+  const auto request_id = excellent_calendar::common::generate_uuid_v4();
+  return to_jstring(
+      env,
+      excellent_calendar::boundary::contract::native_failure_json_v2(
+          excellent_calendar::common::make_error(
+              "NATIVE_INTERNAL_ERROR",
+              "Native internal error",
+              {{"reason", reason == nullptr ? "unknown exception" : reason}}),
+          request_id));
+}
+
+jstring call_boundary_v2(JNIEnv* env, jstring input, std::string (*function)(std::string_view)) {
+  try {
+    return to_jstring(env, function(from_jstring(env, input)));
+  } catch (const std::exception& error) {
+    return internal_error_result_v2(env, error.what());
+  } catch (...) {
+    return internal_error_result_v2(env, "unknown exception");
+  }
+}
+
+#define CALENDAR_V2_JNI(kotlin_name, cpp_name)                                              \
+  extern "C" JNIEXPORT jstring JNICALL                                                     \
+      Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_##kotlin_name( \
+          JNIEnv* env, jobject /* this */, jstring request_json) {                          \
+    return call_boundary_v2(env, request_json, excellent_calendar::boundary::api::cpp_name); \
+  }
+
+CALENDAR_V2_JNI(nativeInitializeRuntimeV2, initialize_runtime_v2_json)
+CALENDAR_V2_JNI(nativeCreateEventV2, create_event_v2)
+CALENDAR_V2_JNI(nativeUpdateEventV2, update_event_v2)
+CALENDAR_V2_JNI(nativeDeleteEventV2, delete_event_v2)
+CALENDAR_V2_JNI(nativeSearchEventsV2, search_events_v2)
+CALENDAR_V2_JNI(nativeGetEventDetailV2, get_event_detail_v2)
+CALENDAR_V2_JNI(nativeCompleteEventV2, complete_event_v2)
+CALENDAR_V2_JNI(nativeReopenEventV2, reopen_event_v2)
+CALENDAR_V2_JNI(nativeListEventOccurrencesV2, list_event_occurrences_v2)
+CALENDAR_V2_JNI(nativeCompleteEventOccurrenceV2, complete_event_occurrence_v2)
+CALENDAR_V2_JNI(nativeReopenEventOccurrenceV2, reopen_event_occurrence_v2)
+CALENDAR_V2_JNI(nativeSkipEventOccurrenceV2, skip_event_occurrence_v2)
+CALENDAR_V2_JNI(nativeCancelEventOccurrenceV2, cancel_event_occurrence_v2)
+CALENDAR_V2_JNI(nativeCompleteEventSeriesV2, complete_event_series_v2)
+CALENDAR_V2_JNI(nativeReopenEventSeriesV2, reopen_event_series_v2)
+CALENDAR_V2_JNI(nativeCancelEventSeriesV2, cancel_event_series_v2)
+CALENDAR_V2_JNI(nativeCreateReminderV2, create_reminder_v2)
+CALENDAR_V2_JNI(nativeUpdateReminderV2, update_reminder_v2)
+CALENDAR_V2_JNI(nativeCancelReminderV2, cancel_reminder_v2)
+CALENDAR_V2_JNI(nativeListRemindersV2, list_reminders_v2)
+CALENDAR_V2_JNI(nativeGetReminderV2, get_reminder_v2)
+CALENDAR_V2_JNI(nativeListSchedulableRemindersV2, list_schedulable_reminders_v2)
+CALENDAR_V2_JNI(nativeMarkReminderScheduledV2, mark_reminder_scheduled_v2)
+CALENDAR_V2_JNI(nativeEnableReminderV2, enable_reminder_v2)
+CALENDAR_V2_JNI(nativeDisableReminderV2, disable_reminder_v2)
+CALENDAR_V2_JNI(nativePrepareReminderDeliveryV2, prepare_reminder_delivery_v2)
+CALENDAR_V2_JNI(nativeFinalizeReminderDeliveryV2, finalize_reminder_delivery_v2)
+CALENDAR_V2_JNI(nativePlanReminderRecoveryV2, plan_reminder_recovery_v2)
+
+#undef CALENDAR_V2_JNI

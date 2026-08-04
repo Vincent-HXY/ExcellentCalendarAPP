@@ -25,12 +25,15 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.SearchEventReque
 import com.excellentcalendar.excellent_calendar.bridge.contract.SchedulePendingRemindersContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.UpdateEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.UpdateReminderRequestContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.V2RequestContracts
+import com.excellentcalendar.excellent_calendar.bridge.contract.V2ResponseContracts
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeBridgeUnavailableException
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeContractProfile
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
-import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderScheduleCoordinator
+import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderScheduleReconciler
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executor
@@ -87,7 +90,9 @@ class NativeMethodChannelHandler(
     private val reminderOrchestrator: ReminderNativeOrchestrator? = null,
     private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
     private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
-    private val reminderScheduleCoordinator: ReminderScheduleCoordinator? = null,
+    private val reminderScheduleCoordinator: ReminderScheduleReconciler? = null,
+    private val contractProfile: NativeContractProfile = NativeContractProfile.V1,
+    private val reconcileRetryEnqueuer: (() -> Unit)? = null,
     /**
      * native 调用放到后台 executor 中执行，避免阻塞 Android 主线程。
      *
@@ -105,13 +110,22 @@ class NativeMethodChannelHandler(
             MethodEventUpdate -> handleUpdateEvent(call, completion)
             MethodEventDelete -> handleDeleteEvent(call, completion)
             MethodEventSearch -> handleSearchEvents(call, completion)
+            MethodEventDetail -> handleEventDetail(call, completion)
             MethodEventComplete -> handleCompleteEvent(call, completion)
             MethodEventReopen -> handleReopenEvent(call, completion)
+            MethodEventListOccurrences -> handleListEventOccurrences(call, completion)
+            MethodEventOccurrenceComplete -> handleOccurrenceOperation(call, completion, nativeCalendarCoreBridge::completeEventOccurrence)
+            MethodEventOccurrenceReopen -> handleOccurrenceOperation(call, completion, nativeCalendarCoreBridge::reopenEventOccurrence)
+            MethodEventOccurrenceSkip -> handleOccurrenceOperation(call, completion, nativeCalendarCoreBridge::skipEventOccurrence)
+            MethodEventOccurrenceCancel -> handleOccurrenceOperation(call, completion, nativeCalendarCoreBridge::cancelEventOccurrence)
+            MethodEventSeriesComplete -> handleSeriesOperation(call, completion, nativeCalendarCoreBridge::completeEventSeries)
+            MethodEventSeriesReopen -> handleSeriesOperation(call, completion, nativeCalendarCoreBridge::reopenEventSeries)
+            MethodEventSeriesCancel -> handleSeriesOperation(call, completion, nativeCalendarCoreBridge::cancelEventSeries)
             MethodReminderCreate -> handleCreateReminder(call, completion)
             MethodReminderUpdate -> handleUpdateReminder(call, completion)
             MethodReminderCancel -> handleCancelReminder(call, completion)
             MethodReminderList -> handleListReminders(call, completion)
-            MethodReminderSchedulePending -> handleSchedulePending(call, completion)
+            MethodReminderSchedulePending -> if (contractProfile == NativeContractProfile.V1) handleSchedulePending(call, completion) else completion.notImplemented()
             MethodReminderReconcileSchedule -> handleReconcileSchedule(call, completion)
             MethodNotificationInitialize -> handleNotificationInitialize(call, completion)
             MethodNotificationPermissionStatus -> handleNotificationPermissionStatus(call, completion)
@@ -132,6 +146,13 @@ class NativeMethodChannelHandler(
 
     /** 解析并校验创建事件请求，然后交给 native bridge。 */
     private fun handleCreateEvent(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.createEvent(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::event, reconcileAfterSuccess = true) {
+                nativeCalendarCoreBridge.createEvent(request.toJson())
+            }
+            return
+        }
         val request = try {
             CreateEventRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -145,6 +166,13 @@ class NativeMethodChannelHandler(
 
     /** 解析并校验搜索请求，然后交给 native bridge。 */
     private fun handleUpdateEvent(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.updateEvent(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::event, reconcileAfterSuccess = true) {
+                nativeCalendarCoreBridge.updateEvent(request.toJson())
+            }
+            return
+        }
         val request = try {
             UpdateEventRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -157,6 +185,13 @@ class NativeMethodChannelHandler(
     }
 
     private fun handleDeleteEvent(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.deleteEvent(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::event, reconcileAfterSuccess = true) {
+                nativeCalendarCoreBridge.deleteEvent(request.toJson())
+            }
+            return
+        }
         val request = try {
             DeleteEventRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -169,6 +204,13 @@ class NativeMethodChannelHandler(
     }
 
     private fun handleSearchEvents(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.searchEvent(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::eventList) {
+                nativeCalendarCoreBridge.searchEvents(request.toJson())
+            }
+            return
+        }
         val request = try {
             SearchEventRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -182,6 +224,13 @@ class NativeMethodChannelHandler(
 
     /** 解析完成单次事件请求，并将 C++ NativeResult 完整返回给 Flutter。 */
     private fun handleCompleteEvent(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.completeEvent(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::event, reconcileAfterSuccess = true) {
+                nativeCalendarCoreBridge.completeEvent(request.toJson())
+            }
+            return
+        }
         val request = try {
             CompleteEventRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -195,6 +244,13 @@ class NativeMethodChannelHandler(
 
     /** 解析“重新打开事件实例”请求。 */
     private fun handleReopenEvent(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.reopenEvent(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::event, reconcileAfterSuccess = true) {
+                nativeCalendarCoreBridge.reopenEvent(request.toJson())
+            }
+            return
+        }
         val request = try {
             ReopenEventRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -206,7 +262,54 @@ class NativeMethodChannelHandler(
         }
     }
 
+    private fun handleEventDetail(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile != NativeContractProfile.V2) return completion.notImplemented()
+        val request = parseV2(call, completion) { V2RequestContracts.eventId(it) } ?: return
+        executeNative(call.method, completion, V2ResponseContracts::eventDetail) {
+            nativeCalendarCoreBridge.getEventDetail(request.toJson())
+        }
+    }
+
+    private fun handleListEventOccurrences(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile != NativeContractProfile.V2) return completion.notImplemented()
+        val request = parseV2(call, completion) { V2RequestContracts.listOccurrences(it) } ?: return
+        executeNative(call.method, completion, V2ResponseContracts::occurrenceList) {
+            nativeCalendarCoreBridge.listEventOccurrences(request.toJson())
+        }
+    }
+
+    private fun handleOccurrenceOperation(
+        call: MethodCall,
+        completion: SingleCompletion,
+        nativeCall: (String) -> String,
+    ) {
+        if (contractProfile != NativeContractProfile.V2) return completion.notImplemented()
+        val request = parseV2(call, completion) { V2RequestContracts.occurrenceOperation(it) } ?: return
+        executeNative(call.method, completion, V2ResponseContracts::occurrenceState, reconcileAfterSuccess = true) {
+            nativeCall(request.toJson())
+        }
+    }
+
+    private fun handleSeriesOperation(
+        call: MethodCall,
+        completion: SingleCompletion,
+        nativeCall: (String) -> String,
+    ) {
+        if (contractProfile != NativeContractProfile.V2) return completion.notImplemented()
+        val request = parseV2(call, completion) { V2RequestContracts.seriesOperation(it) } ?: return
+        executeNative(call.method, completion, V2ResponseContracts::event, reconcileAfterSuccess = true) {
+            nativeCall(request.toJson())
+        }
+    }
+
     private fun handleCreateReminder(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.createReminder(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::reminder, reconcileAfterSuccess = true) {
+                nativeCalendarCoreBridge.createReminder(request.toJson())
+            }
+            return
+        }
         val request = try {
             CreateReminderRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -219,6 +322,13 @@ class NativeMethodChannelHandler(
     }
 
     private fun handleUpdateReminder(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.updateReminder(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::reminder, reconcileAfterSuccess = true) {
+                nativeCalendarCoreBridge.updateReminder(request.toJson())
+            }
+            return
+        }
         val request = try {
             UpdateReminderRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -231,6 +341,13 @@ class NativeMethodChannelHandler(
     }
 
     private fun handleCancelReminder(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.cancelReminder(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::reminder, reconcileAfterSuccess = true) {
+                nativeCalendarCoreBridge.cancelReminder(request.toJson())
+            }
+            return
+        }
         val request = try {
             CancelReminderRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -243,6 +360,13 @@ class NativeMethodChannelHandler(
     }
 
     private fun handleListReminders(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile == NativeContractProfile.V2) {
+            val request = parseV2(call, completion) { V2RequestContracts.listReminders(it) } ?: return
+            executeNative(call.method, completion, V2ResponseContracts::reminderList) {
+                nativeCalendarCoreBridge.listReminders(request.toJson())
+            }
+            return
+        }
         val request = try {
             ListRemindersRequestContract.fromMethodArguments(call.arguments)
         } catch (error: NativeContractViolation) {
@@ -363,6 +487,17 @@ class NativeMethodChannelHandler(
         }
     }
 
+    private fun <T> parseV2(
+        call: MethodCall,
+        completion: SingleCompletion,
+        parser: (Any?) -> T,
+    ): T? = try {
+        parser(call.arguments)
+    } catch (error: NativeContractViolation) {
+        completion.success(contractFailure(call.method, error).toMap())
+        null
+    }
+
     private fun executeLocal(
         method: String,
         completion: SingleCompletion,
@@ -375,8 +510,9 @@ class NativeMethodChannelHandler(
         } catch (error: Throwable) {
             nativeInternalFailure(method, error)
         }
-        logger.log(method, nativeResult.requestId, "completed ok=${nativeResult.ok}")
-        completion.success(nativeResult.toMap())
+        val profiled = nativeResult.copy(contractVersion = contractProfile.contractVersion)
+        logger.log(method, profiled.requestId, "completed ok=${profiled.ok}")
+        completion.success(profiled.toMap())
     }
 
     /**
@@ -389,12 +525,13 @@ class NativeMethodChannelHandler(
         method: String,
         completion: SingleCompletion,
         dataValidator: (Any?) -> Unit,
+        reconcileAfterSuccess: Boolean = false,
         nativeCall: () -> String,
     ) {
         executor.execute {
             val nativeResult = try {
                 val nativeJson = nativeCall()
-                NativeResultContract.fromJson(nativeJson, dataValidator)
+                NativeResultContract.fromJson(nativeJson, contractProfile.contractVersion, dataValidator)
             } catch (error: NativeContractViolation) {
                 contractFailure(method, error)
             } catch (error: NativeBridgeUnavailableException) {
@@ -404,8 +541,29 @@ class NativeMethodChannelHandler(
             } catch (error: Throwable) {
                 nativeInternalFailure(method, error)
             }
+            if (nativeResult.ok && reconcileAfterSuccess && contractProfile == NativeContractProfile.V2) {
+                reconcileAfterMutation(method)
+            }
             logger.log(method, nativeResult.requestId, "completed ok=${nativeResult.ok}")
             completion.success(nativeResult.toMap())
+        }
+    }
+
+    private fun reconcileAfterMutation(method: String) {
+        try {
+            val reconciled = reminderScheduleCoordinator?.reconcile(
+                ReconcileReminderScheduleContract(
+                    com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger.Mutation,
+                    force = true,
+                ),
+            )
+            if (reconciled != null && !reconciled.ok) {
+                logger.log(method, reconciled.requestId, "domain mutation committed; reconcile deferred code=${reconciled.error?.code}")
+                reconcileRetryEnqueuer?.invoke()
+            }
+        } catch (error: Throwable) {
+            logger.log(method, null, "domain mutation committed; reconcile deferred type=${error.javaClass.simpleName}")
+            runCatching { reconcileRetryEnqueuer?.invoke() }
         }
     }
 
@@ -449,7 +607,7 @@ class NativeMethodChannelHandler(
         )
     }
 
-    private fun requireReminderScheduleCoordinator(method: String): ReminderScheduleCoordinator {
+    private fun requireReminderScheduleCoordinator(method: String): ReminderScheduleReconciler {
         return reminderScheduleCoordinator ?: throw NativeBridgeUnavailableException(
             "Reminder schedule coordinator is not configured for $method.",
         )
@@ -465,6 +623,7 @@ class NativeMethodChannelHandler(
                 "method" to method,
                 "field" to error.field,
             ),
+            contractVersion = contractProfile.contractVersion,
         )
     }
 
@@ -478,6 +637,7 @@ class NativeMethodChannelHandler(
                 "method" to method,
                 "reason" to (error.message ?: error.javaClass.simpleName),
             ),
+            contractVersion = contractProfile.contractVersion,
         )
     }
 
@@ -491,6 +651,7 @@ class NativeMethodChannelHandler(
                 "method" to method,
                 "reason" to error.javaClass.simpleName,
             ),
+            contractVersion = contractProfile.contractVersion,
         )
     }
 
@@ -529,8 +690,17 @@ class NativeMethodChannelHandler(
         const val MethodEventUpdate = "event.update"
         const val MethodEventDelete = "event.delete"
         const val MethodEventSearch = "event.search"
+        const val MethodEventDetail = "event.detail"
         const val MethodEventComplete = "event.complete"
         const val MethodEventReopen = "event.reopen"
+        const val MethodEventListOccurrences = "event.list_occurrences"
+        const val MethodEventOccurrenceComplete = "event_occurrence.complete"
+        const val MethodEventOccurrenceReopen = "event_occurrence.reopen"
+        const val MethodEventOccurrenceSkip = "event_occurrence.skip"
+        const val MethodEventOccurrenceCancel = "event_occurrence.cancel"
+        const val MethodEventSeriesComplete = "event.complete_series"
+        const val MethodEventSeriesReopen = "event.reopen_series"
+        const val MethodEventSeriesCancel = "event.cancel_series"
         const val MethodReminderCreate = "reminder.create"
         const val MethodReminderUpdate = "reminder.update"
         const val MethodReminderCancel = "reminder.cancel"

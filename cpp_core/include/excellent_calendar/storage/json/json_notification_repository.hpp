@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string_view>
@@ -8,12 +9,15 @@
 
 #include "excellent_calendar/repository/notification_repository.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/runtime_storage_lease.hpp"
 
 namespace excellent_calendar::storage::json {
 
 class JsonNotificationRepository final : public repository::NotificationRepository {
  public:
-  explicit JsonNotificationRepository(std::filesystem::path storage_directory);
+  explicit JsonNotificationRepository(
+      std::filesystem::path storage_directory,
+      std::shared_ptr<storage::RuntimeStorageLease> runtime_lease = {});
 
   common::Result<common::Unit> initialize();
 
@@ -31,6 +35,7 @@ class JsonNotificationRepository final : public repository::NotificationReposito
       const std::vector<domain::Notification>& notifications);
 
   AtomicJsonFileStore store_;
+  std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
   mutable std::mutex mutex_;
 };
 

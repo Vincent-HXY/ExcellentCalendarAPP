@@ -28,6 +28,15 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        buildConfigField("boolean", "CALENDAR_CORE_V2_ENABLED", "false")
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    sourceSets {
+        getByName("main").assets.srcDir("../../../cpp_core/third_party/tzdata")
     }
 
     externalNativeBuild {

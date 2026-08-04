@@ -1,0 +1,4 @@
+interface:
+  display_name: "Worktree Architecture Review"
+  short_description: "Review dirty changes, boundaries, completeness, and tests"
+  default_prompt: "Use $review-worktree-architecture to review all uncommitted changes against the repository architecture and verify them with independent tests."

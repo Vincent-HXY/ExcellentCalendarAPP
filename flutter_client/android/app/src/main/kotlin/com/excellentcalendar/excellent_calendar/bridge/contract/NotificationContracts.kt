@@ -225,6 +225,23 @@ object NotificationTapPayloadContract {
         val map = normalizeArguments(value).toMutableMap()
         map["opened_at"] = openedAt
         val parent = "NotificationTapPayload"
+        if (map.containsKey("delivery_id")) {
+            ContractValidators.rejectUnknownFields(
+                map,
+                setOf(
+                    "notification_id", "delivery_id", "delivery_attempt_id", "kind", "reminder_id",
+                    "recovery_batch_id", "target_type", "target_id", "occurrence_key", "route", "opened_at",
+                ),
+                parent,
+            )
+            listOf("notification_id", "delivery_id", "delivery_attempt_id", "kind", "target_type", "target_id", "opened_at")
+                .forEach { ContractValidators.requireString(map, it, parent, nonEmpty = true) }
+            ContractValidators.optionalString(map, "reminder_id", parent)
+            ContractValidators.optionalString(map, "recovery_batch_id", parent)
+            ContractValidators.optionalString(map, "occurrence_key", parent)
+            ContractValidators.optionalString(map, "route", parent)
+            return map
+        }
         ContractValidators.rejectUnknownFields(
             map,
             setOf("notification_id", "reminder_id", "target_type", "target_id", "route", "opened_at"),

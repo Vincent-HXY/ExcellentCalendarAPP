@@ -7,6 +7,7 @@ package com.excellentcalendar.excellent_calendar.bridge.native
  * narrow interface first, then be included in this aggregate interface.
  */
 interface NativeCalendarCoreBridge :
+    NativeRuntimeBridge,
     NativeEventBridge,
     NativeReminderBridge,
     NativeNotificationBridge

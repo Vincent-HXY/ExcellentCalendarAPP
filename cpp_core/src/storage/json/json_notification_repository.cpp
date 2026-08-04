@@ -141,10 +141,17 @@ picojson::value to_json(const domain::Notification& notification) {
 
 }  // namespace
 
-JsonNotificationRepository::JsonNotificationRepository(std::filesystem::path storage_directory)
-    : store_(std::move(storage_directory)) {}
+JsonNotificationRepository::JsonNotificationRepository(
+    std::filesystem::path storage_directory,
+    std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
+    : store_(std::move(storage_directory)), runtime_lease_(std::move(runtime_lease)) {}
 
 common::Result<common::Unit> JsonNotificationRepository::initialize() {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<common::Unit>::failure(
+        storage::runtime_storage_revoked_error("notification_repository.initialize"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   return store_.initialize();
@@ -152,6 +159,11 @@ common::Result<common::Unit> JsonNotificationRepository::initialize() {
 
 common::Result<domain::Notification> JsonNotificationRepository::create(
     const domain::Notification& notification) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<domain::Notification>::failure(
+        storage::runtime_storage_revoked_error("notification_repository.create"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   auto loaded = load_notifications_locked();
@@ -171,6 +183,12 @@ common::Result<domain::Notification> JsonNotificationRepository::create(
 
 common::Result<std::optional<domain::Notification>>
 JsonNotificationRepository::find_sent_by_reminder_id(std::string_view reminder_id) {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<std::optional<domain::Notification>>::failure(
+        storage::runtime_storage_revoked_error(
+            "notification_repository.find_sent_by_reminder_id"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   auto loaded = load_notifications_locked();
@@ -187,6 +205,11 @@ JsonNotificationRepository::find_sent_by_reminder_id(std::string_view reminder_i
 }
 
 common::Result<std::vector<domain::Notification>> JsonNotificationRepository::find_all() {
+  auto runtime_access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !runtime_access.has_value()) {
+    return common::Result<std::vector<domain::Notification>>::failure(
+        storage::runtime_storage_revoked_error("notification_repository.find_all"));
+  }
   auto directory_lock = store_.acquire_directory_lock();
   std::lock_guard<std::mutex> lock(mutex_);
   return load_notifications_locked();

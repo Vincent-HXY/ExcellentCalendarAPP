@@ -22,6 +22,13 @@ data class ReminderNotificationContent(
     val plannedAt: String,
 )
 
+data class PreparedNotificationContent(
+    val deliveryId: String,
+    val title: String,
+    val body: String?,
+    val tapPayload: Map<String, Any?>,
+)
+
 data class AndroidNotificationIdentity(
     val tag: String,
     val id: Int,
@@ -39,6 +46,13 @@ sealed class NotificationPostResult {
 interface NotificationDisplayService {
     fun post(content: ReminderNotificationContent, sentAt: String): NotificationPostResult
     fun cancel(reminderId: String)
+    fun postPrepared(content: PreparedNotificationContent): NotificationPostResult =
+        NotificationPostResult.Failure(
+            NativeErrorCodes.NotificationDeliveryFailed,
+            "Prepared notifications are not supported by this display service.",
+            retryable = false,
+        )
+    fun cancelDelivery(deliveryId: String) = Unit
 }
 
 class AndroidNotificationDisplayService(
@@ -78,6 +92,39 @@ class AndroidNotificationDisplayService(
 
     override fun cancel(reminderId: String) {
         val identity = notificationIdentity(reminderId)
+        notificationManager.cancel(identity.tag, identity.id)
+    }
+
+    override fun postPrepared(content: PreparedNotificationContent): NotificationPostResult {
+        if (!canPostNotifications()) {
+            return NotificationPostResult.Failure(
+                NativeErrorCodes.NotificationPermissionDenied,
+                "Android notification permission is denied.",
+                retryable = true,
+            )
+        }
+        return try {
+            channelManager.ensureChannels()
+            val identity = preparedNotificationIdentity(content.deliveryId)
+            notificationManager.notify(identity.tag, identity.id, buildPreparedNotification(content))
+            NotificationPostResult.Success(identity)
+        } catch (_: SecurityException) {
+            NotificationPostResult.Failure(
+                NativeErrorCodes.NotificationPermissionDenied,
+                "Android notification permission is denied.",
+                retryable = true,
+            )
+        } catch (_: RuntimeException) {
+            NotificationPostResult.Failure(
+                NativeErrorCodes.NotificationDeliveryFailed,
+                "Android notification delivery failed.",
+                retryable = true,
+            )
+        }
+    }
+
+    override fun cancelDelivery(deliveryId: String) {
+        val identity = preparedNotificationIdentity(deliveryId)
         notificationManager.cancel(identity.tag, identity.id)
     }
 
@@ -127,6 +174,36 @@ class AndroidNotificationDisplayService(
             .build()
     }
 
+    private fun buildPreparedNotification(content: PreparedNotificationContent): Notification {
+        val tapIntent = Intent(appContext, MainActivity::class.java)
+            .setAction(AndroidNotificationRuntime.ActionOpenReminder)
+            .setPackage(appContext.packageName)
+            .setData(Uri.parse("excellentcalendar://notification/delivery/${Uri.encode(content.deliveryId)}"))
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra(
+                AndroidNotificationRuntime.ExtraPayloadJson,
+                NativeContractJsonCodec.encodeObject(content.tapPayload),
+            )
+        val contentIntent = PendingIntent.getActivity(
+            appContext,
+            content.deliveryId.hashCode(),
+            tapIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(appContext, AndroidNotificationChannelManager.PopupChannelId)
+        } else {
+            Notification.Builder(appContext)
+        }
+        return builder
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(content.title)
+            .setContentText(content.body ?: "")
+            .setContentIntent(contentIntent)
+            .setAutoCancel(true)
+            .build()
+    }
+
     private fun routeFor(targetType: String): String? = when (targetType) {
         "event" -> "/event/detail"
         "habit" -> "/habit/detail"
@@ -143,5 +220,8 @@ class AndroidNotificationDisplayService(
                 id = ReminderNotificationId,
             )
         }
+
+        fun preparedNotificationIdentity(deliveryId: String): AndroidNotificationIdentity =
+            AndroidNotificationIdentity(tag = "delivery:$deliveryId", id = ReminderNotificationId)
     }
 }

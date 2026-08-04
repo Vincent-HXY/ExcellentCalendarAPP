@@ -14,8 +14,10 @@
 #include "excellent_calendar/application/create_event_workflow_service.hpp"
 #include "excellent_calendar/application/event_lifecycle_workflow_service.hpp"
 #include "excellent_calendar/application/event_service.hpp"
+#include "excellent_calendar/application/notification_service.hpp"
 #include "excellent_calendar/application/reminder_service.hpp"
 #include "excellent_calendar/boundary/api/event_api.hpp"
+#include "excellent_calendar/boundary/api/native_runtime.hpp"
 #include "excellent_calendar/common/clock.hpp"
 #include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
@@ -1022,6 +1024,89 @@ void initialize_failure_tests() {
   std::filesystem::remove_all(dir);
 }
 
+// A failed replacement must revoke every previously borrowed v1 writer. This
+// exercises both direct repository-backed services and the two transaction
+// workflows; the valid commands ensure STORAGE_NOT_INITIALIZED comes from the
+// storage generation guard rather than unrelated command validation.
+void stale_v1_runtime_borrower_tests() {
+  const auto dir = make_temp_dir("stale_v1_runtime");
+  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+
+  auto initialized = excellent_calendar::boundary::api::initialize_runtime(dir.string());
+  require(initialized.ok(), "initial v1 runtime should initialize");
+  auto stale_event_service = excellent_calendar::boundary::api::current_event_service();
+  auto stale_reminder_service = excellent_calendar::boundary::api::current_reminder_service();
+  auto stale_create_workflow =
+      excellent_calendar::boundary::api::current_create_event_workflow_service();
+  auto stale_notification_service =
+      excellent_calendar::boundary::api::current_notification_service();
+  require(stale_event_service && stale_reminder_service && stale_create_workflow &&
+              stale_notification_service,
+          "v1 runtime should publish all legacy borrowers");
+
+  const auto invalid_path = dir / "not_a_directory";
+  {
+    std::ofstream output(invalid_path, std::ios::binary | std::ios::trunc);
+    output << "file";
+  }
+  auto replacement = excellent_calendar::boundary::api::initialize_runtime(
+      invalid_path.string());
+  require(!replacement.ok() && replacement.error().code == "STORAGE_PATH_INVALID",
+          "invalid v1 replacement should fail deterministically");
+  require(!excellent_calendar::boundary::api::current_event_service() &&
+              !excellent_calendar::boundary::api::current_reminder_service() &&
+              !excellent_calendar::boundary::api::current_create_event_workflow_service() &&
+              !excellent_calendar::boundary::api::current_notification_service(),
+          "failed replacement must leave no newly published runtime services");
+
+  CreateEventCommand event_command;
+  event_command.title = "stale writer";
+  event_command.start_at = future_utc(3600);
+  event_command.end_at = future_utc(7200);
+  event_command.is_all_day = false;
+  event_command.timezone = "Asia/Shanghai";
+  event_command.source = "manual";
+
+  auto stale_event_write = stale_event_service->create_event(event_command);
+  require(!stale_event_write.ok() &&
+              stale_event_write.error().code == "STORAGE_NOT_INITIALIZED",
+          "stale EventService must not write its old v1 directory");
+
+  excellent_calendar::application::ReminderQuery reminder_query;
+  auto stale_reminder_read = stale_reminder_service->list_reminders(reminder_query);
+  require(!stale_reminder_read.ok() &&
+              stale_reminder_read.error().code == "STORAGE_NOT_INITIALIZED",
+          "stale ReminderService must not read its old v1 directory");
+
+  CreateEventWorkflowCommand workflow_command;
+  workflow_command.event = event_command;
+  auto stale_event_transaction = stale_create_workflow->create_event(workflow_command);
+  require(!stale_event_transaction.ok() &&
+              stale_event_transaction.error().code == "STORAGE_NOT_INITIALIZED",
+          "stale EventReminder transaction must reject before invoking its callback");
+
+  excellent_calendar::application::ConsumeReminderAfterDeliveryCommand delivery_command;
+  delivery_command.reminder_id = "00000000-0000-4000-8000-000000000001";
+  delivery_command.method = "popup";
+  delivery_command.title = "stale delivery";
+  delivery_command.planned_at = "2026-06-08T12:00:00Z";
+  delivery_command.sent_at = "2026-06-08T12:00:01Z";
+  delivery_command.delete_after_sent = true;
+  auto stale_delivery_transaction =
+      stale_notification_service->consume_after_delivery(delivery_command);
+  require(!stale_delivery_transaction.ok() &&
+              stale_delivery_transaction.error().code == "STORAGE_NOT_INITIALIZED",
+          "stale ReminderNotification transaction must reject before invoking its callback");
+
+  for (const auto* file : {"events.json", "reminders.json", "notifications.json",
+                           "event_reminder_transaction.json",
+                           "reminder_notification_transaction.json"}) {
+    require(!std::filesystem::exists(dir / file),
+            std::string("stale borrower must not create old v1 file: ") + file);
+  }
+  cleanup();
+}
+
 }  // namespace
 
 // CTest 运行的是这个可执行程序；任一场景抛异常即整体失败。
@@ -1036,6 +1121,7 @@ int main() {
     boundary_and_search_tests();
     soft_delete_and_corruption_tests();
     concurrency_tests();
+    stale_v1_runtime_borrower_tests();
     initialize_failure_tests();
   } catch (const std::exception& error) {
     std::cerr << "event_core_tests failed: " << error.what() << '\n';

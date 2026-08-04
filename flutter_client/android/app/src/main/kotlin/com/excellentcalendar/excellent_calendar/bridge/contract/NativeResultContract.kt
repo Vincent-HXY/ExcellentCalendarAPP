@@ -46,20 +46,39 @@ data class NativeResultContract(
         fun fromJson(
             json: String,
             dataValidator: (Any?) -> Unit,
+        ): NativeResultContract = fromJson(json, ContractVersion, dataValidator)
+
+        fun fromJson(
+            json: String,
+            expectedContractVersion: Int,
+            dataValidator: (Any?) -> Unit,
         ): NativeResultContract {
             val map = try {
                 NativeContractJsonCodec.decodeObject(json)
             } catch (error: Exception) {
                 throw NativeContractViolation("NativeResult JSON is malformed.", cause = error)
             }
-            return fromMap(map, dataValidator)
+            return fromMap(map, expectedContractVersion, dataValidator)
         }
 
         /** 从 Map 构造并严格校验 NativeResult。 */
         fun fromMap(
             map: Map<String, Any?>,
             dataValidator: (Any?) -> Unit,
+        ): NativeResultContract = fromMap(map, ContractVersion, dataValidator)
+
+        fun fromMap(
+            map: Map<String, Any?>,
+            expectedContractVersion: Int,
+            dataValidator: (Any?) -> Unit,
         ): NativeResultContract {
+            if (expectedContractVersion >= 2) {
+                ContractValidators.rejectUnknownFields(
+                    map,
+                    setOf("ok", "data", "error", "contract_version", "request_id"),
+                    "NativeResult",
+                )
+            }
             if (!map.containsKey("ok") || !map.containsKey("data") || !map.containsKey("error")) {
                 throw NativeContractViolation("NativeResult must contain ok, data, and error.")
             }
@@ -76,8 +95,11 @@ data class NativeResultContract(
             if (contractVersion != null && contractVersion !is Int) {
                 throw NativeContractViolation("NativeResult.contract_version must be integer or null.", "contract_version")
             }
-            if (contractVersion != null && contractVersion != ContractVersion) {
+            if (contractVersion != null && contractVersion != expectedContractVersion) {
                 throw NativeContractViolation("NativeResult.contract_version is unsupported.", "contract_version")
+            }
+            if (expectedContractVersion >= 2 && contractVersion == null) {
+                throw NativeContractViolation("NativeResult.contract_version is required.", "contract_version")
             }
             if (requestId != null && requestId !is String) {
                 throw NativeContractViolation("NativeResult.request_id must be string or null.", "request_id")
@@ -104,7 +126,7 @@ data class NativeResultContract(
                     throw NativeContractViolation("NativeResult.error must be object when ok=false.", "error")
                 }
                 @Suppress("UNCHECKED_CAST")
-                val error = NativeErrorContract.fromMap(rawError as Map<String, Any?>)
+                val error = NativeErrorContract.fromMap(rawError as Map<String, Any?>, strict = expectedContractVersion >= 2)
                 NativeResultContract(
                     ok = false,
                     data = null,
@@ -122,6 +144,7 @@ data class NativeResultContract(
             details: Map<String, Any?>? = null,
             retryable: Boolean = false,
             requestId: String? = null,
+            contractVersion: Int = ContractVersion,
         ): NativeResultContract {
             return NativeResultContract(
                 ok = false,
@@ -132,7 +155,7 @@ data class NativeResultContract(
                     details = details,
                     retryable = retryable,
                 ),
-                contractVersion = ContractVersion,
+                contractVersion = contractVersion,
                 requestId = requestId,
             )
         }
@@ -141,12 +164,13 @@ data class NativeResultContract(
         fun success(
             data: Any?,
             requestId: String = UUID.randomUUID().toString(),
+            contractVersion: Int = ContractVersion,
         ): NativeResultContract {
             return NativeResultContract(
                 ok = true,
                 data = data,
                 error = null,
-                contractVersion = ContractVersion,
+                contractVersion = contractVersion,
                 requestId = requestId,
             )
         }

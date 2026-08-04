@@ -126,6 +126,11 @@ errors:
     message: "Deterministic Reminder ID already exists with different business content"
     retryable: false
 
+  REMINDER_SCHEDULE_CONFLICT:
+    module: reminder
+    message: "Reminder schedule changed before the Android registration acknowledgement"
+    retryable: true
+
   DELIVERY_ATTEMPT_INVALID:
     module: notification
     message: "Delivery attempt is missing, not prepared, or finalized with a conflicting outcome"

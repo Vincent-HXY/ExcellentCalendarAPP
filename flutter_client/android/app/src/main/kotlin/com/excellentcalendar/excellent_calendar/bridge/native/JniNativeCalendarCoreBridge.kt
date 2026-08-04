@@ -5,366 +5,320 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeContractVi
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
 
-/**
- * 表示 native bridge 当前不可用的异常。
- *
- * 这类错误通常不是业务输入问题，而是动态库没有加载成功、JNI 函数名不匹配、
- * 或 Android 系统拒绝加载 so 文件。上层会把它转换成统一的 NativeResult 失败响应。
- */
 class NativeBridgeUnavailableException(
     message: String,
     cause: Throwable? = null,
 ) : Exception(message, cause)
 
-/**
- * Kotlin 的 `fun interface` 是“只有一个抽象函数的接口”，也叫 SAM 接口。
- *
- * 它的好处是可以直接用 lambda 创建实例：
- * `NativeLibraryLoader { System.loadLibrary("xxx") }`。
- * 这里抽象出来是为了测试时替换加载逻辑，不必真的加载 native 库。
- */
 fun interface NativeLibraryLoader {
     fun load()
 }
 
-/**
- * 通过 JNI 调用 C++ 事件内核的 Kotlin 实现。
- *
- * 构造参数说明：
- * - `storageDirectory`：C++ JSON 仓库使用的本地目录；为 null 时跳过初始化。
- * - `libraryLoader`：负责加载 `.so` 动态库，默认调用 `System.loadLibrary`。
- *
- * Kotlin 初学点：
- * - `private val` 是构造函数参数同时声明为私有只读属性。
- * - `: NativeCalendarCoreBridge` 表示这个类实现了聚合接口，必须提供接口里的函数。
- */
+/** One bridge framework with a strictly selected native contract profile. */
 class JniNativeCalendarCoreBridge(
+    val profile: NativeContractProfile = NativeContractProfile.V1,
     private val storageDirectory: String? = null,
+    private val runtimeRequestProvider: NativeRuntimeRequestProvider? = null,
     private val libraryLoader: NativeLibraryLoader = NativeLibraryLoader {
         System.loadLibrary(NativeLibraryName)
     },
+    private val runtimeInitializer: ((String) -> String)? = null,
 ) : NativeCalendarCoreBridge {
-    /**
-     * `@Volatile` 保证多线程下读取到的是最新值。
-     *
-     * Android 的 MethodChannel 调用可能被派发到后台线程。这里配合 `synchronized(this)`
-     * 实现“双重检查”：库只加载一次，失败结果也只记录一次。
-     */
-    @Volatile
-    private var loadAttempted = false
+    @Volatile private var loadAttempted = false
+    @Volatile private var loadFailure: Throwable? = null
+    @Volatile private var runtimeInitAttempted = false
+    @Volatile private var runtimeInitFailureJson: String? = null
 
-    /** 保存加载失败的异常；为 null 表示加载成功或尚未尝试。 */
-    @Volatile
-    private var loadFailure: Throwable? = null
-
-    /** storage 初始化也只做一次，避免每次业务调用都重复创建目录/初始化仓库。 */
-    @Volatile
-    private var storageInitAttempted = false
-
-    /** 如果初始化失败，保存 C++ 返回的 NativeResult JSON，后续调用直接返回同一个失败。 */
-    @Volatile
-    private var storageInitFailureJson: String? = null
-
-    /** 调用 C++ 创建事件：先确保库和存储可用，再进入 nativeCreateEvent。 */
-    override fun createEvent(requestJson: String): String {
+    override fun initializeRuntime(requestJson: String): String {
         ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeCreateEvent(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeCreateEvent is unavailable.", error)
+        return callNative(if (profile == NativeContractProfile.V2) "nativeInitializeRuntimeV2" else "nativeInitializeStorage") {
+            if (profile == NativeContractProfile.V2) nativeInitializeRuntimeV2(requestJson)
+            else nativeInitializeStorage(requestJson)
         }
     }
 
-    /** 调用 C++ 搜索事件。`?.let { return it }` 表示：如果初始化失败 JSON 非空，直接返回。 */
-    override fun updateEvent(requestJson: String): String {
+    override fun createEvent(requestJson: String) = callWithRuntime("nativeCreateEvent") {
+        if (profile == NativeContractProfile.V2) nativeCreateEventV2(requestJson) else nativeCreateEvent(requestJson)
+    }
+
+    override fun updateEvent(requestJson: String) = callWithRuntime("nativeUpdateEvent") {
+        if (profile == NativeContractProfile.V2) nativeUpdateEventV2(requestJson) else nativeUpdateEvent(requestJson)
+    }
+
+    override fun deleteEvent(requestJson: String) = callWithRuntime("nativeDeleteEvent") {
+        if (profile == NativeContractProfile.V2) nativeDeleteEventV2(requestJson) else nativeDeleteEvent(requestJson)
+    }
+
+    override fun searchEvents(requestJson: String) = callWithRuntime("nativeSearchEvents") {
+        if (profile == NativeContractProfile.V2) nativeSearchEventsV2(requestJson) else nativeSearchEvents(requestJson)
+    }
+
+    override fun getEventDetail(requestJson: String): String = v2Only("nativeGetEventDetailV2") {
+        nativeGetEventDetailV2(requestJson)
+    }
+
+    override fun completeEvent(requestJson: String) = callWithRuntime("nativeCompleteEvent") {
+        if (profile == NativeContractProfile.V2) nativeCompleteEventV2(requestJson) else nativeCompleteEvent(requestJson)
+    }
+
+    override fun reopenEvent(requestJson: String) = callWithRuntime("nativeReopenEvent") {
+        if (profile == NativeContractProfile.V2) nativeReopenEventV2(requestJson) else nativeReopenEvent(requestJson)
+    }
+
+    override fun listEventOccurrences(requestJson: String) = v2Only("nativeListEventOccurrencesV2") {
+        nativeListEventOccurrencesV2(requestJson)
+    }
+
+    override fun completeEventOccurrence(requestJson: String) = v2Only("nativeCompleteEventOccurrenceV2") {
+        nativeCompleteEventOccurrenceV2(requestJson)
+    }
+
+    override fun reopenEventOccurrence(requestJson: String) = v2Only("nativeReopenEventOccurrenceV2") {
+        nativeReopenEventOccurrenceV2(requestJson)
+    }
+
+    override fun skipEventOccurrence(requestJson: String) = v2Only("nativeSkipEventOccurrenceV2") {
+        nativeSkipEventOccurrenceV2(requestJson)
+    }
+
+    override fun cancelEventOccurrence(requestJson: String) = v2Only("nativeCancelEventOccurrenceV2") {
+        nativeCancelEventOccurrenceV2(requestJson)
+    }
+
+    override fun completeEventSeries(requestJson: String) = v2Only("nativeCompleteEventSeriesV2") {
+        nativeCompleteEventSeriesV2(requestJson)
+    }
+
+    override fun reopenEventSeries(requestJson: String) = v2Only("nativeReopenEventSeriesV2") {
+        nativeReopenEventSeriesV2(requestJson)
+    }
+
+    override fun cancelEventSeries(requestJson: String) = v2Only("nativeCancelEventSeriesV2") {
+        nativeCancelEventSeriesV2(requestJson)
+    }
+
+    override fun createReminder(requestJson: String) = callWithRuntime("nativeCreateReminder") {
+        if (profile == NativeContractProfile.V2) nativeCreateReminderV2(requestJson) else nativeCreateReminder(requestJson)
+    }
+
+    override fun updateReminder(requestJson: String) = callWithRuntime("nativeUpdateReminder") {
+        if (profile == NativeContractProfile.V2) nativeUpdateReminderV2(requestJson) else nativeUpdateReminder(requestJson)
+    }
+
+    override fun cancelReminder(requestJson: String) = callWithRuntime("nativeCancelReminder") {
+        if (profile == NativeContractProfile.V2) nativeCancelReminderV2(requestJson) else nativeCancelReminder(requestJson)
+    }
+
+    override fun listReminders(requestJson: String) = callWithRuntime("nativeListReminders") {
+        if (profile == NativeContractProfile.V2) nativeListRemindersV2(requestJson) else nativeListReminders(requestJson)
+    }
+
+    override fun getReminder(requestJson: String) = callWithRuntime("nativeGetReminder") {
+        if (profile == NativeContractProfile.V2) nativeGetReminderV2(requestJson) else nativeGetReminder(requestJson)
+    }
+
+    override fun listSchedulableReminders(requestJson: String) = callWithRuntime("nativeListSchedulableReminders") {
+        if (profile == NativeContractProfile.V2) nativeListSchedulableRemindersV2(requestJson)
+        else nativeListSchedulableReminders(requestJson)
+    }
+
+    override fun markReminderScheduled(requestJson: String) = callWithRuntime("nativeMarkReminderScheduled") {
+        if (profile == NativeContractProfile.V2) nativeMarkReminderScheduledV2(requestJson)
+        else nativeMarkReminderScheduled(requestJson)
+    }
+
+    override fun markReminderSent(requestJson: String): String = if (profile == NativeContractProfile.V1) {
+        callWithRuntime("nativeMarkReminderSent") { nativeMarkReminderSent(requestJson) }
+    } else unsupported("reminder.mark_sent")
+
+    override fun markReminderFailed(requestJson: String): String = if (profile == NativeContractProfile.V1) {
+        callWithRuntime("nativeMarkReminderFailed") { nativeMarkReminderFailed(requestJson) }
+    } else unsupported("reminder.mark_failed")
+
+    override fun enableReminder(requestJson: String) = callWithRuntime("nativeEnableReminder") {
+        if (profile == NativeContractProfile.V2) nativeEnableReminderV2(requestJson) else nativeEnableReminder(requestJson)
+    }
+
+    override fun disableReminder(requestJson: String) = callWithRuntime("nativeDisableReminder") {
+        if (profile == NativeContractProfile.V2) nativeDisableReminderV2(requestJson) else nativeDisableReminder(requestJson)
+    }
+
+    override fun prepareReminderDelivery(requestJson: String) = v2Only("nativePrepareReminderDeliveryV2") {
+        nativePrepareReminderDeliveryV2(requestJson)
+    }
+
+    override fun finalizeReminderDelivery(requestJson: String) = v2Only("nativeFinalizeReminderDeliveryV2") {
+        nativeFinalizeReminderDeliveryV2(requestJson)
+    }
+
+    override fun planReminderRecovery(requestJson: String) = v2Only("nativePlanReminderRecoveryV2") {
+        nativePlanReminderRecoveryV2(requestJson)
+    }
+
+    override fun createNotification(requestJson: String): String = if (profile == NativeContractProfile.V1) {
+        callWithRuntime("nativeCreateNotification") { nativeCreateNotification(requestJson) }
+    } else unsupported("notification.create")
+
+    override fun consumeReminderAfterDelivery(requestJson: String): String = if (profile == NativeContractProfile.V1) {
+        callWithRuntime("nativeConsumeReminderAfterDelivery") { nativeConsumeReminderAfterDelivery(requestJson) }
+    } else unsupported("reminder.consume_after_delivery")
+
+    private inline fun v2Only(symbol: String, call: () -> String): String {
+        if (profile != NativeContractProfile.V2) return unsupported(symbol)
+        return callWithRuntime(symbol, call)
+    }
+
+    private inline fun callWithRuntime(symbol: String, call: () -> String): String {
         ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeUpdateEvent(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeUpdateEvent is unavailable.", error)
-        }
+        ensureRuntimeInitialized()?.let { return it }
+        return callNative(symbol, call)
     }
 
-    override fun deleteEvent(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeDeleteEvent(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeDeleteEvent is unavailable.", error)
-        }
+    private inline fun callNative(symbol: String, call: () -> String): String = try {
+        call()
+    } catch (error: UnsatisfiedLinkError) {
+        throw NativeBridgeUnavailableException("JNI symbol $symbol is unavailable.", error)
     }
 
-    override fun searchEvents(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeSearchEvents(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeSearchEvents is unavailable.", error)
-        }
-    }
-
-    /** 调用 C++ 完成单次事件。 */
-    override fun completeEvent(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeCompleteEvent(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeCompleteEvent is unavailable.", error)
-        }
-    }
-
-    /** 调用 C++ 重新打开事件。 */
-    override fun reopenEvent(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeReopenEvent(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeReopenEvent is unavailable.", error)
-        }
-    }
-
-    override fun createReminder(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeCreateReminder(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeCreateReminder is unavailable.", error)
-        }
-    }
-
-    override fun updateReminder(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeUpdateReminder(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeUpdateReminder is unavailable.", error)
-        }
-    }
-
-    override fun cancelReminder(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeCancelReminder(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeCancelReminder is unavailable.", error)
-        }
-    }
-
-    override fun listReminders(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeListReminders(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeListReminders is unavailable.", error)
-        }
-    }
-
-    override fun getReminder(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return callNative("nativeGetReminder") { nativeGetReminder(requestJson) }
-    }
-
-    override fun listSchedulableReminders(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return callNative("nativeListSchedulableReminders") { nativeListSchedulableReminders(requestJson) }
-    }
-
-    override fun markReminderScheduled(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeMarkReminderScheduled(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeMarkReminderScheduled is unavailable.", error)
-        }
-    }
-
-    override fun markReminderSent(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeMarkReminderSent(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeMarkReminderSent is unavailable.", error)
-        }
-    }
-
-    override fun markReminderFailed(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeMarkReminderFailed(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeMarkReminderFailed is unavailable.", error)
-        }
-    }
-
-    override fun enableReminder(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeEnableReminder(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeEnableReminder is unavailable.", error)
-        }
-    }
-
-    override fun disableReminder(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return try {
-            nativeDisableReminder(requestJson)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeDisableReminder is unavailable.", error)
-        }
-    }
-
-    override fun createNotification(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return callNative("nativeCreateNotification") { nativeCreateNotification(requestJson) }
-    }
-
-    override fun consumeReminderAfterDelivery(requestJson: String): String {
-        ensureLibraryLoaded()
-        ensureStorageInitialized()?.let { return it }
-        return callNative("nativeConsumeReminderAfterDelivery") {
-            nativeConsumeReminderAfterDelivery(requestJson)
-        }
-    }
-
-    /**
-     * `external` 表示函数体不在 Kotlin 中，而是在 JNI/C++ 中实现。
-     *
-     * C++ 侧函数名必须按 JNI 规则匹配这个包名、类名、方法名，否则运行时会抛出
-     * `UnsatisfiedLinkError`。
-     */
-    external fun nativeCreateEvent(requestJson: String): String
-
-    external fun nativeUpdateEvent(requestJson: String): String
-
-    external fun nativeDeleteEvent(requestJson: String): String
-
-    external fun nativeInitializeStorage(storageDirectory: String): String
-
-    external fun nativeSearchEvents(requestJson: String): String
-
-    external fun nativeCompleteEvent(requestJson: String): String
-
-    external fun nativeReopenEvent(requestJson: String): String
-
-    external fun nativeCreateReminder(requestJson: String): String
-
-    external fun nativeUpdateReminder(requestJson: String): String
-
-    external fun nativeCancelReminder(requestJson: String): String
-
-    external fun nativeListReminders(requestJson: String): String
-
-    external fun nativeGetReminder(requestJson: String): String
-
-    external fun nativeListSchedulableReminders(requestJson: String): String
-
-    external fun nativeMarkReminderScheduled(requestJson: String): String
-
-    external fun nativeMarkReminderSent(requestJson: String): String
-
-    external fun nativeMarkReminderFailed(requestJson: String): String
-
-    external fun nativeEnableReminder(requestJson: String): String
-
-    external fun nativeDisableReminder(requestJson: String): String
-
-    external fun nativeCreateNotification(requestJson: String): String
-
-    external fun nativeConsumeReminderAfterDelivery(requestJson: String): String
-
-    private inline fun callNative(symbol: String, call: () -> String): String {
-        return try {
-            call()
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol $symbol is unavailable.", error)
-        }
-    }
-
-    /** 加载 native 动态库。成功或失败都会被缓存，避免重复加载。 */
     private fun ensureLibraryLoaded() {
-        if (!loadAttempted) {
-            synchronized(this) {
-                if (!loadAttempted) {
-                    loadFailure = try {
-                        libraryLoader.load()
-                        null
-                    } catch (error: UnsatisfiedLinkError) {
-                        error
-                    } catch (error: SecurityException) {
-                        error
-                    }
-                    loadAttempted = true
+        if (!loadAttempted) synchronized(this) {
+            if (!loadAttempted) {
+                loadFailure = try {
+                    libraryLoader.load()
+                    null
+                } catch (error: UnsatisfiedLinkError) {
+                    error
+                } catch (error: SecurityException) {
+                    error
                 }
+                loadAttempted = true
             }
         }
-        val failure = loadFailure
-        if (failure != null) {
-            throw NativeBridgeUnavailableException("Native calendar core library is unavailable.", failure)
-        }
+        loadFailure?.let { throw NativeBridgeUnavailableException("Native calendar core library is unavailable.", it) }
     }
 
-    /**
-     * 初始化 C++ 存储层。
-     *
-     * 返回值是 `String?`：
-     * - null：初始化成功，可以继续业务调用。
-     * - 非 null：初始化失败，字符串本身就是符合 NativeResult 合约的错误 JSON。
-     */
-    private fun ensureStorageInitialized(): String? {
-        val directory = storageDirectory ?: return null
-        if (!storageInitAttempted) {
-            synchronized(this) {
-                if (!storageInitAttempted) {
-                    storageInitFailureJson = initializeStorage(directory)
-                    storageInitAttempted = true
-                }
+    private fun ensureRuntimeInitialized(): String? {
+        if (profile == NativeContractProfile.V1 && storageDirectory == null) return null
+        if (!runtimeInitAttempted) synchronized(this) {
+            if (!runtimeInitAttempted) {
+                val attempt = initializeConfiguredRuntime()
+                runtimeInitFailureJson = attempt.failureJson
+                runtimeInitAttempted = attempt.failureJson == null || !attempt.retryable
             }
         }
-        return storageInitFailureJson
+        return runtimeInitFailureJson
     }
 
-    /** 调用 nativeInitializeStorage，并把畸形响应转换成统一的合约错误。 */
-    private fun initializeStorage(directory: String): String? {
-        val initJson = try {
-            nativeInitializeStorage(directory)
-        } catch (error: UnsatisfiedLinkError) {
-            throw NativeBridgeUnavailableException("JNI symbol nativeInitializeStorage is unavailable.", error)
+    private fun initializeConfiguredRuntime(): RuntimeInitializationAttempt {
+        val request = if (profile == NativeContractProfile.V2) {
+            runtimeRequestProvider?.createRequestJson()
+                ?: return RuntimeInitializationAttempt(
+                    localFailure("Calendar Core v2 runtime request provider is unavailable."),
+                    retryable = false,
+                )
+        } else {
+            storageDirectory ?: return RuntimeInitializationAttempt(failureJson = null, retryable = false)
         }
+        val initJson = runtimeInitializer?.invoke(request) ?: initializeRuntime(request)
         return try {
-            val parsed = NativeResultContract.fromJson(initJson) { }
-            if (parsed.ok) null else initJson
+            val parsed = NativeResultContract.fromJson(
+                initJson,
+                dataValidator = { data ->
+                    if (profile == NativeContractProfile.V2) validateV2RuntimeResponse(data)
+                },
+                expectedContractVersion = profile.contractVersion,
+            )
+            if (parsed.ok) {
+                RuntimeInitializationAttempt(failureJson = null, retryable = false)
+            } else {
+                RuntimeInitializationAttempt(initJson, retryable = parsed.error?.retryable == true)
+            }
         } catch (error: NativeContractViolation) {
-            NativeContractJsonCodec.encodeObject(
-                NativeResultContract.failure(
-                    code = NativeErrorCodes.ContractValidationFailed,
-                    message = error.message ?: "Native storage initialization returned malformed NativeResult.",
-                    details = linkedMapOf("field" to error.field),
-                ).toMap(),
+            RuntimeInitializationAttempt(
+                localFailure(error.message ?: "Native runtime initialization returned malformed NativeResult.", error.field),
+                retryable = false,
             )
         }
     }
 
+    private data class RuntimeInitializationAttempt(
+        val failureJson: String?,
+        val retryable: Boolean,
+    )
+
+    private fun validateV2RuntimeResponse(data: Any?) {
+        if (data !is Map<*, *> || data["initialized"] != true || data["storage_format_version"] != 2 || data["tzdb_version"] != BundledTzdbExtractor.Version) {
+            throw NativeContractViolation("Runtime v2 initialization response is malformed.", "data")
+        }
+    }
+
+    private fun unsupported(operation: String): String = NativeContractJsonCodec.encodeObject(
+        NativeResultContract.failure(
+            code = NativeErrorCodes.FeatureNotImplemented,
+            message = "$operation is unavailable for Native Contract ${profile.contractVersion}.",
+            contractVersion = profile.contractVersion,
+        ).toMap(),
+    )
+
+    private fun localFailure(message: String, field: String? = null): String = NativeContractJsonCodec.encodeObject(
+        NativeResultContract.failure(
+            code = NativeErrorCodes.ContractValidationFailed,
+            message = message,
+            details = field?.let { linkedMapOf("field" to it) },
+            contractVersion = profile.contractVersion,
+        ).toMap(),
+    )
+
+    external fun nativeInitializeStorage(storageDirectory: String): String
+    external fun nativeInitializeRuntimeV2(requestJson: String): String
+    external fun nativeCreateEvent(requestJson: String): String
+    external fun nativeCreateEventV2(requestJson: String): String
+    external fun nativeUpdateEvent(requestJson: String): String
+    external fun nativeUpdateEventV2(requestJson: String): String
+    external fun nativeDeleteEvent(requestJson: String): String
+    external fun nativeDeleteEventV2(requestJson: String): String
+    external fun nativeSearchEvents(requestJson: String): String
+    external fun nativeSearchEventsV2(requestJson: String): String
+    external fun nativeGetEventDetailV2(requestJson: String): String
+    external fun nativeCompleteEvent(requestJson: String): String
+    external fun nativeCompleteEventV2(requestJson: String): String
+    external fun nativeReopenEvent(requestJson: String): String
+    external fun nativeReopenEventV2(requestJson: String): String
+    external fun nativeListEventOccurrencesV2(requestJson: String): String
+    external fun nativeCompleteEventOccurrenceV2(requestJson: String): String
+    external fun nativeReopenEventOccurrenceV2(requestJson: String): String
+    external fun nativeSkipEventOccurrenceV2(requestJson: String): String
+    external fun nativeCancelEventOccurrenceV2(requestJson: String): String
+    external fun nativeCompleteEventSeriesV2(requestJson: String): String
+    external fun nativeReopenEventSeriesV2(requestJson: String): String
+    external fun nativeCancelEventSeriesV2(requestJson: String): String
+    external fun nativeCreateReminder(requestJson: String): String
+    external fun nativeCreateReminderV2(requestJson: String): String
+    external fun nativeUpdateReminder(requestJson: String): String
+    external fun nativeUpdateReminderV2(requestJson: String): String
+    external fun nativeCancelReminder(requestJson: String): String
+    external fun nativeCancelReminderV2(requestJson: String): String
+    external fun nativeListReminders(requestJson: String): String
+    external fun nativeListRemindersV2(requestJson: String): String
+    external fun nativeGetReminder(requestJson: String): String
+    external fun nativeGetReminderV2(requestJson: String): String
+    external fun nativeListSchedulableReminders(requestJson: String): String
+    external fun nativeListSchedulableRemindersV2(requestJson: String): String
+    external fun nativeMarkReminderScheduled(requestJson: String): String
+    external fun nativeMarkReminderScheduledV2(requestJson: String): String
+    external fun nativeMarkReminderSent(requestJson: String): String
+    external fun nativeMarkReminderFailed(requestJson: String): String
+    external fun nativeEnableReminder(requestJson: String): String
+    external fun nativeEnableReminderV2(requestJson: String): String
+    external fun nativeDisableReminder(requestJson: String): String
+    external fun nativeDisableReminderV2(requestJson: String): String
+    external fun nativePrepareReminderDeliveryV2(requestJson: String): String
+    external fun nativeFinalizeReminderDeliveryV2(requestJson: String): String
+    external fun nativePlanReminderRecoveryV2(requestJson: String): String
+    external fun nativeCreateNotification(requestJson: String): String
+    external fun nativeConsumeReminderAfterDelivery(requestJson: String): String
+
     companion object {
-        /** `companion object` 类似 Java 的 static 成员容器；这里放动态库名常量。 */
         const val NativeLibraryName = "excellent_calendar_native"
     }
 }

@@ -42,7 +42,11 @@
       "items": {"type": "string", "format": "uuid"}
     },
     "older_skipped_occurrence_count": {"type": "integer", "minimum": 0},
-    "older_skipped_reminder_count": {"type": "integer", "minimum": 0},
+    "older_skipped_reminder_count": {
+      "description": "Count of reminder instances strictly before window_start_at, including unmaterialized recurring instances and materialized open Reminders atomically changed to expired.",
+      "type": "integer",
+      "minimum": 0
+    },
     "window_overflow_count": {"type": "integer", "minimum": 0},
     "summary_delivery_id": {"type": ["string", "null"], "format": "uuid"},
     "status": {"type": "string", "enum": ["in_progress", "completed"]},

@@ -8,7 +8,7 @@ package com.excellentcalendar.excellent_calendar.bridge.contract
  */
 internal object ContractEnums {
     val EventStatus = setOf("active", "completed", "cancelled", "archived")
-    val EventOccurrenceStatus = setOf("completed", "skipped", "cancelled")
+    val EventOccurrenceStatus = setOf("scheduled", "completed", "skipped", "cancelled")
     val Importance = setOf(
         "unimportant_noturgent",
         "important_noturgent",
@@ -19,7 +19,7 @@ internal object ContractEnums {
     val CompleteEventSource = setOf("manual", "auto", "ai_extraction", "sync", "import", "wechat")
     val ReminderSource = setOf("manual", "auto", "ai_extraction", "sync", "import", "wechat")
     val ReminderMethods = setOf("ring", "popup", "wechat")
-    val ReminderStatus = setOf("pending", "scheduled", "sent", "failed", "cancelled")
+    val ReminderStatus = setOf("pending", "scheduled", "sent", "failed", "cancelled", "expired")
     val ReminderTargetType = setOf("event", "habit", "anniversary")
     val RecurrenceFrequency = setOf("daily", "weekly", "monthly", "yearly", "custom")
     val SortDirection = setOf("asc", "desc")

@@ -27,6 +27,9 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
                     "dispatcher handled legacy=$isLegacy planned_at=" +
                         "${intent.getStringExtra(ReminderDispatchAlarmScheduler.ExtraPlannedAt)} ok=${result.ok}",
                 )
+                if (!result.ok && result.error?.retryable == true) {
+                    ReminderWorkScheduler.enqueueContinuation(context)
+                }
             } catch (error: Throwable) {
                 Log.e(LogTag, "dispatcher failed type=${error.javaClass.simpleName}")
                 ReminderWorkScheduler.enqueueContinuation(context)

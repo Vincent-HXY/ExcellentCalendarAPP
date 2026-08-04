@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string_view>
@@ -8,6 +9,7 @@
 
 #include "excellent_calendar/repository/event_repository.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/runtime_storage_lease.hpp"
 
 namespace excellent_calendar::storage::json {
 
@@ -20,7 +22,9 @@ namespace excellent_calendar::storage::json {
 class JsonEventRepository final : public repository::EventRepository {
  public:
   /** explicit 防止 std::filesystem::path 被隐式转换成仓库对象。 */
-  explicit JsonEventRepository(std::filesystem::path storage_directory);
+  explicit JsonEventRepository(
+      std::filesystem::path storage_directory,
+      std::shared_ptr<storage::RuntimeStorageLease> runtime_lease = {});
 
   /** 创建目录并检查目录可写。 */
   common::Result<common::Unit> initialize();
@@ -48,6 +52,7 @@ class JsonEventRepository final : public repository::EventRepository {
   common::Result<common::Unit> save_events_locked(const std::vector<domain::Event>& events);
 
   AtomicJsonFileStore store_;
+  std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
   /** mutable 允许 const 成员函数未来也能加锁；当前主要保护 create/find_all/initialize。 */
   mutable std::mutex mutex_;
 };

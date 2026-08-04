@@ -56,6 +56,9 @@ class BootCompletedReceiver : BroadcastReceiver() {
                     ReconcileReminderScheduleContract(trigger, force = true),
                 )
                 Log.d(LogTag, "reconcile trigger_source=${trigger.wireValue} ok=${result.ok}")
+                if (!result.ok && result.error?.retryable == true) {
+                    ReminderWorkScheduler.enqueue(context, trigger)
+                }
             } catch (error: Throwable) {
                 Log.e(LogTag, "reconcile failed type=${error.javaClass.simpleName}")
                 ReminderWorkScheduler.enqueueContinuation(context)

@@ -2,17 +2,21 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/plan_recovery_response.schema.json",
   "title": "PlanRecoveryResponse",
-  "description": "Persisted recovery batch plus the selected detail Reminder objects in delivery order. detail_reminders must contain exactly batch.detail_reminder_ids in the same order.",
+  "description": "Persisted recovery batch, selected detail Reminders, and immutable arbitration for attempts prepared before recovery. detail_reminders must contain exactly batch.detail_reminder_ids in the same order.",
   "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": ["batch", "detail_reminders", "idempotent_replay"],
+  "required": ["batch", "detail_reminders", "prepared_attempt_resolutions", "idempotent_replay"],
   "properties": {
     "batch": {"$ref": "./reminder_recovery_batch_response.schema.json"},
     "detail_reminders": {
       "type": "array",
       "maxItems": 20,
       "items": {"$ref": "./reminder_response.schema.json"}
+    },
+    "prepared_attempt_resolutions": {
+      "type": "array",
+      "items": {"$ref": "./prepared_attempt_recovery_resolution.schema.json"}
     },
     "idempotent_replay": {"type": "boolean"}
   }

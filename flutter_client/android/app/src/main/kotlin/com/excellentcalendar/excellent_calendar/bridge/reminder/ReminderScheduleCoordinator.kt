@@ -16,6 +16,13 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /** Serializes every queue/Alarm reconciliation in this process. Reminder storage remains authoritative. */
+interface ReminderScheduleReconciler {
+    fun reconcile(
+        request: ReconcileReminderScheduleContract,
+        executionBudgetMillis: Long = ReminderScheduleCoordinator.DefaultExecutionBudgetMillis,
+    ): NativeResultContract
+}
+
 class ReminderScheduleCoordinator(
     private val nativeBridge: NativeReminderBridge,
     private val alarmScheduler: DispatchAlarmScheduler,
@@ -24,10 +31,10 @@ class ReminderScheduleCoordinator(
     private val logger: ReminderOrchestrationLogger,
     private val now: () -> Instant = { Instant.now() },
     private val elapsedRealtime: () -> Long = { android.os.SystemClock.elapsedRealtime() },
-) {
-    fun reconcile(
+) : ReminderScheduleReconciler {
+    override fun reconcile(
         request: ReconcileReminderScheduleContract,
-        executionBudgetMillis: Long = DefaultExecutionBudgetMillis,
+        executionBudgetMillis: Long,
     ): NativeResultContract = ProcessLock.withLock {
         val startedAt = elapsedRealtime()
         val deadline = if (executionBudgetMillis == Long.MAX_VALUE) Long.MAX_VALUE else startedAt + executionBudgetMillis
@@ -121,6 +128,9 @@ class ReminderScheduleCoordinator(
             continuationEnqueued = continuationEnqueued,
         )
     }
+
+    fun reconcile(request: ReconcileReminderScheduleContract): NativeResultContract =
+        reconcile(request, DefaultExecutionBudgetMillis)
 
     private fun listSchedulable(
         fromAt: String? = null,
