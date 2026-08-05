@@ -3,6 +3,7 @@ package com.excellentcalendar.excellent_calendar.bridge.channel
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.excellentcalendar.excellent_calendar.bridge.auth.AuthTokenSecureStorage
 import com.excellentcalendar.excellent_calendar.bridge.contract.CompleteEventRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.CancelReminderRequestContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.CreateEventRequestContract
@@ -84,6 +85,7 @@ class AndroidNativeBridgeLogger : NativeBridgeLogger {
  */
 class NativeMethodChannelHandler(
     private val nativeCalendarCoreBridge: NativeCalendarCoreBridge,
+    private val authTokenSecureStorage: AuthTokenSecureStorage? = null,
     private val reminderOrchestrator: ReminderNativeOrchestrator? = null,
     private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
     private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
@@ -118,6 +120,10 @@ class NativeMethodChannelHandler(
             MethodNotificationRequestPermission -> handleNotificationRequestPermission(call, completion)
             MethodNotificationOpenSettings -> handleNotificationOpenSettings(call, completion)
             MethodNotificationGetInitialTapPayload -> handleGetInitialTapPayload(call, completion)
+            MethodAuthRefreshTokenStore -> handleAuthRefreshTokenStore(call, completion)
+            MethodAuthRefreshTokenRead -> handleAuthRefreshTokenRead(call, completion)
+            MethodAuthRefreshTokenDelete -> handleAuthRefreshTokenDelete(call, completion)
+            MethodAuthRefreshTokenExists -> handleAuthRefreshTokenExists(call, completion)
             else -> completion.notImplemented()
         }
     }
@@ -521,6 +527,101 @@ class NativeMethodChannelHandler(
         }
     }
 
+    // ---------------------------------------------------------------
+    // Auth Refresh Token handlers
+    // ---------------------------------------------------------------
+
+    private fun handleAuthRefreshTokenStore(call: MethodCall, completion: SingleCompletion) {
+        executor.execute {
+            val storage = requireAuthStorage(call.method)
+            try {
+                @Suppress("UNCHECKED_CAST")
+                val args = call.arguments as? Map<String, Any?>
+                    ?: throw IllegalArgumentException("Arguments must be a Map")
+
+                val refreshToken = args["refresh_token"] as? String
+                    ?: throw IllegalArgumentException("Missing required field: refresh_token")
+                val sessionId = args["session_id"] as? String
+                    ?: throw IllegalArgumentException("Missing required field: session_id")
+                val expiresAt = args["expires_at"] as? String
+                    ?: throw IllegalArgumentException("Missing required field: expires_at")
+
+                val ok = storage.store(refreshToken, sessionId, expiresAt)
+                val nativeResult = if (ok) {
+                    NativeResultContract.success(linkedMapOf("performed" to true, "message" to null))
+                } else {
+                    NativeResultContract.failure(
+                        code = NativeErrorCodes.NativeInternalError,
+                        message = "Failed to store refresh token.",
+                    )
+                }
+                completion.success(nativeResult.toMap())
+            } catch (e: Exception) {
+                completion.success(nativeInternalFailure(call.method, e).toMap())
+            }
+        }
+    }
+
+    private fun handleAuthRefreshTokenRead(call: MethodCall, completion: SingleCompletion) {
+        executor.execute {
+            val storage = requireAuthStorage(call.method)
+            try {
+                val record = storage.read()
+                if (record != null) {
+                    val nativeResult = NativeResultContract.success(record)
+                    completion.success(nativeResult.toMap())
+                } else {
+                    val nativeResult = NativeResultContract.failure(
+                        code = NativeErrorCodes.NativeInternalError,
+                        message = "No Refresh Token record exists.",
+                    )
+                    completion.success(nativeResult.toMap())
+                }
+            } catch (e: Exception) {
+                completion.success(nativeInternalFailure(call.method, e).toMap())
+            }
+        }
+    }
+
+    private fun handleAuthRefreshTokenDelete(call: MethodCall, completion: SingleCompletion) {
+        executor.execute {
+            val storage = requireAuthStorage(call.method)
+            try {
+                val ok = storage.delete()
+                val nativeResult = if (ok) {
+                    NativeResultContract.success(linkedMapOf("performed" to true, "message" to null))
+                } else {
+                    NativeResultContract.failure(
+                        code = NativeErrorCodes.NativeInternalError,
+                        message = "Failed to delete refresh token.",
+                    )
+                }
+                completion.success(nativeResult.toMap())
+            } catch (e: Exception) {
+                completion.success(nativeInternalFailure(call.method, e).toMap())
+            }
+        }
+    }
+
+    private fun handleAuthRefreshTokenExists(call: MethodCall, completion: SingleCompletion) {
+        executor.execute {
+            val storage = requireAuthStorage(call.method)
+            try {
+                val exists = storage.exists()
+                val nativeResult = NativeResultContract.success(linkedMapOf("exists" to exists))
+                completion.success(nativeResult.toMap())
+            } catch (e: Exception) {
+                completion.success(nativeInternalFailure(call.method, e).toMap())
+            }
+        }
+    }
+
+    private fun requireAuthStorage(method: String): AuthTokenSecureStorage {
+        return authTokenSecureStorage ?: throw NativeBridgeUnavailableException(
+            "Auth token secure storage is not configured for $method.",
+        )
+    }
+
     companion object {
         /** Dart 和 Kotlin 必须使用完全相同的 channel 名称才能通信。 */
         const val ChannelName = "excellent_calendar/native"
@@ -543,5 +644,10 @@ class NativeMethodChannelHandler(
         const val MethodNotificationOpenSettings = "notification.open_settings"
         const val MethodNotificationGetInitialTapPayload = "notification.get_initial_tap_payload"
         const val LogTag = "ExcellentCalendarNative"
+
+        const val MethodAuthRefreshTokenStore = "auth.refresh_token.store"
+        const val MethodAuthRefreshTokenRead = "auth.refresh_token.read"
+        const val MethodAuthRefreshTokenDelete = "auth.refresh_token.delete"
+        const val MethodAuthRefreshTokenExists = "auth.refresh_token.exists"
     }
 }

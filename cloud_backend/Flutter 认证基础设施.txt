@@ -1,0 +1,95 @@
+ ### 禁止修改的文件
+  在本次任务中，你绝对不允许修改以下文件或目录：
+  - docs/ 目录下的任何文件
+  - cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/ 下的任何文件
+  - cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/ 下的任何文件
+  - cloud_backend/src/main/resources/application.yml（除非说明书上明确要求）
+  - cloud_backend/pom.xml（除非要求新增依赖）
+  - cloud_backend/compose.yaml
+  - cloud_backend/Dockerfile
+  - contract/ 目录下的任何文件（除非要求修改 implementation_status）
+
+  ### 禁止的代码模式
+  - 禁止创建 CommonService、BaseRepository、BaseController、AbstractService 等"万能基类"
+  - 禁止创建 Utils 工具类（除非有极其充分的理由，且必须说明）
+  - 禁止使用 Map<String, Object> 代替稳定 DTO
+  - 禁止在 Controller 中直接操作 Repository 或 EntityManager
+  - 禁止在 Controller 中写 @Transactional
+  - 禁止在事务中调用外部 HTTP、邮件、推送等慢速操作
+  - 禁止吞异常后提交半成品事务
+  - 禁止在业务代码中直接调用静态工具方法（如 new Date()、UUID.randomUUID()）
+  - 禁止返回 JPA Entity 给客户端
+  - 禁止创建空类、空接口、空方法作为"占位"
+
+  ### 必须遵守的规范
+  - 构造器注入是默认方式，禁止使用 @Autowired 字段注入
+  - 所有时间使用 java.time.Instant / Clock，不调用 new Date() 或 System.currentTimeMillis()
+  - 密码、Token、Secret 等敏感信息不得序列化到日志、响应体或异常消息中
+  - 错误提示不能返回服务端堆栈或内部异常消息
+  - 跨模块只能调用对方公开 Application API，禁止引用其他模块的 JPA Entity 或 Repository
+  - 不要创建没有实际业务含义的 placeholder 类
+  - 若某个功能需要新增依赖（pom.xml），必须明确指出并说明理由
+
+  ---
+：Flutter 认证基础设施 + 特有约束
+
+  ### 特有约束
+  - Refresh Token 绝对不允许保存在 Flutter 内存、Dart 变量、SharedPreferences、文件或 SQLite 中
+  - 从 Android 读取 Refresh Token 后，只在刷新请求期间短暂持有，使用后立即从 Dart 变量中清除
+  - 禁止在 Widget 中直接操作 Token 或认证状态
+  - 所有网络请求必须经过统一网络层，禁止每个页面单独发送 HTTP 请求
+  - Token 刷新互斥机制必须使用队列或锁，禁止多个请求各自刷新
+  - 刷新失败后必须清除所有本地状态，不能停留在半登录状态
+  - 禁止无限重试：业务请求最多重试 1 次（刷新后重试），刷新请求本身不重试
+  - 网络不可达时不能自动进入离线模式，必须明确显示"登录恢复失败"页面
+  - 状态管理必须使用互斥枚举（如 enum AuthStatus { initial, loading, authenticated, unauthenticated, error
+  }），禁止使用多个布尔值组合
+  - 页面销毁时必须取消正在进行的网络请求，防止在已销毁的页面中调用 setState
+  - 日志中不得包含 Access Token、Refresh Token 或密码
+  - 所有认证相关接口的 base URL 必须从配置中读取，不能硬编码
+
+  ---
+目标：实现 Flutter 端的全局认证状态管理、统一网络客户端、Token 刷新机制。
+
+  Skill 指令要点：
+
+  # Flutter Auth Infrastructure
+
+  ## 上下文
+  - 项目根目录：`D:\github\ExcellentCalendarAPP-xjw`
+  - 完整流程文档：`docs/完整流程.md`
+  - Contract：`contracts/method_channels.yaml` 中的 auth.refresh_token.* 方法
+  - Contract：`contracts/backend_api.yaml` 中的 auth.token.refresh endpoint
+
+  ## 实现目标
+  参照 `docs/完整流程.md` 的第十六~十八章，实现：
+
+  1. **全局认证状态管理**（AuthState / AuthBloc）
+     - 维护登录状态
+     - 管理 Access Token (仅内存)
+     - 统一认证状态变更通知
+
+  2. **统一网络客户端**
+     - 自动添加 Authorization header
+     - 401 时自动触发 Token 刷新
+     - 刷新失败时清除登录状态并跳转登录页
+     - 并发请求下只执行一次刷新，其他请求等待同一个结果
+
+  3. **Token 刷新互斥机制**
+     - 同时多个请求 401 时只发起一次刷新
+     - 刷新成功后统一重试原请求
+     - 刷新失败后统一退出
+
+  4. **应用启动认证检查**
+     - 先检查内存 Access Token
+     - 通过 MethodChannel 查询 Android 是否有 Refresh Token
+     - 有则刷新，无则进入登录页
+     - 网络不可用时显示恢复失败页面
+
+  ## 与 Android 的 MethodChannel
+  - 调用 `auth.refresh_token.read` 读取 Refresh Token
+  - 调用 `auth.refresh_token.store` 保存 Refresh Token
+  - 调用 `auth.refresh_token.delete` 删除 Refresh Token
+  - 调用 `auth.refresh_token.exists` 检查 Refresh Token 是否存在
+
+  ---

@@ -1,0 +1,76 @@
+Backend 认证模块实现
+
+  目标：在现有的 Spring Boot 骨架中实现 identity 模块的全部认证 API。
+
+  Skill 指令要点：
+
+  # Cloud Backend Auth Module Implementation
+
+  ## 上下文
+  - 项目根目录：`D:\github\ExcellentCalendarAPP-xjw\cloud_backend`
+  - 当前框架：Spring Boot 4.1 + Java 21 + Spring Modulith + PostgreSQL + Flyway + Spring Security
+  - 架构规范：`docs/architecture.md`（模块分层规则、安全基线）
+  - 开发规范：`docs/development.md`（切片顺序、包结构、事务规则）
+  - 实现状态：`docs/implementation-status.md`
+  - 配置体系：`docs/configuration.md`
+
+  ## 实现目标
+  根据 `docs/完整流程.md` 和 `contracts/backend_api.yaml`，实现 `identity` 模块的所有认证 API。
+
+  ## 确切的 API 清单（来自 contracts/backend_api.yaml）
+  所有 endpoint 以 `implementation_status: planned` 标记，需要修改为 `implemented`：
+
+  1. `POST /api/v1/auth/register` — 注册（public, 需幂等键）
+  2. `POST /api/v1/auth/registration/verify` — 验证邮箱（public, one-time challenge）
+  3. `POST /api/v1/auth/registration/resend` — 重发验证码（public, 需幂等键）
+  4. `POST /api/v1/auth/login` — 登录（public）
+  5. `POST /api/v1/auth/token/refresh` — 刷新 Token（refresh_token 认证）
+  6. `POST /api/v1/auth/logout` — 退出（refresh_token 认证）
+  7. `POST /api/v1/auth/logout-all` — 退出所有设备（bearer 认证）
+  8. `POST /api/v1/auth/password-reset/request` — 申请重置密码（public, 需幂等键）
+  9. `POST /api/v1/auth/password-reset/confirm` — 确认重置密码（public, one-time）
+  10. `POST /api/v1/auth/password/change` — 修改密码（bearer 认证）
+  11. `POST /api/v1/auth/email-change/request` — 申请修改邮箱（bearer, 需幂等键）
+  12. `POST /api/v1/auth/email-change/confirm` — 确认修改邮箱（bearer, one-time）
+
+  ## 安全参数
+  - Access Token TTL: 900 秒
+  - Refresh Token TTL: 2,592,000 秒（30天）
+  - 每次使用 Refresh Token 需轮换，旧 token 被再次使用时撤销整个 token family
+  - 验证码 TTL: 600 秒
+  - 密码重置 TTL: 900 秒
+  - 重发间隔: 60 秒
+  - 最大验证失败: 5 次
+
+  ## 模块内分层要求
+  identity/
+  ├── api/            — Controller、DTO、Validation
+  ├── application/    — Use Case、事务、授权
+  ├── domain/         — 领域规则、值对象、Port 接口
+  └── infrastructure/ — JPA、PasswordEncoder、Token 生成
+
+  ## 数据库
+  - 使用 Flyway V1 迁移创建业务表
+  - 所有时间使用 timestamptz
+  - 密码使用 Argon2id 加密
+  - 不用 Hibernate ddl-auto=update
+
+  ## 必须实现的 Contract schema
+  以 contracts/ 目录下的 JSON Schema 文件为准：
+  - auth/registration_request.schema.json
+  - auth/login_request.schema.json
+  - auth/authentication_response.schema.json
+  - auth/token_pair_response.schema.json
+  - ...（所有 auth/ 和 user/ 下的 schema）
+
+  ## 测试
+  - 每个 endpoint 至少覆盖：成功、认证失败、参数校验失败、重复请求
+  - 密码不得出现在日志中
+  - Token 不得出现在日志中
+
+  ## 注意
+  - 不要修改已存在的 `boot/` 和 `platform/` 基础设施代码
+  - 只修改 `identity/` 模块和自己的测试
+  - 跨模块只能调用公开 Application API
+
+  ---
