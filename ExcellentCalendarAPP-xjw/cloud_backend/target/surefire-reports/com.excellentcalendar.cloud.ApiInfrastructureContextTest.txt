@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.excellentcalendar.cloud.ApiInfrastructureContextTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.086 s -- in com.excellentcalendar.cloud.ApiInfrastructureContextTest

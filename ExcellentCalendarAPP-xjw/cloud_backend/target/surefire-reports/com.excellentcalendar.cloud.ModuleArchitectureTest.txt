@@ -1,0 +1,72 @@
+-------------------------------------------------------------------------------
+Test set: com.excellentcalendar.cloud.ModuleArchitectureTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 2.427 s <<< FAILURE! -- in com.excellentcalendar.cloud.ModuleArchitectureTest
+com.excellentcalendar.cloud.ModuleArchitectureTest.moduleDependenciesRespectModularMonolithBoundaries -- Time elapsed: 0.215 s <<< ERROR!
+org.springframework.modulith.core.Violations: 
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository within module 'identity'!
+AvatarUploadUseCase declares constructor AvatarUploadUseCase(UserProfileJpaRepository, AvatarProperties, Clock) in (AvatarUploadUseCase.java:0)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+UserProfileEntity declares return type UserProfileEntity.uploadAvatar(UUID, String, byte[]) in (AvatarUploadUseCase.java:0)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+UserProfileEntity declares return type UserProfileEntity.deleteAvatar(UUID) in (AvatarUploadUseCase.java:0)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarUrl(java.lang.String)> in (AvatarUploadUseCase.java:123)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository.findByUserId(java.util.UUID)> in (AvatarUploadUseCase.java:106)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setUpdatedAt(java.time.Instant)> in (AvatarUploadUseCase.java:127)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository.save(java.lang.Object)> in (AvatarUploadUseCase.java:129)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarThumbnailUrl(java.lang.String)> in (AvatarUploadUseCase.java:124)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.getAvatarAssetId()> in (AvatarUploadUseCase.java:111)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarEtag(java.lang.String)> in (AvatarUploadUseCase.java:125)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.getAvatarUrl()> in (AvatarUploadUseCase.java:112)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarAssetId(java.util.UUID)> in (AvatarUploadUseCase.java:122)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarUpdatedAt(java.time.Instant)> in (AvatarUploadUseCase.java:126)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.getAvatarUrl()> in (AvatarUploadUseCase.java:113)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.getAvatarUrl()> in (AvatarUploadUseCase.java:111)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarAssetId(java.util.UUID)> in (AvatarUploadUseCase.java:157)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarEtag(java.lang.String)> in (AvatarUploadUseCase.java:160)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository.save(java.lang.Object)> in (AvatarUploadUseCase.java:164)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository.findByUserId(java.util.UUID)> in (AvatarUploadUseCase.java:140)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setUpdatedAt(java.time.Instant)> in (AvatarUploadUseCase.java:162)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarUrl(java.lang.String)> in (AvatarUploadUseCase.java:158)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.getAvatarUrl()> in (AvatarUploadUseCase.java:146)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.getAvatarUrl()> in (AvatarUploadUseCase.java:147)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarUpdatedAt(java.time.Instant)> in (AvatarUploadUseCase.java:161)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.setAvatarThumbnailUrl(java.lang.String)> in (AvatarUploadUseCase.java:159)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> calls method <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity.getAvatarUrl()> in (AvatarUploadUseCase.java:145)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository within module 'identity'!
+Field <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.profileJpaRepository> has type <com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository> in (AvatarUploadUseCase.java:0)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.uploadAvatar(java.util.UUID, java.lang.String, [B)> has return type <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity> in (AvatarUploadUseCase.java:0)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity within module 'identity'!
+Method <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.deleteAvatar(java.util.UUID)> has return type <com.excellentcalendar.cloud.identity.infrastructure.UserProfileEntity> in (AvatarUploadUseCase.java:0)
+- Module 'userdevice' depends on non-exposed type com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository within module 'identity'!
+Constructor <com.excellentcalendar.cloud.userdevice.application.AvatarUploadUseCase.<init>(com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository, com.excellentcalendar.cloud.userdevice.infrastructure.AvatarProperties, java.time.Clock)> has parameter of type <com.excellentcalendar.cloud.identity.infrastructure.UserProfileJpaRepository> in (AvatarUploadUseCase.java:0)
+	at org.springframework.modulith.core.Violations.and(Violations.java:141)
+	at org.springframework.modulith.core.ApplicationModules.detectViolations(ApplicationModules.java:497)
+	at org.springframework.modulith.core.ApplicationModules.verify(ApplicationModules.java:451)
+	at org.springframework.modulith.core.ApplicationModules.verify(ApplicationModules.java:435)
+	at com.excellentcalendar.cloud.ModuleArchitectureTest.moduleDependenciesRespectModularMonolithBoundaries(ModuleArchitectureTest.java:32)
+

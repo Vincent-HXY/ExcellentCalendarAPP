@@ -1,0 +1,5 @@
+# Created at 2026-08-04T11:32:27.018
+Boot Manifest-JAR contains absolute paths in classpath 'D:\github\ExcellentCalendarAPP-xjw2\ExcellentCalendarAPP-xjw\cloud_backend\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+
