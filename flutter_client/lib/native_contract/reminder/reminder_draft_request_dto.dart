@@ -1,4 +1,12 @@
-class ReminderDraftRequestDto {
+import '../shared/contract_value.dart';
+
+abstract interface class EventReminderDraftRequestDto {
+  Map<String, dynamic> toJson();
+
+  Map<String, dynamic> toEventJson({required bool recurring});
+}
+
+class ReminderDraftRequestDto implements EventReminderDraftRequestDto {
   const ReminderDraftRequestDto({
     required this.targetType,
     required this.methods,
@@ -9,6 +17,17 @@ class ReminderDraftRequestDto {
     this.message,
   });
 
+  static const _ordinaryTargetTypes = {'event', 'anniversary'};
+  static const _methods = {'ring', 'popup', 'wechat'};
+  static const _sources = {
+    'manual',
+    'auto',
+    'ai_extraction',
+    'sync',
+    'import',
+    'wechat',
+  };
+
   final String targetType;
   final String? targetId;
   final DateTime? remindAt;
@@ -17,65 +36,80 @@ class ReminderDraftRequestDto {
   final String? message;
   final String source;
 
-  Map<String, dynamic> toJson() {
-    _validateTargetType(targetType);
-    if (remindAt == null && advanceMinutes == null) {
+  @override
+  Map<String, dynamic> toJson() => _ordinaryJson();
+
+  @override
+  Map<String, dynamic> toEventJson({required bool recurring}) {
+    if (!recurring) return _ordinaryJson();
+    _validateShared();
+    if (targetType != 'event' ||
+        remindAt != null ||
+        advanceMinutes == null ||
+        methods.length != 1 ||
+        methods.single != 'popup') {
       throw const FormatException(
-        'ReminderDraft requires remind_at or advance_minutes.',
+        'Recurring Event reminders require advance_minutes and popup only.',
       );
     }
-    if (advanceMinutes != null && advanceMinutes! < 0) {
-      throw const FormatException(
-        'ReminderDraft advance_minutes must be greater than or equal to 0.',
-      );
-    }
-    if (methods.isEmpty) {
-      throw const FormatException('ReminderDraft methods must not be empty.');
-    }
-    if (methods.toSet().length != methods.length) {
-      throw const FormatException('ReminderDraft methods must be unique.');
-    }
-    for (final method in methods) {
-      _validateReminderMethod(method);
-    }
-    _validateSource(source);
     return {
-      'target_type': targetType,
+      'target_type': 'event',
       'target_id': targetId,
-      'remind_at': remindAt?.toUtc().toIso8601String(),
       'advance_minutes': advanceMinutes,
-      'methods': methods,
+      'methods': const ['popup'],
       'message': message,
       'is_enabled': true,
       'source': source,
     };
   }
 
-  static void _validateTargetType(String value) {
-    const allowed = {'event', 'anniversary'};
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown ReminderDraft target_type: $value');
+  Map<String, dynamic> _ordinaryJson() {
+    _validateShared();
+    ContractValue.validateEnum(
+      targetType,
+      _ordinaryTargetTypes,
+      'ReminderDraftRequest.target_type',
+    );
+    final hasAbsolute = remindAt != null;
+    final hasAdvance = advanceMinutes != null;
+    if (hasAbsolute == hasAdvance) {
+      throw const FormatException(
+        'ReminderDraftRequest requires exactly one reminder time form.',
+      );
     }
-  }
-
-  static void _validateReminderMethod(String value) {
-    const allowed = {'ring', 'popup', 'wechat'};
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown ReminderMethod: $value');
-    }
-  }
-
-  static void _validateSource(String value) {
-    const allowed = {
-      'manual',
-      'auto',
-      'ai_extraction',
-      'sync',
-      'import',
-      'wechat',
+    return {
+      'target_type': targetType,
+      'target_id': targetId,
+      'remind_at': hasAbsolute
+          ? ContractValue.formatUtcDateTime(
+              remindAt!,
+              field: 'ReminderDraftRequest.remind_at',
+            )
+          : null,
+      'advance_minutes': advanceMinutes,
+      'methods': List<String>.unmodifiable(methods),
+      'message': message,
+      'is_enabled': true,
+      'source': source,
     };
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown ReminderDraft source: $value');
+  }
+
+  void _validateShared() {
+    if (targetId != null && targetId!.trim().isEmpty) {
+      throw const FormatException(
+        'ReminderDraftRequest.target_id must be non-empty or null.',
+      );
     }
+    if (advanceMinutes != null && advanceMinutes! < 0) {
+      throw const FormatException(
+        'ReminderDraftRequest.advance_minutes must be non-negative.',
+      );
+    }
+    if (methods.isEmpty ||
+        methods.toSet().length != methods.length ||
+        methods.any((method) => !_methods.contains(method))) {
+      throw const FormatException('ReminderDraftRequest.methods is invalid.');
+    }
+    ContractValue.validateEnum(source, _sources, 'ReminderDraftRequest.source');
   }
 }

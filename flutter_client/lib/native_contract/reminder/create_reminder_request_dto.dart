@@ -1,4 +1,5 @@
 import 'reminder_contract_enums.dart';
+import '../shared/contract_value.dart';
 
 class CreateReminderRequestDto {
   const CreateReminderRequestDto({
@@ -25,9 +26,9 @@ class CreateReminderRequestDto {
         'CreateReminderRequest.target_id must be non-empty.',
       );
     }
-    if (remindAt == null && advanceMinutes == null) {
+    if ((remindAt == null) == (advanceMinutes == null)) {
       throw const FormatException(
-        'CreateReminderRequest requires remind_at or advance_minutes.',
+        'CreateReminderRequest requires exactly one reminder time form.',
       );
     }
     if (advanceMinutes != null && advanceMinutes! < 0) {
@@ -50,7 +51,12 @@ class CreateReminderRequestDto {
     return {
       'target_type': targetType.wireValue,
       'target_id': targetId,
-      'remind_at': remindAt?.toUtc().toIso8601String(),
+      'remind_at': remindAt == null
+          ? null
+          : ContractValue.formatUtcDateTime(
+              remindAt!,
+              field: 'CreateReminderRequest.remind_at',
+            ),
       'advance_minutes': advanceMinutes,
       'methods': methodValues,
       'message': message,

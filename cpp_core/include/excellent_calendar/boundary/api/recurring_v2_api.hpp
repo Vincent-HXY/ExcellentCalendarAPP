@@ -7,6 +7,8 @@ namespace excellent_calendar::boundary::api {
 
 // Unified Contract v2 boundary. Existing names are retained as source-compatible wrappers.
 std::string initialize_runtime_v2_json(std::string_view request_json);
+std::string resolve_local_datetime_v2(std::string_view request_json);
+std::string localize_instants_v2(std::string_view request_json);
 std::string create_event_v2(std::string_view request_json);
 std::string update_event_v2(std::string_view request_json);
 std::string delete_event_v2(std::string_view request_json);

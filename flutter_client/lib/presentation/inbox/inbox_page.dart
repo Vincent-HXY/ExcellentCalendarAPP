@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../application/event/complete_event_use_case.dart';
 import '../../application/event/create_event_use_case.dart';
 import '../../application/event/read_events_use_case.dart';
+import '../../application/timezone/timezone_application_service.dart';
 import '../app_design_tokens.dart';
 import '../event_detail/models/event_detail_ui_state.dart';
 import '../event_detail/pages/event_detail_page.dart';
@@ -22,12 +23,14 @@ class InboxPage extends StatefulWidget {
     required this.readEventsUseCase,
     required this.createEventUseCase,
     required this.completeEventUseCase,
+    required this.timezoneService,
     super.key,
   });
 
   final ReadEventsUseCase readEventsUseCase;
   final CreateEventUseCase createEventUseCase;
   final CompleteEventUseCase completeEventUseCase;
+  final TimezoneApplicationService timezoneService;
 
   @override
   State<InboxPage> createState() => _InboxPageState();
@@ -42,6 +45,7 @@ class _InboxPageState extends State<InboxPage> {
     _controller = InboxController(
       readEventsUseCase: widget.readEventsUseCase,
       completeEventUseCase: widget.completeEventUseCase,
+      timezoneService: widget.timezoneService,
     );
     unawaited(_controller.initialize());
   }
@@ -126,7 +130,10 @@ class _InboxPageState extends State<InboxPage> {
         transitionDuration: AppMotion.routeEnter,
         reverseTransitionDuration: AppMotion.routeExit,
         pageBuilder: (context, animation, secondaryAnimation) {
-          return NewSchedulePage(createUseCase: widget.createEventUseCase);
+          return NewSchedulePage(
+            createUseCase: widget.createEventUseCase,
+            timezoneService: widget.timezoneService,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final curvedAnimation = CurvedAnimation(

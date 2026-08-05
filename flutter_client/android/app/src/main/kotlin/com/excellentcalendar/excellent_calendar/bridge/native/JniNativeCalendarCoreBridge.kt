@@ -37,6 +37,14 @@ class JniNativeCalendarCoreBridge(
         }
     }
 
+    override fun resolveLocalDateTime(requestJson: String) = v2Only("nativeResolveLocalDateTimeV2") {
+        nativeResolveLocalDateTimeV2(requestJson)
+    }
+
+    override fun localizeInstants(requestJson: String) = v2Only("nativeLocalizeInstantsV2") {
+        nativeLocalizeInstantsV2(requestJson)
+    }
+
     override fun createEvent(requestJson: String) = callWithRuntime("nativeCreateEvent") {
         if (profile == NativeContractProfile.V2) nativeCreateEventV2(requestJson) else nativeCreateEvent(requestJson)
     }
@@ -271,6 +279,8 @@ class JniNativeCalendarCoreBridge(
 
     external fun nativeInitializeStorage(storageDirectory: String): String
     external fun nativeInitializeRuntimeV2(requestJson: String): String
+    external fun nativeResolveLocalDateTimeV2(requestJson: String): String
+    external fun nativeLocalizeInstantsV2(requestJson: String): String
     external fun nativeCreateEvent(requestJson: String): String
     external fun nativeCreateEventV2(requestJson: String): String
     external fun nativeUpdateEvent(requestJson: String): String

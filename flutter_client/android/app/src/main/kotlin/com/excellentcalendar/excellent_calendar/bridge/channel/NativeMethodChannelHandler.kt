@@ -18,6 +18,8 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultCont
 import com.excellentcalendar.excellent_calendar.bridge.contract.OpenNotificationSettingsContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.RequestNotificationPermissionContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReopenEventRequestContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.RuntimeTimezoneRequestContracts
+import com.excellentcalendar.excellent_calendar.bridge.contract.RuntimeTimezoneResponseContracts
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderListResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderResponseContract
@@ -34,6 +36,8 @@ import com.excellentcalendar.excellent_calendar.bridge.notification.Notification
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderScheduleReconciler
+import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
+import com.excellentcalendar.excellent_calendar.bridge.runtime.DeviceTimezoneProvider
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executor
@@ -101,11 +105,15 @@ class NativeMethodChannelHandler(
     private val executor: Executor = Executors.newSingleThreadExecutor(),
     private val resultDispatcher: ResultDispatcher = MainThreadResultDispatcher(),
     private val logger: NativeBridgeLogger = AndroidNativeBridgeLogger(),
+    private val deviceTimezoneProvider: DeviceTimezoneProvider = AndroidDeviceTimezoneProvider,
 ) : MethodChannel.MethodCallHandler, AutoCloseable {
     /** Flutter 每次通过 MethodChannel 调用方法时，都会进入这里。 */
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         val completion = SingleCompletion(result, resultDispatcher)
         when (call.method) {
+            MethodRuntimeDeviceTimezone -> handleDeviceTimezone(call, completion)
+            MethodRuntimeResolveLocalDateTime -> handleResolveLocalDateTime(call, completion)
+            MethodRuntimeLocalizeInstants -> handleLocalizeInstants(call, completion)
             MethodEventCreate -> handleCreateEvent(call, completion)
             MethodEventUpdate -> handleUpdateEvent(call, completion)
             MethodEventDelete -> handleDeleteEvent(call, completion)
@@ -259,6 +267,61 @@ class NativeMethodChannelHandler(
         }
         executeNative(call.method, completion, EventResponseContract::validate) {
             nativeCalendarCoreBridge.reopenEvent(request.toJson())
+        }
+    }
+
+    private fun handleDeviceTimezone(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile != NativeContractProfile.V2) return completion.notImplemented()
+        if (!validateEmptyRequest(call, completion)) return
+        executeLocal(call.method, completion) {
+            val data = linkedMapOf<String, Any?>("timezone" to deviceTimezoneProvider.currentTimezone())
+            RuntimeTimezoneResponseContracts.deviceTimezone(data)
+            NativeResultContract.success(data, contractVersion = contractProfile.contractVersion)
+        }
+    }
+
+    private fun handleResolveLocalDateTime(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile != NativeContractProfile.V2) return completion.notImplemented()
+        val request = parseV2(call, completion) {
+            RuntimeTimezoneRequestContracts.resolveLocalDateTime(it)
+        } ?: return
+        val localDateTime = request.value.getValue("local_datetime") as String
+        val timezone = request.value.getValue("timezone") as String
+        executeNative(
+            call.method,
+            completion,
+            dataValidator = {
+                RuntimeTimezoneResponseContracts.resolveLocalDateTime(
+                    it,
+                    expectedLocalDateTime = localDateTime,
+                    expectedTimezone = timezone,
+                )
+            },
+        ) {
+            nativeCalendarCoreBridge.resolveLocalDateTime(request.toJson())
+        }
+    }
+
+    private fun handleLocalizeInstants(call: MethodCall, completion: SingleCompletion) {
+        if (contractProfile != NativeContractProfile.V2) return completion.notImplemented()
+        val request = parseV2(call, completion) {
+            RuntimeTimezoneRequestContracts.localizeInstants(it)
+        } ?: return
+        val timezone = request.value.getValue("timezone") as String
+        @Suppress("UNCHECKED_CAST")
+        val instants = request.value.getValue("instants") as List<String>
+        executeNative(
+            call.method,
+            completion,
+            dataValidator = {
+                RuntimeTimezoneResponseContracts.localizeInstants(
+                    it,
+                    expectedTimezone = timezone,
+                    expectedInstants = instants,
+                )
+            },
+        ) {
+            nativeCalendarCoreBridge.localizeInstants(request.toJson())
         }
     }
 
@@ -686,6 +749,9 @@ class NativeMethodChannelHandler(
         /** Dart 和 Kotlin 必须使用完全相同的 channel 名称才能通信。 */
         const val ChannelName = "excellent_calendar/native"
         /** 以下方法名是 Dart 调用 native 能力时使用的字符串协议。 */
+        const val MethodRuntimeDeviceTimezone = "runtime.device_timezone"
+        const val MethodRuntimeResolveLocalDateTime = "runtime.resolve_local_datetime"
+        const val MethodRuntimeLocalizeInstants = "runtime.localize_instants"
         const val MethodEventCreate = "event.create"
         const val MethodEventUpdate = "event.update"
         const val MethodEventDelete = "event.delete"

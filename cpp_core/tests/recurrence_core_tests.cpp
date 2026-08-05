@@ -36,6 +36,7 @@
 namespace {
 
 using excellent_calendar::domain::LocalDateTime;
+using excellent_calendar::domain::LocalDateTimeResolution;
 using excellent_calendar::infrastructure::time::TzdbLocalTimeResolver;
 
 void require(bool condition, const std::string& message) {
@@ -82,18 +83,28 @@ void test_contract_uuid_v5_vectors() {
 
 void test_london_dst_gap_moves_to_first_legal_instant() {
   auto resolver = create_resolver();
-  auto resolved = resolver->to_utc(LocalDateTime{2026, 3, 29, 1, 30, 0}, "Europe/London");
+  auto resolved = resolver->resolve_local_datetime(
+      LocalDateTime{2026, 3, 29, 1, 30, 0}, "Europe/London");
   require(resolved.ok(), "London DST gap should resolve");
-  require(resolved.value() == "2026-03-29T01:00:00Z",
-          "nonexistent local time must move to the first legal instant");
+  require(resolved.value().utc_instant == "2026-03-29T01:00:00Z",
+           "nonexistent local time must move to the first legal instant");
+  require(resolved.value().resolution == LocalDateTimeResolution::gap_shifted &&
+              resolved.value().resolved_local_datetime ==
+                  LocalDateTime{2026, 3, 29, 2, 0, 0},
+          "gap resolution must report the first legal local wall time");
 }
 
 void test_london_dst_fold_chooses_earlier_instant() {
   auto resolver = create_resolver();
-  auto resolved = resolver->to_utc(LocalDateTime{2026, 10, 25, 1, 30, 0}, "Europe/London");
+  auto resolved = resolver->resolve_local_datetime(
+      LocalDateTime{2026, 10, 25, 1, 30, 0}, "Europe/London");
   require(resolved.ok(), "London DST fold should resolve");
-  require(resolved.value() == "2026-10-25T00:30:00Z",
-          "ambiguous local time must choose the earlier instant");
+  require(resolved.value().utc_instant == "2026-10-25T00:30:00Z",
+           "ambiguous local time must choose the earlier instant");
+  require(resolved.value().resolution == LocalDateTimeResolution::fold_earlier &&
+              resolved.value().resolved_local_datetime ==
+                  LocalDateTime{2026, 10, 25, 1, 30, 0},
+          "fold resolution must retain the requested wall time and report its branch");
 }
 
 void test_timezone_round_trip_and_validation() {
@@ -102,7 +113,12 @@ void test_timezone_round_trip_and_validation() {
   auto local = resolver->to_local("2026-08-03T01:00:00Z", "Asia/Shanghai");
   require(local.ok(), "Shanghai conversion should succeed");
   require(local.value() == LocalDateTime{2026, 8, 3, 9, 0, 0},
-          "UTC instant must convert using the Event timezone");
+           "UTC instant must convert using the Event timezone");
+  auto exact = resolver->resolve_local_datetime(
+      LocalDateTime{2026, 8, 3, 9, 0, 0}, "Asia/Shanghai");
+  require(exact.ok() && exact.value().utc_instant == "2026-08-03T01:00:00Z" &&
+              exact.value().resolution == LocalDateTimeResolution::exact,
+          "ordinary local time must report an exact resolution");
   auto invalid = resolver->validate_timezone("Europe/Not-A-Zone");
   require(!invalid.ok() && invalid.error().code == "TIMEZONE_ID_INVALID",
           "unknown IANA zone must fail explicitly");
@@ -2023,6 +2039,85 @@ picojson::object parse_native_v2(const std::string& json) {
   return object;
 }
 
+void test_runtime_timezone_boundary_is_strict_and_batched() {
+  TemporaryDirectory directory;
+  picojson::object initialize;
+  initialize["storage_directory"] = picojson::value(directory.path().generic_string());
+  initialize["tzdb_directory"] = picojson::value(
+      std::filesystem::path(EXCELLENT_CALENDAR_TEST_TZDB_DIR).generic_string());
+  auto initialized = parse_native_v2(
+      excellent_calendar::boundary::api::initialize_runtime_v2_json(
+          picojson::value(initialize).serialize()));
+  require(initialized.at("ok").get<bool>(),
+          "timezone boundary test runtime initialization should succeed");
+
+  picojson::object gap_request;
+  gap_request["local_datetime"] = picojson::value("2026-03-29T01:30:00");
+  gap_request["timezone"] = picojson::value("Europe/London");
+  auto gap = parse_native_v2(excellent_calendar::boundary::api::resolve_local_datetime_v2(
+      picojson::value(gap_request).serialize()));
+  require(gap.at("ok").get<bool>(), "gap request should succeed through the v2 boundary");
+  const auto gap_data = gap.at("data").get<picojson::object>();
+  require(gap_data.at("utc_instant").get<std::string>() == "2026-03-29T01:00:00Z" &&
+              gap_data.at("resolved_local_datetime").get<std::string>() ==
+                  "2026-03-29T02:00:00" &&
+              gap_data.at("resolution").get<std::string>() == "gap_shifted",
+          "gap response must expose the shifted local time and UTC instant");
+
+  gap_request["local_datetime"] = picojson::value("2026-10-25T01:30:00");
+  auto fold = parse_native_v2(excellent_calendar::boundary::api::resolve_local_datetime_v2(
+      picojson::value(gap_request).serialize()));
+  const auto fold_data = fold.at("data").get<picojson::object>();
+  require(fold.at("ok").get<bool>() &&
+              fold_data.at("utc_instant").get<std::string>() ==
+                  "2026-10-25T00:30:00Z" &&
+              fold_data.at("resolution").get<std::string>() == "fold_earlier",
+          "fold response must choose and report the earlier instant");
+
+  picojson::array instants;
+  instants.emplace_back("2026-03-29T00:30:00Z");
+  instants.emplace_back("2026-03-29T01:00:00Z");
+  instants.emplace_back("2026-03-29T01:00:00Z");
+  picojson::object localize_request;
+  localize_request["timezone"] = picojson::value("Europe/London");
+  localize_request["instants"] = picojson::value(std::move(instants));
+  auto localized = parse_native_v2(excellent_calendar::boundary::api::localize_instants_v2(
+      picojson::value(localize_request).serialize()));
+  require(localized.at("ok").get<bool>(), "batch localization should succeed");
+  const auto items = localized.at("data")
+                         .get<picojson::object>()
+                         .at("items")
+                         .get<picojson::array>();
+  require(items.size() == 3U &&
+              items[0].get<picojson::object>().at("local_datetime").get<std::string>() ==
+                  "2026-03-29T00:30:00" &&
+              items[1].get<picojson::object>().at("local_datetime").get<std::string>() ==
+                  "2026-03-29T02:00:00" &&
+              items[1].serialize() == items[2].serialize(),
+          "batch localization must preserve order, timezone rules, and duplicates");
+
+  localize_request["instants"] = picojson::value(
+      picojson::array{picojson::value("2026-03-29T01:00:00.000Z")});
+  auto fractional = parse_native_v2(excellent_calendar::boundary::api::localize_instants_v2(
+      picojson::value(localize_request).serialize()));
+  require(!fractional.at("ok").get<bool>() &&
+              fractional.at("error")
+                      .get<picojson::object>()
+                      .at("code")
+                      .get<std::string>() == "CONTRACT_VALIDATION_FAILED",
+          "whole-second Contract must reject fractional UTC instants");
+
+  gap_request["unknown"] = picojson::value(true);
+  auto unknown = parse_native_v2(excellent_calendar::boundary::api::resolve_local_datetime_v2(
+      picojson::value(gap_request).serialize()));
+  require(!unknown.at("ok").get<bool>() &&
+              unknown.at("error")
+                      .get<picojson::object>()
+                      .at("code")
+                      .get<std::string>() == "CONTRACT_VALIDATION_FAILED",
+          "timezone boundary must reject unknown fields");
+}
+
 void test_contract_v2_boundary_supports_ordinary_event_and_reminder_flow() {
   TemporaryDirectory directory;
   picojson::object initialize;
@@ -2610,6 +2705,7 @@ int main() {
     test_event_detail_aggregate_uses_one_storage_snapshot();
     test_v2_schedulable_query_and_mark_scheduled_use_recurring_store();
     test_rolling_reminder_idempotency_detects_message_drift();
+    test_runtime_timezone_boundary_is_strict_and_batched();
     test_contract_v2_boundary_supports_ordinary_event_and_reminder_flow();
     test_contract_v2_boundary_supports_kotlin_recurrence_flow();
     std::cout << "recurrence core tests passed\n";

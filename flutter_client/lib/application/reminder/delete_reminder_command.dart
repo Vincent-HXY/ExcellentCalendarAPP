@@ -4,7 +4,6 @@ class DeleteReminderCommand {
   const DeleteReminderCommand({
     required this.reminderId,
     required this.requestId,
-    this.reason,
   });
 
   final String reminderId;
@@ -12,7 +11,6 @@ class DeleteReminderCommand {
   // Application-local correlation only. The current request schema does not
   // declare request_id, so this value is intentionally not sent to native.
   final String requestId;
-  final String? reason;
 
   String? validate() {
     if (reminderId.trim().isEmpty) {
@@ -25,6 +23,6 @@ class DeleteReminderCommand {
   }
 
   CancelReminderRequestDto toRequestDto() {
-    return CancelReminderRequestDto(id: reminderId, reason: reason);
+    return CancelReminderRequestDto(reminderId: reminderId);
   }
 }

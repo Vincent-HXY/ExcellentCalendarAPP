@@ -14,11 +14,21 @@ enum DateTimePickerStep { calendar, time, yearMonthDay }
 class ScheduleDateTimeSelection {
   const ScheduleDateTimeSelection({
     required this.localDateTime,
+    required this.year,
+    required this.month,
+    required this.day,
+    required this.hour,
+    required this.minute,
     required this.timezone,
     required this.calendarSystem,
   });
 
   final DateTime localDateTime;
+  final int year;
+  final int month;
+  final int day;
+  final int hour;
+  final int minute;
   final String timezone;
   final CalendarSystem calendarSystem;
 }

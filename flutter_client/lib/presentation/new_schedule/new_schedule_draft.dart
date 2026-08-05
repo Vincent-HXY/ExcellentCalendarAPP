@@ -26,20 +26,12 @@ extension RecurrencePresetLabel on RecurrencePreset {
     };
   }
 
-  RecurrenceRuleDto? toDto({
-    required DateTime startAt,
-    required String timezone,
-  }) {
+  RecurrenceRuleDto? toDto() {
     final frequency = contractFrequency;
     if (frequency == null) {
       return null;
     }
-    return RecurrenceRuleDto(
-      frequency: frequency,
-      interval: 1,
-      startAt: startAt,
-      timezone: timezone,
-    );
+    return RecurrenceRuleDto(frequency: frequency, interval: 1);
   }
 }
 

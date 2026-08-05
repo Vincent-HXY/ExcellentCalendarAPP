@@ -6,14 +6,14 @@ import 'floating_selection_sheet.dart';
 Future<RecurrencePreset?> showRecurrenceSelectionSheet({
   required BuildContext context,
   required RecurrencePreset initialValue,
-  required VoidCallback onCustomUnsupported,
+  required ValueChanged<RecurrencePreset> onUnsupported,
 }) {
   return showFloatingSelectionSheet<RecurrencePreset>(
     context: context,
     builder: (sheetContext) {
       return _RecurrenceSelectionSheet(
         initialValue: initialValue,
-        onCustomUnsupported: onCustomUnsupported,
+        onUnsupported: onUnsupported,
       );
     },
   );
@@ -22,11 +22,11 @@ Future<RecurrencePreset?> showRecurrenceSelectionSheet({
 class _RecurrenceSelectionSheet extends StatefulWidget {
   const _RecurrenceSelectionSheet({
     required this.initialValue,
-    required this.onCustomUnsupported,
+    required this.onUnsupported,
   });
 
   final RecurrencePreset initialValue;
-  final VoidCallback onCustomUnsupported;
+  final ValueChanged<RecurrencePreset> onUnsupported;
 
   @override
   State<_RecurrenceSelectionSheet> createState() =>
@@ -60,8 +60,9 @@ class _RecurrenceSelectionSheetState extends State<_RecurrenceSelectionSheet> {
             showDivider: index != options.length - 1,
             indicator: SelectionRadioIndicator(selected: option == _draft),
             onTap: () {
-              if (option == RecurrencePreset.custom) {
-                widget.onCustomUnsupported();
+              if (option == RecurrencePreset.yearly ||
+                  option == RecurrencePreset.custom) {
+                widget.onUnsupported(option);
                 return;
               }
               setState(() {

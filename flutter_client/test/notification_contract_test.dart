@@ -17,7 +17,7 @@ void main() {
         'should_show_notification_rationale': false,
       },
       'error': null,
-      'contract_version': 1,
+      'contract_version': 2,
       'request_id': 'permission-1',
     }, NotificationMapper.permissionStatus);
     final failure = NativeResultDto<Object>.fromJson({
@@ -29,7 +29,7 @@ void main() {
         'details': {'sdk_int': 35},
         'retryable': true,
       },
-      'contract_version': 1,
+      'contract_version': 2,
       'request_id': 'permission-2',
     }, (raw) => raw as Object);
 
@@ -42,9 +42,14 @@ void main() {
   test('NotificationTapPayload round-trips contract fields', () {
     final payload = NotificationTapPayloadDto.fromJson({
       'notification_id': 'notification-1',
+      'delivery_id': 'delivery-1',
+      'delivery_attempt_id': 'attempt-1',
+      'kind': 'reminder',
       'reminder_id': 'reminder-1',
+      'recovery_batch_id': null,
       'target_type': 'event',
       'target_id': 'event-1',
+      'occurrence_key': null,
       'route': null,
       'opened_at': '2026-07-05T10:00:00.000Z',
     });
@@ -52,9 +57,14 @@ void main() {
     expect(payload.targetType, NotificationTargetType.event);
     expect(payload.toJson(), {
       'notification_id': 'notification-1',
+      'delivery_id': 'delivery-1',
+      'delivery_attempt_id': 'attempt-1',
+      'kind': 'reminder',
       'reminder_id': 'reminder-1',
+      'recovery_batch_id': null,
       'target_type': 'event',
       'target_id': 'event-1',
+      'occurrence_key': null,
       'route': null,
       'opened_at': '2026-07-05T10:00:00.000Z',
     });

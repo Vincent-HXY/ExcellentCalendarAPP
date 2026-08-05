@@ -1,5 +1,11 @@
 version: 2
 
+LocalDateTimeResolution:
+  values:
+    - exact
+    - gap_shifted
+    - fold_earlier
+
 Importance:
   values:
     - unimportant_noturgent

@@ -28,7 +28,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        buildConfigField("boolean", "CALENDAR_CORE_V2_ENABLED", "false")
+        buildConfigField("boolean", "CALENDAR_CORE_V2_ENABLED", "true")
     }
 
     buildFeatures {

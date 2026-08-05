@@ -31,10 +31,20 @@ class PaginationResponseDto {
       'next_cursor',
     }, 'PaginationResponse');
 
+    final total = _readOptionalInt(json, 'total');
+    final page = _readOptionalInt(json, 'page');
+    final pageSize = _readInt(json, 'page_size');
+    if ((total != null && total < 0) ||
+        (page != null && page < 1) ||
+        pageSize < 1 ||
+        pageSize > 200) {
+      throw const FormatException('PaginationResponse range is invalid.');
+    }
+
     return PaginationResponseDto(
-      total: _readOptionalInt(json, 'total'),
-      page: _readOptionalInt(json, 'page'),
-      pageSize: _readInt(json, 'page_size'),
+      total: total,
+      page: page,
+      pageSize: pageSize,
       hasMore: _readBool(json, 'has_more'),
       nextCursor: _readOptionalString(json, 'next_cursor'),
     );

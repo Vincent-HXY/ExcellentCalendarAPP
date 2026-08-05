@@ -129,7 +129,9 @@ void main() {
       expect(outcome.reminder!.isEnabled, isFalse);
       expect(outcome.reminder!.deletedAt, isNotNull);
       expect(outcome.requestId, 'native-cancel-1');
-      expect(gateway.lastCancelRequest!.toJson().keys, {'id', 'reason'});
+      expect(gateway.lastCancelRequest!.toJson(), {
+        'reminder_id': 'reminder-1',
+      });
     },
   );
 
@@ -219,9 +221,5 @@ CreateReminderCommand _createCommand({String requestId = 'local-create-1'}) {
 }
 
 DeleteReminderCommand _deleteCommand({String requestId = 'local-delete-1'}) {
-  return DeleteReminderCommand(
-    reminderId: 'reminder-1',
-    requestId: requestId,
-    reason: 'User cancelled reminder.',
-  );
+  return DeleteReminderCommand(reminderId: 'reminder-1', requestId: requestId);
 }

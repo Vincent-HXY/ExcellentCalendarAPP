@@ -38,7 +38,8 @@ enum ReminderStatus {
   scheduled('scheduled'),
   sent('sent'),
   failed('failed'),
-  cancelled('cancelled');
+  cancelled('cancelled'),
+  expired('expired');
 
   const ReminderStatus(this.wireValue);
 
@@ -50,6 +51,44 @@ enum ReminderStatus {
       orElse: () => throw FormatException('Unknown Reminder status: $value'),
     );
   }
+}
+
+enum ReminderCancellationReason {
+  userCancelled('user_cancelled'),
+  eventCompleted('event_completed'),
+  occurrenceCompleted('occurrence_completed'),
+  occurrenceSkipped('occurrence_skipped'),
+  occurrenceCancelled('occurrence_cancelled'),
+  occurrenceReopened('occurrence_reopened'),
+  seriesCompleted('series_completed'),
+  seriesCancelled('series_cancelled'),
+  seriesDeleted('series_deleted'),
+  seriesUpdated('series_updated');
+
+  const ReminderCancellationReason(this.wireValue);
+  final String wireValue;
+
+  static ReminderCancellationReason fromWireValue(String value) =>
+      values.firstWhere(
+        (item) => item.wireValue == value,
+        orElse: () => throw FormatException(
+          'Unknown Reminder cancellation reason: $value',
+        ),
+      );
+}
+
+enum ReminderExpirationReason {
+  recoveryWindowElapsed('recovery_window_elapsed');
+
+  const ReminderExpirationReason(this.wireValue);
+  final String wireValue;
+
+  static ReminderExpirationReason fromWireValue(String value) =>
+      values.firstWhere(
+        (item) => item.wireValue == value,
+        orElse: () =>
+            throw FormatException('Unknown Reminder expiration reason: $value'),
+      );
 }
 
 enum ReminderSource {

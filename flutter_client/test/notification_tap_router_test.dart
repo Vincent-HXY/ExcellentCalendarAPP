@@ -31,7 +31,9 @@ void main() {
   test('unsupported dated_message target falls back to today', () {
     final navigator = FakeAppRouteNavigator();
     final router = NotificationTapRouter(navigator: navigator);
-    router.open(tapPayload(targetType: NotificationTargetType.datedMessage));
+    router.open(
+      tapPayload(targetType: NotificationTargetType.reminderRecoveryBatch),
+    );
     expect(navigator.routes, ['/today']);
   });
 }

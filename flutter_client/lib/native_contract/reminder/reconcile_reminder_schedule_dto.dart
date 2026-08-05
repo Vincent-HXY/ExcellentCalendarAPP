@@ -1,9 +1,16 @@
 import '../shared/contract_json_object.dart';
+import '../shared/contract_value.dart';
 
 enum ReminderScheduleTrigger {
   appStart('app_start'),
   appResume('app_resume'),
   mutation('mutation'),
+  bootCompleted('boot_completed'),
+  packageReplaced('package_replaced'),
+  timeChanged('time_changed'),
+  timezoneChanged('timezone_changed'),
+  periodicWorker('periodic_worker'),
+  alarmFired('alarm_fired'),
   manualRetry('manual_retry');
 
   const ReminderScheduleTrigger(this.wireValue);
@@ -96,7 +103,12 @@ class ReconcileReminderScheduleResponseDto {
     }
     return ReconcileReminderScheduleResponseDto(
       action: action,
-      nextRemindAt: rawNext == null ? null : DateTime.parse(rawNext).toUtc(),
+      nextRemindAt: rawNext == null
+          ? null
+          : ContractValue.parseUtcDateTime(
+              rawNext,
+              field: 'ReconcileReminderScheduleResponse.next_remind_at',
+            ),
       processedDueCount: processed,
       failedCount: failed,
       continuationEnqueued: continuation,

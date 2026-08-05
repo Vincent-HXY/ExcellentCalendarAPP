@@ -57,7 +57,7 @@ enum NotificationTargetType {
   event('event'),
   habit('habit'),
   anniversary('anniversary'),
-  datedMessage('dated_message');
+  reminderRecoveryBatch('reminder_recovery_batch');
 
   const NotificationTargetType(this.wireValue);
   final String wireValue;
@@ -68,4 +68,17 @@ enum NotificationTargetType {
         orElse: () =>
             throw FormatException('Unknown Notification target_type: $value'),
       );
+}
+
+enum NotificationKind {
+  reminder('reminder'),
+  recoverySummary('recovery_summary');
+
+  const NotificationKind(this.wireValue);
+  final String wireValue;
+
+  static NotificationKind fromWireValue(String value) => values.firstWhere(
+    (item) => item.wireValue == value,
+    orElse: () => throw FormatException('Unknown Notification kind: $value'),
+  );
 }

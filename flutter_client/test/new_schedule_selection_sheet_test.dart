@@ -1,4 +1,5 @@
 import 'package:excellent_calendar/presentation/new_schedule/new_schedule_draft.dart';
+import 'package:excellent_calendar/presentation/new_schedule/selection/floating_selection_sheet.dart';
 import 'package:excellent_calendar/presentation/new_schedule/selection/recurrence_selection_sheet.dart';
 import 'package:excellent_calendar/presentation/new_schedule/selection/reminder_selection_sheet.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ void main() {
           selected = await showRecurrenceSelectionSheet(
             context: context,
             initialValue: RecurrencePreset.once,
-            onCustomUnsupported: () {},
+            onUnsupported: (_) {},
           );
         },
       ),
@@ -38,6 +39,35 @@ void main() {
     await tester.tap(find.text('确定'));
     await tester.pumpAndSettle();
     expect(selected, RecurrencePreset.weekly);
+  });
+
+  testWidgets('yearly recurrence reports unsupported and is not selected', (
+    tester,
+  ) async {
+    RecurrencePreset? unsupported;
+
+    await tester.pumpWidget(
+      _SheetHost(
+        onOpen: (context) async {
+          await showRecurrenceSelectionSheet(
+            context: context,
+            initialValue: RecurrencePreset.once,
+            onUnsupported: (value) {
+              unsupported = value;
+            },
+          );
+        },
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(RecurrencePreset.yearly.label));
+    await tester.pump();
+
+    expect(unsupported, RecurrencePreset.yearly);
+    Navigator.of(tester.element(find.byType(FloatingSelectionSheet))).pop();
+    await tester.pumpAndSettle();
   });
 
   // 目的：验证用户可以一次提交多个预设提醒；方法：勾选多项、确认并比较返回集合。

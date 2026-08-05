@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/runtime/resolve_local_datetime_response.schema.json",
+  "title": "ResolveLocalDateTimeResponse",
+  "description": "Deterministic bundled-TZDB resolution of one local wall-clock value.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requested_local_datetime",
+    "resolved_local_datetime",
+    "utc_instant",
+    "timezone",
+    "resolution"
+  ],
+  "properties": {
+    "requested_local_datetime": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
+    },
+    "resolved_local_datetime": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+      "description": "Actual local wall-clock value used. It differs from the request only when a DST gap is shifted."
+    },
+    "utc_instant": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "resolution": {
+      "type": "string",
+      "enum": ["exact", "gap_shifted", "fold_earlier"]
+    }
+  }
+}

@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../application/event/create_event_use_case.dart';
+import '../../application/timezone/timezone_application_service.dart';
 import '../../native_contract/event/create_event_request_dto.dart';
+import '../../native_contract/runtime/local_wall_date_time.dart';
+import '../../native_contract/runtime/resolve_local_datetime_dto.dart';
 import '../shared/native_result_dialog.dart';
 import 'components/create_mode_segmented_control.dart';
 import 'components/manual_schedule_form.dart';
@@ -16,9 +21,14 @@ import 'selection/reminder_selection_sheet.dart';
 enum CreateScheduleMode { manual, aiRecognition }
 
 class NewSchedulePage extends StatefulWidget {
-  const NewSchedulePage({required this.createUseCase, super.key});
+  const NewSchedulePage({
+    required this.createUseCase,
+    required this.timezoneService,
+    super.key,
+  });
 
   final CreateEventUseCase createUseCase;
+  final TimezoneApplicationService timezoneService;
 
   @override
   State<NewSchedulePage> createState() => _NewSchedulePageState();
@@ -41,8 +51,9 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
 
   late DateTime _startAt;
   late DateTime _endAt;
-  static const _timezoneLabel = 'GMT+08:00 北京';
-  static const _timezoneId = 'Asia/Shanghai';
+  String? _timezoneId;
+
+  String get _timezoneLabel => _timezoneId ?? '正在读取设备时区…';
 
   @override
   void initState() {
@@ -51,6 +62,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     _startAt = _nextDefaultStartAt();
     _endAt = _startAt.add(const Duration(hours: 1));
     _titleController.addListener(_handleTitleChanged);
+    unawaited(_refreshDeviceTimezone(showError: true));
   }
 
   @override
@@ -68,7 +80,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
 
   static DateTime _nextDefaultStartAt() {
     final now = DateTime.now();
-    return DateTime(
+    return DateTime.utc(
       now.year,
       now.month,
       now.day,
@@ -79,9 +91,32 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   bool get _canSubmit =>
       _titleController.text.trim().isNotEmpty && !_isSubmitting;
 
+  bool get _isRecurring => _recurrencePreset != RecurrencePreset.once;
+
   Future<void> _handleSubmit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty || _isSubmitting) {
+      return;
+    }
+
+    if (_isRecurring && _reminderPresets.isNotEmpty && _isAllDay) {
+      _showTodo('全天重复日程暂不支持提醒');
+      return;
+    }
+    if (_isRecurring &&
+        _reminderPresets.isNotEmpty &&
+        _isRingingReminderEnabled) {
+      _showTodo('重复日程本期仅支持弹窗提醒');
+      return;
+    }
+
+    final startWall = LocalWallDateTime.fromDateTimeComponents(_startAt);
+    final endWall = LocalWallDateTime.fromDateTimeComponents(_endAt);
+    if ((!_isAllDay && !startWall.isBefore(endWall)) ||
+        (_isAllDay && endWall.isBefore(startWall))) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('结束时间必须晚于开始时间')));
       return;
     }
 
@@ -89,33 +124,90 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
       _isSubmitting = true;
     });
 
-    if (_endAt.isBefore(_startAt)) {
+    final previousTimezone = _timezoneId;
+    final timezone = await _refreshDeviceTimezone(showError: true);
+    if (!mounted) return;
+    if (timezone == null) {
       setState(() {
         _isSubmitting = false;
       });
+      return;
+    }
+    if (previousTimezone != null && previousTimezone != timezone) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('结束时间不能早于开始时间')));
-      return;
+      ).showSnackBar(SnackBar(content: Text('设备时区已切换为 $timezone，将按新时区保存')));
+    }
+
+    DateTime? resolvedStartAt;
+    DateTime? resolvedEndAt;
+    if (!_isAllDay) {
+      final resolutions = await Future.wait([
+        widget.timezoneService.resolveLocalDateTime(
+          localDateTime: startWall,
+          timezone: timezone,
+        ),
+        widget.timezoneService.resolveLocalDateTime(
+          localDateTime: endWall,
+          timezone: timezone,
+        ),
+      ]);
+      if (!mounted) return;
+      final failed = resolutions.where((item) => !item.result.ok).firstOrNull;
+      if (failed != null) {
+        setState(() {
+          _isSubmitting = false;
+        });
+        final error = failed.result.error;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error == null ? '时区解析失败' : '${error.code}: ${error.message}',
+            ),
+          ),
+        );
+        return;
+      }
+      final startResolution = resolutions[0].result.data!;
+      final endResolution = resolutions[1].result.data!;
+      if (startResolution.resolution == LocalDateTimeResolution.gapShifted ||
+          endResolution.resolution == LocalDateTimeResolution.gapShifted) {
+        setState(() {
+          _startAt = startResolution.resolvedLocalDateTime
+              .toComponentDateTime();
+          _endAt = endResolution.resolvedLocalDateTime.toComponentDateTime();
+          _isSubmitting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('所选时间落在夏令时跳时区间，已移到首个合法时间，请确认后再次保存')),
+        );
+        return;
+      }
+      resolvedStartAt = startResolution.utcInstant;
+      resolvedEndAt = endResolution.utcInstant;
     }
 
     final note = _noteController.text.trim();
     final location = _locationController.text.trim();
+    final allDayStart = DateTime(_startAt.year, _startAt.month, _startAt.day);
+    final selectedAllDayEnd = DateTime(_endAt.year, _endAt.month, _endAt.day);
+    final allDayEnd = selectedAllDayEnd.isAfter(allDayStart)
+        ? selectedAllDayEnd
+        : allDayStart.add(const Duration(days: 1));
     final request = CreateEventRequestDto(
       title: title,
       content: note.isEmpty ? null : note,
-      startAt: _startAt,
-      endAt: _endAt,
+      startAt: resolvedStartAt,
+      endAt: resolvedEndAt,
+      startDate: _isAllDay ? _formatLocalDate(allDayStart) : null,
+      endDate: _isAllDay ? _formatLocalDate(allDayEnd) : null,
       isAllDay: _isAllDay,
       categoryId: '1',
       importance: 'unimportant_noturgent',
       location: location.isEmpty ? null : location,
-      timezone: _timezoneId,
+      timezone: timezone,
       source: 'manual',
-      recurrence: _recurrencePreset.toDto(
-        startAt: _startAt,
-        timezone: _timezoneId,
-      ),
+      recurrence: _recurrencePreset.toDto(),
       reminders: buildReminderDraftDtos(
         presets: _reminderPresets,
         customAdvanceMinutes: _customReminderAdvanceMinutes,
@@ -157,6 +249,37 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     );
   }
 
+  static String _formatLocalDate(DateTime value) {
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '${value.year.toString().padLeft(4, '0')}-$month-$day';
+  }
+
+  Future<String?> _refreshDeviceTimezone({required bool showError}) async {
+    final invocation = await widget.timezoneService.getDeviceTimezone();
+    if (!mounted) return null;
+    if (!invocation.result.ok) {
+      if (showError) {
+        final error = invocation.result.error;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error == null ? '无法读取设备时区' : '${error.code}: ${error.message}',
+            ),
+          ),
+        );
+      }
+      return null;
+    }
+    final timezone = invocation.result.data!.timezone;
+    if (_timezoneId != timezone) {
+      setState(() {
+        _timezoneId = timezone;
+      });
+    }
+    return timezone;
+  }
+
   void _showTodo(String message) {
     ScaffoldMessenger.of(
       context,
@@ -175,7 +298,13 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
       return;
     }
     setState(() {
-      _startAt = result.localDateTime;
+      _startAt = DateTime.utc(
+        result.year,
+        result.month,
+        result.day,
+        result.hour,
+        result.minute,
+      );
     });
   }
 
@@ -191,7 +320,13 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
       return;
     }
     setState(() {
-      _endAt = result.localDateTime;
+      _endAt = DateTime.utc(
+        result.year,
+        result.month,
+        result.day,
+        result.hour,
+        result.minute,
+      );
     });
   }
 
@@ -199,9 +334,21 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     final result = await showRecurrenceSelectionSheet(
       context: context,
       initialValue: _recurrencePreset,
-      onCustomUnsupported: () => _showTodo('自定义重复规则后续实现'),
+      onUnsupported: (preset) => _showTodo(
+        preset == RecurrencePreset.yearly ? '每年重复暂未开放' : '自定义重复规则后续实现',
+      ),
     );
     if (result == null || !mounted) {
+      return;
+    }
+    if (result != RecurrencePreset.once &&
+        _isAllDay &&
+        _reminderPresets.isNotEmpty) {
+      _showTodo('全天重复日程暂不支持提醒');
+      return;
+    }
+    if (result != RecurrencePreset.once && _isRingingReminderEnabled) {
+      _showTodo('重复日程本期仅支持弹窗提醒');
       return;
     }
     setState(() {
@@ -210,6 +357,14 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   }
 
   Future<void> _pickReminders() async {
+    if (_isRecurring && _isAllDay) {
+      _showTodo('全天重复日程暂不支持提醒');
+      return;
+    }
+    if (_isRecurring && _isRingingReminderEnabled) {
+      _showTodo('重复日程本期仅支持弹窗提醒');
+      return;
+    }
     final result = await showReminderSelectionSheet(
       context: context,
       initialPresets: _reminderPresets,
@@ -273,12 +428,23 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
                           presets: _reminderPresets,
                           customAdvanceMinutes: _customReminderAdvanceMinutes,
                         ),
+                        timezoneLabel: _timezoneLabel,
                         onAllDayChanged: (value) {
+                          if (value &&
+                              _isRecurring &&
+                              _reminderPresets.isNotEmpty) {
+                            _showTodo('全天重复日程暂不支持提醒');
+                            return;
+                          }
                           setState(() {
                             _isAllDay = value;
                           });
                         },
                         onRingingReminderChanged: (value) {
+                          if (value && _isRecurring) {
+                            _showTodo('重复日程本期仅支持弹窗提醒');
+                            return;
+                          }
                           setState(() {
                             _isRingingReminderEnabled = value;
                           });

@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 
 import '../../application/event/complete_event_use_case.dart';
 import '../../application/event/read_events_use_case.dart';
+import '../../application/timezone/timezone_application_service.dart';
 import '../../native_contract/common/pagination_request_dto.dart';
 import '../../native_contract/event/complete_event_request_dto.dart';
 import '../../native_contract/event/event_response_dto.dart';
 import '../../native_contract/event/search_event_request_dto.dart';
+import '../../native_contract/runtime/local_wall_date_time.dart';
 import '../event_detail/models/event_detail_ui_state.dart';
 import 'models/inbox_task_view_data.dart';
 
@@ -27,11 +29,14 @@ class InboxController extends ChangeNotifier {
   InboxController({
     required ReadEventsUseCase readEventsUseCase,
     required CompleteEventUseCase completeEventUseCase,
+    required TimezoneApplicationService timezoneService,
   }) : _readEventsUseCase = readEventsUseCase,
-       _completeEventUseCase = completeEventUseCase;
+       _completeEventUseCase = completeEventUseCase,
+       _timezoneService = timezoneService;
 
   final ReadEventsUseCase _readEventsUseCase;
   final CompleteEventUseCase _completeEventUseCase;
+  final TimezoneApplicationService _timezoneService;
 
   List<InboxTaskViewData> _activeTasks = const [];
   List<InboxTaskViewData> _completedTasks = const [];
@@ -78,22 +83,33 @@ class InboxController extends ChangeNotifier {
         status: ['active'],
         includeDeleted: false,
         pagination: PaginationRequestDto(page: 1, pageSize: 20),
-        sortBy: 'start_at',
+        sortBy: 'start',
         sortDirection: 'asc',
       ),
     );
     final result = invocation.result;
-    _isLoadingActive = false;
     if (result.ok) {
-      _activeTasks = result.data!.items
+      final events = result.data!.items
           .where((event) => event.status == 'active' && event.deletedAt == null)
-          .map(_toInboxTask)
           .toList(growable: false);
-      _activeError = null;
+      final localized = await _timezoneService.localizeEventTimes(events);
+      if (localized.ok) {
+        _activeTasks = events
+            .map((event) => _toInboxTask(event, localized.ranges[event.id]!))
+            .toList(growable: false);
+        _activeError = null;
+      } else {
+        _activeTasks = const [];
+        _activeError = _errorMessage(
+          localized.errorCode,
+          localized.errorMessage,
+        );
+      }
     } else {
       _activeTasks = const [];
       _activeError = _errorMessage(result.error?.code, result.error?.message);
     }
+    _isLoadingActive = false;
     _notifyListeners();
   }
 
@@ -120,24 +136,34 @@ class InboxController extends ChangeNotifier {
       ),
     );
     final result = invocation.result;
-    _isLoadingCompleted = false;
     if (result.ok) {
       final response = result.data!;
-      _completedTasks = response.items
+      final events = response.items
           .where(
             (event) => event.status == 'completed' && event.deletedAt == null,
           )
-          .map(_toInboxTask)
           .toList(growable: false);
-      _completedCount = response.pagination.total ?? _completedTasks.length;
-      _hasLoadedCompleted = true;
-      _completedError = null;
+      final localized = await _timezoneService.localizeEventTimes(events);
+      if (localized.ok) {
+        _completedTasks = events
+            .map((event) => _toInboxTask(event, localized.ranges[event.id]!))
+            .toList(growable: false);
+        _completedCount = response.pagination.total ?? _completedTasks.length;
+        _hasLoadedCompleted = true;
+        _completedError = null;
+      } else {
+        _completedError = _errorMessage(
+          localized.errorCode,
+          localized.errorMessage,
+        );
+      }
     } else {
       _completedError = _errorMessage(
         result.error?.code,
         result.error?.message,
       );
     }
+    _isLoadingCompleted = false;
     _notifyListeners();
   }
 
@@ -152,11 +178,7 @@ class InboxController extends ChangeNotifier {
     _completingIds.add(task.id);
     _notifyListeners();
     final invocation = await _completeEventUseCase.execute(
-      CompleteEventRequestDto(
-        eventId: task.id,
-        completedAt: DateTime.now(),
-        source: 'manual',
-      ),
+      CompleteEventRequestDto(eventId: task.id, source: 'manual'),
     );
     final result = invocation.result;
     if (!result.ok) {
@@ -174,7 +196,29 @@ class InboxController extends ChangeNotifier {
       return const InboxCompletionResult.failure('Native 未返回 completed 状态');
     }
 
-    final completedTask = _toInboxTask(completedEvent);
+    final localized = await _timezoneService.localizeEventTimes([
+      completedEvent,
+    ]);
+    final previousDetail = task.detailState;
+    final localizedRange =
+        localized.ranges[completedEvent.id] ??
+        (previousDetail == null
+            ? null
+            : LocalizedTimeRange(
+                start: LocalWallDateTime.fromDateTimeComponents(
+                  previousDetail.startAt,
+                ),
+                end: LocalWallDateTime.fromDateTimeComponents(
+                  previousDetail.endAt,
+                ),
+                timezone: completedEvent.timezone,
+              ));
+    if (localizedRange == null) {
+      _completingIds.remove(task.id);
+      _notifyListeners();
+      return const InboxCompletionResult.failure('日程已完成，但原时区显示刷新失败，请重新加载');
+    }
+    final completedTask = _toInboxTask(completedEvent, localizedRange);
     final alreadyCached = _completedTasks.any(
       (item) => item.id == completedTask.id,
     );
@@ -199,15 +243,21 @@ class InboxController extends ChangeNotifier {
     _notifyListeners();
   }
 
-  InboxTaskViewData _toInboxTask(EventResponseDto event) {
+  InboxTaskViewData _toInboxTask(
+    EventResponseDto event,
+    LocalizedTimeRange localizedTimeRange,
+  ) {
     return InboxTaskViewData(
       id: event.id,
       title: event.title,
-      dueDateLabel: _formatDueDate(event.startAt),
+      dueDateLabel: _formatDueDate(localizedTimeRange.start),
       importance: _mapImportance(event.importance),
       isCompleted: event.status == 'completed',
       hasRecurrence: event.hasRecurrence,
-      detailState: EventDetailUiState.fromEvent(event),
+      detailState: EventDetailUiState.fromEvent(
+        event,
+        localizedTimeRange: localizedTimeRange,
+      ),
     );
   }
 
@@ -220,9 +270,8 @@ class InboxController extends ChangeNotifier {
     };
   }
 
-  String _formatDueDate(DateTime dateTime) {
-    final local = dateTime.toLocal();
-    return '${local.month.toString().padLeft(2, '0')}/${local.day.toString().padLeft(2, '0')}';
+  String _formatDueDate(LocalWallDateTime dateTime) {
+    return '${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')}';
   }
 
   String _errorMessage(String? code, String? message) {

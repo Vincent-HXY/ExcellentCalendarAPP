@@ -1,10 +1,13 @@
 import '../common/pagination_request_dto.dart';
+import '../shared/contract_value.dart';
 
 class SearchEventRequestDto {
   const SearchEventRequestDto({
     this.keyword,
     this.startAtFrom,
     this.startAtTo,
+    this.startDateFrom,
+    this.startDateTo,
     this.status = const [],
     this.categoryIds = const [],
     this.importance = const [],
@@ -13,13 +16,38 @@ class SearchEventRequestDto {
     this.source = const [],
     this.includeDeleted = false,
     this.pagination = const PaginationRequestDto(),
-    this.sortBy = 'start_at',
+    this.sortBy = 'start',
     this.sortDirection = 'asc',
   });
+
+  static const _statuses = {'active', 'completed', 'cancelled', 'archived'};
+  static const _importanceValues = {
+    'unimportant_noturgent',
+    'important_noturgent',
+    'unimportant_urgent',
+    'important_urgent',
+  };
+  static const _sourceValues = {
+    'manual',
+    'ai_extraction',
+    'sync',
+    'import',
+    'wechat',
+  };
+  static const _sortValues = {
+    null,
+    'start',
+    'created_at',
+    'updated_at',
+    'importance',
+    'title',
+  };
 
   final String? keyword;
   final DateTime? startAtFrom;
   final DateTime? startAtTo;
+  final String? startDateFrom;
+  final String? startDateTo;
   final List<String> status;
   final List<String> categoryIds;
   final List<String> importance;
@@ -33,77 +61,60 @@ class SearchEventRequestDto {
 
   Map<String, dynamic> toJson() {
     for (final value in status) {
-      _validateStatus(value);
+      ContractValue.validateEnum(value, _statuses, 'EventStatus');
     }
     for (final value in importance) {
-      _validateImportance(value);
+      ContractValue.validateEnum(value, _importanceValues, 'Importance');
     }
     for (final value in source) {
-      _validateSource(value);
+      ContractValue.validateEnum(value, _sourceValues, 'SearchEvent source');
     }
-    _validateSortBy(sortBy);
-    _validateSortDirection(sortDirection);
+    if (!_sortValues.contains(sortBy)) {
+      throw FormatException('Unknown SearchEvent sort_by: $sortBy');
+    }
+    if (sortDirection != null &&
+        sortDirection != 'asc' &&
+        sortDirection != 'desc') {
+      throw FormatException('Unknown SortDirection: $sortDirection');
+    }
+    if (startDateFrom != null) {
+      ContractValue.validateLocalDate(
+        startDateFrom!,
+        field: 'SearchEventRequest.start_date_from',
+      );
+    }
+    if (startDateTo != null) {
+      ContractValue.validateLocalDate(
+        startDateTo!,
+        field: 'SearchEventRequest.start_date_to',
+      );
+    }
     return {
       'keyword': keyword,
-      'start_at_from': startAtFrom?.toUtc().toIso8601String(),
-      'start_at_to': startAtTo?.toUtc().toIso8601String(),
-      'status': status,
-      'category_ids': categoryIds,
-      'importance': importance,
+      'start_at_from': startAtFrom == null
+          ? null
+          : ContractValue.formatUtcDateTime(
+              startAtFrom!,
+              field: 'SearchEventRequest.start_at_from',
+            ),
+      'start_at_to': startAtTo == null
+          ? null
+          : ContractValue.formatUtcDateTime(
+              startAtTo!,
+              field: 'SearchEventRequest.start_at_to',
+            ),
+      'start_date_from': startDateFrom,
+      'start_date_to': startDateTo,
+      'status': List<String>.unmodifiable(status),
+      'category_ids': List<String>.unmodifiable(categoryIds),
+      'importance': List<String>.unmodifiable(importance),
       'location': location,
       'has_recurrence': hasRecurrence,
-      'source': source,
+      'source': List<String>.unmodifiable(source),
       'include_deleted': includeDeleted,
       'pagination': pagination.toJson(),
       'sort_by': sortBy,
       'sort_direction': sortDirection,
     };
-  }
-
-  static void _validateStatus(String value) {
-    const allowed = {'active', 'completed', 'cancelled', 'archived'};
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown EventStatus: $value');
-    }
-  }
-
-  static void _validateImportance(String value) {
-    const allowed = {
-      'unimportant_noturgent',
-      'important_noturgent',
-      'unimportant_urgent',
-      'important_urgent',
-    };
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown Importance: $value');
-    }
-  }
-
-  static void _validateSource(String value) {
-    const allowed = {'manual', 'ai_extraction', 'sync', 'import', 'wechat'};
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown SearchEvent source: $value');
-    }
-  }
-
-  static void _validateSortBy(String? value) {
-    const allowed = {
-      null,
-      'start_at',
-      'created_at',
-      'updated_at',
-      'importance',
-      'title',
-    };
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown SearchEvent sort_by: $value');
-    }
-  }
-
-  static void _validateSortDirection(String? value) {
-    const allowed = {null, 'asc', 'desc'};
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown SortDirection: $value');
-    }
   }
 }

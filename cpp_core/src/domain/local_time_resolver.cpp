@@ -97,6 +97,23 @@ common::Result<LocalDate> parse_local_date(std::string_view value) {
   return common::Result<LocalDate>::success(result);
 }
 
+common::Result<LocalDateTime> parse_local_date_time(std::string_view value) {
+  LocalDateTime result;
+  if (value.size() != 19U || value[4] != '-' || value[7] != '-' || value[10] != 'T' ||
+      value[13] != ':' || value[16] != ':' ||
+      !parse_fixed(value, 0, 4, result.year) ||
+      !parse_fixed(value, 5, 2, result.month) ||
+      !parse_fixed(value, 8, 2, result.day) ||
+      !parse_fixed(value, 11, 2, result.hour) ||
+      !parse_fixed(value, 14, 2, result.minute) ||
+      !parse_fixed(value, 17, 2, result.second) || !is_valid_local_date_time(result)) {
+    return common::Result<LocalDateTime>::failure(common::make_error(
+        "CONTRACT_VALIDATION_FAILED", "Local date-time is invalid",
+        {{"field", "local_datetime"}}));
+  }
+  return common::Result<LocalDateTime>::success(result);
+}
+
 std::string format_local_date(const LocalDate& value) {
   std::ostringstream output;
   output << std::setfill('0') << std::setw(4) << value.year << '-' << std::setw(2)
@@ -111,6 +128,18 @@ std::string format_local_date_time(const LocalDateTime& value) {
          << value.hour << ':' << std::setw(2) << value.minute << ':' << std::setw(2)
          << value.second;
   return output.str();
+}
+
+std::string local_date_time_resolution_to_string(LocalDateTimeResolution value) {
+  switch (value) {
+    case LocalDateTimeResolution::exact:
+      return "exact";
+    case LocalDateTimeResolution::gap_shifted:
+      return "gap_shifted";
+    case LocalDateTimeResolution::fold_earlier:
+      return "fold_earlier";
+  }
+  return "exact";
 }
 
 LocalDate add_local_days(const LocalDate& value, int days) {

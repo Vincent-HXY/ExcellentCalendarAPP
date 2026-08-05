@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/runtime/device_timezone_response.schema.json",
+  "title": "DeviceTimezoneResponse",
+  "description": "The Android device's current system IANA timezone. Callers must not treat this as the timezone of an existing Event.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["timezone"],
+  "properties": {
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Current Android system IANA timezone identifier, for example Europe/London."
+    }
+  }
+}

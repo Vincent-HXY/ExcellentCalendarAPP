@@ -20,6 +20,7 @@ class ManualScheduleForm extends StatelessWidget {
     required this.isMoreSettingsExpanded,
     required this.recurrenceLabel,
     required this.reminderSummary,
+    required this.timezoneLabel,
     required this.onAllDayChanged,
     required this.onRingingReminderChanged,
     required this.onMoreSettingsToggle,
@@ -46,6 +47,7 @@ class ManualScheduleForm extends StatelessWidget {
   final bool isMoreSettingsExpanded;
   final String recurrenceLabel;
   final String reminderSummary;
+  final String timezoneLabel;
   final ValueChanged<bool> onAllDayChanged;
   final ValueChanged<bool> onRingingReminderChanged;
   final VoidCallback onMoreSettingsToggle;
@@ -74,6 +76,7 @@ class ManualScheduleForm extends StatelessWidget {
           startAt: startAt,
           endAt: endAt,
           isAllDay: isAllDay,
+          timezoneLabel: timezoneLabel,
           onAllDayChanged: onAllDayChanged,
           onStartTap: onStartTap,
           onStartTimeTap: onStartTimeTap,

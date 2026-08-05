@@ -1,4 +1,5 @@
 import '../../../native_contract/event/event_response_dto.dart';
+import '../../../application/timezone/timezone_application_service.dart';
 
 enum EventDisplayStatus { pending, inProgress, overdue, completed }
 
@@ -87,18 +88,24 @@ class EventDetailUiState {
 
   factory EventDetailUiState.fromEvent(
     EventResponseDto event, {
+    required LocalizedTimeRange localizedTimeRange,
     List<ReminderUiModel> reminders = const [],
     int? participantCount,
     DateTime? now,
   }) {
+    if (localizedTimeRange.timezone != event.timezone) {
+      throw const FormatException(
+        'Localized Event time must use the Event original timezone.',
+      );
+    }
     return EventDetailUiState(
       eventId: event.id,
       title: event.title,
       description: event.content,
       content: event.content,
-      startAt: event.startAt.toLocal(),
-      endAt: event.endAt.toLocal(),
-      timezone: event.timezone ?? 'Asia/Shanghai',
+      startAt: localizedTimeRange.start.toComponentDateTime(),
+      endAt: localizedTimeRange.end.toComponentDateTime(),
+      timezone: event.timezone,
       isAllDay: event.isAllDay,
       displayStatus: deriveDisplayStatus(event: event, now: now),
       priorityLabel: priorityLabelForImportance(event.importance),
@@ -134,8 +141,12 @@ class EventDetailUiState {
   }) {
     if (event.status == 'completed') return EventDisplayStatus.completed;
     final instant = now ?? DateTime.now();
-    if (instant.isBefore(event.startAt)) return EventDisplayStatus.pending;
-    if (!instant.isAfter(event.endAt)) return EventDisplayStatus.inProgress;
+    if (instant.isBefore(event.displayStartAt)) {
+      return EventDisplayStatus.pending;
+    }
+    if (!instant.isAfter(event.displayEndAt)) {
+      return EventDisplayStatus.inProgress;
+    }
     return EventDisplayStatus.overdue;
   }
 

@@ -38,7 +38,7 @@ class NotificationTapRouter {
       NotificationTargetType.event => '/event/detail/$targetId',
       NotificationTargetType.habit => '/habit/detail/$targetId',
       NotificationTargetType.anniversary => '/anniversary/detail/$targetId',
-      NotificationTargetType.datedMessage => '/today',
+      NotificationTargetType.reminderRecoveryBatch => '/today',
     };
     _navigator.go(route);
     return true;

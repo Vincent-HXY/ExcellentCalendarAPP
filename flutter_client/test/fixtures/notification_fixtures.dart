@@ -5,7 +5,6 @@ import 'package:excellent_calendar/native_contract/notification/notification_ini
 import 'package:excellent_calendar/native_contract/notification/notification_permission_status_dto.dart';
 import 'package:excellent_calendar/native_contract/notification/notification_tap_payload_dto.dart';
 import 'package:excellent_calendar/native_contract/notification/request_notification_permission_dto.dart';
-import 'package:excellent_calendar/native_contract/reminder/schedule_pending_reminders_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/reconcile_reminder_schedule_dto.dart';
 import 'package:excellent_calendar/native_contract/shared/native_invocation.dart';
 
@@ -19,14 +18,14 @@ NativeInvocation<T> successInvocation<T>(
       'ok': true,
       'data': rawData ?? const {},
       'error': null,
-      'contract_version': 1,
+      'contract_version': 2,
       'request_id': requestId,
     },
     result: NativeResultDto<T>(
       ok: true,
       data: data,
       error: null,
-      contractVersion: 1,
+      contractVersion: 2,
       requestId: requestId,
     ),
     isNativeResult: true,
@@ -48,14 +47,14 @@ NativeInvocation<T> failureInvocation<T>({
         'details': null,
         'retryable': false,
       },
-      'contract_version': 1,
+      'contract_version': 2,
       'request_id': 'request-failure',
     },
     result: NativeResultDto<T>(
       ok: false,
       data: null,
       error: NativeErrorDto(code: code, message: message),
-      contractVersion: 1,
+      contractVersion: 2,
       requestId: 'request-failure',
     ),
     isNativeResult: isNativeResult,
@@ -105,16 +104,6 @@ RequestNotificationPermissionResponseDto permissionRequestResponse({
   );
 }
 
-const scheduleResponse = SchedulePendingRemindersResponseDto(
-  scheduledCount: 1,
-  skippedCount: 0,
-  failedCount: 0,
-  unsupportedMethodCount: 0,
-  hasMore: false,
-  failedReminderIds: [],
-  unsupportedReminderIds: [],
-);
-
 const reconcileResponse = ReconcileReminderScheduleResponseDto(
   action: 'scheduled',
   nextRemindAt: null,
@@ -130,11 +119,20 @@ NotificationTapPayloadDto tapPayload({
   NotificationTargetType targetType = NotificationTargetType.event,
   String targetId = 'event-1',
 }) {
+  final isRecoverySummary =
+      targetType == NotificationTargetType.reminderRecoveryBatch;
   return NotificationTapPayloadDto(
     notificationId: notificationId,
-    reminderId: reminderId,
+    deliveryId: 'delivery-1',
+    deliveryAttemptId: 'delivery-attempt-1',
+    kind: isRecoverySummary
+        ? NotificationKind.recoverySummary
+        : NotificationKind.reminder,
+    reminderId: isRecoverySummary ? null : reminderId,
+    recoveryBatchId: isRecoverySummary ? targetId : null,
     targetType: targetType,
     targetId: targetId,
+    occurrenceKey: null,
     route: null,
     openedAt: DateTime.utc(2026, 7, 5, 10),
   );

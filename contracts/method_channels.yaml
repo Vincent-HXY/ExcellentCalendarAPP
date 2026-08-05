@@ -4,6 +4,31 @@ implementation_status: cpp_core_complete_unintegrated
 channel: excellent_calendar/native
 
 methods:
+  runtime.device_timezone:
+    module: runtime
+    implementation: kotlin_local
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: runtime/device_timezone_response.schema.json
+    event_stream: false
+
+  runtime.resolve_local_datetime:
+    module: runtime
+    request: runtime/resolve_local_datetime_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: runtime/resolve_local_datetime_response.schema.json
+    event_stream: false
+
+  runtime.localize_instants:
+    module: runtime
+    request: runtime/localize_instants_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: runtime/localize_instants_response.schema.json
+    event_stream: false
+
   event.create:
     module: event
     request: event/create_event_request.schema.json

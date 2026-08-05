@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/runtime/localize_instants_request.schema.json",
+  "title": "LocalizeInstantsRequest",
+  "description": "Batch-convert UTC instants into local wall-clock values in one IANA timezone.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["timezone", "instants"],
+  "properties": {
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "instants": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 400,
+      "items": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+      },
+      "description": "Order and duplicates are significant and must be preserved in the response."
+    }
+  }
+}

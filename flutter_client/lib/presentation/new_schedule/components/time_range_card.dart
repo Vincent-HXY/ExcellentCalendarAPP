@@ -10,6 +10,7 @@ class TimeRangeCard extends StatelessWidget {
     required this.startAt,
     required this.endAt,
     required this.isAllDay,
+    required this.timezoneLabel,
     required this.onAllDayChanged,
     required this.onStartTap,
     required this.onStartTimeTap,
@@ -24,6 +25,7 @@ class TimeRangeCard extends StatelessWidget {
   final DateTime startAt;
   final DateTime endAt;
   final bool isAllDay;
+  final String timezoneLabel;
   final ValueChanged<bool> onAllDayChanged;
   final VoidCallback onStartTap;
   final VoidCallback onStartTimeTap;
@@ -93,7 +95,7 @@ class TimeRangeCard extends StatelessWidget {
               color: NewScheduleColors.divider,
             ),
           ),
-          FormRowItem(label: '时区', value: 'GMT+08:00 北京', onTap: onTimezoneTap),
+          FormRowItem(label: '时区', value: timezoneLabel, onTap: onTimezoneTap),
         ],
       ),
     );

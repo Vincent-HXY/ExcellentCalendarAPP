@@ -31,9 +31,12 @@
 - Daily/Weekly/Monthly 必须先在 Event 原时区做本地日历运算，再解析 UTC，禁止用固定 24 小时或固定 7×24 小时累加替代日历语义。
 - 本地时间落入 DST gap 时移动到 gap 后第一个合法 Instant；落入 fold 时选择较早 Instant。`occurrenceKey` 仍使用解析前的原始计划本地值，因此 TZDB 解析策略不会改变身份。
 - 定时 Event 的本地开始与本地结束分别推进、分别解析，以保持 wall-clock 起止时间。写入前还必须验证原始本地区间为正，不能只验证解析后的 UTC 顺序。
+- Flutter 创建定时 Event 前必须调用 `runtime.resolve_local_datetime`，把严格整秒本地日期时间 `YYYY-MM-DDTHH:mm:ss` 与 IANA timezone 解析为 UTC Instant。响应使用 `exact`、`gap_shifted`、`fold_earlier` 明确解析分支，并同时返回实际采用的本地日期时间；Flutter 不得用设备当前 offset 自行换算。
+- Flutter 展示定时 Event 或 occurrence 时必须按 Event 原始 timezone 调用批量 `runtime.localize_instants`。单批最多 400 个 UTC Instant，结果保留输入顺序和重复项，任一输入非法则整批失败；全天 Event 继续直接使用本地 date，不进入该接口。
+- `runtime.device_timezone` 由 Kotlin 在每次调用时读取 Android 当前系统 IANA timezone。Flutter 在创建页进入、恢复前台或提交前可以重新读取，不能把进程启动时的值视为永久不变；该方法只报告设备默认时区，不覆盖 Event 已保存的原始 timezone。
 - Windows 测试与 Android 发行包必须使用同一份捆绑 IANA tzdata 2026c，禁止运行时下载或回退到平台自带、版本未知的时区数据。
 - `runtime.initialize(storage_directory, tzdb_directory)` 必须先完成 Storage 恢复和 TZDB 完整性/版本校验。TZDB 缺失、损坏、版本错误或 IANA ID 无效时初始化失败，失败进程不得接受 Event 写入。
-- Howard Hinnant `date` 的具体 release/commit 尚未通过实施门禁；Contract 只固定可验证的 `tzdb_version = 2026c`，不能把不存在的依赖版本写成已落地事实。
+- C++ 已固定 Howard Hinnant `date v3.0.4`（commit `f94b8f36c6180be0021876c4a397a054fe50c6f2`）与捆绑 TZDB 2026c；版本证据在 `cpp_core/third_party/date/README.excellent-calendar.md`。
 
 ## 模型职责总览
 
@@ -897,7 +900,6 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 
 - Event v3 是否需要支持 `interval > 1`、有界 `endAt/count`、Yearly/Custom 或 iCalendar RRULE；这些能力不得静默塞入 v2。
 - Habit/Anniversary 的重复规则、锚点与 Reminder 生成语义需要独立设计，不能直接照搬 Event v2。
-- C++ 时区库版本仍需实施前确认：方案写的 Howard Hinnant `date v3.0.5` 在官方发布列表中不存在；TZDB `2026c` 已确认可获取。
 - `DatedMessage` 未来是只做本地投送，还是也需要云端运营投放能力。
 - `AIExtraction.extractedData` 未来是否需要拆成强类型表，还是先以 JSON 保存。
 - 后续加入 MFA 时是否把 V1 的 8 位密码下限提升到单因素认证推荐基线。

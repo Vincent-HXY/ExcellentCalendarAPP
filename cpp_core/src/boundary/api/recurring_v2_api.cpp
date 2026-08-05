@@ -1247,6 +1247,96 @@ std::string initialize_recurring_runtime_v2_json(std::string_view request_json) 
   return initialize_runtime_v2_json(request_json);
 }
 
+std::string resolve_local_datetime_v2(std::string_view request_json) {
+  return respond_v2([&]() -> common::Result<picojson::value> {
+    auto parsed = parse_object(request_json);
+    if (!parsed.ok()) return common::Result<picojson::value>::failure(parsed.error());
+    auto known = reject_unknown(
+        parsed.value(), {"local_datetime", "timezone"}, "ResolveLocalDateTimeRequest");
+    if (!known.ok()) return common::Result<picojson::value>::failure(known.error());
+    auto local_value = require_string(
+        parsed.value(), "local_datetime", "ResolveLocalDateTimeRequest");
+    auto timezone = require_string(parsed.value(), "timezone", "ResolveLocalDateTimeRequest");
+    if (!local_value.ok()) return common::Result<picojson::value>::failure(local_value.error());
+    if (!timezone.ok()) return common::Result<picojson::value>::failure(timezone.error());
+    if (timezone.value().size() > 255U) {
+      return common::Result<picojson::value>::failure(
+          contract_error("ResolveLocalDateTimeRequest.timezone", "timezone is too long"));
+    }
+    auto local = domain::parse_local_date_time(local_value.value());
+    if (!local.ok()) return common::Result<picojson::value>::failure(local.error());
+    const auto resolver = current_local_time_resolver();
+    if (!resolver) {
+      return common::Result<picojson::value>::failure(common::make_error(
+          "TIMEZONE_DATABASE_UNAVAILABLE",
+          "Bundled timezone database is missing, corrupted, or has the wrong version",
+          {{"operation", "runtime.resolve_local_datetime"}}));
+    }
+    auto resolved = resolver->resolve_local_datetime(local.value(), timezone.value());
+    if (!resolved.ok()) return common::Result<picojson::value>::failure(resolved.error());
+    picojson::object data;
+    data["requested_local_datetime"] = picojson::value(
+        domain::format_local_date_time(resolved.value().requested_local_datetime));
+    data["resolved_local_datetime"] = picojson::value(
+        domain::format_local_date_time(resolved.value().resolved_local_datetime));
+    data["utc_instant"] = picojson::value(resolved.value().utc_instant);
+    data["timezone"] = picojson::value(timezone.value());
+    data["resolution"] = picojson::value(
+        domain::local_date_time_resolution_to_string(resolved.value().resolution));
+    return common::Result<picojson::value>::success(picojson::value(std::move(data)));
+  });
+}
+
+std::string localize_instants_v2(std::string_view request_json) {
+  return respond_v2([&]() -> common::Result<picojson::value> {
+    auto parsed = parse_object(request_json);
+    if (!parsed.ok()) return common::Result<picojson::value>::failure(parsed.error());
+    auto known = reject_unknown(
+        parsed.value(), {"timezone", "instants"}, "LocalizeInstantsRequest");
+    if (!known.ok()) return common::Result<picojson::value>::failure(known.error());
+    auto timezone = require_string(parsed.value(), "timezone", "LocalizeInstantsRequest");
+    auto instants = string_array(
+        parsed.value(), "instants", "LocalizeInstantsRequest", true, false);
+    if (!timezone.ok()) return common::Result<picojson::value>::failure(timezone.error());
+    if (!instants.ok()) return common::Result<picojson::value>::failure(instants.error());
+    if (timezone.value().size() > 255U) {
+      return common::Result<picojson::value>::failure(
+          contract_error("LocalizeInstantsRequest.timezone", "timezone is too long"));
+    }
+    if (instants.value().empty() || instants.value().size() > 400U) {
+      return common::Result<picojson::value>::failure(contract_error(
+          "LocalizeInstantsRequest.instants", "array size must be between 1 and 400"));
+    }
+    const auto resolver = current_local_time_resolver();
+    if (!resolver) {
+      return common::Result<picojson::value>::failure(common::make_error(
+          "TIMEZONE_DATABASE_UNAVAILABLE",
+          "Bundled timezone database is missing, corrupted, or has the wrong version",
+          {{"operation", "runtime.localize_instants"}}));
+    }
+    picojson::array items;
+    items.reserve(instants.value().size());
+    for (std::size_t index = 0; index < instants.value().size(); ++index) {
+      const auto& instant = instants.value()[index];
+      if (instant.size() != 20U || !common::is_iso8601_utc_datetime(instant)) {
+        return common::Result<picojson::value>::failure(contract_error(
+            "LocalizeInstantsRequest.instants[" + std::to_string(index) + "]",
+            "instant must be a whole-second UTC date-time"));
+      }
+      auto local = resolver->to_local(instant, timezone.value());
+      if (!local.ok()) return common::Result<picojson::value>::failure(local.error());
+      picojson::object item;
+      item["instant"] = picojson::value(instant);
+      item["local_datetime"] = picojson::value(domain::format_local_date_time(local.value()));
+      items.emplace_back(std::move(item));
+    }
+    picojson::object data;
+    data["timezone"] = picojson::value(timezone.value());
+    data["items"] = picojson::value(std::move(items));
+    return common::Result<picojson::value>::success(picojson::value(std::move(data)));
+  });
+}
+
 std::string create_event_v2(std::string_view request_json) {
   return respond_v2([&]() -> common::Result<picojson::value> {
     auto parsed = parse_create(request_json);

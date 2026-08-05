@@ -294,6 +294,11 @@ std::shared_ptr<application::ReminderServiceV2> current_reminder_service_v2() {
   return g_state.reminder_service_v2;
 }
 
+std::shared_ptr<domain::LocalTimeResolver> current_local_time_resolver() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.local_time_resolver;
+}
+
 common::Error storage_not_initialized_error(std::string operation) {
   return common::make_error(
       "STORAGE_NOT_INITIALIZED",

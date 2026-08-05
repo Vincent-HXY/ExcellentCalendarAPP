@@ -33,6 +33,19 @@ const date::time_zone* locate(std::string_view timezone) {
   return date::locate_zone(std::string(timezone));
 }
 
+domain::LocalDateTime to_domain_local(date::local_seconds local) {
+  const auto local_day = date::floor<date::days>(local);
+  const date::year_month_day calendar{local_day};
+  const auto clock = date::make_time(local - local_day);
+  return domain::LocalDateTime{
+      static_cast<int>(calendar.year()),
+      static_cast<int>(static_cast<unsigned>(calendar.month())),
+      static_cast<int>(static_cast<unsigned>(calendar.day())),
+      static_cast<int>(clock.hours().count()),
+      static_cast<int>(clock.minutes().count()),
+      static_cast<int>(clock.seconds().count())};
+}
+
 }  // namespace
 
 TzdbLocalTimeResolver::TzdbLocalTimeResolver(std::string version)
@@ -92,27 +105,17 @@ common::Result<domain::LocalDateTime> TzdbLocalTimeResolver::to_local(
   try {
     const date::sys_seconds instant{std::chrono::seconds{*epoch}};
     const auto local = locate(timezone)->to_local(instant);
-    const auto local_day = date::floor<date::days>(local);
-    const date::year_month_day calendar{local_day};
-    const auto clock = date::make_time(local - local_day);
-    domain::LocalDateTime result;
-    result.year = static_cast<int>(calendar.year());
-    result.month = static_cast<unsigned>(calendar.month());
-    result.day = static_cast<unsigned>(calendar.day());
-    result.hour = static_cast<int>(clock.hours().count());
-    result.minute = static_cast<int>(clock.minutes().count());
-    result.second = static_cast<int>(clock.seconds().count());
-    return common::Result<domain::LocalDateTime>::success(result);
+    return common::Result<domain::LocalDateTime>::success(to_domain_local(local));
   } catch (...) {
     return common::Result<domain::LocalDateTime>::failure(timezone_invalid(std::string(timezone)));
   }
 }
 
-common::Result<std::string> TzdbLocalTimeResolver::to_utc(
+common::Result<domain::ResolvedLocalDateTime> TzdbLocalTimeResolver::resolve_local_datetime(
     const domain::LocalDateTime& local,
     std::string_view timezone) const {
   if (!domain::is_valid_local_date_time(local)) {
-    return common::Result<std::string>::failure(common::make_error(
+    return common::Result<domain::ResolvedLocalDateTime>::failure(common::make_error(
         "RECURRENCE_RULE_INVALID", "Local date-time is invalid", {{"field", "local_datetime"}}));
   }
   try {
@@ -125,19 +128,38 @@ common::Result<std::string> TzdbLocalTimeResolver::to_utc(
     const auto* zone = locate(timezone);
     const auto info = zone->get_info(local_instant);
     date::sys_seconds instant;
+    auto resolution = domain::LocalDateTimeResolution::exact;
+    auto resolved_local = local;
     if (info.result == date::local_info::nonexistent) {
       // The first legal instant after the gap is the transition instant.
       instant = date::floor<std::chrono::seconds>(info.first.end);
+      resolved_local = to_domain_local(zone->to_local(instant));
+      resolution = domain::LocalDateTimeResolution::gap_shifted;
     } else if (info.result == date::local_info::ambiguous) {
       instant = date::floor<std::chrono::seconds>(zone->to_sys(local_instant, date::choose::earliest));
+      resolution = domain::LocalDateTimeResolution::fold_earlier;
     } else {
       instant = date::floor<std::chrono::seconds>(zone->to_sys(local_instant));
     }
-    return common::Result<std::string>::success(
-        common::format_epoch_seconds_utc_iso8601(instant.time_since_epoch().count()));
+    return common::Result<domain::ResolvedLocalDateTime>::success(
+        domain::ResolvedLocalDateTime{
+            local,
+            resolved_local,
+            common::format_epoch_seconds_utc_iso8601(instant.time_since_epoch().count()),
+            resolution});
   } catch (...) {
-    return common::Result<std::string>::failure(timezone_invalid(std::string(timezone)));
+    return common::Result<domain::ResolvedLocalDateTime>::failure(
+        timezone_invalid(std::string(timezone)));
   }
+}
+
+common::Result<std::string> TzdbLocalTimeResolver::to_utc(
+    const domain::LocalDateTime& local,
+    std::string_view timezone) const {
+  auto resolved = resolve_local_datetime(local, timezone);
+  return resolved.ok()
+             ? common::Result<std::string>::success(resolved.value().utc_instant)
+             : common::Result<std::string>::failure(resolved.error());
 }
 
 std::string TzdbLocalTimeResolver::tzdb_version() const {

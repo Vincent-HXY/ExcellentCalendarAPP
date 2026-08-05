@@ -1,5 +1,6 @@
 import 'package:excellent_calendar/application/event/complete_event_use_case.dart';
 import 'package:excellent_calendar/application/event/read_events_use_case.dart';
+import 'package:excellent_calendar/application/timezone/timezone_application_service.dart';
 import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
 import 'package:excellent_calendar/gateway_interfaces/event_native_gateway.dart';
 import 'package:excellent_calendar/native_contract/common/native_result_dto.dart';
@@ -14,6 +15,8 @@ import 'package:excellent_calendar/native_contract/event/update_event_request_dt
 import 'package:excellent_calendar/native_contract/shared/native_invocation.dart';
 import 'package:excellent_calendar/presentation/inbox/inbox_controller.dart';
 import 'package:excellent_calendar/presentation/inbox/models/inbox_task_view_data.dart';
+
+import 'fakes/fake_timezone_gateway.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,16 +33,10 @@ void main() {
   test('complete DTO follows the single-event contract', () {
     final json = CompleteEventRequestDto(
       eventId: 'event-1',
-      completedAt: DateTime.utc(2026, 7, 1, 8, 30),
       source: 'manual',
     ).toJson();
 
-    expect(json, {
-      'event_id': 'event-1',
-      'completed_at': '2026-07-01T08:30:00.000Z',
-      'source': 'manual',
-      'note': null,
-    });
+    expect(json, {'event_id': 'event-1', 'source': 'manual', 'note': null});
     expect(json, isNot(contains('occurrence_start_at')));
   });
 
@@ -54,11 +51,7 @@ void main() {
 
     final invocation = await MethodChannelEventAdapter(channel: channel)
         .completeEvent(
-          CompleteEventRequestDto(
-            eventId: 'event-1',
-            completedAt: DateTime.utc(2026, 7, 1, 8, 30),
-            source: 'manual',
-          ),
+          CompleteEventRequestDto(eventId: 'event-1', source: 'manual'),
         );
 
     expect(captured!.method, 'event.complete');
@@ -103,6 +96,7 @@ void main() {
       final controller = InboxController(
         readEventsUseCase: ReadEventsUseCase(gateway),
         completeEventUseCase: CompleteEventUseCase(gateway),
+        timezoneService: _timezoneService(),
       );
 
       await controller.loadActive();
@@ -147,6 +141,7 @@ void main() {
     final controller = InboxController(
       readEventsUseCase: ReadEventsUseCase(gateway),
       completeEventUseCase: CompleteEventUseCase(gateway),
+      timezoneService: _timezoneService(),
     );
     const recurringTask = InboxTaskViewData(
       id: 'recurring-event',
@@ -169,6 +164,7 @@ void main() {
     final controller = InboxController(
       readEventsUseCase: ReadEventsUseCase(gateway),
       completeEventUseCase: CompleteEventUseCase(gateway),
+      timezoneService: _timezoneService(),
     );
 
     await controller.initialize();
@@ -200,6 +196,7 @@ void main() {
       final controller = InboxController(
         readEventsUseCase: ReadEventsUseCase(gateway),
         completeEventUseCase: CompleteEventUseCase(gateway),
+        timezoneService: _timezoneService(),
       );
 
       await controller.initialize();
@@ -225,6 +222,7 @@ void main() {
     final controller = InboxController(
       readEventsUseCase: ReadEventsUseCase(gateway),
       completeEventUseCase: CompleteEventUseCase(gateway),
+      timezoneService: _timezoneService(),
     );
 
     await controller.initialize();
@@ -246,6 +244,7 @@ void main() {
     final controller = InboxController(
       readEventsUseCase: ReadEventsUseCase(gateway),
       completeEventUseCase: CompleteEventUseCase(gateway),
+      timezoneService: _timezoneService(),
     );
 
     await controller.initialize();
@@ -255,6 +254,10 @@ void main() {
     expect(controller.completedCountLabel, '37');
     controller.dispose();
   });
+}
+
+TimezoneApplicationService _timezoneService() {
+  return TimezoneApplicationService(FakeTimezoneGateway());
 }
 
 // Controller 测试的 Event Gateway 替身：按测试配置返回结果，并记录调用参数与次数。
@@ -317,6 +320,9 @@ class _FakeEventGateway implements EventNativeGateway {
   ) {
     throw UnimplementedError();
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 // 构造单个 Event 的成功 NativeInvocation，供完成/重开场景复用。
@@ -325,7 +331,7 @@ NativeInvocation<EventResponseDto> _eventInvocation({required String status}) {
     'ok': true,
     'data': _eventJson(status: status),
     'error': null,
-    'contract_version': 1,
+    'contract_version': 2,
     'request_id': 'request-1',
   };
   return NativeInvocation<EventResponseDto>(
@@ -360,7 +366,7 @@ NativeInvocation<EventListResponseDto> _eventListInvocation({
       },
     },
     'error': null,
-    'contract_version': 1,
+    'contract_version': 2,
     'request_id': 'request-list',
   };
   return NativeInvocation<EventListResponseDto>(
@@ -384,7 +390,7 @@ NativeInvocation<EventListResponseDto> _eventListFailureInvocation() {
       'details': null,
       'retryable': true,
     },
-    'contract_version': 1,
+    'contract_version': 2,
     'request_id': 'request-failure',
   };
   return NativeInvocation<EventListResponseDto>(
@@ -406,20 +412,23 @@ Map<String, dynamic> _eventJson({
     'id': id,
     'title': 'Finish implementation',
     'content': null,
-    'start_at': '2026-07-01T09:00:00.000Z',
-    'end_at': '2026-07-01T10:00:00.000Z',
+    'start_at': '2026-07-01T09:00:00Z',
+    'end_at': '2026-07-01T10:00:00Z',
+    'start_date': null,
+    'end_date': null,
     'is_all_day': false,
     'has_recurrence': false,
     'status': status,
-    'completed_at': status == 'completed' ? '2026-07-01T08:30:00.000Z' : null,
+    'completed_at': status == 'completed' ? '2026-07-01T08:30:00Z' : null,
     'recurrence_id': null,
+    'recurrence_revision': null,
     'category_id': '1',
     'importance': 'unimportant_noturgent',
     'location': null,
     'timezone': 'Asia/Shanghai',
     'source': 'manual',
-    'created_at': '2026-07-01T07:00:00.000Z',
-    'updated_at': '2026-07-01T08:30:00.000Z',
+    'created_at': '2026-07-01T07:00:00Z',
+    'updated_at': '2026-07-01T08:30:00Z',
     'deleted_at': null,
   };
 }

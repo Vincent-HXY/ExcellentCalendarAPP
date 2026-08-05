@@ -18,6 +18,9 @@ class TzdbLocalTimeResolver final : public domain::LocalTimeResolver {
   common::Result<common::Unit> validate_timezone(std::string_view timezone) const override;
   common::Result<domain::LocalDateTime> to_local(std::string_view utc_instant,
                                                 std::string_view timezone) const override;
+  common::Result<domain::ResolvedLocalDateTime> resolve_local_datetime(
+      const domain::LocalDateTime& local,
+      std::string_view timezone) const override;
   common::Result<std::string> to_utc(const domain::LocalDateTime& local,
                                      std::string_view timezone) const override;
   std::string tzdb_version() const override;

@@ -12,7 +12,7 @@ void main() {
     final request = CreateReminderRequestDto(
       targetType: ReminderTargetType.event,
       targetId: 'event-1',
-      remindAt: DateTime(2026, 6, 15, 10),
+      remindAt: DateTime.utc(2026, 6, 15, 2),
       methods: const [ReminderMethod.ring, ReminderMethod.wechat],
       source: ReminderSource.manual,
     );
@@ -21,10 +21,7 @@ void main() {
 
     expect(json['target_type'], 'event');
     expect(json['target_id'], 'event-1');
-    expect(
-      json['remind_at'],
-      DateTime(2026, 6, 15, 10).toUtc().toIso8601String(),
-    );
+    expect(json['remind_at'], '2026-06-15T02:00:00.000Z');
     expect(json['methods'], ['ring', 'wechat']);
     expect(json['is_enabled'], isTrue);
     expect(json.containsKey('request_id'), isFalse);

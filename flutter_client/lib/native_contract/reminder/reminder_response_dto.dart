@@ -1,15 +1,19 @@
-import '../shared/contract_json_object.dart';
+import '../shared/contract_value.dart';
 import 'reminder_contract_enums.dart';
 
 class ReminderResponseDto {
   const ReminderResponseDto({
-    required this.id,
+    required this.reminderId,
     required this.targetType,
     required this.targetId,
+    required this.recurrenceRevision,
+    required this.occurrenceKey,
+    required this.occurrenceStartAt,
     required this.remindAt,
     required this.methods,
     required this.isEnabled,
     required this.status,
+    required this.reactivationCount,
     required this.createdAt,
     required this.updatedAt,
     this.advanceMinutes,
@@ -17,13 +21,47 @@ class ReminderResponseDto {
     this.scheduledAt,
     this.lastTriggeredAt,
     this.failureReason,
-    this.cancellationReason,
+    this.lastCancellationReason,
+    this.lastCancelledAt,
+    this.expirationReason,
+    this.expiredAt,
+    this.reactivatedAt,
     this.deletedAt,
   });
 
-  final String id;
+  static const _keys = {
+    'reminder_id',
+    'target_type',
+    'target_id',
+    'recurrence_revision',
+    'occurrence_key',
+    'occurrence_start_at',
+    'remind_at',
+    'advance_minutes',
+    'methods',
+    'message',
+    'is_enabled',
+    'status',
+    'scheduled_at',
+    'last_triggered_at',
+    'failure_reason',
+    'last_cancellation_reason',
+    'last_cancelled_at',
+    'expiration_reason',
+    'expired_at',
+    'reactivated_at',
+    'reactivation_count',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+  };
+
+  final String reminderId;
   final ReminderTargetType targetType;
   final String targetId;
+  final int? recurrenceRevision;
+  final String? occurrenceKey;
+  final DateTime? occurrenceStartAt;
   final DateTime remindAt;
   final List<ReminderMethod> methods;
   final int? advanceMinutes;
@@ -33,160 +71,200 @@ class ReminderResponseDto {
   final DateTime? scheduledAt;
   final DateTime? lastTriggeredAt;
   final String? failureReason;
-  final String? cancellationReason;
+  final ReminderCancellationReason? lastCancellationReason;
+  final DateTime? lastCancelledAt;
+  final ReminderExpirationReason? expirationReason;
+  final DateTime? expiredAt;
+  final DateTime? reactivatedAt;
+  final int reactivationCount;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
-  factory ReminderResponseDto.fromJson(Map<String, dynamic> json) {
-    ContractJsonObject.rejectUnknownKeys(json, {
-      'id',
-      'target_type',
-      'target_id',
-      'remind_at',
-      'methods',
-      'advance_minutes',
-      'message',
-      'is_enabled',
-      'status',
-      'scheduled_at',
-      'last_triggered_at',
-      'failure_reason',
-      'cancellation_reason',
-      'created_at',
-      'updated_at',
-      'deleted_at',
-    }, 'ReminderResponse');
-    ContractJsonObject.requireKeys(json, {
-      'id',
-      'target_type',
-      'target_id',
-      'remind_at',
-      'methods',
-      'is_enabled',
-      'status',
-      'created_at',
-      'updated_at',
-    }, 'ReminderResponse');
+  String get id => reminderId;
+  String? get cancellationReason => lastCancellationReason?.wireValue;
 
-    final methods = _readStringList(
+  bool get isRecurring => recurrenceRevision != null;
+
+  factory ReminderResponseDto.fromJson(Map<String, dynamic> json) {
+    ContractValue.requireExactKeys(json, _keys, 'ReminderResponse');
+    final methodValues = ContractValue.stringList(
       json,
       'methods',
-    ).map(ReminderMethod.fromWireValue).toList(growable: false);
-    if (methods.isEmpty || methods.toSet().length != methods.length) {
+      'ReminderResponse',
+      allowed: ReminderMethod.values.map((value) => value.wireValue).toSet(),
+      unique: true,
+      nonEmpty: true,
+    );
+    final methods = List<ReminderMethod>.unmodifiable(
+      methodValues.map(ReminderMethod.fromWireValue),
+    );
+    final status = ReminderStatus.fromWireValue(
+      ContractValue.nonEmptyString(json, 'status', 'ReminderResponse'),
+    );
+    final recurrenceRevision = ContractValue.optionalInteger(
+      json,
+      'recurrence_revision',
+      'ReminderResponse',
+      minimum: 1,
+    );
+    final occurrenceKey = ContractValue.optionalString(
+      json,
+      'occurrence_key',
+      'ReminderResponse',
+    );
+    final occurrenceStartAt = ContractValue.optionalUtcDateTime(
+      json,
+      'occurrence_start_at',
+      'ReminderResponse',
+      wholeSecond: true,
+    );
+    final advanceMinutes = ContractValue.optionalInteger(
+      json,
+      'advance_minutes',
+      'ReminderResponse',
+      minimum: 0,
+    );
+    final targetType = ReminderTargetType.fromWireValue(
+      ContractValue.nonEmptyString(json, 'target_type', 'ReminderResponse'),
+    );
+    final recurringIdentity =
+        recurrenceRevision != null &&
+        occurrenceKey != null &&
+        occurrenceStartAt != null;
+    final ordinaryIdentity =
+        recurrenceRevision == null &&
+        occurrenceKey == null &&
+        occurrenceStartAt == null;
+    if (!(recurringIdentity || ordinaryIdentity) ||
+        (recurringIdentity &&
+            (targetType != ReminderTargetType.event ||
+                advanceMinutes == null ||
+                methods.length != 1 ||
+                methods.single != ReminderMethod.popup))) {
       throw const FormatException(
-        'ReminderResponse.methods must contain unique values.',
+        'ReminderResponse recurrence identity is invalid.',
       );
     }
 
+    final isEnabled = ContractValue.boolean(
+      json,
+      'is_enabled',
+      'ReminderResponse',
+    );
+    final rawExpirationReason = ContractValue.optionalString(
+      json,
+      'expiration_reason',
+      'ReminderResponse',
+    );
+    final expirationReason = rawExpirationReason == null
+        ? null
+        : ReminderExpirationReason.fromWireValue(rawExpirationReason);
+    final expiredAt = ContractValue.optionalUtcDateTime(
+      json,
+      'expired_at',
+      'ReminderResponse',
+    );
+    if (status == ReminderStatus.expired) {
+      if (isEnabled ||
+          json['scheduled_at'] != null ||
+          expirationReason != ReminderExpirationReason.recoveryWindowElapsed ||
+          expiredAt == null) {
+        throw const FormatException(
+          'Expired ReminderResponse fields are inconsistent.',
+        );
+      }
+    } else if (expirationReason != null || expiredAt != null) {
+      throw const FormatException(
+        'Non-expired ReminderResponse cannot contain expiration fields.',
+      );
+    }
+
+    final rawCancellationReason = ContractValue.optionalString(
+      json,
+      'last_cancellation_reason',
+      'ReminderResponse',
+    );
     return ReminderResponseDto(
-      id: _readNonEmptyString(json, 'id'),
-      targetType: ReminderTargetType.fromWireValue(
-        _readNonEmptyString(json, 'target_type'),
+      reminderId: ContractValue.nonEmptyString(
+        json,
+        'reminder_id',
+        'ReminderResponse',
       ),
-      targetId: _readNonEmptyString(json, 'target_id'),
-      remindAt: _readDateTime(json, 'remind_at'),
+      targetType: targetType,
+      targetId: ContractValue.nonEmptyString(
+        json,
+        'target_id',
+        'ReminderResponse',
+      ),
+      recurrenceRevision: recurrenceRevision,
+      occurrenceKey: occurrenceKey,
+      occurrenceStartAt: occurrenceStartAt,
+      remindAt: ContractValue.utcDateTime(
+        json,
+        'remind_at',
+        'ReminderResponse',
+      ),
       methods: methods,
-      advanceMinutes: _readOptionalNonNegativeInt(json, 'advance_minutes'),
-      message: _readOptionalString(json, 'message'),
-      isEnabled: _readBool(json, 'is_enabled'),
-      status: ReminderStatus.fromWireValue(_readNonEmptyString(json, 'status')),
-      scheduledAt: _readOptionalDateTime(json, 'scheduled_at'),
-      lastTriggeredAt: _readOptionalDateTime(json, 'last_triggered_at'),
-      failureReason: _readOptionalString(json, 'failure_reason'),
-      cancellationReason: _readCancellationReason(json),
-      createdAt: _readDateTime(json, 'created_at'),
-      updatedAt: _readDateTime(json, 'updated_at'),
-      deletedAt: _readOptionalDateTime(json, 'deleted_at'),
-    );
-  }
-
-  static String _readNonEmptyString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is String && value.isNotEmpty) {
-      return value;
-    }
-    throw FormatException('ReminderResponse.$key must be non-empty string.');
-  }
-
-  static String? _readOptionalString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value == null) {
-      return null;
-    }
-    if (value is String) {
-      return value;
-    }
-    throw FormatException('ReminderResponse.$key must be string or null.');
-  }
-
-  static String? _readCancellationReason(Map<String, dynamic> json) {
-    final value = _readOptionalString(json, 'cancellation_reason');
-    if (value == null) {
-      return null;
-    }
-    const allowed = {'user_cancelled', 'event_completed'};
-    if (allowed.contains(value)) {
-      return value;
-    }
-    throw const FormatException(
-      'ReminderResponse.cancellation_reason is invalid.',
-    );
-  }
-
-  static List<String> _readStringList(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is List && value.every((item) => item is String)) {
-      return value.cast<String>();
-    }
-    throw FormatException('ReminderResponse.$key must be string array.');
-  }
-
-  static int? _readOptionalNonNegativeInt(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) {
-      return null;
-    }
-    if (value is int && value >= 0) {
-      return value;
-    }
-    throw FormatException(
-      'ReminderResponse.$key must be non-negative integer or null.',
-    );
-  }
-
-  static bool _readBool(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is bool) {
-      return value;
-    }
-    throw FormatException('ReminderResponse.$key must be bool.');
-  }
-
-  static DateTime _readDateTime(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is String) {
-      return DateTime.parse(value);
-    }
-    throw FormatException('ReminderResponse.$key must be date-time string.');
-  }
-
-  static DateTime? _readOptionalDateTime(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) {
-      return null;
-    }
-    if (value is String) {
-      return DateTime.parse(value);
-    }
-    throw FormatException(
-      'ReminderResponse.$key must be date-time string or null.',
+      advanceMinutes: advanceMinutes,
+      message: ContractValue.optionalString(
+        json,
+        'message',
+        'ReminderResponse',
+      ),
+      isEnabled: isEnabled,
+      status: status,
+      scheduledAt: ContractValue.optionalUtcDateTime(
+        json,
+        'scheduled_at',
+        'ReminderResponse',
+      ),
+      lastTriggeredAt: ContractValue.optionalUtcDateTime(
+        json,
+        'last_triggered_at',
+        'ReminderResponse',
+      ),
+      failureReason: ContractValue.optionalString(
+        json,
+        'failure_reason',
+        'ReminderResponse',
+      ),
+      lastCancellationReason: rawCancellationReason == null
+          ? null
+          : ReminderCancellationReason.fromWireValue(rawCancellationReason),
+      lastCancelledAt: ContractValue.optionalUtcDateTime(
+        json,
+        'last_cancelled_at',
+        'ReminderResponse',
+      ),
+      expirationReason: expirationReason,
+      expiredAt: expiredAt,
+      reactivatedAt: ContractValue.optionalUtcDateTime(
+        json,
+        'reactivated_at',
+        'ReminderResponse',
+      ),
+      reactivationCount: ContractValue.integer(
+        json,
+        'reactivation_count',
+        'ReminderResponse',
+        minimum: 0,
+      ),
+      createdAt: ContractValue.utcDateTime(
+        json,
+        'created_at',
+        'ReminderResponse',
+      ),
+      updatedAt: ContractValue.utcDateTime(
+        json,
+        'updated_at',
+        'ReminderResponse',
+      ),
+      deletedAt: ContractValue.optionalUtcDateTime(
+        json,
+        'deleted_at',
+        'ReminderResponse',
+      ),
     );
   }
 }

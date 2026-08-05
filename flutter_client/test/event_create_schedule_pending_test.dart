@@ -22,6 +22,32 @@ import 'fixtures/notification_fixtures.dart';
 import 'fixtures/reminder_fixtures.dart';
 
 void main() {
+  test('timed Event DTOs reject unresolved local DateTime values', () {
+    final localStart = DateTime(2026, 7, 5, 10);
+    final localEnd = DateTime(2026, 7, 5, 11);
+
+    expect(
+      () => CreateEventRequestDto.timed(
+        title: 'Meeting',
+        startAt: localStart,
+        endAt: localEnd,
+        timezone: 'Europe/London',
+        source: 'manual',
+      ).toJson(),
+      throwsFormatException,
+    );
+    expect(
+      () => UpdateEventRequestDto(
+        id: 'event-1',
+        startAt: localStart,
+        endAt: localEnd,
+        isAllDay: false,
+        timezone: 'Europe/London',
+      ).toJson(),
+      throwsFormatException,
+    );
+  });
+
   test(
     'successful event mutation reconciles the durable reminder queue',
     () async {
@@ -65,11 +91,7 @@ void main() {
       );
 
       await complete.execute(
-        CompleteEventRequestDto(
-          eventId: 'event-1',
-          completedAt: DateTime.utc(2026, 7, 5, 12),
-          source: 'manual',
-        ),
+        const CompleteEventRequestDto(eventId: 'event-1', source: 'manual'),
       );
       await reopen.execute(const ReopenEventRequestDto(eventId: 'event-1'));
 
@@ -150,6 +172,7 @@ CreateEventRequestDto _createRequest() => CreateEventRequestDto(
   startAt: DateTime.utc(2026, 7, 5, 10),
   endAt: DateTime.utc(2026, 7, 5, 11),
   isAllDay: false,
+  timezone: 'Asia/Shanghai',
   source: 'manual',
 );
 
@@ -179,10 +202,15 @@ class _EventGateway implements EventNativeGateway {
     title: title,
     startAt: DateTime.utc(2026, 7, 5, 10),
     endAt: DateTime.utc(2026, 7, 5, 11),
+    startDate: null,
+    endDate: null,
     isAllDay: false,
     hasRecurrence: false,
     status: status,
     completedAt: completedAt,
+    recurrenceId: null,
+    recurrenceRevision: null,
+    timezone: 'Asia/Shanghai',
     source: 'manual',
     createdAt: DateTime.utc(2026, 7, 5),
     updatedAt: DateTime.utc(2026, 7, 5),
@@ -195,7 +223,7 @@ class _EventGateway implements EventNativeGateway {
     _event(
       title: 'Meeting',
       status: 'completed',
-      completedAt: request.completedAt,
+      completedAt: DateTime.utc(2026, 7, 5, 12),
     ),
   );
   @override
@@ -206,4 +234,7 @@ class _EventGateway implements EventNativeGateway {
   Future<NativeInvocation<EventResponseDto>> reopenEvent(
     ReopenEventRequestDto request,
   ) async => successInvocation(_event(title: 'Meeting'));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

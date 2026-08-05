@@ -3,7 +3,6 @@ import 'package:excellent_calendar/native_contract/reminder/cancel_reminder_requ
 import 'package:excellent_calendar/native_contract/reminder/create_reminder_request_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/reminder_response_dto.dart';
 import 'package:excellent_calendar/native_contract/reminder/reconcile_reminder_schedule_dto.dart';
-import 'package:excellent_calendar/native_contract/reminder/schedule_pending_reminders_dto.dart';
 import 'package:excellent_calendar/native_contract/shared/native_invocation.dart';
 
 typedef CreateReminderHandler =
@@ -13,10 +12,6 @@ typedef CreateReminderHandler =
 typedef CancelReminderHandler =
     Future<NativeInvocation<ReminderResponseDto>> Function(
       CancelReminderRequestDto request,
-    );
-typedef SchedulePendingRemindersHandler =
-    Future<NativeInvocation<SchedulePendingRemindersResponseDto>> Function(
-      SchedulePendingRemindersRequestDto request,
     );
 typedef ReconcileReminderScheduleHandler =
     Future<NativeInvocation<ReconcileReminderScheduleResponseDto>> Function(
@@ -29,22 +24,18 @@ class FakeReminderGateway implements ReminderNativeGateway {
   FakeReminderGateway({
     required this.onCreate,
     required this.onCancel,
-    this.onSchedulePending,
     this.onReconcileSchedule,
   });
 
   final CreateReminderHandler onCreate;
   final CancelReminderHandler onCancel;
-  final SchedulePendingRemindersHandler? onSchedulePending;
   final ReconcileReminderScheduleHandler? onReconcileSchedule;
 
   var createCallCount = 0;
   var cancelCallCount = 0;
-  var schedulePendingCallCount = 0;
   var reconcileScheduleCallCount = 0;
   CreateReminderRequestDto? lastCreateRequest;
   CancelReminderRequestDto? lastCancelRequest;
-  SchedulePendingRemindersRequestDto? lastSchedulePendingRequest;
   ReconcileReminderScheduleRequestDto? lastReconcileScheduleRequest;
 
   @override
@@ -66,19 +57,6 @@ class FakeReminderGateway implements ReminderNativeGateway {
   }
 
   @override
-  Future<NativeInvocation<SchedulePendingRemindersResponseDto>> schedulePending(
-    SchedulePendingRemindersRequestDto request,
-  ) {
-    schedulePendingCallCount += 1;
-    lastSchedulePendingRequest = request;
-    final handler = onSchedulePending;
-    if (handler == null) {
-      throw StateError('onSchedulePending is not configured for this test.');
-    }
-    return handler(request);
-  }
-
-  @override
   Future<NativeInvocation<ReconcileReminderScheduleResponseDto>>
   reconcileSchedule(ReconcileReminderScheduleRequestDto request) {
     reconcileScheduleCallCount += 1;
@@ -89,4 +67,7 @@ class FakeReminderGateway implements ReminderNativeGateway {
     }
     return handler(request);
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

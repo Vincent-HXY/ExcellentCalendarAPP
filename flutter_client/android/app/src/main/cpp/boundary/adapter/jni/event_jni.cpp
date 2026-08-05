@@ -263,6 +263,8 @@ jstring call_boundary_v2(JNIEnv* env, jstring input, std::string (*function)(std
   }
 
 CALENDAR_V2_JNI(nativeInitializeRuntimeV2, initialize_runtime_v2_json)
+CALENDAR_V2_JNI(nativeResolveLocalDateTimeV2, resolve_local_datetime_v2)
+CALENDAR_V2_JNI(nativeLocalizeInstantsV2, localize_instants_v2)
 CALENDAR_V2_JNI(nativeCreateEventV2, create_event_v2)
 CALENDAR_V2_JNI(nativeUpdateEventV2, update_event_v2)
 CALENDAR_V2_JNI(nativeDeleteEventV2, delete_event_v2)

@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import '../../gateway_interfaces/reminder_native_gateway.dart';
 import '../../native_contract/reminder/cancel_reminder_request_dto.dart';
 import '../../native_contract/reminder/create_reminder_request_dto.dart';
+import '../../native_contract/reminder/list_reminders_request_dto.dart';
 import '../../native_contract/reminder/reminder_mapper.dart';
+import '../../native_contract/reminder/reminder_list_response_dto.dart';
 import '../../native_contract/reminder/reminder_response_dto.dart';
 import '../../native_contract/reminder/reconcile_reminder_schedule_dto.dart';
-import '../../native_contract/reminder/schedule_pending_reminders_dto.dart';
+import '../../native_contract/reminder/update_reminder_request_dto.dart';
 import '../../native_contract/shared/native_invocation.dart';
 import 'native_method_channel_contract.dart';
 import 'native_method_channel_invoker.dart';
@@ -43,20 +45,24 @@ class MethodChannelReminderAdapter implements ReminderNativeGateway {
   }
 
   @override
-  Future<NativeInvocation<SchedulePendingRemindersResponseDto>> schedulePending(
-    SchedulePendingRemindersRequestDto request,
+  Future<NativeInvocation<ReminderResponseDto>> updateReminder(
+    UpdateReminderRequestDto request,
   ) {
-    return _invoker.invoke<SchedulePendingRemindersResponseDto>(
-      method: NativeReminderMethods.schedulePending,
+    return _invoker.invoke<ReminderResponseDto>(
+      method: NativeReminderMethods.update,
       arguments: request.toJson(),
-      parseData: (rawData) {
-        if (rawData is! Map<String, dynamic>) {
-          throw const FormatException(
-            'SchedulePendingRemindersResponse data must be object.',
-          );
-        }
-        return SchedulePendingRemindersResponseDto.fromJson(rawData);
-      },
+      parseData: ReminderMapper.responseFromNativeData,
+    );
+  }
+
+  @override
+  Future<NativeInvocation<ReminderListResponseDto>> listReminders(
+    ListRemindersRequestDto request,
+  ) {
+    return _invoker.invoke<ReminderListResponseDto>(
+      method: NativeReminderMethods.list,
+      arguments: request.toJson(),
+      parseData: ReminderMapper.listResponseFromNativeData,
     );
   }
 

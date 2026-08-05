@@ -14,6 +14,26 @@ calls:
       envelope: common/native_result.schema.json
       data: runtime/initialize_runtime_response.schema.json
 
+  runtime.resolve_local_datetime:
+    module: runtime
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: runtime/resolve_local_datetime_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: runtime/resolve_local_datetime_response.schema.json
+
+  runtime.localize_instants:
+    module: runtime
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: runtime/localize_instants_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: runtime/localize_instants_response.schema.json
+
   event.create:
     module: event
     visibility: internal

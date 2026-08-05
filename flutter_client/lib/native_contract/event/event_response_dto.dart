@@ -1,4 +1,4 @@
-import '../shared/contract_json_object.dart';
+import '../shared/contract_value.dart';
 
 class EventResponseDto {
   const EventResponseDto({
@@ -6,179 +6,225 @@ class EventResponseDto {
     required this.title,
     required this.startAt,
     required this.endAt,
+    required this.startDate,
+    required this.endDate,
     required this.isAllDay,
     required this.hasRecurrence,
     required this.status,
+    required this.recurrenceId,
+    required this.recurrenceRevision,
+    required this.timezone,
     required this.source,
     required this.createdAt,
     required this.updatedAt,
     this.content,
-    this.recurrenceId,
+    this.completedAt,
     this.categoryId,
     this.importance,
     this.location,
-    this.timezone,
-    this.completedAt,
     this.deletedAt,
   });
+
+  static const _keys = {
+    'id',
+    'title',
+    'content',
+    'start_at',
+    'end_at',
+    'start_date',
+    'end_date',
+    'is_all_day',
+    'has_recurrence',
+    'status',
+    'completed_at',
+    'recurrence_id',
+    'recurrence_revision',
+    'category_id',
+    'importance',
+    'location',
+    'timezone',
+    'source',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+  };
+  static const _statuses = {'active', 'completed', 'cancelled', 'archived'};
+  static const _importanceValues = {
+    'unimportant_noturgent',
+    'important_noturgent',
+    'unimportant_urgent',
+    'important_urgent',
+  };
+  static const _sourceValues = {
+    'manual',
+    'ai_extraction',
+    'sync',
+    'import',
+    'wechat',
+  };
 
   final String id;
   final String title;
   final String? content;
-  final DateTime startAt;
-  final DateTime endAt;
+  final DateTime? startAt;
+  final DateTime? endAt;
+  final String? startDate;
+  final String? endDate;
   final bool isAllDay;
   final bool hasRecurrence;
   final String status;
   final DateTime? completedAt;
   final String? recurrenceId;
+  final int? recurrenceRevision;
   final String? categoryId;
   final String? importance;
   final String? location;
-  final String? timezone;
+  final String timezone;
   final String source;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
+  DateTime get displayStartAt =>
+      startAt ??
+      ContractValue.localDateAsDateTime(
+        startDate!,
+        field: 'EventResponse.start_date',
+      );
+
+  DateTime get displayEndAt =>
+      endAt ??
+      ContractValue.localDateAsDateTime(
+        endDate!,
+        field: 'EventResponse.end_date',
+      );
+
   factory EventResponseDto.fromJson(Map<String, dynamic> json) {
-    ContractJsonObject.rejectUnknownKeys(json, {
-      'id',
-      'title',
-      'content',
+    ContractValue.requireExactKeys(json, _keys, 'EventResponse');
+    final isAllDay = ContractValue.boolean(json, 'is_all_day', 'EventResponse');
+    final startAt = ContractValue.optionalUtcDateTime(
+      json,
       'start_at',
+      'EventResponse',
+      wholeSecond: true,
+    );
+    final endAt = ContractValue.optionalUtcDateTime(
+      json,
       'end_at',
-      'is_all_day',
+      'EventResponse',
+      wholeSecond: true,
+    );
+    final startDate = ContractValue.optionalLocalDate(
+      json,
+      'start_date',
+      'EventResponse',
+    );
+    final endDate = ContractValue.optionalLocalDate(
+      json,
+      'end_date',
+      'EventResponse',
+    );
+    if (isAllDay) {
+      if (startAt != null ||
+          endAt != null ||
+          startDate == null ||
+          endDate == null ||
+          !ContractValue.localDateAsDateTime(
+            startDate,
+            field: 'EventResponse.start_date',
+          ).isBefore(
+            ContractValue.localDateAsDateTime(
+              endDate,
+              field: 'EventResponse.end_date',
+            ),
+          )) {
+        throw const FormatException('EventResponse all-day shape is invalid.');
+      }
+    } else if (startAt == null ||
+        endAt == null ||
+        startDate != null ||
+        endDate != null ||
+        !startAt.isBefore(endAt)) {
+      throw const FormatException('EventResponse timed shape is invalid.');
+    }
+
+    final hasRecurrence = ContractValue.boolean(
+      json,
       'has_recurrence',
-      'status',
-      'completed_at',
+      'EventResponse',
+    );
+    final recurrenceId = ContractValue.optionalString(
+      json,
       'recurrence_id',
-      'category_id',
-      'importance',
-      'location',
-      'timezone',
-      'source',
-      'created_at',
-      'updated_at',
-      'deleted_at',
-    }, 'EventResponse');
-    ContractJsonObject.requireKeys(json, {
-      'id',
-      'title',
-      'start_at',
-      'end_at',
-      'is_all_day',
-      'has_recurrence',
+      'EventResponse',
+    );
+    final recurrenceRevision = ContractValue.optionalInteger(
+      json,
+      'recurrence_revision',
+      'EventResponse',
+      minimum: 1,
+    );
+    if (hasRecurrence != (recurrenceId != null && recurrenceRevision != null)) {
+      throw const FormatException(
+        'EventResponse recurrence identity is inconsistent.',
+      );
+    }
+
+    final status = ContractValue.nonEmptyString(
+      json,
       'status',
-      'source',
-      'created_at',
-      'updated_at',
-    }, 'EventResponse');
-
-    final importance = _readOptionalString(json, 'importance');
+      'EventResponse',
+    );
+    ContractValue.validateEnum(status, _statuses, 'EventStatus');
+    final importance = ContractValue.optionalString(
+      json,
+      'importance',
+      'EventResponse',
+    );
     if (importance != null) {
-      _validateImportance(importance);
+      ContractValue.validateEnum(importance, _importanceValues, 'Importance');
     }
-    final source = _readString(json, 'source');
-    _validateSource(source);
-    final status = _readString(json, 'status');
-    _validateEventStatus(status);
+    final source = ContractValue.nonEmptyString(
+      json,
+      'source',
+      'EventResponse',
+    );
+    ContractValue.validateEnum(source, _sourceValues, 'DataSource');
+
     return EventResponseDto(
-      id: _readString(json, 'id'),
-      title: _readString(json, 'title'),
-      content: _readOptionalString(json, 'content'),
-      startAt: _readDateTime(json, 'start_at'),
-      endAt: _readDateTime(json, 'end_at'),
-      isAllDay: _readBool(json, 'is_all_day'),
-      hasRecurrence: _readBool(json, 'has_recurrence'),
+      id: ContractValue.nonEmptyString(json, 'id', 'EventResponse'),
+      title: ContractValue.nonEmptyString(json, 'title', 'EventResponse'),
+      content: ContractValue.optionalString(json, 'content', 'EventResponse'),
+      startAt: startAt,
+      endAt: endAt,
+      startDate: startDate,
+      endDate: endDate,
+      isAllDay: isAllDay,
+      hasRecurrence: hasRecurrence,
       status: status,
-      completedAt: _readOptionalDateTime(json, 'completed_at'),
-      recurrenceId: _readOptionalString(json, 'recurrence_id'),
-      categoryId: _readOptionalString(json, 'category_id'),
+      completedAt: ContractValue.optionalUtcDateTime(
+        json,
+        'completed_at',
+        'EventResponse',
+      ),
+      recurrenceId: recurrenceId,
+      recurrenceRevision: recurrenceRevision,
+      categoryId: ContractValue.optionalString(
+        json,
+        'category_id',
+        'EventResponse',
+      ),
       importance: importance,
-      location: _readOptionalString(json, 'location'),
-      timezone: _readOptionalString(json, 'timezone'),
+      location: ContractValue.optionalString(json, 'location', 'EventResponse'),
+      timezone: ContractValue.nonEmptyString(json, 'timezone', 'EventResponse'),
       source: source,
-      createdAt: _readDateTime(json, 'created_at'),
-      updatedAt: _readDateTime(json, 'updated_at'),
-      deletedAt: _readOptionalDateTime(json, 'deleted_at'),
+      createdAt: ContractValue.utcDateTime(json, 'created_at', 'EventResponse'),
+      updatedAt: ContractValue.utcDateTime(json, 'updated_at', 'EventResponse'),
+      deletedAt: ContractValue.optionalUtcDateTime(
+        json,
+        'deleted_at',
+        'EventResponse',
+      ),
     );
-  }
-
-  static String _readString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is String && value.isNotEmpty) {
-      return value;
-    }
-    throw FormatException('EventResponse.$key must be non-empty string.');
-  }
-
-  static String? _readOptionalString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value == null) {
-      return null;
-    }
-    if (value is String) {
-      return value;
-    }
-    throw FormatException('EventResponse.$key must be string or null.');
-  }
-
-  static bool _readBool(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is bool) {
-      return value;
-    }
-    throw FormatException('EventResponse.$key must be bool.');
-  }
-
-  static DateTime _readDateTime(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is String) {
-      return DateTime.parse(value);
-    }
-    throw FormatException('EventResponse.$key must be date-time string.');
-  }
-
-  static DateTime? _readOptionalDateTime(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) {
-      return null;
-    }
-    if (value is String) {
-      return DateTime.parse(value);
-    }
-    throw FormatException(
-      'EventResponse.$key must be date-time string or null.',
-    );
-  }
-
-  static void _validateImportance(String value) {
-    const allowed = {
-      'unimportant_noturgent',
-      'important_noturgent',
-      'unimportant_urgent',
-      'important_urgent',
-    };
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown Importance: $value');
-    }
-  }
-
-  static void _validateSource(String value) {
-    const allowed = {'manual', 'ai_extraction', 'sync', 'import', 'wechat'};
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown DataSource: $value');
-    }
-  }
-
-  static void _validateEventStatus(String value) {
-    const allowed = {'active', 'completed', 'cancelled', 'archived'};
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown EventStatus: $value');
-    }
   }
 }

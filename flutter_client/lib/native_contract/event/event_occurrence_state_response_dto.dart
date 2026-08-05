@@ -1,138 +1,108 @@
-import '../shared/contract_json_object.dart';
+import '../shared/contract_value.dart';
 
 class EventOccurrenceStateResponseDto {
   const EventOccurrenceStateResponseDto({
-    required this.id,
     required this.eventId,
+    required this.recurrenceRevision,
+    required this.occurrenceKey,
     required this.occurrenceStartAt,
+    required this.occurrenceStartDate,
     required this.status,
-    required this.source,
+    required this.stateChangedAt,
+    required this.reopenedAt,
     required this.createdAt,
     required this.updatedAt,
-    this.completedAt,
-    this.note,
-    this.deletedAt,
   });
 
-  final String id;
+  static const _keys = {
+    'event_id',
+    'recurrence_revision',
+    'occurrence_key',
+    'occurrence_start_at',
+    'occurrence_start_date',
+    'status',
+    'state_changed_at',
+    'reopened_at',
+    'created_at',
+    'updated_at',
+  };
+  static const _statuses = {'scheduled', 'completed', 'skipped', 'cancelled'};
+
   final String eventId;
-  final DateTime occurrenceStartAt;
+  final int recurrenceRevision;
+  final String occurrenceKey;
+  final DateTime? occurrenceStartAt;
+  final String? occurrenceStartDate;
   final String status;
-  final DateTime? completedAt;
-  final String? note;
-  final String source;
+  final DateTime stateChangedAt;
+  final DateTime? reopenedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final DateTime? deletedAt;
 
   factory EventOccurrenceStateResponseDto.fromJson(Map<String, dynamic> json) {
-    ContractJsonObject.rejectUnknownKeys(json, {
-      'id',
-      'event_id',
+    ContractValue.requireExactKeys(json, _keys, 'EventOccurrenceStateResponse');
+    final occurrenceStartAt = ContractValue.optionalUtcDateTime(
+      json,
       'occurrence_start_at',
+      'EventOccurrenceStateResponse',
+      wholeSecond: true,
+    );
+    final occurrenceStartDate = ContractValue.optionalLocalDate(
+      json,
+      'occurrence_start_date',
+      'EventOccurrenceStateResponse',
+    );
+    if ((occurrenceStartAt == null) == (occurrenceStartDate == null)) {
+      throw const FormatException(
+        'EventOccurrenceStateResponse must contain exactly one start shape.',
+      );
+    }
+    final status = ContractValue.nonEmptyString(
+      json,
       'status',
-      'completed_at',
-      'note',
-      'source',
-      'created_at',
-      'updated_at',
-      'deleted_at',
-    }, 'EventOccurrenceStateResponse');
-    ContractJsonObject.requireKeys(json, {
-      'id',
-      'event_id',
-      'occurrence_start_at',
-      'status',
-      'source',
-      'created_at',
-      'updated_at',
-    }, 'EventOccurrenceStateResponse');
-
-    final status = _readString(json, 'status');
-    _validateStatus(status);
-    final source = _readString(json, 'source');
-    _validateSource(source);
+      'EventOccurrenceStateResponse',
+    );
+    ContractValue.validateEnum(status, _statuses, 'EventOccurrenceStatus');
     return EventOccurrenceStateResponseDto(
-      id: _readString(json, 'id'),
-      eventId: _readString(json, 'event_id'),
-      occurrenceStartAt: _readDateTime(json, 'occurrence_start_at'),
+      eventId: ContractValue.nonEmptyString(
+        json,
+        'event_id',
+        'EventOccurrenceStateResponse',
+      ),
+      recurrenceRevision: ContractValue.integer(
+        json,
+        'recurrence_revision',
+        'EventOccurrenceStateResponse',
+        minimum: 1,
+      ),
+      occurrenceKey: ContractValue.nonEmptyString(
+        json,
+        'occurrence_key',
+        'EventOccurrenceStateResponse',
+      ),
+      occurrenceStartAt: occurrenceStartAt,
+      occurrenceStartDate: occurrenceStartDate,
       status: status,
-      completedAt: _readOptionalDateTime(json, 'completed_at'),
-      note: _readOptionalString(json, 'note'),
-      source: source,
-      createdAt: _readDateTime(json, 'created_at'),
-      updatedAt: _readDateTime(json, 'updated_at'),
-      deletedAt: _readOptionalDateTime(json, 'deleted_at'),
+      stateChangedAt: ContractValue.utcDateTime(
+        json,
+        'state_changed_at',
+        'EventOccurrenceStateResponse',
+      ),
+      reopenedAt: ContractValue.optionalUtcDateTime(
+        json,
+        'reopened_at',
+        'EventOccurrenceStateResponse',
+      ),
+      createdAt: ContractValue.utcDateTime(
+        json,
+        'created_at',
+        'EventOccurrenceStateResponse',
+      ),
+      updatedAt: ContractValue.utcDateTime(
+        json,
+        'updated_at',
+        'EventOccurrenceStateResponse',
+      ),
     );
-  }
-
-  static String _readString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is String && value.isNotEmpty) {
-      return value;
-    }
-    throw FormatException(
-      'EventOccurrenceStateResponse.$key must be non-empty string.',
-    );
-  }
-
-  static String? _readOptionalString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value == null) {
-      return null;
-    }
-    if (value is String) {
-      return value;
-    }
-    throw FormatException(
-      'EventOccurrenceStateResponse.$key must be string or null.',
-    );
-  }
-
-  static DateTime _readDateTime(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is String) {
-      return DateTime.parse(value);
-    }
-    throw FormatException(
-      'EventOccurrenceStateResponse.$key must be date-time string.',
-    );
-  }
-
-  static DateTime? _readOptionalDateTime(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) {
-      return null;
-    }
-    if (value is String) {
-      return DateTime.parse(value);
-    }
-    throw FormatException(
-      'EventOccurrenceStateResponse.$key must be date-time string or null.',
-    );
-  }
-
-  static void _validateStatus(String value) {
-    const allowed = {'completed', 'skipped', 'cancelled'};
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown EventOccurrenceStatus: $value');
-    }
-  }
-
-  static void _validateSource(String value) {
-    const allowed = {
-      'manual',
-      'auto',
-      'ai_extraction',
-      'sync',
-      'import',
-      'wechat',
-    };
-    if (!allowed.contains(value)) {
-      throw FormatException('Unknown DataSource: $value');
-    }
   }
 }

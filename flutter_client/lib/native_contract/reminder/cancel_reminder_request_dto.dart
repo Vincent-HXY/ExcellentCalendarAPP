@@ -1,15 +1,14 @@
 class CancelReminderRequestDto {
-  const CancelReminderRequestDto({required this.id, this.reason});
+  const CancelReminderRequestDto({required this.reminderId});
 
-  final String id;
-  final String? reason;
+  final String reminderId;
 
   Map<String, dynamic> toJson() {
-    if (id.trim().isEmpty) {
+    if (reminderId.trim().isEmpty) {
       throw const FormatException(
-        'CancelReminderRequest.id must be non-empty.',
+        'CancelReminderRequest.reminder_id must be non-empty.',
       );
     }
-    return {'id': id, 'reason': reason};
+    return {'reminder_id': reminderId};
   }
 }

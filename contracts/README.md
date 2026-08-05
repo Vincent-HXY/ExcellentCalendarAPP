@@ -25,26 +25,27 @@
 2. 枚举值统一使用字符串，不使用数字枚举。
 3. 精确时间点使用 ISO 8601 UTC 字符串，例如 `2026-06-06T10:00:00Z`。
 4. 本地日期使用 `YYYY-MM-DD` 字符串，例如 `2026-06-06`。
-5. Flutter ↔ Kotlin 和 Kotlin ↔ C++ 使用 `NativeResult<T>`；Flutter ↔ Backend 使用独立的 `ApiResult<T>`，不得混用两种版本域。
-6. 两种返回外壳都要求 `ok = true` 时 `error = null`。
-7. 两种返回外壳都要求 `ok = false` 时 `data = null`，且 `error.code` 必须来自 `error_codes.yaml`。
-8. `EventResponse` 不直接嵌入 `Reminder`；详情页聚合数据使用 `EventDetailResponse`。四个时间字段必须全部出现，未启用的一组显式为 `null`。
-9. `Event.status` 只表示整个 Event 或整个重复系列的生命周期；重复日程单次 occurrence 状态使用 `EventOccurrenceStateResponse`。
-10. `Reminder` 是未来要执行的提醒任务，`Notification` 是投递结果日志，二者不能混用。
-11. `Habit` 只描述习惯定义，`HabitCheckIn` 才是完成记录和统计来源。
-12. 独立创建 Reminder 必须使用 `CreateReminderRequest` 且包含 `target_id`；嵌入父对象创建流程时使用 `ReminderDraftRequest`。
-13. `CreateReminderRequest` 和 `ReminderDraftRequest` 只能创建 `is_enabled = true` 的新 Reminder。修改已有 Reminder 必须使用 `reminder.update`；后续更新或取消可以使持久化的 `is_enabled` 变为 `false`。
-14. Event recurrence 客户端输入固定使用 `EventRecurrenceRuleInput`；Habit/Anniversary 的计划态规则不得被解释为 Event v2 规则。
-15. 重复 Event 的 occurrence 和滚动 Reminder 身份只能由 C++ 按 `identity.yaml` 生成；Dart/Kotlin 只透传。
-16. Notification 必须走 `reminder.prepare_delivery` / `reminder.finalize_delivery`；v1 的 `notification.create`、`reminder.consume_after_delivery` 和 `reminder.mark_sent` 不属于 v2。
-17. `finalize_delivery.error_code` 必须来自 `error_codes.yaml`，且 `failure_class` 必须与该错误码的 `retryable` 元数据一致。
-18. Native v2 的 Reminder 主键字段统一为 `reminder_id`；v1 的通用 `id` 不得在 Reminder request/response 或调度游标中继续接受。
-19. `event.update.recurrence` 省略表示保留，传对象表示设置或修改；v2 不接受含义不明确的 `null` 拆系操作。
-20. `prepare_delivery` 返回 `PreparedNotificationPayload`，其中没有 `opened_at`；Android 收到点击后追加非空 `opened_at`，才形成 EventChannel 使用的 `NotificationTapPayload`。
-21. `reminder.mark_scheduled` 必须携带 Kotlin 本次注册所依据的 `expected_remind_at`；C++ 仅在持久化 `remind_at` 仍严格相等时写入 `scheduled`，否则返回可重试的 `REMINDER_SCHEDULE_CONFLICT` 且不得修改 Reminder。
-22. `prepared` Notification 的投递内容和 PendingIntent payload 一经返回即冻结。Recovery 只能通过 `resolved_by_recovery_batch_id` 接管原 attempt，或把它终结为 `abandoned`；禁止改写原 `recovery_batch_id` 来伪造新 payload。
-23. `plan_recovery` 是唯一可写入 `ReminderStatus.expired` 的 workflow：只处理严格早于 72 小时窗口的 open `pending/scheduled` Reminder，原子禁用并清空 `scheduled_at`；重复 Reminder 同一事务保证未来 successor。
-24. occurrence reopen 若遇到同模板的后继滚动 Reminder，必须以 `occurrence_reopened` 暂存后继并恢复原 Reminder；滚动链随后复用确定性 ID，任何时刻同模板最多一条 open Reminder。
+5. 不携带 offset 的本地日期时间只允许用于时区解析请求，格式固定为 `YYYY-MM-DDTHH:mm:ss`；它不是 UTC Instant，禁止直接写入 Event。
+6. Flutter ↔ Kotlin 和 Kotlin ↔ C++ 使用 `NativeResult<T>`；Flutter ↔ Backend 使用独立的 `ApiResult<T>`，不得混用两种版本域。
+7. 两种返回外壳都要求 `ok = true` 时 `error = null`。
+8. 两种返回外壳都要求 `ok = false` 时 `data = null`，且 `error.code` 必须来自 `error_codes.yaml`。
+9. `EventResponse` 不直接嵌入 `Reminder`；详情页聚合数据使用 `EventDetailResponse`。四个时间字段必须全部出现，未启用的一组显式为 `null`。
+10. `Event.status` 只表示整个 Event 或整个重复系列的生命周期；重复日程单次 occurrence 状态使用 `EventOccurrenceStateResponse`。
+11. `Reminder` 是未来要执行的提醒任务，`Notification` 是投递结果日志，二者不能混用。
+12. `Habit` 只描述习惯定义，`HabitCheckIn` 才是完成记录和统计来源。
+13. 独立创建 Reminder 必须使用 `CreateReminderRequest` 且包含 `target_id`；嵌入父对象创建流程时使用 `ReminderDraftRequest`。
+14. `CreateReminderRequest` 和 `ReminderDraftRequest` 只能创建 `is_enabled = true` 的新 Reminder。修改已有 Reminder 必须使用 `reminder.update`；后续更新或取消可以使持久化的 `is_enabled` 变为 `false`。
+15. Event recurrence 客户端输入固定使用 `EventRecurrenceRuleInput`；Habit/Anniversary 的计划态规则不得被解释为 Event v2 规则。
+16. 重复 Event 的 occurrence 和滚动 Reminder 身份只能由 C++ 按 `identity.yaml` 生成；Dart/Kotlin 只透传。
+17. Notification 必须走 `reminder.prepare_delivery` / `reminder.finalize_delivery`；v1 的 `notification.create`、`reminder.consume_after_delivery` 和 `reminder.mark_sent` 不属于 v2。
+18. `finalize_delivery.error_code` 必须来自 `error_codes.yaml`，且 `failure_class` 必须与该错误码的 `retryable` 元数据一致。
+19. Native v2 的 Reminder 主键字段统一为 `reminder_id`；v1 的通用 `id` 不得在 Reminder request/response 或调度游标中继续接受。
+20. `event.update.recurrence` 省略表示保留，传对象表示设置或修改；v2 不接受含义不明确的 `null` 拆系操作。
+21. `prepare_delivery` 返回 `PreparedNotificationPayload`，其中没有 `opened_at`；Android 收到点击后追加非空 `opened_at`，才形成 EventChannel 使用的 `NotificationTapPayload`。
+22. `reminder.mark_scheduled` 必须携带 Kotlin 本次注册所依据的 `expected_remind_at`；C++ 仅在持久化 `remind_at` 仍严格相等时写入 `scheduled`，否则返回可重试的 `REMINDER_SCHEDULE_CONFLICT` 且不得修改 Reminder。
+23. `prepared` Notification 的投递内容和 PendingIntent payload 一经返回即冻结。Recovery 只能通过 `resolved_by_recovery_batch_id` 接管原 attempt，或把它终结为 `abandoned`；禁止改写原 `recovery_batch_id` 来伪造新 payload。
+24. `plan_recovery` 是唯一可写入 `ReminderStatus.expired` 的 workflow：只处理严格早于 72 小时窗口的 open `pending/scheduled` Reminder，原子禁用并清空 `scheduled_at`；重复 Reminder 同一事务保证未来 successor。
+25. occurrence reopen 若遇到同模板的后继滚动 Reminder，必须以 `occurrence_reopened` 暂存后继并恢复原 Reminder；滚动链随后复用确定性 ID，任何时刻同模板最多一条 open Reminder。
 
 ## Directory
 
@@ -123,6 +124,9 @@ Native Contract 已设计为 breaking v2，Backend API 继续使用独立的 v1�
 - `event.list_occurrences`、`event_occurrence.*` 与 `event.*_series` 同时出现在 MethodChannel 和 JNI 能力图中。
 - `reminder.prepare_delivery`、`reminder.finalize_delivery`、`reminder.plan_recovery` 由 Android 调度服务调用，只出现在 `native_calls.yaml`，不暴露给 Flutter。
 - `runtime.initialize(storage_directory, tzdb_directory)` 只出现在 `native_calls.yaml`。目录由 Kotlin 私有解析，Flutter 不得传入文件系统路径。
+- `runtime.device_timezone` 只出现在 MethodChannel，由 Kotlin 每次读取 Android 当前系统 IANA timezone，不进入 JNI，也不得长期缓存。
+- `runtime.resolve_local_datetime` 与 `runtime.localize_instants` 同时出现在 MethodChannel 和 JNI 能力图中；Flutter 不得用 Dart/设备 offset 代替 C++ 捆绑 TZDB 的解析结果。
+- `runtime.localize_instants` 单次最多接收 400 个 UTC Instant，响应严格保留输入顺序与重复项；任一元素无效时整批失败。
 - `reminder.reconcile_schedule` 是 Kotlin 本地系统能力编排，可以组合多个 JNI workflow；MethodChannel 与 JNI 方法数量无需一一相等。
 
 ### Event recurrence v2
@@ -134,7 +138,7 @@ Native Contract 已设计为 breaking v2，Backend API 继续使用独立的 v1�
 
 ### TZDB 实施门禁
 
-Contract v2 固定返回 `tzdb_version = 2026c`，该版本可从 [IANA Time Zone Database releases](https://www.iana.org/time-zones/releases) 获取。需求中指定的 Howard Hinnant `date v3.0.5` 未出现在 [date 官方 release 列表](https://github.com/HowardHinnant/date/releases)；C++ 实施前必须由项目负责人选择真实 release（当前官方最新为 v3.0.4）或审核过的固定 commit。该依赖决策不由 Contract 静默替换。
+Contract v2 固定返回 `tzdb_version = 2026c`。C++ 已 vendored Howard Hinnant `date v3.0.4`（commit `f94b8f36c6180be0021876c4a397a054fe50c6f2`），并关闭运行时下载、平台 TZDB 回退和 Windows timezone 名称映射；依赖证据记录在 `cpp_core/third_party/date/README.excellent-calendar.md`。
 
 ### v2 影响矩阵
 

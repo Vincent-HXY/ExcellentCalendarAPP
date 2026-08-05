@@ -15,9 +15,12 @@ Map<String, dynamic> reminderResponseJson({
   String? deletedAt,
 }) {
   return {
-    'id': id,
+    'reminder_id': id,
     'target_type': 'event',
     'target_id': 'event-1',
+    'recurrence_revision': null,
+    'occurrence_key': null,
+    'occurrence_start_at': null,
     'remind_at': '2026-06-15T02:00:00.000Z',
     'methods': ['ring', 'popup'],
     'advance_minutes': 15,
@@ -27,7 +30,14 @@ Map<String, dynamic> reminderResponseJson({
     'scheduled_at': status == 'scheduled' ? '2026-06-15T01:00:00.000Z' : null,
     'last_triggered_at': null,
     'failure_reason': failureReason,
-    'cancellation_reason': cancellationReason,
+    'last_cancellation_reason': cancellationReason,
+    'last_cancelled_at': cancellationReason == null
+        ? null
+        : '2026-06-15T01:30:00Z',
+    'expiration_reason': null,
+    'expired_at': null,
+    'reactivated_at': null,
+    'reactivation_count': 0,
     'created_at': '2026-06-15T00:00:00.000Z',
     'updated_at': '2026-06-15T01:00:00.000Z',
     'deleted_at': deletedAt,
@@ -53,7 +63,7 @@ NativeInvocation<ReminderResponseDto> reminderSuccessInvocation({
       deletedAt: deletedAt,
     ),
     'error': null,
-    'contract_version': 1,
+    'contract_version': 2,
     'request_id': requestId,
   };
   return NativeInvocation<ReminderResponseDto>(
@@ -84,7 +94,7 @@ NativeInvocation<ReminderResponseDto> reminderFailureInvocation({
       'details': details,
       'retryable': retryable,
     },
-    'contract_version': 1,
+    'contract_version': 2,
     'request_id': requestId,
   };
   return NativeInvocation<ReminderResponseDto>(

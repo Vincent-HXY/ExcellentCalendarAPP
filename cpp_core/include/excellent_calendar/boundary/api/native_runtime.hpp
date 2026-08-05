@@ -18,6 +18,7 @@
 #include "excellent_calendar/application/recurring_reminder_query_service.hpp"
 #include "excellent_calendar/application/rolling_reminder_service.hpp"
 #include "excellent_calendar/common/result.hpp"
+#include "excellent_calendar/domain/local_time_resolver.hpp"
 
 namespace excellent_calendar::boundary::api {
 
@@ -59,6 +60,8 @@ std::shared_ptr<application::RecurringReminderQueryService>
 current_recurring_reminder_query_service();
 
 std::shared_ptr<application::ReminderServiceV2> current_reminder_service_v2();
+
+std::shared_ptr<domain::LocalTimeResolver> current_local_time_resolver();
 
 common::Error storage_not_initialized_error(std::string operation);
 

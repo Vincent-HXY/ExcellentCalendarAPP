@@ -8,9 +8,11 @@ import 'application/event/create_event_use_case.dart';
 import 'application/event/complete_event_use_case.dart';
 import 'application/event/read_events_use_case.dart';
 import 'application/reminder/reconcile_reminder_schedule_use_case.dart';
+import 'application/timezone/timezone_application_service.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_notification_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_reminder_adapter.dart';
+import 'boundary_adapters/dart_method_channel/method_channel_timezone_adapter.dart';
 import 'presentation/app_notification_host.dart';
 import 'presentation/inbox/inbox_page.dart';
 
@@ -30,12 +32,16 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   late final MethodChannelEventAdapter _eventGateway;
   late final ReconcileReminderScheduleUseCase _reconcileReminderScheduleUseCase;
   late final CreateEventUseCase _createEventUseCase;
+  late final TimezoneApplicationService _timezoneService;
   late final AppNotificationBootstrap _notificationBootstrap;
 
   @override
   void initState() {
     super.initState();
     _eventGateway = MethodChannelEventAdapter();
+    _timezoneService = TimezoneApplicationService(
+      MethodChannelTimezoneAdapter(),
+    );
     final reminderGateway = MethodChannelReminderAdapter();
     _reconcileReminderScheduleUseCase = ReconcileReminderScheduleUseCase(
       reminderGateway,
@@ -63,6 +69,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
           _eventGateway,
           reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
         ),
+        timezoneService: _timezoneService,
       ),
     );
   }

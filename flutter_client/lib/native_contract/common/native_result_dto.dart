@@ -31,6 +31,7 @@ class NativeResultDto<T> {
       'ok',
       'data',
       'error',
+      'contract_version',
     }, 'NativeResult');
 
     final ok = json['ok'];
@@ -42,13 +43,8 @@ class NativeResultDto<T> {
     if (ok is! bool) {
       throw const FormatException('NativeResult.ok must be bool.');
     }
-    if (contractVersion != null && contractVersion is! int) {
-      throw const FormatException(
-        'NativeResult.contract_version must be integer or null.',
-      );
-    }
-    if (contractVersion != null && contractVersion != 1) {
-      throw const FormatException('NativeResult.contract_version must be 1.');
+    if (contractVersion != 2) {
+      throw const FormatException('NativeResult.contract_version must be 2.');
     }
     if (requestId != null && requestId is! String) {
       throw const FormatException(
@@ -66,7 +62,7 @@ class NativeResultDto<T> {
         ok: true,
         data: parseData(rawData),
         error: null,
-        contractVersion: contractVersion as int?,
+        contractVersion: contractVersion as int,
         requestId: requestId as String?,
       );
     }
@@ -86,7 +82,7 @@ class NativeResultDto<T> {
       ok: false,
       data: null,
       error: NativeErrorDto.fromJson(rawError),
-      contractVersion: contractVersion as int?,
+      contractVersion: contractVersion as int,
       requestId: requestId as String?,
     );
   }

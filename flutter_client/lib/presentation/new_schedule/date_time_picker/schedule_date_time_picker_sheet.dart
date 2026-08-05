@@ -110,6 +110,11 @@ class _ScheduleDateTimePickerSheetState
     Navigator.of(context).pop(
       ScheduleDateTimeSelection(
         localDateTime: localDateTime,
+        year: _selectedDate.year,
+        month: _selectedDate.month,
+        day: _selectedDate.day,
+        hour: _selectedTime.hour,
+        minute: _selectedTime.minute,
         timezone: widget.timezone,
         calendarSystem: _calendarSystem,
       ),
