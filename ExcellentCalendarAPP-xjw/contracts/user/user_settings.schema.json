@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/user/user_settings.schema.json",
+  "title": "UserSettings",
+  "description": "Non-sensitive user setting map. Keys use snake_case, values stay flat, and credentials are prohibited.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "maxProperties": 64,
+  "propertyNames": {
+    "pattern": "^[a-z][a-z0-9_]{0,63}$",
+    "not": {
+      "enum": [
+        "password",
+        "password_hash",
+        "access_token",
+        "refresh_token",
+        "token_hash",
+        "verification_code",
+        "link_token",
+        "storage_key"
+      ]
+    }
+  },
+  "patternProperties": {
+    "^[a-z][a-z0-9_]{0,63}$": {
+      "type": ["string", "number", "boolean"]
+    }
+  },
+  "examples": [
+    {
+      "theme": "system",
+      "show_week_numbers": false
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/mark_reminder_failed_request.schema.json",
+  "title": "MarkReminderFailedRequest",
+  "description": "Internal Kotlin-to-C++ payload used when scheduling or delivery of a reminder fails.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "failure_reason"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "failure_reason": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

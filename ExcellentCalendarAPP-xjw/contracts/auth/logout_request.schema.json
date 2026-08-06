@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/logout_request.schema.json",
+  "title": "LogoutRequest",
+  "description": "Idempotently revokes the session associated with a refresh token.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["refresh_token"],
+  "properties": {
+    "refresh_token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 8192,
+      "writeOnly": true
+    }
+  },
+  "examples": [
+    {
+      "refresh_token": "opaque-refresh-token-value-at-least-32-characters"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/reminder_list_response.schema.json",
+  "title": "ReminderListResponse",
+  "description": "Paginated reminder response.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "pagination"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "./reminder_response.schema.json"
+      }
+    },
+    "pagination": {
+      "$ref": "../common/pagination_response.schema.json"
+    }
+  }
+}

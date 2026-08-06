@@ -1,0 +1,203 @@
+version: 1
+bridge: kotlin_jni
+
+calls:
+  event.create:
+    module: event
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: event/create_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+
+  event.update:
+    module: event
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: event/update_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+
+  event.delete:
+    module: event
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: event/delete_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+
+  event.search:
+    module: event
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: event/search_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_list_response.schema.json
+
+  event.detail:
+    module: event
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: event/get_event_detail_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_detail_response.schema.json
+
+  event.complete:
+    module: event
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: event/complete_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+
+  event.reopen:
+    module: event
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: event/reopen_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+
+  reminder.create:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/create_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.update:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/update_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.cancel:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/cancel_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.list:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/list_reminders_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_list_response.schema.json
+
+  reminder.get:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/get_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.list_schedulable:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/list_schedulable_reminders_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/schedulable_reminder_list_response.schema.json
+
+  reminder.mark_scheduled:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/mark_reminder_scheduled_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.mark_sent:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/mark_reminder_sent_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.mark_failed:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/mark_reminder_failed_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.enable:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/enable_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.disable:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/disable_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+
+  reminder.consume_after_delivery:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: reminder/consume_reminder_after_delivery_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/consume_reminder_after_delivery_response.schema.json
+
+  notification.create:
+    module: notification
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    request: notification/create_notification_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_response.schema.json

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/notification/request_notification_permission_response.schema.json",
+  "title": "RequestNotificationPermissionResponse",
+  "description": "Fresh Android permission state after a user-initiated permission request or settings redirect.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notification_permission",
+    "exact_alarm_permission",
+    "can_post_notifications",
+    "can_schedule_exact_alarms",
+    "should_open_settings"
+  ],
+  "properties": {
+    "notification_permission": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "permanently_denied", "unknown"]
+    },
+    "exact_alarm_permission": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "unknown"]
+    },
+    "can_post_notifications": {
+      "type": "boolean"
+    },
+    "can_schedule_exact_alarms": {
+      "type": "boolean"
+    },
+    "should_open_settings": {
+      "type": "boolean"
+    },
+    "message": {
+      "type": ["string", "null"]
+    }
+  }
+}

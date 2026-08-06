@@ -1,0 +1,22 @@
+spring:
+  config:
+    activate:
+      on-profile: api
+  main:
+    web-application-type: servlet
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 10MB
+
+excellent-calendar:
+  runtime:
+    role: api
+  avatar:
+    upload-dir: ${AVATAR_UPLOAD_DIR:/data/avatars}
+    base-url: ${AVATAR_BASE_URL:http://localhost:8080/avatars}
+    max-size-bytes: 5242880
+    accepted-mime-types:
+      - image/jpeg
+      - image/png
+      - image/webp

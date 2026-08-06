@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/notification/notification_tap_payload_response.schema.json",
+  "title": "NotificationTapPayloadResponse",
+  "description": "One-shot cold-start notification tap payload. A returned payload is cleared after it is read successfully.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["has_payload", "payload"],
+  "properties": {
+    "has_payload": {
+      "type": "boolean"
+    },
+    "payload": {
+      "oneOf": [
+        { "$ref": "./notification_tap_payload.schema.json" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "has_payload": { "const": true },
+        "payload": { "$ref": "./notification_tap_payload.schema.json" }
+      }
+    },
+    {
+      "properties": {
+        "has_payload": { "const": false },
+        "payload": { "type": "null" }
+      }
+    }
+  ]
+}

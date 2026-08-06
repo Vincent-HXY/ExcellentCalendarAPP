@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/consume_reminder_after_delivery_response.schema.json",
+  "title": "ConsumeReminderAfterDeliveryResponse",
+  "description": "The two records committed by reminder.consume_after_delivery in one C++ transaction.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reminder", "notification"],
+  "properties": {
+    "reminder": {
+      "$ref": "./reminder_response.schema.json"
+    },
+    "notification": {
+      "$ref": "../notification/notification_response.schema.json"
+    }
+  }
+}

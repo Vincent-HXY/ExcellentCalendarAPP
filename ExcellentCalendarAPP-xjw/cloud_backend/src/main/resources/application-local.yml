@@ -1,0 +1,11 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/excellent_calendar}
+    username: ${SPRING_DATASOURCE_USERNAME:excellent_calendar}
+    password: ${SPRING_DATASOURCE_PASSWORD:local-dev-only-change-me}
+
+server:
+  port: ${SERVER_PORT:8080}

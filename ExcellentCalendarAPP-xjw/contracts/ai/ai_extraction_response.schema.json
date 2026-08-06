@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/ai/ai_extraction_response.schema.json",
+  "title": "AIExtractionResponse",
+  "description": "Transport representation of an AI extraction record. Field names are the snake_case mapping of DATA_MODEL.md AIExtraction.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "input_type",
+    "raw_input",
+    "extracted_type",
+    "extracted_data",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "image",
+        "share",
+        "wechat",
+        "import"
+      ]
+    },
+    "raw_input": {
+      "type": "string",
+      "minLength": 1
+    },
+    "extracted_type": {
+      "type": "string",
+      "enum": [
+        "event",
+        "reminder",
+        "habit",
+        "anniversary"
+      ]
+    },
+    "extracted_data": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "candidate_event_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "accepted",
+        "rejected"
+      ]
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "./ai_candidate_event.schema.json"
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

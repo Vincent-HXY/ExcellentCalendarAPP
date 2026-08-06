@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/user/user_account_response.schema.json",
+  "title": "UserAccountResponse",
+  "description": "Public account identity. Password and session secrets are deliberately excluded.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "email",
+    "status",
+    "email_verified_at",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending_verification", "active", "disabled", "deleted"]
+    },
+    "email_verified_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    }
+  },
+  "examples": [
+    {
+      "id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+      "email": "user@example.com",
+      "status": "active",
+      "email_verified_at": "2026-08-01T01:00:00Z",
+      "created_at": "2026-08-01T00:55:00Z",
+      "updated_at": "2026-08-01T01:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+version: 1
+
+Importance:
+  values:
+    - unimportant_noturgent
+    - important_noturgent
+    - unimportant_urgent
+    - important_urgent
+
+EventStatus:
+  values:
+    - active
+    - completed
+    - cancelled
+    - archived
+
+EventOccurrenceStatus:
+  values:
+    - completed
+    - skipped
+    - cancelled
+
+ReminderMethod:
+  values:
+    - ring
+    - popup
+    - wechat
+
+RecurrenceFrequency:
+  values:
+    - daily
+    - weekly
+    - monthly
+    - yearly
+    - custom
+
+ReminderStatus:
+  values:
+    - pending
+    - scheduled
+    - sent
+    - failed
+    - cancelled
+
+NotificationStatus:
+  values:
+    - pending
+    - sent
+    - failed
+    - cancelled
+
+NotificationPermissionStatus:
+  values:
+    - granted
+    - denied
+    - not_required
+    - permanently_denied
+    - unknown
+
+ExactAlarmPermissionStatus:
+  values:
+    - granted
+    - denied
+    - not_required
+    - unknown
+
+NotificationPermissionRequestSource:
+  values:
+    - app_startup
+    - settings_page
+    - reminder_creation
+    - manual_retry
+
+NotificationSettingsTarget:
+  values:
+    - notification
+    - exact_alarm
+    - application
+
+HabitCheckInStatus:
+  values:
+    - done
+    - partial
+    - missed
+    - skipped
+
+SyncOperationType:
+  values:
+    - create
+    - update
+    - delete
+    - restore
+
+UserAccountStatus:
+  values:
+    - pending_verification
+    - active
+    - disabled
+    - deleted
+
+VerificationCredentialType:
+  values:
+    - code
+    - link_token
+
+EmailActionPurpose:
+  values:
+    - registration_verification
+    - email_change
+    - password_reset
+
+EmailChangeStatus:
+  values:
+    - pending
+    - verified
+    - expired
+    - cancelled
+
+SessionRevocationReason:
+  values:
+    - logout
+    - logout_all
+    - password_changed
+    - password_reset
+    - email_changed
+    - refresh_token_reused
+    - account_disabled
+    - expired
+
+ClientPlatform:
+  values:
+    - android
+
+DataSource:
+  values:
+    - manual
+    - auto
+    - ai_extraction
+    - sync
+    - import
+    - wechat
+
+TargetType:
+  values:
+    - event
+    - habit
+    - anniversary
+    - dated_message
+
+EntityType:
+  values:
+    - event
+    - event_occurrence_state
+    - habit
+    - habit_check_in
+    - reminder
+    - notification
+    - category
+    - recurrence
+    - user_preferences
+    - dated_message
+    - anniversary
+
+DeleteMode:
+  values:
+    - soft
+    - hard
+
+RecurrenceDeleteScope:
+  values:
+    - single_occurrence
+    - future_occurrences
+    - all_occurrences
+
+SortDirection:
+  values:
+    - asc
+    - desc
+
+AIExtractionSourceType:
+  values:
+    - text
+    - image
+    - share
+    - wechat
+    - import
+
+AIExtractionStatus:
+  values:
+    - pending_review
+    - accepted
+    - rejected
+
+SyncStatus:
+  values:
+    - pending
+    - synced
+    - conflict
+    - failed
+
+DatedMessageChannel:
+  values:
+    - in_app
+    - notification
+    - wechat
+
+DatedMessageStatus:
+  values:
+    - draft
+    - scheduled
+    - sent
+    - cancelled
+
+CalendarType:
+  values:
+    - solar
+    - lunar

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/refresh_token_presence_response.schema.json",
+  "title": "RefreshTokenPresenceResponse",
+  "description": "Reports only whether Android secure storage currently contains a Refresh Token record.",
+  "x-contract-domain": "native_method_channel",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["exists"],
+  "properties": {
+    "exists": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "exists": true
+    }
+  ]
+}

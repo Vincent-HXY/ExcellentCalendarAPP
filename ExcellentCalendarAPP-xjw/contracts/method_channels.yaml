@@ -1,0 +1,263 @@
+version: 1
+channel: excellent_calendar/native
+
+methods:
+  event.create:
+    module: event
+    request: event/create_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.update:
+    module: event
+    request: event/update_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.delete:
+    module: event
+    request: event/delete_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.search:
+    module: event
+    request: event/search_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_list_response.schema.json
+    event_stream: false
+
+  event.detail:
+    module: event
+    request: event/get_event_detail_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_detail_response.schema.json
+    event_stream: false
+
+  event.complete:
+    module: event
+    request: event/complete_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  event.reopen:
+    module: event
+    request: event/reopen_event_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: event/event_response.schema.json
+    event_stream: false
+
+  reminder.create:
+    module: reminder
+    request: reminder/create_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+    event_stream: false
+
+  reminder.update:
+    module: reminder
+    request: reminder/update_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+    event_stream: false
+
+  reminder.cancel:
+    module: reminder
+    request: reminder/cancel_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_response.schema.json
+    event_stream: false
+
+  reminder.list:
+    module: reminder
+    request: reminder/list_reminders_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reminder_list_response.schema.json
+    event_stream: false
+
+  reminder.schedule_pending:
+    module: reminder
+    deprecated: true
+    request: reminder/schedule_pending_reminders_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/schedule_pending_reminders_response.schema.json
+    event_stream: false
+
+  reminder.reconcile_schedule:
+    module: reminder
+    request: reminder/reconcile_reminder_schedule_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/reconcile_reminder_schedule_response.schema.json
+    event_stream: false
+
+  notification.initialize:
+    module: notification
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_initialize_response.schema.json
+    event_stream: false
+
+  notification.permission_status:
+    module: notification
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_permission_status_response.schema.json
+    event_stream: false
+
+  notification.request_permission:
+    module: notification
+    request: notification/request_notification_permission_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/request_notification_permission_response.schema.json
+    event_stream: false
+
+  notification.open_settings:
+    module: notification
+    request: notification/open_notification_settings_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: common/operation_response.schema.json
+    event_stream: false
+
+  notification.get_initial_tap_payload:
+    module: notification
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_tap_payload_response.schema.json
+    event_stream: false
+
+  notification.list:
+    module: notification
+    request: common/pagination_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: notification/notification_list_response.schema.json
+    event_stream: false
+
+  habit.create:
+    module: habit
+    request: habit/create_habit_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_response.schema.json
+    event_stream: false
+
+  habit.check_in:
+    module: habit
+    request: habit/habit_check_in_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_check_in_response.schema.json
+    event_stream: false
+
+  category.create:
+    module: category
+    request: category/create_category_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: category/category_response.schema.json
+    event_stream: false
+
+  anniversary.create:
+    module: anniversary
+    request: anniversary/create_anniversary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_response.schema.json
+    event_stream: false
+
+  ai.extract:
+    module: ai
+    request: ai/ai_extraction_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ai/ai_extraction_response.schema.json
+    event_stream: false
+
+  sync.apply:
+    module: sync
+    request: sync/sync_operation.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: sync/sync_result.schema.json
+    event_stream: false
+
+  auth.refresh_token.store:
+    module: auth
+    implementation: kotlin_local
+    implementation_status: planned
+    sensitive_payload: true
+    request: auth/store_refresh_token_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: common/operation_response.schema.json
+    event_stream: false
+
+  auth.refresh_token.read:
+    module: auth
+    implementation: kotlin_local
+    implementation_status: planned
+    sensitive_payload: true
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: auth/secure_refresh_token_record_response.schema.json
+    event_stream: false
+
+  auth.refresh_token.delete:
+    module: auth
+    implementation: kotlin_local
+    implementation_status: planned
+    sensitive_payload: true
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: common/operation_response.schema.json
+    event_stream: false
+
+  auth.refresh_token.exists:
+    module: auth
+    implementation: kotlin_local
+    implementation_status: planned
+    request: common/empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: auth/refresh_token_presence_response.schema.json
+    event_stream: false
+
+event_channels:
+  reminder.status_changed:
+    module: reminder
+    channel: excellent_calendar/events/reminder
+    data: reminder/reminder_response.schema.json
+
+  notification.delivered:
+    module: notification
+    channel: excellent_calendar/events/notification
+    data: notification/notification_response.schema.json
+
+  notification.opened:
+    module: notification
+    channel: excellent_calendar/events/notification_opened
+    data: notification/notification_tap_payload.schema.json

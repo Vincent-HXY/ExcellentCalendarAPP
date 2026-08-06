@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/schedule_pending_reminders_response.schema.json",
+  "title": "SchedulePendingRemindersResponse",
+  "description": "Batch scheduling summary. Partial per-reminder failures keep NativeResult.ok=true; a missing required Android permission returns NativeResult.ok=false.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "scheduled_count",
+    "skipped_count",
+    "failed_count",
+    "unsupported_method_count",
+    "has_more",
+    "failed_reminder_ids",
+    "unsupported_reminder_ids"
+  ],
+  "properties": {
+    "scheduled_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "unsupported_method_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "has_more": {
+      "type": "boolean"
+    },
+    "failed_reminder_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "unsupported_reminder_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

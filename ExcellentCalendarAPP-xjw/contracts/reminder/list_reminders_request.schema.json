@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/list_reminders_request.schema.json",
+  "title": "ListRemindersRequest",
+  "description": "Request payload for viewing reminder tasks with optional filtering, sorting, and pagination.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "target_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "event",
+        "habit",
+        "anniversary",
+        null
+      ]
+    },
+    "target_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "remind_at_from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "remind_at_to": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ring",
+          "popup",
+          "wechat"
+        ]
+      }
+    },
+    "status": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "scheduled",
+          "sent",
+          "failed",
+          "cancelled"
+        ]
+      }
+    },
+    "is_enabled": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "include_deleted": {
+      "type": "boolean",
+      "default": false
+    },
+    "pagination": {
+      "$ref": "../common/pagination_request.schema.json"
+    },
+    "sort_by": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "remind_at",
+        "created_at",
+        "updated_at",
+        "status",
+        "target_type",
+        null
+      ]
+    },
+    "sort_direction": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "asc",
+        "desc",
+        null
+      ]
+    }
+  }
+}

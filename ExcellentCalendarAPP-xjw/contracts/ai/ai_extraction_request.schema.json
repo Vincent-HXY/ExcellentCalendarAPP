@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/ai/ai_extraction_request.schema.json",
+  "title": "AIExtractionRequest",
+  "description": "Request payload for extracting candidate events from text, image, WeChat message, or imported content.",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_type",
+    "timezone",
+    "reference_date"
+  ],
+  "properties": {
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "image",
+        "share",
+        "wechat",
+        "import"
+      ]
+    },
+    "raw_text": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "image_uri": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "wechat_message_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reference_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "locale": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "raw_text": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "raw_text"
+      ]
+    },
+    {
+      "properties": {
+        "image_uri": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "image_uri"
+      ]
+    },
+    {
+      "properties": {
+        "wechat_message_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "wechat_message_id"
+      ]
+    }
+  ]
+}

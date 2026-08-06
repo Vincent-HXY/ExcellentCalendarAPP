@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/reconcile_reminder_schedule_response.schema.json",
+  "title": "ReconcileReminderScheduleResponse",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "action", "next_remind_at", "processed_due_count", "failed_count",
+    "continuation_enqueued", "failed_reminder_ids"
+  ],
+  "properties": {
+    "action": {"type": "string", "enum": ["scheduled", "cancelled", "unchanged"]},
+    "next_remind_at": {"type": ["string", "null"], "format": "date-time"},
+    "processed_due_count": {"type": "integer", "minimum": 0},
+    "failed_count": {"type": "integer", "minimum": 0},
+    "continuation_enqueued": {"type": "boolean"},
+    "failed_reminder_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/user/avatar_upload_request.schema.json",
+  "title": "AvatarUploadRequest",
+  "description": "multipart/form-data shape. The file part is binary and must be at most 5 MiB after client processing.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["file"],
+  "properties": {
+    "file": {
+      "type": "string",
+      "format": "binary",
+      "description": "JPEG, PNG, or WebP image. Backend validates actual MIME, size, and decodability."
+    }
+  },
+  "examples": [
+    {
+      "file": "<binary image part>"
+    }
+  ]
+}
