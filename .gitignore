@@ -135,6 +135,10 @@ local_storage/operation_log/*.log
 exports/
 backups/
 
+# Maven build output
+**/target/
+**/out/
+
 # Test output and generic caches
 .cache/
 test-results/
