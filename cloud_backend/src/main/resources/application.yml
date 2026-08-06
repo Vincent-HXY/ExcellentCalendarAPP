@@ -49,3 +49,20 @@ management:
 logging:
   pattern:
     level: "%5p [request_id:%X{request_id:-}]"
+
+# ---------------------------------------------------------------------------
+# Identity / Auth
+# ---------------------------------------------------------------------------
+excellent-calendar:
+  identity:
+    jwt-secret: ${EXCELLENT_CALENDAR_IDENTITY_JWT_SECRET:change-me-to-a-secret-at-least-32-characters}
+    mail-enabled: ${EXCELLENT_CALENDAR_IDENTITY_MAIL_ENABLED:false}
+    app-base-url: ${EXCELLENT_CALENDAR_IDENTITY_APP_BASE_URL:http://localhost:8080}
+    mail-from: ${EXCELLENT_CALENDAR_IDENTITY_MAIL_FROM:noreply@excellentcalendar.app}
+    access-token-expiration: 15m
+    refresh-token-expiration: 30d
+    verification-code-expiration: 15m
+    password-reset-expiration: 30m
+    email-change-expiration: 15m
+    verification-code-max-per-window: 3
+    verification-code-window: 10m

@@ -1,0 +1,55 @@
+ ### 禁止修改的文件
+  在本次任务中，你绝对不允许修改以下文件或目录：
+  - docs/ 目录下的任何文件
+  - cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/ 下的任何文件
+  - cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/ 下的任何文件
+  - cloud_backend/src/main/resources/application.yml（除非说明书上明确要求）
+  - cloud_backend/pom.xml（除非要求新增依赖）
+  - cloud_backend/compose.yaml
+  - cloud_backend/Dockerfile
+  - contract/ 目录下的任何文件（除非要求修改 implementation_status）
+
+  ### 禁止的代码模式
+  - 禁止创建 CommonService、BaseRepository、BaseController、AbstractService 等"万能基类"
+  - 禁止创建 Utils 工具类（除非有极其充分的理由，且必须说明）
+  - 禁止使用 Map<String, Object> 代替稳定 DTO
+  - 禁止在 Controller 中直接操作 Repository 或 EntityManager
+  - 禁止在 Controller 中写 @Transactional
+  - 禁止在事务中调用外部 HTTP、邮件、推送等慢速操作
+  - 禁止吞异常后提交半成品事务
+  - 禁止在业务代码中直接调用静态工具方法（如 new Date()、UUID.randomUUID()）
+  - 禁止返回 JPA Entity 给客户端
+  - 禁止创建空类、空接口、空方法作为"占位"
+
+  ### 必须遵守的规范
+  - 构造器注入是默认方式，禁止使用 @Autowired 字段注入
+  - 所有时间使用 java.time.Instant / Clock，不调用 new Date() 或 System.currentTimeMillis()
+  - 密码、Token、Secret 等敏感信息不得序列化到日志、响应体或异常消息中
+  - 错误提示不能返回服务端堆栈或内部异常消息
+  - 跨模块只能调用对方公开 Application API，禁止引用其他模块的 JPA Entity 或 Repository
+  - 不要创建没有实际业务含义的 placeholder 类
+  - 若某个功能需要新增依赖（pom.xml），必须明确指出并说明理由
+
+  --- Flutter 用户资料页面 UI + 特有约束
+ ### 特有约束
+  - 个人信息页面必须先显示本地缓存，再异步请求服务端最新数据
+  - 如果网络请求失败但本地有缓存，继续显示缓存内容并提示"信息可能不是最新"
+  - 编辑页面必须判断内容是否实际发生变化，无变化时禁用保存按钮
+  - 保存成功后必须使用服务端返回的完整资料更新本地状态，不能只在本地拼接
+  - 保存失败时保留用户当前输入，不覆盖为旧值
+  - 修改邮箱必须在新邮箱验证通过后原邮箱才失效，验证通过前原邮箱继续可用
+  - 修改密码成功后当前设备应继续登录（后端返回新会话），其他设备退出
+  - 密码修改成功后要清除本地旧 Token 并保存新 Token
+  - 退出登录后无论后端接口是否成功，本地都必须清除所有登录状态
+  - 退出所有设备需要二次确认
+  - 头像编辑页面必须包含：图片选择、裁剪为正方形、压缩、上传进度显示
+  - 头像上传需要检查文件大小（不超过 5MB）和图片格式（仅 jpeg/png/webp）
+  - 头像删除需要二次确认
+  - 不要在这批页面中实现注册、登录等认证功能，那些属于另一个任务
+
+  ---
+目标：实现用户资料管理页面。
+
+  Skill 指令要点：类似上面，聚焦 docs/完整流程.md 第十~十四章。
+
+  ---

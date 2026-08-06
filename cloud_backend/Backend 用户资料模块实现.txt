@@ -1,0 +1,77 @@
+ ### 禁止修改的文件
+  在本次任务中，你绝对不允许修改以下文件或目录：
+  - docs/ 目录下的任何文件
+  - cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/ 下的任何文件
+  - cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/ 下的任何文件
+  - cloud_backend/src/main/resources/application.yml（除非说明书上明确要求）
+  - cloud_backend/pom.xml（除非要求新增依赖）
+  - cloud_backend/compose.yaml
+  - cloud_backend/Dockerfile
+  - contract/ 目录下的任何文件（除非要求修改 implementation_status）
+
+  ### 禁止的代码模式
+  - 禁止创建 CommonService、BaseRepository、BaseController、AbstractService 等"万能基类"
+  - 禁止创建 Utils 工具类（除非有极其充分的理由，且必须说明）
+  - 禁止使用 Map<String, Object> 代替稳定 DTO
+  - 禁止在 Controller 中直接操作 Repository 或 EntityManager
+  - 禁止在 Controller 中写 @Transactional
+  - 禁止在事务中调用外部 HTTP、邮件、推送等慢速操作
+  - 禁止吞异常后提交半成品事务
+  - 禁止在业务代码中直接调用静态工具方法（如 new Date()、UUID.randomUUID()）
+  - 禁止返回 JPA Entity 给客户端
+  - 禁止创建空类、空接口、空方法作为"占位"
+
+  ### 必须遵守的规范
+  - 构造器注入是默认方式，禁止使用 @Autowired 字段注入
+  - 所有时间使用 java.time.Instant / Clock，不调用 new Date() 或 System.currentTimeMillis()
+  - 密码、Token、Secret 等敏感信息不得序列化到日志、响应体或异常消息中
+  - 错误提示不能返回服务端堆栈或内部异常消息
+  - 跨模块只能调用对方公开 Application API，禁止引用其他模块的 JPA Entity 或 Repository
+  - 不要创建没有实际业务含义的 placeholder 类
+  - 若某个功能需要新增依赖（pom.xml），必须明确指出并说明理由
+
+  ---
+：Backend 用户资料模块 + 特有约束
+
+  ### 特有约束
+  - 用户只能访问自己的资料，所有查询必须带上 user_id 范围条件，禁止查询全表
+  - 禁止在 Application Service 之外校验所有权
+  - PATCH 更新必须只更新请求中提供的字段，不能全量覆盖
+  - 用户名唯一性检查必须使用数据库唯一约束作为最终防线，不能只靠应用层查询判断
+  - 头像上传必须先验证文件魔数（Magic Bytes），不能只依赖 Content-Type 头部
+  - 头像文件不能直接保存到数据库，应该在本地文件系统或对象存储中保存，数据库只存 URL 或路径
+  - 删除头像后必须返回更新后的用户资料（不含头像 URL），不能返回空响应
+  - 本模块的 entity 和 repository 放在 userdevice 模块内，不允许放到 identity 模块中
+Backend 用户资料模块实现
+
+  目标：在 userdevice 模块中实现用户资料管理 API。
+
+  Skill 指令要点：
+
+  # Cloud Backend User Profile Module Implementation
+
+  ## 上下文
+  - 与 Skill 一相同，但实现的是 `userdevice` 模块
+  - 依赖 identity 模块的用户认证（需要获取当前用户 ID）
+
+  ## 实现目标
+  在 `userdevice` 模块中实现以下 API（来自 contracts/backend_api.yaml）：
+
+  1. `GET /api/v1/users/me` — 获取当前用户资料
+  2. `PATCH /api/v1/users/me` — 修改用户资料（昵称、用户名、语言、时区）
+  3. `POST /api/v1/users/me/avatar` — 上传头像（multipart/form-data）
+  4. `DELETE /api/v1/users/me/avatar` — 删除头像
+
+  ## 头像约束
+  - 接受类型: image/jpeg, image/png, image/webp
+  - 最大大小: 5MB
+  - 需验证实际 MIME 类型
+  - 输出形状: 正方形
+  - 失败时保留旧头像
+
+  ## 安全
+  - 所有接口需要 bearer 认证
+  - 用户只能访问自己的资料
+  - 所有权在 Application 层校验
+
+  ---
