@@ -189,7 +189,12 @@ private fun notificationMap(value: Any?): Map<String, Any?> {
     if (kind !in setOf("reminder", "recovery_summary") || map["method"] !in setOf("ring", "popup", "wechat") || status !in setOf("prepared", "sent", "failed", "abandoned")) {
         throw NativeContractViolation("Notification enum value is invalid.", "NotificationResponse")
     }
-    if ((kind == "reminder") != (map["reminder_id"] is String) || (kind == "recovery_summary") != (map["recovery_batch_id"] is String)) {
+    val identityIsValid = when (kind) {
+        "reminder" -> map["reminder_id"] is String
+        "recovery_summary" -> map["reminder_id"] == null && map["recovery_batch_id"] is String
+        else -> false
+    }
+    if (!identityIsValid) {
         throw NativeContractViolation("Notification kind identity is invalid.", "NotificationResponse.kind")
     }
     if (map["recovery_batch_id"] != null && map["resolved_by_recovery_batch_id"] != null) {
@@ -260,7 +265,12 @@ private fun preparedPayloadMap(value: Any?): Map<String, Any?> {
     if (kind !in setOf("reminder", "recovery_summary") || map["target_type"] !in setOf("event", "habit", "anniversary", "reminder_recovery_batch")) {
         throw NativeContractViolation("Prepared payload enum value is invalid.", "PreparedNotificationPayload")
     }
-    if ((kind == "reminder") != (map["reminder_id"] is String) || (kind == "recovery_summary") != (map["recovery_batch_id"] is String)) {
+    val identityIsValid = when (kind) {
+        "reminder" -> map["reminder_id"] is String
+        "recovery_summary" -> map["reminder_id"] == null && map["recovery_batch_id"] is String
+        else -> false
+    }
+    if (!identityIsValid) {
         throw NativeContractViolation("Prepared payload kind identity is invalid.", "PreparedNotificationPayload.kind")
     }
     return map

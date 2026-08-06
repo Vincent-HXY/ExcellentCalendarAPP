@@ -2,12 +2,26 @@ import 'package:flutter/material.dart';
 
 import '../../presentation/event_detail/pages/event_detail_page.dart';
 
+typedef EventDetailRouteBuilder =
+    Widget Function(BuildContext context, EventDetailRouteData routeData);
+
+class EventDetailRouteData {
+  const EventDetailRouteData({
+    required this.eventId,
+    required this.occurrenceKey,
+  });
+
+  final String eventId;
+  final String? occurrenceKey;
+}
+
 class AppRouter {
   const AppRouter._();
 
   static Route<dynamic> onGenerateRoute(
     RouteSettings settings, {
     required WidgetBuilder todayBuilder,
+    EventDetailRouteBuilder? eventDetailBuilder,
   }) {
     final name = settings.name ?? '/today';
     if (name == '/today' || name == '/') {
@@ -17,13 +31,28 @@ class AppRouter {
       );
     }
 
-    final uri = Uri.tryParse(name);
+    final parsedUri = Uri.tryParse(name);
+    final uri =
+        parsedUri == null ||
+            parsedUri.hasScheme ||
+            parsedUri.hasAuthority ||
+            parsedUri.hasFragment
+        ? null
+        : parsedUri;
     final segments = uri?.pathSegments ?? const <String>[];
-    if (segments.length == 3 && segments[1] == 'detail') {
+    if (uri != null && segments.length == 3 && segments[1] == 'detail') {
       final type = segments[0];
       final id = segments[2];
-      if ({'event', 'habit', 'anniversary'}.contains(type) && id.isNotEmpty) {
+      if ({'event', 'habit', 'anniversary'}.contains(type) &&
+          id.trim().isNotEmpty) {
         if (type == 'event') {
+          final occurrenceValues = uri.queryParametersAll['occurrence_key'];
+          if (occurrenceValues != null &&
+              (occurrenceValues.length != 1 ||
+                  occurrenceValues.single.trim().isEmpty)) {
+            return _todayRoute(todayBuilder);
+          }
+          final occurrenceKey = occurrenceValues?.single;
           final arguments = settings.arguments;
           if (arguments is EventDetailPageArguments) {
             return MaterialPageRoute<void>(
@@ -38,6 +67,16 @@ class AppRouter {
               ),
             );
           }
+          if (eventDetailBuilder != null) {
+            final routeData = EventDetailRouteData(
+              eventId: id,
+              occurrenceKey: occurrenceKey,
+            );
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (context) => eventDetailBuilder(context, routeData),
+            );
+          }
         }
         return MaterialPageRoute<void>(
           settings: settings,
@@ -47,11 +86,14 @@ class AppRouter {
       }
     }
 
-    return MaterialPageRoute<void>(
-      settings: const RouteSettings(name: '/today'),
-      builder: todayBuilder,
-    );
+    return _todayRoute(todayBuilder);
   }
+
+  static MaterialPageRoute<void> _todayRoute(WidgetBuilder todayBuilder) =>
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/today'),
+        builder: todayBuilder,
+      );
 }
 
 class NotificationTargetDetailPage extends StatelessWidget {

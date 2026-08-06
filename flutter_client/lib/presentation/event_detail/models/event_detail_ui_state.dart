@@ -1,7 +1,15 @@
 import '../../../native_contract/event/event_response_dto.dart';
 import '../../../application/timezone/timezone_application_service.dart';
+import '../../../native_contract/runtime/local_wall_date_time.dart';
 
-enum EventDisplayStatus { pending, inProgress, overdue, completed }
+enum EventDisplayStatus {
+  pending,
+  inProgress,
+  overdue,
+  completed,
+  cancelled,
+  archived,
+}
 
 enum EventDetailField { schedule, note, allDay }
 
@@ -77,10 +85,16 @@ class EventDetailUiState {
     EventDisplayStatus.inProgress => '\u8fdb\u884c\u4e2d',
     EventDisplayStatus.overdue => '\u5df2\u903e\u671f',
     EventDisplayStatus.completed => '\u5df2\u5b8c\u6210',
+    EventDisplayStatus.cancelled => '\u5df2\u53d6\u6d88',
+    EventDisplayStatus.archived => '\u5df2\u5f52\u6863',
   };
 
-  String get completionLabel =>
-      completionPercent == 100 ? '\u5df2\u5b8c\u6210' : '\u672a\u5b8c\u6210';
+  String get completionLabel => switch (displayStatus) {
+    EventDisplayStatus.completed => '\u5df2\u5b8c\u6210',
+    EventDisplayStatus.cancelled => '\u5df2\u53d6\u6d88',
+    EventDisplayStatus.archived => '\u5df2\u5f52\u6863',
+    _ => '\u672a\u5b8c\u6210',
+  };
 
   String get reminderLabel => reminders.isEmpty
       ? '\u4e0d\u63d0\u9192'
@@ -92,6 +106,8 @@ class EventDetailUiState {
     List<ReminderUiModel> reminders = const [],
     int? participantCount,
     DateTime? now,
+    LocalWallDateTime? referenceLocalNow,
+    EventDisplayStatus? displayStatusOverride,
   }) {
     if (localizedTimeRange.timezone != event.timezone) {
       throw const FormatException(
@@ -107,7 +123,15 @@ class EventDetailUiState {
       endAt: localizedTimeRange.end.toComponentDateTime(),
       timezone: event.timezone,
       isAllDay: event.isAllDay,
-      displayStatus: deriveDisplayStatus(event: event, now: now),
+      displayStatus:
+          displayStatusOverride ??
+          (referenceLocalNow == null
+              ? deriveDisplayStatus(event: event, now: now)
+              : deriveLocalizedDisplayStatus(
+                  event: event,
+                  localizedTimeRange: localizedTimeRange,
+                  referenceLocalNow: referenceLocalNow,
+                )),
       priorityLabel: priorityLabelForImportance(event.importance),
       participantCount: participantCount,
       location: event.location,
@@ -140,11 +164,35 @@ class EventDetailUiState {
     DateTime? now,
   }) {
     if (event.status == 'completed') return EventDisplayStatus.completed;
+    if (event.status == 'cancelled') return EventDisplayStatus.cancelled;
+    if (event.status == 'archived') return EventDisplayStatus.archived;
     final instant = now ?? DateTime.now();
     if (instant.isBefore(event.displayStartAt)) {
       return EventDisplayStatus.pending;
     }
     if (!instant.isAfter(event.displayEndAt)) {
+      return EventDisplayStatus.inProgress;
+    }
+    return EventDisplayStatus.overdue;
+  }
+
+  static EventDisplayStatus deriveLocalizedDisplayStatus({
+    required EventResponseDto event,
+    required LocalizedTimeRange localizedTimeRange,
+    required LocalWallDateTime referenceLocalNow,
+  }) {
+    if (event.status == 'completed') return EventDisplayStatus.completed;
+    if (event.status == 'cancelled') return EventDisplayStatus.cancelled;
+    if (event.status == 'archived') return EventDisplayStatus.archived;
+    if (localizedTimeRange.timezone != event.timezone) {
+      throw const FormatException(
+        'Localized Event time must use the Event original timezone.',
+      );
+    }
+    if (referenceLocalNow.isBefore(localizedTimeRange.start)) {
+      return EventDisplayStatus.pending;
+    }
+    if (!localizedTimeRange.end.isBefore(referenceLocalNow)) {
       return EventDisplayStatus.inProgress;
     }
     return EventDisplayStatus.overdue;

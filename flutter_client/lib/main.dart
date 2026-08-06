@@ -7,6 +7,8 @@ import 'app/routing/notification_tap_router.dart';
 import 'application/event/create_event_use_case.dart';
 import 'application/event/complete_event_use_case.dart';
 import 'application/event/read_events_use_case.dart';
+import 'application/event/recurring_event_detail_controller.dart';
+import 'application/event/update_event_use_case.dart';
 import 'application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'application/timezone/timezone_application_service.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
@@ -14,6 +16,7 @@ import 'boundary_adapters/dart_method_channel/method_channel_notification_adapte
 import 'boundary_adapters/dart_method_channel/method_channel_reminder_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_timezone_adapter.dart';
 import 'presentation/app_notification_host.dart';
+import 'presentation/event_detail/pages/event_detail_flow_page.dart';
 import 'presentation/inbox/inbox_page.dart';
 
 void main() {
@@ -32,6 +35,8 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   late final MethodChannelEventAdapter _eventGateway;
   late final ReconcileReminderScheduleUseCase _reconcileReminderScheduleUseCase;
   late final CreateEventUseCase _createEventUseCase;
+  late final CompleteEventUseCase _completeEventUseCase;
+  late final UpdateEventUseCase _updateEventUseCase;
   late final TimezoneApplicationService _timezoneService;
   late final AppNotificationBootstrap _notificationBootstrap;
 
@@ -50,6 +55,14 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
       _eventGateway,
       reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
     );
+    _completeEventUseCase = CompleteEventUseCase(
+      _eventGateway,
+      reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
+    );
+    _updateEventUseCase = UpdateEventUseCase(
+      _eventGateway,
+      reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
+    );
     _notificationBootstrap = AppNotificationBootstrap(
       notificationGateway: MethodChannelNotificationAdapter(),
       reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
@@ -65,10 +78,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
       child: InboxPage(
         readEventsUseCase: ReadEventsUseCase(_eventGateway),
         createEventUseCase: _createEventUseCase,
-        completeEventUseCase: CompleteEventUseCase(
-          _eventGateway,
-          reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
-        ),
+        completeEventUseCase: _completeEventUseCase,
         timezoneService: _timezoneService,
       ),
     );
@@ -86,8 +96,22 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
         useMaterial3: true,
       ),
       initialRoute: '/today',
-      onGenerateRoute: (settings) =>
-          AppRouter.onGenerateRoute(settings, todayBuilder: _buildToday),
+      onGenerateRoute: (settings) => AppRouter.onGenerateRoute(
+        settings,
+        todayBuilder: _buildToday,
+        eventDetailBuilder: (context, routeData) => EventDetailFlowPage(
+          controller: RecurringEventDetailController(
+            eventId: routeData.eventId,
+            gateway: _eventGateway,
+            timezoneService: _timezoneService,
+            reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
+            focusOccurrenceKey: routeData.occurrenceKey,
+          ),
+          completeEventUseCase: _completeEventUseCase,
+          updateEventUseCase: _updateEventUseCase,
+          timezoneService: _timezoneService,
+        ),
+      ),
     );
   }
 

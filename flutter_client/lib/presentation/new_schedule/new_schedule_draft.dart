@@ -22,7 +22,7 @@ extension RecurrencePresetLabel on RecurrencePreset {
       RecurrencePreset.weekly => 'weekly',
       RecurrencePreset.monthly => 'monthly',
       RecurrencePreset.yearly => 'yearly',
-      RecurrencePreset.custom => null,
+      RecurrencePreset.custom => 'custom',
     };
   }
 

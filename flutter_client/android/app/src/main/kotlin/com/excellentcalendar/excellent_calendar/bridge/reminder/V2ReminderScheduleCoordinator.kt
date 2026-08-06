@@ -36,13 +36,22 @@ class V2ReminderScheduleCoordinator(
             if (elapsedRealtime() >= deadline) return@withLock continuationResponse()
 
             val recovered = recoveryCoordinator.recover(request.trigger) { elapsedRealtime() < deadline }
+            val recoveryFailure: NativeResultContract?
             if (!recovered.ok) {
                 if (recovered.error?.retryable == true) enqueueContinuation()
-                return@withLock recovered
-            }
-            @Suppress("UNCHECKED_CAST")
-            if ((recovered.data as? Map<String, Any?>)?.get("continuation_required") == true) {
-                return@withLock continuationResponse()
+                logger.log(
+                    "reminder.plan_recovery",
+                    null,
+                    "failed code=${recovered.error?.code ?: "UNKNOWN"} " +
+                        "retryable=${recovered.error?.retryable == true} live_reconcile_continues=true",
+                )
+                recoveryFailure = recovered
+            } else {
+                @Suppress("UNCHECKED_CAST")
+                if ((recovered.data as? Map<String, Any?>)?.get("continuation_required") == true) {
+                    return@withLock continuationResponse()
+                }
+                recoveryFailure = null
             }
 
             val currentNow = nowUtc()
@@ -53,7 +62,10 @@ class V2ReminderScheduleCoordinator(
                 if (!listed.ok) return@withLock listed
                 val batch = V2SchedulableBatch.fromData(listed.data)
                 for (reminder in batch.reminders) {
-                    if (elapsedRealtime() >= deadline) return@withLock continuationResponse(processed)
+                    if (elapsedRealtime() >= deadline) {
+                        val continuation = continuationResponse(processed)
+                        return@withLock recoveryFailure ?: continuation
+                    }
                     val delivered = deliveryService.deliverReminder(reminder.reminderId, reminder.remindAt)
                     if (!delivered.ok) {
                         if (delivered.error?.retryable == true) enqueueContinuation()
@@ -71,7 +83,7 @@ class V2ReminderScheduleCoordinator(
                 val head = V2SchedulableBatch.fromData(headResult.data).reminders.firstOrNull()
                 if (head == null) {
                     return@withLock when (val cancelled = alarmScheduler.cancel()) {
-                        CancelResult.Success -> success("cancelled", null, processed)
+                        CancelResult.Success -> recoveryFailure ?: success("cancelled", null, processed)
                         is CancelResult.Failure -> NativeResultContract.failure(cancelled.code, cancelled.message, retryable = cancelled.retryable, contractVersion = 2)
                     }
                 }
@@ -87,7 +99,7 @@ class V2ReminderScheduleCoordinator(
                         val marked = markScheduled(head)
                         if (marked.ok) {
                             logger.log("reminder.reconcile_schedule", head.reminderId, "trigger_source=${request.trigger.wireValue} next_remind_at=${head.remindAt}")
-                            return@withLock success("scheduled", head.remindAt, processed)
+                            return@withLock recoveryFailure ?: success("scheduled", head.remindAt, processed)
                         }
                         if (marked.error?.code != NativeErrorCodes.ReminderScheduleConflict || conflictRetries++ >= MaxScheduleConflictRetries) {
                             return@withLock marked

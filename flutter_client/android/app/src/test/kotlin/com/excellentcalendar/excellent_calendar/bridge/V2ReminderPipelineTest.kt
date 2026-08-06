@@ -23,6 +23,7 @@ import com.excellentcalendar.excellent_calendar.bridge.reminder.V2ReminderDelive
 import com.excellentcalendar.excellent_calendar.bridge.reminder.V2ReminderDeliveryService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.V2ReminderScheduleCoordinator
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -66,6 +67,23 @@ class V2ReminderPipelineTest {
     }
 
     @Test
+    fun recoveryOwnedReminderAttemptCanPrepareAndFinalize() {
+        val service = V2ReminderDeliveryService(
+            nativeBridge = RecoveryOwnedDeliveryBridge(),
+            notifications = RecordingDisplay(),
+            eventHub = NotificationEventHub(),
+            logger = { _, _, _ -> },
+        )
+
+        val result = service.deliverReminder("reminder", "2026-08-04T01:00:00Z", "batch")
+
+        assertTrue(result.ok)
+        @Suppress("UNCHECKED_CAST")
+        val data = result.data as Map<String, Any?>
+        assertEquals(true, data["recovery_completed"])
+    }
+
+    @Test
     fun scheduleConflictDoesNotOverwriteAndImmediatelyReconciles() {
         val bridge = ScheduleConflictBridge()
         val alarm = RecordingAlarm()
@@ -98,6 +116,52 @@ class V2ReminderPipelineTest {
             listOf("2026-08-05T01:00:00Z", "2026-08-05T02:00:00Z"),
             bridge.markRequests.map { it["expected_remind_at"] },
         )
+    }
+
+    @Test
+    fun recoveryFailureDoesNotBlockDueDeliveryOrNextAlarmRearm() {
+        val bridge = RecoveryFailureScheduleBridge()
+        val alarm = RecordingAlarm()
+        val deliveredReminderIds = mutableListOf<String>()
+        var continuationCount = 0
+        val coordinator = V2ReminderScheduleCoordinator(
+            nativeBridge = bridge,
+            alarmScheduler = alarm,
+            deliveryService = object : V2ReminderDeliverer {
+                override fun deliverReminder(reminderId: String, expectedRemindAt: String, recoveryBatchId: String?): NativeResultContract {
+                    deliveredReminderIds += reminderId
+                    return NativeResultContract.success(emptyMap<String, Any?>(), contractVersion = 2)
+                }
+
+                override fun deliverSummary(recoveryBatchId: String) =
+                    NativeResultContract.success(emptyMap<String, Any?>(), contractVersion = 2)
+            },
+            recoveryCoordinator = object : ReminderRecoveryRunner {
+                override fun recover(trigger: ReminderScheduleTrigger, canContinue: () -> Boolean) =
+                    NativeResultContract.failure(
+                        NativeErrorCodes.RecoveryBatchConflict,
+                        "stale recovery failed",
+                        retryable = true,
+                        contractVersion = 2,
+                    )
+            },
+            continuationEnqueuer = { continuationCount += 1 },
+            logger = { _, _, _ -> },
+            nowUtc = { "2026-08-04T00:30:00Z" },
+            elapsedRealtime = { 0L },
+        )
+
+        val result = coordinator.reconcile(
+            ReconcileReminderScheduleContract(ReminderScheduleTrigger.AlarmFired, force = true),
+            Long.MAX_VALUE,
+        )
+
+        assertFalse(result.ok)
+        assertEquals(NativeErrorCodes.RecoveryBatchConflict, result.error?.code)
+        assertEquals(1, continuationCount)
+        assertEquals(listOf("due-reminder"), deliveredReminderIds)
+        assertEquals(listOf("2026-08-04T01:00:00Z"), alarm.scheduled)
+        assertEquals(listOf("2026-08-04T01:00:00Z"), bridge.markRequests.map { it["expected_remind_at"] })
     }
 
     @Test
@@ -291,6 +355,57 @@ class V2ReminderPipelineTest {
         )
     }
 
+    private class RecoveryOwnedDeliveryBridge : ReminderBridgeAdapter() {
+        override fun prepareReminderDelivery(requestJson: String): String = success(
+            linkedMapOf(
+                "notification" to notification("prepared") +
+                    ("recovery_batch_id" to "batch"),
+                "tap_payload" to linkedMapOf(
+                    "notification_id" to "notification",
+                    "delivery_id" to "delivery",
+                    "delivery_attempt_id" to "attempt",
+                    "kind" to "reminder",
+                    "reminder_id" to "reminder",
+                    "recovery_batch_id" to "batch",
+                    "target_type" to "event",
+                    "target_id" to "event",
+                    "occurrence_key" to null,
+                    "route" to "/event/detail",
+                ),
+                "idempotent_replay" to true,
+            ),
+        )
+
+        override fun finalizeReminderDelivery(requestJson: String): String = success(
+            linkedMapOf(
+                "notification" to notification("sent") +
+                    ("recovery_batch_id" to "batch"),
+                "reminder" to reminder("2026-08-04T01:00:00Z") + mapOf(
+                    "status" to "sent",
+                    "is_enabled" to false,
+                    "last_triggered_at" to "2026-08-04T00:00:01Z",
+                ),
+                "successor" to null,
+                "recovery_batch" to linkedMapOf(
+                    "recovery_batch_id" to "batch",
+                    "recovery_request_id" to "request",
+                    "trigger_source" to "alarm_reconcile",
+                    "started_at" to "2026-08-04T00:00:00Z",
+                    "window_start_at" to "2026-08-01T00:00:00Z",
+                    "detail_reminder_ids" to listOf("reminder"),
+                    "summary_reminder_ids" to emptyList<String>(),
+                    "older_skipped_occurrence_count" to 0,
+                    "older_skipped_reminder_count" to 0,
+                    "window_overflow_count" to 0,
+                    "summary_delivery_id" to null,
+                    "status" to "completed",
+                    "completed_at" to "2026-08-04T00:00:01Z",
+                ),
+                "idempotent_replay" to false,
+            ),
+        )
+    }
+
     private class ScheduleConflictBridge : ReminderBridgeAdapter() {
         var headCalls = 0
         val markRequests = mutableListOf<Map<String, Any?>>()
@@ -308,6 +423,25 @@ class V2ReminderPipelineTest {
             markRequests += request
             return if (markRequests.size == 1) failure(NativeErrorCodes.ReminderScheduleConflict)
             else success(mapOf("reminder_id" to "reminder"))
+        }
+    }
+
+    private class RecoveryFailureScheduleBridge : ReminderBridgeAdapter() {
+        val markRequests = mutableListOf<Map<String, Any?>>()
+
+        override fun listSchedulableReminders(requestJson: String): String {
+            val request = NativeContractJsonCodec.decodeObject(requestJson)
+            val reminders = if (request["to_at"] != null) {
+                listOf(reminder("2026-08-04T00:00:00Z", "due-reminder"))
+            } else {
+                listOf(reminder("2026-08-04T01:00:00Z", "future-reminder"))
+            }
+            return success(batch(reminders))
+        }
+
+        override fun markReminderScheduled(requestJson: String): String {
+            markRequests += NativeContractJsonCodec.decodeObject(requestJson)
+            return success(mapOf("reminder_id" to "future-reminder"))
         }
     }
 

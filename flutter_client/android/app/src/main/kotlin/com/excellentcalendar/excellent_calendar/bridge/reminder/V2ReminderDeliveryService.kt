@@ -50,7 +50,16 @@ class V2ReminderDeliveryService(
         val preparedResult = parse(nativeBridge.prepareReminderDelivery(NativeContractJsonCodec.encodeObject(request))) {
             V2PreparedDelivery.fromData(it)
         }
-        if (!preparedResult.ok) return preparedResult
+        if (!preparedResult.ok) {
+            val field = preparedResult.error?.details?.get("field") as? String
+            logger.log(
+                "reminder.prepare_delivery",
+                reminderId,
+                "failed code=${preparedResult.error?.code ?: "UNKNOWN"} " +
+                    "retryable=${preparedResult.error?.retryable == true} field=${field ?: "none"}",
+            )
+            return preparedResult
+        }
         val prepared = V2PreparedDelivery.fromData(preparedResult.data)
         val posted = notifications.postPrepared(
             PreparedNotificationContent(
@@ -81,7 +90,14 @@ class V2ReminderDeliveryService(
         val finalizedResult = parse(nativeBridge.finalizeReminderDelivery(NativeContractJsonCodec.encodeObject(request))) {
             V2FinalizeDelivery.fromData(it)
         }
-        if (!finalizedResult.ok) return finalizedResult
+        if (!finalizedResult.ok) {
+            logger.log(
+                "reminder.finalize_delivery",
+                reminderId,
+                "failed code=${finalizedResult.error?.code ?: "UNKNOWN"} retryable=${finalizedResult.error?.retryable == true}",
+            )
+            return finalizedResult
+        }
         val finalized = V2FinalizeDelivery.fromData(finalizedResult.data)
         if (sent) {
             if (!finalized.idempotentReplay) eventHub.emitDelivered(finalized.notification)

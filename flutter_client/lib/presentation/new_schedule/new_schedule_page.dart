@@ -7,7 +7,6 @@ import '../../application/timezone/timezone_application_service.dart';
 import '../../native_contract/event/create_event_request_dto.dart';
 import '../../native_contract/runtime/local_wall_date_time.dart';
 import '../../native_contract/runtime/resolve_local_datetime_dto.dart';
-import '../shared/native_result_dialog.dart';
 import 'components/create_mode_segmented_control.dart';
 import 'components/manual_schedule_form.dart';
 import 'components/new_schedule_top_bar.dart';
@@ -216,15 +215,6 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     );
 
     final invocation = await _submitController.submit(request);
-    if (!mounted) {
-      return;
-    }
-
-    await showNativeResultDialog(
-      context: context,
-      title: 'event.create NativeResult',
-      rawResponse: invocation.rawResponse,
-    );
     if (!mounted) {
       return;
     }

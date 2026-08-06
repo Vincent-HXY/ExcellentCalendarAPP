@@ -6,6 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('unsupported presets keep explicit contract intent', () {
+    expect(RecurrencePreset.yearly.toDto()!.toJson()['frequency'], 'yearly');
+    expect(RecurrencePreset.custom.toDto()!.toJson()['frequency'], 'custom');
+  });
+
   // 目的：验证重复规则只有确认后才提交；方法：先选择并取消，再选择并确认，比较外部结果。
   testWidgets('recurrence selection commits only after confirm', (
     tester,
@@ -66,6 +71,39 @@ void main() {
     await tester.pump();
 
     expect(unsupported, RecurrencePreset.yearly);
+    Navigator.of(tester.element(find.byType(FloatingSelectionSheet))).pop();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('custom recurrence reports unsupported and is not selected', (
+    tester,
+  ) async {
+    RecurrencePreset? unsupported;
+    RecurrencePreset? selected;
+
+    await tester.pumpWidget(
+      _SheetHost(
+        onOpen: (context) async {
+          selected = await showRecurrenceSelectionSheet(
+            context: context,
+            initialValue: RecurrencePreset.once,
+            onUnsupported: (value) {
+              unsupported = value;
+            },
+          );
+        },
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView).first, const Offset(0, -260));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(RecurrencePreset.custom.label));
+    await tester.pump();
+
+    expect(unsupported, RecurrencePreset.custom);
+    expect(selected, isNull);
     Navigator.of(tester.element(find.byType(FloatingSelectionSheet))).pop();
     await tester.pumpAndSettle();
   });

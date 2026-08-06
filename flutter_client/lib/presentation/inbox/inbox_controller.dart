@@ -169,7 +169,7 @@ class InboxController extends ChangeNotifier {
 
   Future<InboxCompletionResult> completeTask(InboxTaskViewData task) async {
     if (task.hasRecurrence) {
-      return const InboxCompletionResult.failure('重复日程暂不支持完成操作');
+      return const InboxCompletionResult.failure('请进入重复日程详情，选择完成本次或完成整个系列');
     }
     if (_completingIds.contains(task.id)) {
       return const InboxCompletionResult.failure('该日程正在完成中');

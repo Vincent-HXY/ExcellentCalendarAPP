@@ -19,25 +19,32 @@ class NotificationTapRouter {
   final AppRouteNavigator _navigator;
   final NotificationRoutingLogger _logger;
   final int maxRememberedPayloads;
-  final Set<String> _handledIds = {};
-  final Queue<Set<String>> _handledPayloads = Queue();
+  final Set<String> _handledDeliveryIds = {};
+  final Queue<String> _handledDeliveries = Queue();
 
   bool open(NotificationTapPayloadDto payload) {
-    final identifiers = <String>{
-      'notification:${payload.notificationId}',
-      if (payload.reminderId != null) 'reminder:${payload.reminderId}',
-    };
-    if (identifiers.any(_handledIds.contains)) {
-      _logger('Duplicate notification tap ignored: ${payload.notificationId}');
+    if (_handledDeliveryIds.contains(payload.deliveryId)) {
+      _logger(
+        'Duplicate notification delivery tap ignored: ${payload.deliveryId}',
+      );
       return false;
     }
-    _remember(identifiers);
+    _remember(payload.deliveryId);
 
-    final targetId = Uri.encodeComponent(payload.targetId);
     final route = switch (payload.targetType) {
-      NotificationTargetType.event => '/event/detail/$targetId',
-      NotificationTargetType.habit => '/habit/detail/$targetId',
-      NotificationTargetType.anniversary => '/anniversary/detail/$targetId',
+      NotificationTargetType.event => _detailRoute(
+        targetType: 'event',
+        targetId: payload.targetId,
+        occurrenceKey: payload.occurrenceKey,
+      ),
+      NotificationTargetType.habit => _detailRoute(
+        targetType: 'habit',
+        targetId: payload.targetId,
+      ),
+      NotificationTargetType.anniversary => _detailRoute(
+        targetType: 'anniversary',
+        targetId: payload.targetId,
+      ),
       NotificationTargetType.reminderRecoveryBatch => '/today',
     };
     _navigator.go(route);
@@ -49,11 +56,25 @@ class NotificationTapRouter {
     _navigator.go('/today');
   }
 
-  void _remember(Set<String> identifiers) {
-    _handledIds.addAll(identifiers);
-    _handledPayloads.addLast(identifiers);
-    while (_handledPayloads.length > maxRememberedPayloads) {
-      _handledIds.removeAll(_handledPayloads.removeFirst());
+  String _detailRoute({
+    required String targetType,
+    required String targetId,
+    String? occurrenceKey,
+  }) {
+    final uri = Uri(
+      pathSegments: [targetType, 'detail', targetId],
+      queryParameters: occurrenceKey == null || occurrenceKey.isEmpty
+          ? null
+          : {'occurrence_key': occurrenceKey},
+    );
+    return '/$uri';
+  }
+
+  void _remember(String deliveryId) {
+    _handledDeliveryIds.add(deliveryId);
+    _handledDeliveries.addLast(deliveryId);
+    while (_handledDeliveries.length > maxRememberedPayloads) {
+      _handledDeliveryIds.remove(_handledDeliveries.removeFirst());
     }
   }
 
