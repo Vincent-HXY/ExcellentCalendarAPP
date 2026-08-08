@@ -130,6 +130,41 @@ void main() {
       expect(find.text('detail'), findsNothing);
     }
   });
+
+  testWidgets('anniversary list route uses the configured feature builder', (
+    tester,
+  ) async {
+    final route = AppRouter.onGenerateRoute(
+      const RouteSettings(name: '/anniversaries'),
+      todayBuilder: (_) => const Text('today'),
+      anniversaryListBuilder: (_) =>
+          const Scaffold(body: Text('anniversary list')),
+    );
+
+    await _pushRoute(tester, route);
+
+    expect(find.text('anniversary list'), findsOneWidget);
+    expect(find.text('today'), findsNothing);
+  });
+
+  testWidgets('anniversary detail route passes the decoded id', (tester) async {
+    String? receivedId;
+    final route = AppRouter.onGenerateRoute(
+      const RouteSettings(
+        name: '/anniversary/detail/promise%2F2026%3Fsource%3Dtap',
+      ),
+      todayBuilder: (_) => const Text('today'),
+      anniversaryDetailBuilder: (context, anniversaryId) {
+        receivedId = anniversaryId;
+        return const Scaffold(body: Text('anniversary detail loaded'));
+      },
+    );
+
+    await _pushRoute(tester, route);
+
+    expect(find.text('anniversary detail loaded'), findsOneWidget);
+    expect(receivedId, 'promise/2026?source=tap');
+  });
 }
 
 Future<void> _pushRoute(WidgetTester tester, Route<dynamic> route) async {

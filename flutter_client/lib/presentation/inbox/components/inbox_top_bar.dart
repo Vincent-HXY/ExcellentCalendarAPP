@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../inbox_design_tokens.dart';
 
+enum _InboxTopBarAction { anniversaries }
+
 class InboxTopBar extends StatelessWidget {
-  const InboxTopBar({super.key});
+  const InboxTopBar({this.onOpenAnniversaries, super.key});
+
+  final VoidCallback? onOpenAnniversaries;
 
   @override
   Widget build(BuildContext context) {
@@ -37,17 +41,31 @@ class InboxTopBar extends StatelessWidget {
               style: InboxTextStyles.headerTitle,
             ),
             const Spacer(),
-            IconButton(
-              tooltip: 'More',
-              onPressed: () {},
+            PopupMenuButton<_InboxTopBarAction>(
+              tooltip: '更多',
               icon: const Icon(Icons.more_vert_rounded),
-              color: Colors.black87,
-              iconSize: InboxSizes.topBarIcon,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(
-                width: InboxSizes.topBarIconButton,
-                height: InboxSizes.topBarIconButton,
-              ),
+              color: Colors.white,
+              onSelected: (action) {
+                if (action == _InboxTopBarAction.anniversaries) {
+                  onOpenAnniversaries?.call();
+                }
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: _InboxTopBarAction.anniversaries,
+                  enabled: onOpenAnniversaries != null,
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.hourglass_bottom_rounded,
+                        color: Color(0xFF38B9C5),
+                      ),
+                      SizedBox(width: 12),
+                      Text('倒数纪念日'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),

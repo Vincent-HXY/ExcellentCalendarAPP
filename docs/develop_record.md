@@ -1,6 +1,6 @@
 # ExcellentCalendarAPP 当前进度
 
-> 更新时间：2026-08-04
+> 更新时间：2026-08-06
 
 ## 总体结论
 
@@ -45,6 +45,7 @@ Flutter → Dart Gateway → Kotlin MethodChannel → JNI → C++ Core → JSON 
 - 已完成新建日程页面、日期/时间选择器、重复和提醒选择 UI。
 - 已完成日程详情页、完成操作和列表刷新。
 - 已接入 Application Layer、Gateway、DTO 和 NativeResult 解析。
+- 已完成“倒数纪念日”Flutter Fake 原型：列表/筛选、详情纸张卡、备注/主题/分享占位、新建/编辑/删除、固定时钟、共享内存 Gateway，以及 loading/empty/error/submitting 状态。该功能未接入真实 Native，后续接口缺口记录在 `docs/anniversary_frontend_contract_requirements.md`。
 
 ### Android Native
 
@@ -96,6 +97,7 @@ Contract 或目录中已有设计，不代表对应生产功能已经完成。
 - 2026-08-04 C++ 配置后执行 `excellent_calendar_check`：3/3 通过；最新 `excellent_calendar_recurrence_tests`（含 Boundary JSON 断言）通过。
 - 2026-08-04 共 112 个 Contract JSON Schema 通过 JSON 语法解析；CAS、reopen、expired、prepared attempt resolution 和逻辑 journal store 名均有 C++ 回归覆盖。
 - 2026-08-04 finalize/list 一致性修复验证：112 个 Schema 可解析、62 个本地 `$ref` 闭合；Kotlin adopted finalize 与 `status=["expired"]` 回归通过；Android 全量 JVM 单测和 Debug APK 构建通过；C++ `excellent_calendar_check` 3/3、Flutter analyze 和 68 个 Flutter 测试通过。
+- 2026-08-06 倒数纪念日 Flutter Fake 原型验证：`flutter analyze` 通过，Flutter 完整测试 156/156 通过，`flutter build apk --debug` 通过。定向测试覆盖五条固定数据、筛选、详情、创建/编辑/删除、共享 Fake、错误恢复、360×800 和 1.3 字体缩放。真实 Anniversary MethodChannel/Kotlin/JNI/C++/存储/农历/通知链路未验证且尚未实现。
 - 以下代码验证为 2026-08-01 的 v1 基线，本次纯文档/Contract 设计没有重跑：C++ `excellent_calendar_check` 2/2、`flutter analyze`、68 个 Flutter 测试、Kotlin `:app:testDebugUnitTest` 和 Android Debug APK 均曾通过。
 - 真机通知、Alarm、JNI、点击路由完整链路：未验证。
 

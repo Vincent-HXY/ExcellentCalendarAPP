@@ -22,6 +22,7 @@ class InboxPage extends StatefulWidget {
     required this.createEventUseCase,
     required this.completeEventUseCase,
     required this.timezoneService,
+    this.onOpenAnniversaries,
     super.key,
   });
 
@@ -29,6 +30,7 @@ class InboxPage extends StatefulWidget {
   final CreateEventUseCase createEventUseCase;
   final CompleteEventUseCase completeEventUseCase;
   final TimezoneApplicationService timezoneService;
+  final VoidCallback? onOpenAnniversaries;
 
   @override
   State<InboxPage> createState() => _InboxPageState();
@@ -120,7 +122,7 @@ class _InboxPageState extends State<InboxPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const InboxTopBar(),
+                InboxTopBar(onOpenAnniversaries: widget.onOpenAnniversaries),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(

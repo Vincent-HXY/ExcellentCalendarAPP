@@ -4,6 +4,8 @@ import '../../presentation/event_detail/pages/event_detail_page.dart';
 
 typedef EventDetailRouteBuilder =
     Widget Function(BuildContext context, EventDetailRouteData routeData);
+typedef AnniversaryDetailRouteBuilder =
+    Widget Function(BuildContext context, String anniversaryId);
 
 class EventDetailRouteData {
   const EventDetailRouteData({
@@ -22,12 +24,20 @@ class AppRouter {
     RouteSettings settings, {
     required WidgetBuilder todayBuilder,
     EventDetailRouteBuilder? eventDetailBuilder,
+    WidgetBuilder? anniversaryListBuilder,
+    AnniversaryDetailRouteBuilder? anniversaryDetailBuilder,
   }) {
     final name = settings.name ?? '/today';
     if (name == '/today' || name == '/') {
       return MaterialPageRoute<void>(
         settings: const RouteSettings(name: '/today'),
         builder: todayBuilder,
+      );
+    }
+    if (name == '/anniversaries' && anniversaryListBuilder != null) {
+      return MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/anniversaries'),
+        builder: anniversaryListBuilder,
       );
     }
 
@@ -77,6 +87,12 @@ class AppRouter {
               builder: (context) => eventDetailBuilder(context, routeData),
             );
           }
+        }
+        if (type == 'anniversary' && anniversaryDetailBuilder != null) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (context) => anniversaryDetailBuilder(context, id),
+          );
         }
         return MaterialPageRoute<void>(
           settings: settings,

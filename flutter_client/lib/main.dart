@@ -11,11 +11,16 @@ import 'application/event/recurring_event_detail_controller.dart';
 import 'application/event/update_event_use_case.dart';
 import 'application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'application/timezone/timezone_application_service.dart';
+import 'application/anniversary/app_clock.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_notification_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_reminder_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_timezone_adapter.dart';
+import 'data/anniversary/fake_anniversary_gateway.dart';
+import 'data/anniversary/fake_anniversary_share_gateway.dart';
 import 'presentation/app_notification_host.dart';
+import 'presentation/anniversary/pages/anniversary_detail_page.dart';
+import 'presentation/anniversary/pages/anniversary_list_page.dart';
 import 'presentation/event_detail/pages/event_detail_flow_page.dart';
 import 'presentation/inbox/inbox_page.dart';
 
@@ -39,11 +44,17 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   late final UpdateEventUseCase _updateEventUseCase;
   late final TimezoneApplicationService _timezoneService;
   late final AppNotificationBootstrap _notificationBootstrap;
+  late final AppClock _anniversaryClock;
+  late final FakeAnniversaryGateway _anniversaryGateway;
+  late final FakeAnniversaryShareGateway _anniversaryShareGateway;
 
   @override
   void initState() {
     super.initState();
     _eventGateway = MethodChannelEventAdapter();
+    _anniversaryClock = FixedAppClock(DateTime(2026, 8, 6));
+    _anniversaryGateway = FakeAnniversaryGateway(clock: _anniversaryClock);
+    _anniversaryShareGateway = FakeAnniversaryShareGateway();
     _timezoneService = TimezoneApplicationService(
       MethodChannelTimezoneAdapter(),
     );
@@ -80,7 +91,26 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
         createEventUseCase: _createEventUseCase,
         completeEventUseCase: _completeEventUseCase,
         timezoneService: _timezoneService,
+        onOpenAnniversaries: () =>
+            Navigator.of(context).pushNamed('/anniversaries'),
       ),
+    );
+  }
+
+  Widget _buildAnniversaryList(BuildContext context) {
+    return AnniversaryListPage(
+      gateway: _anniversaryGateway,
+      shareGateway: _anniversaryShareGateway,
+      clock: _anniversaryClock,
+    );
+  }
+
+  Widget _buildAnniversaryDetail(BuildContext context, String anniversaryId) {
+    return AnniversaryDetailPage(
+      anniversaryId: anniversaryId,
+      gateway: _anniversaryGateway,
+      shareGateway: _anniversaryShareGateway,
+      clock: _anniversaryClock,
     );
   }
 
@@ -99,6 +129,8 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
       onGenerateRoute: (settings) => AppRouter.onGenerateRoute(
         settings,
         todayBuilder: _buildToday,
+        anniversaryListBuilder: _buildAnniversaryList,
+        anniversaryDetailBuilder: _buildAnniversaryDetail,
         eventDetailBuilder: (context, routeData) => EventDetailFlowPage(
           controller: RecurringEventDetailController(
             eventId: routeData.eventId,
