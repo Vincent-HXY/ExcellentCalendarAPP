@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_recurrence_rule_input.schema.json",
+  "title": "AnniversaryRecurrenceRuleInput",
+  "description": "Anniversary V1 recurrence intent. The client never supplies recurrence_id. C++ creates a rule when enabling yearly recurrence and retains the active rule while recurrence remains yearly. Anniversary.date is the sole historical and month/day anchor; this object must not repeat that date or introduce Event v2 UTC occurrence fields.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "frequency",
+    "interval"
+  ],
+  "properties": {
+    "frequency": {
+      "type": "string",
+      "const": "yearly"
+    },
+    "interval": {
+      "type": "integer",
+      "const": 1
+    }
+  }
+}

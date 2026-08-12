@@ -380,6 +380,30 @@ class NativeMethodChannelHandlerTest {
         assertFalse(result.errorCalled)
     }
 
+    // 目的：共享 executor 拒绝任务时调用不能悬空或重复完成；方法：注入抛异常的 Executor 并检查统一失败外壳。
+    @Test
+    fun executorRejectionCompletesExactlyOnceWithNormalizedFailure() {
+        val fakeBridge = FakeNativeCalendarCoreBridge()
+        val handler = NativeMethodChannelHandler(
+            nativeCalendarCoreBridge = fakeBridge,
+            executor = Executor { throw IllegalStateException("executor rejected") },
+            resultDispatcher = ResultDispatcher { block -> block() },
+            logger = NativeBridgeLogger { _, _, _ -> },
+        )
+
+        val result = invoke(handler, NativeMethodChannelHandler.MethodEventCreate, createEventArguments())
+        val returned = result.successMap()
+
+        assertEquals(1, result.successCount)
+        assertEquals(false, returned["ok"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.NativeInternalError, error["code"])
+        assertNull(fakeBridge.lastCreateRequestJson)
+        assertFalse(result.errorCalled)
+        assertFalse(result.notImplementedCalled)
+    }
+
     // 使用 Fake Bridge 构造被测 Handler，隔离真实 JNI 动态库。
     private fun handler(fakeBridge: FakeNativeCalendarCoreBridge): NativeMethodChannelHandler {
         return NativeMethodChannelHandler(
@@ -700,6 +724,10 @@ class NativeMethodChannelHandlerTest {
 
         override fun consumeReminderAfterDelivery(requestJson: String): String = createReminder(requestJson)
 
+        override fun listCategories(requestJson: String): String = createReminder(requestJson)
+
+        override fun createCategory(requestJson: String): String = createReminder(requestJson)
+
         companion object {
             private fun eventResponseStatic(
                 status: String = "active",
@@ -758,12 +786,15 @@ class NativeMethodChannelHandlerTest {
             private set
         var successCalled = false
             private set
+        var successCount = 0
+            private set
         var errorCalled = false
             private set
         var notImplementedCalled = false
             private set
 
         override fun success(result: Any?) {
+            successCount += 1
             successCalled = true
             successValue = result
         }

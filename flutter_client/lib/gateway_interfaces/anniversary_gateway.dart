@@ -1,7 +1,7 @@
 import '../application/anniversary/anniversary_models.dart';
 
 abstract interface class AnniversaryGateway {
-  Future<List<AnniversaryListItem>> list(AnniversaryListQuery query);
+  Future<AnniversaryListResult> list(AnniversaryListQuery query);
 
   Future<AnniversaryDetail> getById(String id);
 
@@ -11,5 +11,8 @@ abstract interface class AnniversaryGateway {
 
   Future<void> delete(String id);
 
-  Future<CountdownSnapshot> previewCountdown(AnniversaryDraft draft);
+  Future<CountdownSnapshot> previewCountdown(
+    AnniversaryDraft draft, {
+    required RecurrenceDraft? recurrence,
+  });
 }

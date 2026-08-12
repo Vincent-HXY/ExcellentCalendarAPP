@@ -1,29 +1,36 @@
 version: 2
-release_status: design_only
-implementation_status: cpp_core_complete_unintegrated
+release_status: active
+implementation_status: integrated
 format_name: excellent_calendar_core_json
 storage_format_version: 2
 
 directories:
   active_android: files/local_storage/calendar_core_storage_json
-  legacy_discovery_only: files/local_storage/test_storage_json
-  archive_name_pattern: calendar_core_storage_json.v1.archived.<UTC_YYYYMMDDTHHMMSSZ>
+  legacy_ignored: files/local_storage/test_storage_json
+  note: >-
+    V1 Calendar Core data is not preserved. The legacy directory is ignored and
+    is no longer a migration source; the active v2 directory is the only writer.
 
 compatibility:
   reads_v1: false
   migrates_v1: false
   writes_v1: false
   mixed_read: forbidden
+  additive_v2_store_policy: >-
+    A new independent file may join the v2 directory without changing
+    storage_format_version when existing v2 runtimes ignore unknown file names,
+    existing store envelopes and codecs remain unchanged, and the new runtime
+    validates rather than rewrites every pre-existing file.
   rollback: >-
-    Keep the v1 archive and v2 directory separate. A rollback requires an explicit
-    restore choice; neither version may reinterpret or overwrite the other.
+    V1 data is not archived or restored. A rollback to a v1 runtime loses local
+    data by decision; the old app must never open the v2 directory.
 
-upgrade_from_v1:
+v1_no_preservation:
   - validate that the source is the confirmed v1 Calendar Core directory
-  - atomically rename the complete v1 directory to the timestamped archive name
+  - remove the confirmed v1 directory after validation; no archive is kept
   - create and initialize an empty v2 directory
-  - stop initialization if validation, archive, or v2 initialization fails
-  - never delete, partially copy, or silently reset v1 user data
+  - stop initialization if validation or v2 initialization fails
+  - never remove an unconfirmed, corrupt, mixed-version, or v2 directory
 
 logical_stores:
   events: events.json
@@ -33,6 +40,21 @@ logical_stores:
   notifications: notifications.json
   reminder_recovery_batches: reminder_recovery_batches.json
   workflow_transactions: workflow_transactions.json
+  anniversaries: anniversaries.json
+  anniversary_recurrences: anniversary_recurrences.json
+  anniversary_workflow_transactions: anniversary_workflow_transactions.json
+  categories: categories.json
+
+logical_store_implementation:
+  categories:
+    implementation_status: implemented_unintegrated
+    release_status: blocked
+    activation_gate: >-
+      Category Domain, Repository, JSON codec, bootstrap integration, JNI
+      export, and persistence tests exist, but release activation remains
+      blocked until Event detail aggregation, Kotlin Event validation, atomic
+      post-replace failure handling, cross-layer sort/normalization conformance,
+      production Flutter composition, and device smoke all pass together.
 
 root_envelopes:
   events: {version_field: storage_version, version: 2, collection_field: events}
@@ -42,12 +64,18 @@ root_envelopes:
   notifications: {version_field: storage_version, version: 2, collection_field: notifications}
   reminder_recovery_batches: {version_field: storage_version, version: 2, collection_field: reminder_recovery_batches}
   workflow_transactions: {version_field: storage_version, version: 2, collection_field: transactions}
+  anniversaries: {version_field: storage_version, version: 2, collection_field: anniversaries}
+  anniversary_recurrences: {version_field: storage_version, version: 2, collection_field: anniversary_recurrences}
+  anniversary_workflow_transactions: {version_field: storage_version, version: 2, collection_field: transactions}
+  categories: {version_field: storage_version, version: 2, collection_field: categories}
 
 file_invariants:
   - every store root declares storage_version equal to 2
   - every write validates the complete new snapshot before atomic replacement
   - unknown storage_version values fail initialization
   - no repository may create a v1-shaped file inside the v2 directory
+  - an existing valid v2 directory may add missing Anniversary stores only as empty v2 roots; existing files are never reset or rewritten by this additive initialization
+  - once Category Storage is activated, an absent categories store may be initialized only as the exact empty v2 root; an existing categories file is always validated and is never reset or rewritten by bootstrap
 
 required_uniques:
   events:
@@ -66,6 +94,14 @@ required_uniques:
     - [delivery_attempt_id]
   workflow_transactions:
     - [transaction_id]
+  anniversaries:
+    - [id]
+  anniversary_recurrences:
+    - [recurrence_id]
+  anniversary_workflow_transactions:
+    - [transaction_id]
+  categories:
+    - [id]
 
 conditional_uniques:
   recurring_reminder_identity:
@@ -94,9 +130,128 @@ lifecycle_invariants:
   scheduler_acknowledgement:
     - mark_scheduled compares expected_remind_at with the persisted remind_at inside the Reminder write transaction
     - a mismatch returns REMINDER_SCHEDULE_CONFLICT and writes no Reminder fields
-  v1_archive_recognition:
+  v1_discard_recognition:
     - the v1 Reminder status and cancellation-reason allow-lists are frozen independently from v2 domain validators
-    - v2-only expired and occurrence_reopened values never qualify a directory for automatic v1 archival
+    - v2-only expired and occurrence_reopened values never qualify a directory for automatic v1 removal
+
+category_store:
+  implementation_status: implemented_unintegrated
+  release_status: blocked
+  file: categories.json
+  schema: storage/category_store.schema.json
+  strategy:
+    format: strict JSON full snapshot
+    rationale:
+      - Category is low-cardinality configuration data and the current public operations are list and create
+      - a complete snapshot is cheap to validate and reuses the existing directory lock, atomic file replacement, and corruption policy
+      - the Repository boundary keeps a future SQLite implementation from leaking into Domain or transport DTOs
+    reconsider_when:
+      - account-partitioned sync or independently versioned remote merges are introduced
+      - write frequency or record volume makes full-snapshot replacement measurably unsuitable
+      - a required Category workflow crosses logical stores and needs a broader transaction model
+  root:
+    exact_fields: [storage_version, categories]
+    storage_version: 2
+    collection_field: categories
+    empty_snapshot: {storage_version: 2, categories: []}
+  record:
+    name: CategoryStorageRecord
+    exact_fields:
+      - id
+      - name
+      - description
+      - color
+      - icon
+      - sort_order
+      - created_at
+      - updated_at
+      - deleted_at
+    nullable_fields: [description, icon, deleted_at]
+    transport_projection: category/category_response.schema.json
+    invariants:
+      - id is a canonical lowercase UUIDv4 generated by the C++ writer
+      - name, description, and icon contain canonical trimmed text; blank optional text is persisted as null
+      - "color is canonical uppercase #RRGGBB and is never null in the official local store"
+      - sort_order is an integer from 0 through 9007199254740991; a null create input is materialized before persistence
+      - created_at and updated_at are whole-second UTC instants and updated_at is not earlier than created_at
+      - deleted_at is null or a whole-second UTC instant not earlier than created_at
+      - a newly created record has deleted_at null and created_at equal to updated_at
+      - unknown fields, missing nullable keys, duplicate ids, and invalid records fail the complete store load
+  scope:
+    storage_partition: current local Calendar Core directory
+    persisted_owner_fields: none
+    invariants:
+      - user_id, owner_name, is_default, and presentation grouping fields are forbidden in CategoryStorageRecord v2
+      - adding account ownership or sync partitioning requires an explicit future Contract and migration decision
+  uniqueness:
+    id: required
+    name: not_constrained_in_current_contract
+    sort_order: not_constrained_in_current_contract
+  ordering:
+    snapshot_order: id ascending
+    list_projection_order: sort_order ascending, then created_at ascending, then id ascending; the wider response comparator still keeps null last for non-store compatibility readers
+    default_create_order: >-
+      When the request sort_order is null, the C++ workflow persists zero if no
+      active record exists; otherwise it persists the checked maximum active
+      sort_order plus one. If that maximum is 9007199254740991, creation returns
+      CATEGORY_SORT_ORDER_EXHAUSTED and writes nothing. Explicit duplicate sort
+      values remain legal and are resolved by the list tie-breakers.
+  numeric_boundary:
+    minimum: 0
+    maximum: 9007199254740991
+    rationale: interoperable JSON safe-integer maximum whose adjacent integers remain distinct under IEEE-754 binary64
+    error_semantics:
+      request_above_maximum: CONTRACT_VALIDATION_FAILED
+      persisted_above_maximum: STORAGE_DATA_CORRUPTED
+      automatic_append_at_maximum: CATEGORY_SORT_ORDER_EXHAUSTED with no write
+  reference_integrity:
+    relationship: weak_by_design
+    referencing_fields:
+      - Event.category_id
+      - Habit.category_id
+      - Anniversary.category_id
+      - SearchIndex.category_id
+    invariants:
+      - Category records use UUIDv4 ids, but already released category_id readers continue to accept nullable opaque strings for legacy references
+      - a missing or soft-deleted Category never makes a referencing business record unreadable
+      - bootstrap, list, create, and future soft delete never cascade, clear, normalize, or rewrite category_id in another store
+      - aggregate projections may return a null Category while preserving the original category_id
+  initialization:
+    new_v2_directory: create the exact empty root
+    existing_v2_without_categories: create only the exact empty root after the existing directory has passed validation
+    existing_valid_categories: preserve and load without rewriting
+    existing_invalid_categories: fail initialization with STORAGE_DATA_CORRUPTED and preserve the original file
+    historical_source: none
+    fake_repository_import: forbidden
+    default_category_seed: forbidden_until_product_semantics_are_frozen
+  write_protocol:
+    lock_scope: existing Calendar Core directory-wide recursive mutex and runtime single-writer lease
+    steps:
+      - load and validate the complete current categories snapshot
+      - apply one Category domain command in memory
+      - validate uniqueness, canonical fields, lifecycle invariants, and the complete new snapshot
+      - serialize records in snapshot_order
+      - write a same-directory temporary file, flush and fsync it, atomically replace categories.json, then sync the directory
+    commit_point: successful directory sync after the atomic replacement
+    failure_guarantee: any validation or I/O failure leaves the previous categories.json snapshot authoritative
+  transaction_policy:
+    journal_required: false
+    reason: >-
+      category.create and future same-file reorder or soft-delete operations mutate
+      only categories.json, so one validated atomic snapshot replacement is the
+      transaction boundary.
+    future_gate: >-
+      Any workflow that must atomically mutate Category plus another logical
+      store must define a dedicated recoverable journal contract before it is
+      exposed; it must not silently widen either existing journal's exact store set.
+  compatibility:
+    storage_format_version: 2
+    rationale: >-
+      categories.json is an independent additive file; it does not alter any
+      integrated v2 root envelope, record codec, or journal. Existing v2 runtimes
+      ignore the unknown file and must leave it untouched.
+    migration_from_v1: none
+    migration_from_flutter_fake: none
 
 workflow_journal:
   states: [prepared, committed]
@@ -134,4 +289,39 @@ workflow_journal:
     - write and fsync commit only after all repository changes succeed
     - replay all prepared uncommitted transactions during runtime.initialize
     - committed records may be compacted only after all affected store snapshots are durable
+    - corrupted or unverifiable journal data fails initialization without resetting storage
+
+anniversary_workflow_journal:
+  isolation: >-
+    This narrow journal is independent from workflow_transactions.json and does
+    not change the existing Event/Reminder journal's exact six-store invariant.
+  states: [prepared, committed]
+  recovery: replay_prepared_idempotently_then_commit
+  record_fields:
+    transaction_id: required_uuid_v4
+    operation: required_stable_string
+    intent_version: required_positive_integer
+    intent: required_strict_object_for_operation_and_intent_version
+    affected_stores: required_unique_logical_store_names
+    state: required_prepared_or_committed
+    prepared_at: required_utc_instant
+    committed_at: nullable_utc_instant
+  operations:
+    - anniversary_create
+    - anniversary_update
+    - anniversary_delete
+  intent_codecs:
+    version_1:
+      applies_to: all_declared_operations
+      exact_fields: [after_stores]
+      after_stores: >-
+        Complete, already validated v2 root snapshots keyed by anniversaries and
+        anniversary_recurrences. File names are storage-adapter details and are
+        forbidden as keys in affected_stores or after_stores.
+  invariants:
+    - affected_stores contains exactly anniversaries and anniversary_recurrences
+    - write and fsync prepared intent before applying either data-store snapshot
+    - the complete after-state is sufficient for deterministic idempotent replay
+    - write and fsync commit only after both data-store snapshots are durable
+    - replay a prepared transaction during runtime.initialize before serving calls
     - corrupted or unverifiable journal data fails initialization without resetting storage

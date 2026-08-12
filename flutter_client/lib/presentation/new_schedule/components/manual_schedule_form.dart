@@ -18,6 +18,7 @@ class ManualScheduleForm extends StatelessWidget {
     required this.isAllDay,
     required this.isRingingReminderEnabled,
     required this.isMoreSettingsExpanded,
+    required this.categoryLabel,
     required this.recurrenceLabel,
     required this.reminderSummary,
     required this.timezoneLabel,
@@ -30,6 +31,7 @@ class ManualScheduleForm extends StatelessWidget {
     required this.onEndTap,
     required this.onEndTimeTap,
     required this.onEndDateTap,
+    required this.onCategoryTap,
     required this.onRecurrenceTap,
     required this.onReminderTap,
     required this.onLocationMapTap,
@@ -45,6 +47,7 @@ class ManualScheduleForm extends StatelessWidget {
   final bool isAllDay;
   final bool isRingingReminderEnabled;
   final bool isMoreSettingsExpanded;
+  final String categoryLabel;
   final String recurrenceLabel;
   final String reminderSummary;
   final String timezoneLabel;
@@ -57,6 +60,7 @@ class ManualScheduleForm extends StatelessWidget {
   final VoidCallback onEndTap;
   final VoidCallback onEndTimeTap;
   final VoidCallback onEndDateTap;
+  final VoidCallback onCategoryTap;
   final VoidCallback onRecurrenceTap;
   final VoidCallback onReminderTap;
   final VoidCallback onLocationMapTap;
@@ -69,7 +73,8 @@ class ManualScheduleForm extends StatelessWidget {
       children: [
         TextInputCard(
           titleController: titleController,
-          onTypeTap: () => onTodoTap('类型选择功能后续实现'),
+          categoryLabel: categoryLabel,
+          onCategoryTap: onCategoryTap,
         ),
         const SizedBox(height: NewScheduleSpacing.sectionGap),
         TimeRangeCard(
@@ -117,14 +122,6 @@ class ManualScheduleForm extends StatelessWidget {
                       child: _LocationInputRow(
                         controller: locationController,
                         onMapTap: onLocationMapTap,
-                      ),
-                    ),
-                    const SizedBox(height: NewScheduleSpacing.sectionGap),
-                    FormSectionCard(
-                      child: FormRowItem(
-                        label: '日历分类',
-                        value: '默认日程',
-                        onTap: () => onTodoTap('日历分类功能后续实现'),
                       ),
                     ),
                     const SizedBox(height: NewScheduleSpacing.sectionGap),

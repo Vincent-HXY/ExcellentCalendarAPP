@@ -119,9 +119,26 @@ class UpdateAnniversaryPlan {
 }
 
 class AnniversaryListQuery {
-  const AnniversaryListQuery({this.kind});
+  const AnniversaryListQuery({this.page = 1, this.pageSize = 20});
 
-  final AnniversaryKind? kind;
+  final int page;
+  final int pageSize;
+}
+
+class AnniversaryListResult {
+  AnniversaryListResult({
+    required List<AnniversaryListItem> items,
+    required this.total,
+    required this.page,
+    required this.pageSize,
+    required this.hasMore,
+  }) : items = List.unmodifiable(items);
+
+  final List<AnniversaryListItem> items;
+  final int? total;
+  final int page;
+  final int pageSize;
+  final bool hasMore;
 }
 
 class CountdownSnapshot {
@@ -198,6 +215,7 @@ class AnniversarySharePayload {
 enum AnniversaryFailureCode {
   titleEmpty,
   dateInvalid,
+  calendarUnsupported,
   notFound,
   contractValidation,
   nativeInternal,
@@ -223,6 +241,7 @@ String anniversaryFailureMessage(Object error) {
   return switch (error.code) {
     AnniversaryFailureCode.titleEmpty => '请输入纪念日名称',
     AnniversaryFailureCode.dateInvalid => '请选择有效的纪念日日期',
+    AnniversaryFailureCode.calendarUnsupported => '当前版本暂不支持农历',
     AnniversaryFailureCode.notFound => '该纪念日不存在或已删除',
     AnniversaryFailureCode.contractValidation => '纪念日数据格式不正确，请稍后重试',
     AnniversaryFailureCode.nativeInternal => '纪念日服务暂时不可用，请稍后重试',

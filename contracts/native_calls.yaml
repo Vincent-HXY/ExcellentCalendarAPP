@@ -1,6 +1,6 @@
 version: 2
-release_status: design_only
-implementation_status: cpp_core_complete_unintegrated
+release_status: active
+implementation_status: integrated
 bridge: kotlin_jni
 
 calls:
@@ -303,3 +303,93 @@ calls:
     result:
       envelope: common/native_result.schema.json
       data: reminder/plan_recovery_response.schema.json
+
+  category.list:
+    module: category
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: implemented_unintegrated
+    release_status: blocked
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: category/category_list_response.schema.json
+
+  category.create:
+    module: category
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: implemented_unintegrated
+    release_status: blocked
+    request: category/create_category_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: category/category_response.schema.json
+
+  anniversary.create:
+    module: anniversary
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/create_anniversary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_detail_response.schema.json
+
+  anniversary.update:
+    module: anniversary
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/update_anniversary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_detail_response.schema.json
+
+  anniversary.delete:
+    module: anniversary
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/delete_anniversary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/deleted_anniversary_response.schema.json
+
+  anniversary.detail:
+    module: anniversary
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/get_anniversary_detail_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_detail_response.schema.json
+
+  anniversary.list:
+    module: anniversary
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/list_anniversaries_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_list_response.schema.json
+
+  anniversary.preview_countdown:
+    module: anniversary
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/preview_anniversary_countdown_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_countdown_response.schema.json

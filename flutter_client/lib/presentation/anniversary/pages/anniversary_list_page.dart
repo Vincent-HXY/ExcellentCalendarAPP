@@ -9,7 +9,6 @@ import '../../../application/anniversary/anniversary_models.dart';
 import '../../../gateway_interfaces/anniversary_gateway.dart';
 import '../../../gateway_interfaces/anniversary_share_gateway.dart';
 import '../anniversary_design_tokens.dart';
-import '../widgets/anniversary_filter_bar.dart';
 import '../widgets/anniversary_list_card.dart';
 import 'anniversary_detail_page.dart';
 import 'create_anniversary_page.dart';
@@ -117,19 +116,7 @@ class _AnniversaryListPageState extends State<AnniversaryListPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _AnniversaryListTopBar(onSelected: _handleMenuAction),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AnniversarySpacing.pageHorizontal,
-                ),
-                child: ListenableBuilder(
-                  listenable: _controller,
-                  builder: (context, _) => AnniversaryFilterBar(
-                    selected: _controller.selectedFilter,
-                    onSelected: _controller.selectFilter,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -170,10 +157,23 @@ class _AnniversaryListPageState extends State<AnniversaryListPage> {
       AnniversaryListPhase.ready => ListView.separated(
         key: const ValueKey('anniversary-list'),
         padding: const EdgeInsets.only(bottom: 104),
-        itemCount: _controller.items.length,
+        itemCount:
+            _controller.items.length +
+            (_controller.hasMore ||
+                    _controller.isLoadingMore ||
+                    _controller.loadMoreErrorMessage != null
+                ? 1
+                : 0),
         separatorBuilder: (_, _) =>
             const SizedBox(height: AnniversarySpacing.listGap),
         itemBuilder: (context, index) {
+          if (index == _controller.items.length) {
+            return _AnniversaryPaginationFooter(
+              isLoading: _controller.isLoadingMore,
+              errorMessage: _controller.loadMoreErrorMessage,
+              onLoadMore: _controller.loadMore,
+            );
+          }
           final item = _controller.items[index];
           return AnniversaryListCard(
             key: ValueKey(item.anniversary.id),
@@ -183,6 +183,67 @@ class _AnniversaryListPageState extends State<AnniversaryListPage> {
         },
       ),
     };
+  }
+}
+
+class _AnniversaryPaginationFooter extends StatelessWidget {
+  const _AnniversaryPaginationFooter({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onLoadMore,
+  });
+
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onLoadMore;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 18),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.2,
+                color: AnniversaryColors.primaryTeal,
+              ),
+            ),
+            SizedBox(width: 10),
+            Text('正在加载更多纪念日…'),
+          ],
+        ),
+      );
+    }
+
+    final error = errorMessage;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        children: [
+          if (error != null) ...[
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AnniversaryColors.error),
+            ),
+            const SizedBox(height: 8),
+          ],
+          OutlinedButton.icon(
+            key: const ValueKey('anniversary-load-more-button'),
+            onPressed: onLoadMore,
+            icon: Icon(
+              error == null ? Icons.expand_more_rounded : Icons.refresh_rounded,
+            ),
+            label: Text(error == null ? '加载更多' : '重试加载更多'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

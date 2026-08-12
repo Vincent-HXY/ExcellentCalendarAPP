@@ -47,11 +47,19 @@
         "type": "string"
       }
     },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Derived stable Category reference used for structured filtering. It remains an opaque string so active Event v2 readers preserve legacy non-UUID category references."
+    },
     "category_name": {
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "description": "Rebuildable display/full-text redundancy. It is never the structured Category filter key."
     },
     "occur_at": {
       "type": [

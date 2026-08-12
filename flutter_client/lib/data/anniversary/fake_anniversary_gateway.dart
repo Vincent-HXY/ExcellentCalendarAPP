@@ -38,7 +38,7 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
   }
 
   @override
-  Future<List<AnniversaryListItem>> list(AnniversaryListQuery query) async {
+  Future<AnniversaryListResult> list(AnniversaryListQuery query) async {
     await _waitForOperation();
     final failure = _nextListFailure;
     _nextListFailure = null;
@@ -46,11 +46,28 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
       throw AnniversaryGatewayException(failure, retryable: true);
     }
 
-    return _entries.values
+    if (query.page < 1 || query.pageSize < 1 || query.pageSize > 200) {
+      throw const AnniversaryGatewayException(
+        AnniversaryFailureCode.contractValidation,
+      );
+    }
+    final allItems = _entries.values
         .where((detail) => detail.anniversary.deletedAt == null)
-        .where((detail) => query.kind == null || detail.kind == query.kind)
         .map((detail) => detail.toListItem())
         .toList(growable: false);
+    final start = (query.page - 1) * query.pageSize;
+    final requestedEnd = start + query.pageSize;
+    final end = requestedEnd < allItems.length ? requestedEnd : allItems.length;
+    final items = start >= allItems.length
+        ? const <AnniversaryListItem>[]
+        : allItems.sublist(start, end);
+    return AnniversaryListResult(
+      items: items,
+      total: allItems.length,
+      page: query.page,
+      pageSize: query.pageSize,
+      hasMore: end < allItems.length,
+    );
   }
 
   @override
@@ -184,10 +201,13 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
   }
 
   @override
-  Future<CountdownSnapshot> previewCountdown(AnniversaryDraft draft) async {
+  Future<CountdownSnapshot> previewCountdown(
+    AnniversaryDraft draft, {
+    required RecurrenceDraft? recurrence,
+  }) async {
     await _waitForOperation();
     _validate(draft);
-    return _calculateSnapshot(draft, repeatsYearly: false);
+    return _calculateSnapshot(draft, repeatsYearly: recurrence != null);
   }
 
   Future<void> _waitForOperation() async {
@@ -206,6 +226,11 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
     if (draft.date.year < 1900 || draft.date.year > 2100) {
       throw const AnniversaryGatewayException(
         AnniversaryFailureCode.dateInvalid,
+      );
+    }
+    if (draft.calendarType == AnniversaryCalendarType.lunar) {
+      throw const AnniversaryGatewayException(
+        AnniversaryFailureCode.calendarUnsupported,
       );
     }
   }

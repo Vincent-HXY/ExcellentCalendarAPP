@@ -1,10 +1,12 @@
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
 
 #include <cerrno>
+#include <exception>
 #include <fstream>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <system_error>
 
@@ -127,6 +129,30 @@ common::Result<common::Unit> sync_directory_to_disk(const std::filesystem::path&
 #endif
 }
 
+common::Result<std::string> read_file_bytes(
+    const std::filesystem::path& path,
+    std::string operation) {
+  std::ifstream input(path, std::ios::binary);
+  if (!input.is_open()) {
+    return common::Result<std::string>::failure(
+        storage_io_error(std::move(operation), path.filename().string() +
+                                                   " cannot be opened"));
+  }
+  std::stringstream buffer;
+  buffer << input.rdbuf();
+  if (input.bad()) {
+    return common::Result<std::string>::failure(
+        storage_io_error(std::move(operation), path.filename().string() +
+                                                   " read failed"));
+  }
+  return common::Result<std::string>::success(buffer.str());
+}
+
+void remove_file_best_effort(const std::filesystem::path& path) {
+  std::error_code ignored;
+  std::filesystem::remove(path, ignored);
+}
+
 }  // namespace
 
 common::Error storage_data_corrupted(std::string reason, std::string field) {
@@ -140,9 +166,13 @@ common::Error storage_data_corrupted(std::string reason, std::string field) {
       std::move(details));
 }
 
-AtomicJsonFileStore::AtomicJsonFileStore(std::filesystem::path storage_directory)
+AtomicJsonFileStore::AtomicJsonFileStore(std::filesystem::path storage_directory,
+                                         FailureHook failure_hook,
+                                         DirectorySyncFailurePolicy failure_policy)
     : storage_directory_(std::move(storage_directory)),
-      directory_mutex_(mutex_for_directory(storage_directory_)) {}
+      directory_mutex_(mutex_for_directory(storage_directory_)),
+      failure_hook_(std::move(failure_hook)),
+      failure_policy_(failure_policy) {}
 
 common::Result<common::Unit> AtomicJsonFileStore::initialize() const {
   auto lock = acquire_directory_lock();
@@ -222,7 +252,12 @@ common::Result<common::Unit> AtomicJsonFileStore::write_json_file(const std::str
   }
 
   const auto target_path = file_path(file_name);
-  const auto tmp_path = target_path.string() + ".tmp";
+  const std::filesystem::path tmp_path = target_path.string() + ".tmp";
+  const std::filesystem::path rollback_path =
+      target_path.string() + ".rollback";
+
+  auto hook = call_write_hook("write");
+  if (!hook.ok()) return hook;
   {
     std::ofstream output(tmp_path, std::ios::binary | std::ios::trunc);
     if (!output.is_open()) {
@@ -235,20 +270,149 @@ common::Result<common::Unit> AtomicJsonFileStore::write_json_file(const std::str
     }
   }
 
+  hook = call_write_hook("temp_fsync");
+  if (!hook.ok()) {
+    remove_file_best_effort(tmp_path);
+    return hook;
+  }
   auto synced = sync_file_to_disk(tmp_path);
   if (!synced.ok()) {
-    std::error_code remove_error;
-    std::filesystem::remove(tmp_path, remove_error);
+    remove_file_best_effort(tmp_path);
     return synced;
   }
 
+  bool target_existed = false;
+  std::optional<std::string> previous_bytes;
+  if (failure_policy_ ==
+      DirectorySyncFailurePolicy::kRestorePreviousSnapshot) {
+    std::error_code exists_error;
+    target_existed = std::filesystem::exists(target_path, exists_error);
+    if (exists_error) {
+      remove_file_best_effort(tmp_path);
+      return common::Result<common::Unit>::failure(
+          storage_io_error("exists_before_replace", exists_error.message()));
+    }
+    if (target_existed) {
+      auto previous = read_file_bytes(target_path, "read_before_replace");
+      if (!previous.ok()) {
+        remove_file_best_effort(tmp_path);
+        return common::Result<common::Unit>::failure(previous.error());
+      }
+      previous_bytes = previous.value();
+
+      std::error_code copy_error;
+      std::filesystem::copy_file(
+          target_path, rollback_path,
+          std::filesystem::copy_options::overwrite_existing, copy_error);
+      if (copy_error) {
+        remove_file_best_effort(tmp_path);
+        return common::Result<common::Unit>::failure(
+            storage_io_error("prepare_rollback", copy_error.message()));
+      }
+      auto rollback_synced = sync_file_to_disk(rollback_path);
+      if (!rollback_synced.ok()) {
+        remove_file_best_effort(tmp_path);
+        remove_file_best_effort(rollback_path);
+        return rollback_synced;
+      }
+      rollback_synced = sync_directory_to_disk(storage_directory_);
+      if (!rollback_synced.ok()) {
+        remove_file_best_effort(tmp_path);
+        remove_file_best_effort(rollback_path);
+        return rollback_synced;
+      }
+    } else {
+      std::error_code remove_error;
+      std::filesystem::remove(rollback_path, remove_error);
+      if (remove_error) {
+        remove_file_best_effort(tmp_path);
+        return common::Result<common::Unit>::failure(storage_io_error(
+            "remove_stale_rollback", remove_error.message()));
+      }
+    }
+  }
+
+  hook = call_write_hook("replace");
+  if (!hook.ok()) {
+    remove_file_best_effort(tmp_path);
+    remove_file_best_effort(rollback_path);
+    return hook;
+  }
   auto replaced = replace_file_atomically(tmp_path, target_path);
   if (!replaced.ok()) {
-    std::error_code remove_error;
-    std::filesystem::remove(tmp_path, remove_error);
+    remove_file_best_effort(tmp_path);
+    remove_file_best_effort(rollback_path);
     return replaced;
   }
-  return sync_directory_to_disk(storage_directory_);
+
+  hook = call_write_hook("directory_fsync");
+  auto directory_synced = hook.ok() ? sync_directory_to_disk(storage_directory_)
+                                    : hook;
+  if (!directory_synced.ok()) {
+    if (failure_policy_ !=
+        DirectorySyncFailurePolicy::kRestorePreviousSnapshot) {
+      return directory_synced;
+    }
+    common::Result<common::Unit> restored =
+        common::Result<common::Unit>::success(common::Unit{});
+    if (target_existed) {
+      restored = replace_file_atomically(rollback_path, target_path);
+    } else {
+      std::error_code remove_error;
+      const bool removed = std::filesystem::remove(target_path, remove_error);
+      if (remove_error || !removed) {
+        restored = common::Result<common::Unit>::failure(storage_io_error(
+            "rollback_remove", remove_error ? remove_error.message()
+                                             : "replacement file is missing"));
+      }
+    }
+    if (restored.ok()) {
+      restored = sync_directory_to_disk(storage_directory_);
+    }
+    if (restored.ok() && target_existed) {
+      auto restored_bytes = read_file_bytes(target_path, "verify_rollback");
+      if (!restored_bytes.ok()) {
+        restored = common::Result<common::Unit>::failure(
+            restored_bytes.error());
+      } else if (!previous_bytes.has_value() ||
+                 restored_bytes.value() != *previous_bytes) {
+        restored = common::Result<common::Unit>::failure(storage_io_error(
+            "verify_rollback", "restored bytes differ from previous snapshot"));
+      }
+    } else if (restored.ok()) {
+      std::error_code rollback_exists_error;
+      const bool replacement_exists =
+          std::filesystem::exists(target_path, rollback_exists_error);
+      if (rollback_exists_error || replacement_exists) {
+        restored = common::Result<common::Unit>::failure(storage_io_error(
+            "verify_rollback",
+            rollback_exists_error ? rollback_exists_error.message()
+                                  : "replacement file is still visible"));
+      }
+    }
+    remove_file_best_effort(tmp_path);
+    if (!restored.ok()) {
+      // Keep an unconsumed rollback snapshot available for diagnosis/recovery.
+      const auto reason = directory_synced.error().details.find("reason");
+      return common::Result<common::Unit>::failure(storage_io_error(
+          "rollback_after_directory_fsync",
+          "commit failure: " +
+              (reason == directory_synced.error().details.end()
+                   ? directory_synced.error().message
+                   : reason->second) +
+              "; rollback failure: " + restored.error().message));
+    }
+    remove_file_best_effort(rollback_path);
+    return directory_synced;
+  }
+
+  // The successful directory sync is the commit point. Cleanup is best-effort:
+  // a stale rollback copy is never consulted as authoritative state.
+  if (failure_policy_ ==
+      DirectorySyncFailurePolicy::kRestorePreviousSnapshot) {
+    remove_file_best_effort(rollback_path);
+  }
+  return common::Result<common::Unit>::success(common::Unit{});
 }
 
 common::Result<common::Unit> AtomicJsonFileStore::remove_file(const std::string& file_name) const {
@@ -273,6 +437,22 @@ common::Result<common::Unit> AtomicJsonFileStore::remove_file(const std::string&
 
 AtomicJsonFileStore::DirectoryLock AtomicJsonFileStore::acquire_directory_lock() const {
   return DirectoryLock(*directory_mutex_);
+}
+
+common::Result<common::Unit> AtomicJsonFileStore::call_write_hook(
+    std::string_view phase) const {
+  if (!failure_hook_) {
+    return common::Result<common::Unit>::success(common::Unit{});
+  }
+  try {
+    return failure_hook_(phase);
+  } catch (const std::exception& error) {
+    return common::Result<common::Unit>::failure(
+        storage_io_error("failure_hook", error.what()));
+  } catch (...) {
+    return common::Result<common::Unit>::failure(
+        storage_io_error("failure_hook", "unknown failure hook exception"));
+  }
 }
 
 std::filesystem::path AtomicJsonFileStore::file_path(const std::string& file_name) const {

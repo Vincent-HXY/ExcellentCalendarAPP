@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/list_anniversaries_request.schema.json",
+  "title": "ListAnniversariesRequest",
+  "description": "Lists active Anniversary records with countdown projections. Missing category_ids or importance means no filter; supplied arrays must be non-empty. kind/count_mode filters are intentionally absent because they are not Anniversary domain facts. V1 supports page/page_size pagination; a non-null pagination.cursor is reserved and returns FEATURE_NOT_IMPLEMENTED until an Anniversary cursor encoding is frozen. Sorting is accepted only through the top-level sort_by and sort_direction fields.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "timezone"
+  ],
+  "properties": {
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "IANA timezone used to calculate each local-date countdown."
+    },
+    "category_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "importance": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "unimportant_noturgent",
+          "important_noturgent",
+          "unimportant_urgent",
+          "important_urgent"
+        ]
+      }
+    },
+    "pagination": {
+      "description": "Anniversary-specific pagination fragment. Sorting fields are intentionally excluded; use the top-level sort_by and sort_direction fields.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "default": 1
+        },
+        "page_size": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 200,
+          "default": 20
+        },
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "sort_by": {
+      "type": "string",
+      "enum": [
+        "target_occurrence_date",
+        "countdown_days"
+      ],
+      "default": "target_occurrence_date",
+      "description": "The only sort-key location for Anniversary list. Missing means target_occurrence_date. Ties are resolved by Anniversary id for stable pagination."
+    },
+    "sort_direction": {
+      "type": "string",
+      "enum": [
+        "asc",
+        "desc"
+      ],
+      "default": "asc",
+      "description": "The only sort-direction location for Anniversary list. Missing means asc."
+    }
+  }
+}

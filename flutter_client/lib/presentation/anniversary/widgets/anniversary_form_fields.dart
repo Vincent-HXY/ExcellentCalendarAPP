@@ -55,10 +55,6 @@ class _BasicsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _SectionTitle(title: '类型'),
-          const SizedBox(height: 12),
-          _KindChoices(controller: controller),
-          const _SectionDivider(),
           TextFormField(
             key: const ValueKey('anniversary-title-field'),
             controller: titleController,
@@ -118,32 +114,6 @@ class _ScheduleSection extends StatelessWidget {
             activeTrackColor: AnniversaryColors.primaryTeal,
             onChanged: controller.setRepeatYearly,
           ),
-          const _SectionDivider(),
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
-            secondary: const Icon(
-              Icons.notifications_none_rounded,
-              color: AnniversaryColors.primaryTeal,
-            ),
-            title: const Text(
-              '提醒',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: const Text('仅构造提醒计划，不触发真实通知'),
-            value: controller.reminderEnabled,
-            activeTrackColor: AnniversaryColors.primaryTeal,
-            onChanged: controller.setReminderEnabled,
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            child: controller.reminderEnabled
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: _ReminderChoices(controller: controller),
-                  )
-                : const SizedBox.shrink(),
-          ),
         ],
       ),
     );
@@ -196,35 +166,6 @@ class _DetailsSection extends StatelessWidget {
   }
 }
 
-class _KindChoices extends StatelessWidget {
-  const _KindChoices({required this.controller});
-
-  final AnniversaryFormController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    const labels = {
-      AnniversaryKind.anniversary: '纪念日',
-      AnniversaryKind.countdown: '倒数日',
-      AnniversaryKind.birthday: '生日',
-      AnniversaryKind.holiday: '节日',
-    };
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final kind in AnniversaryKind.values)
-          _ChoicePill(
-            key: ValueKey('anniversary-kind-${kind.name}'),
-            label: labels[kind]!,
-            selected: controller.kind == kind,
-            onSelected: () => controller.setKind(kind),
-          ),
-      ],
-    );
-  }
-}
-
 class _CalendarChoices extends StatelessWidget {
   const _CalendarChoices({required this.controller});
 
@@ -240,48 +181,18 @@ class _CalendarChoices extends StatelessWidget {
           key: const ValueKey('anniversary-calendar-solar'),
           label: '公历',
           selected: controller.calendarType == AnniversaryCalendarType.solar,
-          onSelected: () =>
-              controller.setCalendarType(AnniversaryCalendarType.solar),
+          onSelected: () {},
         ),
         _ChoicePill(
           key: const ValueKey('anniversary-calendar-lunar'),
-          label: '农历',
+          label: '农历（暂不支持）',
           selected: controller.calendarType == AnniversaryCalendarType.lunar,
-          onSelected: () =>
-              controller.setCalendarType(AnniversaryCalendarType.lunar),
+          onSelected: () {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(const SnackBar(content: Text('当前版本暂不支持农历')));
+          },
         ),
-      ],
-    );
-  }
-}
-
-class _ReminderChoices extends StatelessWidget {
-  const _ReminderChoices({required this.controller});
-
-  final AnniversaryFormController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    const labels = {
-      AnniversaryReminderOffset.sameDay: '当天',
-      AnniversaryReminderOffset.oneDayBefore: '提前 1 天',
-      AnniversaryReminderOffset.sevenDaysBefore: '提前 7 天',
-    };
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final offset in AnniversaryReminderOffset.values)
-          FilterChip(
-            key: ValueKey('anniversary-reminder-${offset.name}'),
-            label: Text(labels[offset]!),
-            selected: controller.reminderOffsets.contains(offset),
-            onSelected: (selected) =>
-                controller.toggleReminderOffset(offset, selected),
-            selectedColor: AnniversaryColors.selectedChip,
-            checkmarkColor: AnniversaryColors.primaryTeal,
-            side: BorderSide.none,
-          ),
       ],
     );
   }

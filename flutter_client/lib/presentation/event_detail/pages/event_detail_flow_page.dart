@@ -7,6 +7,7 @@ import '../../../application/event/complete_event_use_case.dart';
 import '../../../application/event/recurring_event_detail_controller.dart';
 import '../../../application/event/update_event_use_case.dart';
 import '../../../application/timezone/timezone_application_service.dart';
+import '../../../gateway_interfaces/category_repository.dart';
 import '../../../native_contract/event/complete_event_request_dto.dart';
 import '../../../native_contract/recurrence/recurrence_response_dto.dart';
 import '../../new_schedule/edit_recurring_event_page.dart';
@@ -27,6 +28,7 @@ class EventDetailFlowPage extends StatefulWidget {
     required this.completeEventUseCase,
     required this.updateEventUseCase,
     required this.timezoneService,
+    required this.categoryRepository,
     this.loadOnInit = true,
     this.disposeController = true,
     super.key,
@@ -36,6 +38,7 @@ class EventDetailFlowPage extends StatefulWidget {
   final CompleteEventUseCase completeEventUseCase;
   final UpdateEventUseCase updateEventUseCase;
   final TimezoneApplicationService timezoneService;
+  final CategoryRepository categoryRepository;
 
   /// Exposed for deterministic widget tests. Production routes keep this true.
   final bool loadOnInit;
@@ -100,6 +103,7 @@ class _EventDetailFlowPageState extends State<EventDetailFlowPage> {
                   remindAt: reminder.remindAt,
                 ),
             ],
+            category: detail.category,
           );
           return EventDetailPage(
             state: uiState,
@@ -114,6 +118,7 @@ class _EventDetailFlowPageState extends State<EventDetailFlowPage> {
           state: state,
           updateEventUseCase: widget.updateEventUseCase,
           timezoneService: widget.timezoneService,
+          categoryRepository: widget.categoryRepository,
         );
       },
     );
@@ -144,6 +149,7 @@ class RecurringEventDetailPage extends StatefulWidget {
     required this.state,
     required this.updateEventUseCase,
     required this.timezoneService,
+    required this.categoryRepository,
     super.key,
   });
 
@@ -151,6 +157,7 @@ class RecurringEventDetailPage extends StatefulWidget {
   final RecurringEventDetailState state;
   final UpdateEventUseCase updateEventUseCase;
   final TimezoneApplicationService timezoneService;
+  final CategoryRepository categoryRepository;
 
   @override
   State<RecurringEventDetailPage> createState() =>
@@ -189,6 +196,7 @@ class _RecurringEventDetailPageState extends State<RecurringEventDetailPage> {
             remindAt: reminder.remindAt,
           ),
       ],
+      category: detail.category,
     );
     final isBusy = widget.state.hasMutationInProgress;
     final isActive = event.status == 'active';
@@ -367,6 +375,7 @@ class _RecurringEventDetailPageState extends State<RecurringEventDetailPage> {
           detail: widget.state.detail!,
           updateUseCase: widget.updateEventUseCase,
           timezoneService: widget.timezoneService,
+          categoryRepository: widget.categoryRepository,
         ),
       ),
     );

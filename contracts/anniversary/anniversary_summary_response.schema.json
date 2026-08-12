@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_summary_response.schema.json",
+  "title": "AnniversarySummaryResponse",
+  "description": "List projection containing one active solar Anniversary and its derived countdown. Localized date/weekday labels, icon keys, kind and count mode remain Flutter projection state.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "anniversary",
+    "countdown"
+  ],
+  "properties": {
+    "anniversary": {
+      "$ref": "./anniversary_response.schema.json"
+    },
+    "countdown": {
+      "$ref": "./anniversary_countdown_response.schema.json"
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "anniversary": {
+          "properties": {
+            "calendar_type": {
+              "const": "solar"
+            },
+            "deleted_at": {
+              "type": "null"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

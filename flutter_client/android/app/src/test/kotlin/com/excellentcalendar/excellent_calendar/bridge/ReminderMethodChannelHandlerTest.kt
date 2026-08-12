@@ -415,6 +415,10 @@ class ReminderMethodChannelHandlerTest {
 
         override fun consumeReminderAfterDelivery(requestJson: String): String = unsupported()
 
+        override fun listCategories(requestJson: String): String = unsupported()
+
+        override fun createCategory(requestJson: String): String = unsupported()
+
         private fun unsupported(): String {
             return NativeContractJsonCodec.encodeObject(
                 nativeResult(

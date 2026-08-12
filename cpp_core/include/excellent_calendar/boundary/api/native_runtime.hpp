@@ -5,6 +5,9 @@
 #include <string_view>
 
 #include "excellent_calendar/application/event_service.hpp"
+#include "excellent_calendar/application/anniversary_query_service.hpp"
+#include "excellent_calendar/application/anniversary_workflow_service.hpp"
+#include "excellent_calendar/application/category_service.hpp"
 #include "excellent_calendar/application/create_event_workflow_service.hpp"
 #include "excellent_calendar/application/event_lifecycle_workflow_service.hpp"
 #include "excellent_calendar/application/notification_service.hpp"
@@ -60,6 +63,14 @@ std::shared_ptr<application::RecurringReminderQueryService>
 current_recurring_reminder_query_service();
 
 std::shared_ptr<application::ReminderServiceV2> current_reminder_service_v2();
+
+std::shared_ptr<application::AnniversaryWorkflowService>
+current_anniversary_workflow_service();
+
+std::shared_ptr<application::AnniversaryQueryService>
+current_anniversary_query_service();
+
+std::shared_ptr<application::CategoryService> current_category_service();
 
 std::shared_ptr<domain::LocalTimeResolver> current_local_time_resolver();
 

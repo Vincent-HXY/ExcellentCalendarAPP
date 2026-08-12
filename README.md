@@ -1275,47 +1275,34 @@ deleted_at
 
 #### 11. Recurrence Contract 设计
 
-`recurrence_rule.schema.json` 用于描述重复规则。
+重复规则必须按领域拆分，不能用一个通用 DTO 抹平 Event、Habit 和 Anniversary 的锚点、生命周期与 occurrence 语义。
 
-推荐字段：
+- Event 使用 `event_recurrence_rule_input.schema.json` 与不可变 `(recurrence_id, revision)`；其锚点由 C++ 从 Event 时间字段派生。
+- Habit 暂时使用计划态 `recurrence_rule.schema.json`，尚未激活。
+- Anniversary V1 使用独立的 `anniversary_recurrence_rule_input.schema.json` 与 `anniversary_recurrence_response.schema.json`，不得引用 Event Recurrence revision。
 
-```text
-frequency
-interval
-days_of_week
-day_of_month
-month_of_year
-start_at
-end_at
-count
-timezone
-```
+##### 11.1 `anniversary_recurrences` 数据结构
 
-当前阶段优先支持结构化重复规则：
+领域实体名为 `AnniversaryRecurrence`，持久化逻辑集合名为 `anniversary_recurrences`。它是 Anniversary 独占的轻量规则；跨层 Request、Response、Domain 和 Storage Record 仍保持分离。
 
-```text
-daily
-weekly
-monthly
-yearly
-custom
-```
+| 字段 | 领域/存储语义 | 跨层语义 |
+| --- | --- | --- |
+| `recurrence_id` | UUIDv4 主键；一个活动规则最多由一个 Anniversary 引用 | 只由 response 返回，客户端 input 不提交 |
+| `frequency` | V1 固定 `yearly` | schema 使用 `const: yearly` |
+| `interval` | V1 固定 `1` | schema 使用 `const: 1` |
+| `created_at` | 规则创建的 UTC Instant | 当前 recurrence response 不暴露 |
+| `deleted_at` | 软删除 UTC Instant；活动规则为 `null` | 当前 recurrence response 不暴露 |
 
-未来如果需要和 Google Calendar、Outlook、系统日历互通，可以新增：
+核心不变量：
 
-```text
-rrule
-```
+1. 一次性纪念日的 `Anniversary.recurrence_id = null`；年度重复必须指向活动且有效的 `yearly + interval=1` 规则。
+2. 原始日期和历史年份只保存在 `Anniversary.date`。规则不重复保存月、日、时区、RRULE 或 UTC occurrence。
+3. 仍为年度重复时更新标题或日期保留原 `recurrence_id`；日期变化只改变后续动态计算使用的锚点。
+4. 从一次性切换为年度重复时创建新规则；从年度重复切换为一次性时，在同一 C++ transaction 中清空引用并软删除旧规则。
+5. 不提前生成 2027、2028、2029 等 occurrence。C++ 查询按请求 IANA timezone 动态计算下一次本地日期；2 月 29 日在非闰目标年落到二月最后一天。
+6. Anniversary V1 occurrence 没有持久化状态或 Reminder 身份。未来增加提醒前必须另行完成 occurrence identity、幂等与 reconciliation 设计门禁。
 
-用于保存 iCalendar RRULE 标准字符串。
-
-例如：
-
-```text
-FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE,FR
-```
-
-但当前阶段不强制实现 RRULE。
+Anniversary Contract 已切换为 `implementation_status: integrated`。Calendar Core JSON v2 以增量方式增加 `anniversaries.json`、`anniversary_recurrences.json` 和独立的 `anniversary_workflow_transactions.json`；合法旧 v2 目录会初始化空 Store，不迁移或改写 Event/Reminder 数据。Anniversary create/update/delete 使用专用两 Store journal，既有 Event/Reminder 六 Store journal 不变。六条 Flutter → Kotlin → JNI → C++ 调用、Repository/workflow、重启恢复和真机持久化 smoke 已完成；Anniversary Reminder 仍须通过独立 occurrence identity 与调度语义门禁后再扩展。
 
 ------
 

@@ -20,37 +20,20 @@ class AnniversaryFormController extends ChangeNotifier {
        _calendarType =
            initialDetail?.anniversary.calendarType ??
            AnniversaryCalendarType.solar,
-       _kind = initialDetail?.kind ?? AnniversaryKind.anniversary,
-       _repeatYearly =
-           initialDetail?.recurrence != null ||
-           (initialDetail == null &&
-               defaultYearlyRepeat(AnniversaryKind.anniversary)),
-       _reminderEnabled = initialDetail?.reminders.isNotEmpty ?? false,
+       _repeatYearly = initialDetail?.recurrence != null,
        _importance =
            initialDetail?.anniversary.importance ??
            AnniversaryImportance.unimportantNotUrgent,
        _note = initialDetail?.anniversary.note ?? '',
-       _preview = initialDetail?.countdown {
-    for (final reminder
-        in initialDetail?.reminders ?? const <ReminderDraft>[]) {
-      for (final offset in AnniversaryReminderOffset.values) {
-        if (offset.advanceDays == reminder.advanceDays) {
-          _reminderOffsets.add(offset);
-        }
-      }
-    }
-  }
+       _preview = initialDetail?.countdown;
 
   final AnniversaryGateway _gateway;
   final AnniversaryDetail? _initialDetail;
-  final Set<AnniversaryReminderOffset> _reminderOffsets = {};
 
   String _title;
   DateTime? _date;
-  AnniversaryCalendarType _calendarType;
-  AnniversaryKind _kind;
+  final AnniversaryCalendarType _calendarType;
   bool _repeatYearly;
-  bool _reminderEnabled;
   AnniversaryImportance _importance;
   String _note;
   CountdownSnapshot? _preview;
@@ -65,11 +48,7 @@ class AnniversaryFormController extends ChangeNotifier {
   String get title => _title;
   DateTime? get date => _date;
   AnniversaryCalendarType get calendarType => _calendarType;
-  AnniversaryKind get kind => _kind;
   bool get repeatYearly => _repeatYearly;
-  bool get reminderEnabled => _reminderEnabled;
-  Set<AnniversaryReminderOffset> get reminderOffsets =>
-      Set.unmodifiable(_reminderOffsets);
   AnniversaryImportance get importance => _importance;
   String get note => _note;
   CountdownSnapshot? get preview => _preview;
@@ -80,13 +59,6 @@ class AnniversaryFormController extends ChangeNotifier {
   String? get submitError => _submitError;
   bool get isEditing => _initialDetail != null;
   bool get isSubmitting => _phase == AnniversaryFormPhase.submitting;
-
-  static bool defaultYearlyRepeat(AnniversaryKind kind) {
-    return switch (kind) {
-      AnniversaryKind.birthday || AnniversaryKind.holiday => true,
-      AnniversaryKind.anniversary || AnniversaryKind.countdown => false,
-    };
-  }
 
   void initialize() {
     if (_date != null) {
@@ -111,54 +83,16 @@ class AnniversaryFormController extends ChangeNotifier {
     unawaited(_refreshPreview());
   }
 
-  void setCalendarType(AnniversaryCalendarType value) {
-    if (_calendarType == value) {
+  void setRepeatYearly(bool value) {
+    if (_repeatYearly == value) {
       return;
     }
-    _calendarType = value;
+    _repeatYearly = value;
     _clearSubmitFailure();
     _notify();
     if (_date != null) {
       unawaited(_refreshPreview());
     }
-  }
-
-  void setKind(AnniversaryKind value) {
-    if (_kind == value) {
-      return;
-    }
-    _kind = value;
-    _repeatYearly = defaultYearlyRepeat(value);
-    _clearSubmitFailure();
-    _notify();
-  }
-
-  void setRepeatYearly(bool value) {
-    _repeatYearly = value;
-    _clearSubmitFailure();
-    _notify();
-  }
-
-  void setReminderEnabled(bool value) {
-    _reminderEnabled = value;
-    if (value && _reminderOffsets.isEmpty) {
-      _reminderOffsets.add(AnniversaryReminderOffset.sameDay);
-    }
-    if (!value) {
-      _reminderOffsets.clear();
-    }
-    _clearSubmitFailure();
-    _notify();
-  }
-
-  void toggleReminderOffset(AnniversaryReminderOffset offset, bool selected) {
-    if (selected) {
-      _reminderOffsets.add(offset);
-    } else {
-      _reminderOffsets.remove(offset);
-    }
-    _clearSubmitFailure();
-    _notify();
   }
 
   void setImportance(AnniversaryImportance value) {
@@ -193,13 +127,6 @@ class AnniversaryFormController extends ChangeNotifier {
       importance: _importance,
     );
     final recurrence = _repeatYearly ? const RecurrenceDraft.yearly() : null;
-    final reminders = _reminderEnabled
-        ? (_reminderOffsets.toList()..sort(
-                (left, right) => left.advanceDays.compareTo(right.advanceDays),
-              ))
-              .map((offset) => ReminderDraft(advanceDays: offset.advanceDays))
-              .toList(growable: false)
-        : const <ReminderDraft>[];
 
     try {
       final result = isEditing
@@ -207,17 +134,17 @@ class AnniversaryFormController extends ChangeNotifier {
               UpdateAnniversaryPlan(
                 id: _initialDetail!.anniversary.id,
                 anniversary: draft,
-                kind: _kind,
+                kind: AnniversaryKind.anniversary,
                 recurrence: recurrence,
-                reminders: reminders,
+                reminders: const [],
               ),
             )
           : await _gateway.create(
               CreateAnniversaryPlan(
                 anniversary: draft,
-                kind: _kind,
+                kind: AnniversaryKind.anniversary,
                 recurrence: recurrence,
-                reminders: reminders,
+                reminders: const [],
               ),
             );
       if (_isDisposed) {
@@ -268,6 +195,7 @@ class AnniversaryFormController extends ChangeNotifier {
           note: null,
           importance: _importance,
         ),
+        recurrence: _repeatYearly ? const RecurrenceDraft.yearly() : null,
       );
       if (_isDisposed || requestVersion != _previewVersion) {
         return;

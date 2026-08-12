@@ -4,6 +4,7 @@ import 'package:excellent_calendar/application/reminder/reconcile_reminder_sched
 import 'package:excellent_calendar/gateway_interfaces/notification_native_gateway.dart';
 import 'package:excellent_calendar/native_contract/common/operation_response_dto.dart';
 import 'package:excellent_calendar/native_contract/notification/notification_tap_payload_dto.dart';
+import 'package:excellent_calendar/native_contract/reminder/reconcile_reminder_schedule_dto.dart';
 import 'package:excellent_calendar/presentation/app_notification_host.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -161,6 +162,49 @@ void main() {
       await notificationGateway.openedController.close();
     },
   );
+
+  test('app resume and mutation use the extracted scheduling policy', () async {
+    final notificationGateway = _notificationGateway(
+      canPost: false,
+      canScheduleExact: false,
+    );
+    final reminderGateway = _reminderGateway(
+      onReconcile: (_) async => successInvocation(reconcileResponse),
+    );
+    final bootstrap = AppNotificationBootstrap(
+      notificationGateway: notificationGateway,
+      reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
+        reminderGateway,
+      ),
+      notificationTapRouter: NotificationTapRouter(
+        navigator: FakeAppRouteNavigator(),
+      ),
+    );
+    await bootstrap.start();
+    expect(reminderGateway.reconcileScheduleCallCount, 0);
+
+    notificationGateway.permissionStatusInvocation = successInvocation(
+      permissionStatus(canPost: true, canScheduleExact: true),
+    );
+    await bootstrap.onAppResumed();
+    expect(reminderGateway.reconcileScheduleCallCount, 1);
+    expect(
+      reminderGateway.lastReconcileScheduleRequest!.triggerSource,
+      ReminderScheduleTrigger.appResume,
+    );
+    expect(reminderGateway.lastReconcileScheduleRequest!.force, isFalse);
+
+    await bootstrap.schedulePendingAfterMutation();
+    expect(reminderGateway.reconcileScheduleCallCount, 2);
+    expect(
+      reminderGateway.lastReconcileScheduleRequest!.triggerSource,
+      ReminderScheduleTrigger.mutation,
+    );
+    expect(reminderGateway.lastReconcileScheduleRequest!.force, isTrue);
+
+    bootstrap.dispose();
+    await notificationGateway.openedController.close();
+  });
 }
 
 FakeReminderGateway _reminderGateway({

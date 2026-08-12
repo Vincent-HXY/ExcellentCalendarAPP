@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/preview_anniversary_countdown_request.schema.json",
+  "title": "PreviewAnniversaryCountdownRequest",
+  "description": "Calculates a countdown before persistence from only the facts needed by the calculator. recurrence must reflect the form's current yearly-repeat switch. lunar is accepted so the operation can return ANNIVERSARY_CALENDAR_UNSUPPORTED.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date",
+    "calendar_type",
+    "recurrence",
+    "timezone"
+  ],
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "calendar_type": {
+      "type": "string",
+      "enum": [
+        "solar",
+        "lunar"
+      ]
+    },
+    "recurrence": {
+      "oneOf": [
+        {
+          "$ref": "./anniversary_recurrence_rule_input.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "IANA timezone used to derive today's local date."
+    }
+  }
+}

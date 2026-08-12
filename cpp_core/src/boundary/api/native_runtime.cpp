@@ -5,6 +5,9 @@
 
 #include "excellent_calendar/common/clock.hpp"
 #include "excellent_calendar/common/id_generator.hpp"
+#include "excellent_calendar/application/anniversary_query_service.hpp"
+#include "excellent_calendar/application/anniversary_workflow_service.hpp"
+#include "excellent_calendar/application/category_service.hpp"
 #include "excellent_calendar/application/event_lifecycle_workflow_service.hpp"
 #include "excellent_calendar/application/recurrence_service.hpp"
 #include "excellent_calendar/application/reminder_recovery_workflow_service.hpp"
@@ -21,6 +24,8 @@
 #include "excellent_calendar/storage/json/json_notification_repository.hpp"
 #include "excellent_calendar/storage/json/json_reminder_notification_transaction.hpp"
 #include "excellent_calendar/storage/json/json_recurring_event_transaction.hpp"
+#include "excellent_calendar/storage/json/json_anniversary_transaction.hpp"
+#include "excellent_calendar/storage/json/json_category_repository.hpp"
 #include "excellent_calendar/storage/json/calendar_core_v2_storage_bootstrap.hpp"
 #include "excellent_calendar/storage/runtime_storage_lease.hpp"
 
@@ -51,6 +56,11 @@ struct RuntimeState {
   std::shared_ptr<application::RecurringReminderQueryService>
       recurring_reminder_query_service;
   std::shared_ptr<application::ReminderServiceV2> reminder_service_v2;
+  std::shared_ptr<storage::json::JsonAnniversaryTransaction> anniversary_transaction;
+  std::shared_ptr<application::AnniversaryWorkflowService> anniversary_workflow_service;
+  std::shared_ptr<application::AnniversaryQueryService> anniversary_query_service;
+  std::shared_ptr<storage::json::JsonCategoryRepository> category_repository;
+  std::shared_ptr<application::CategoryService> category_service;
   std::shared_ptr<storage::RuntimeStorageLease> writer_lease;
   std::string storage_directory;
   std::string recurring_storage_directory;
@@ -184,9 +194,8 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
   if (!resolver.ok()) {
     return common::Result<RecurringRuntimeInitializationResult>::failure(resolver.error());
   }
-  const auto archive_time = common::utc_now_iso8601();
   auto prepared_storage = storage::json::prepare_calendar_core_v2_storage(
-      std::filesystem::path(std::string(storage_directory)), archive_time);
+      std::filesystem::path(std::string(storage_directory)));
   if (!prepared_storage.ok()) {
     return common::Result<RecurringRuntimeInitializationResult>::failure(
         prepared_storage.error());
@@ -199,12 +208,28 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
   if (!initialized.ok()) {
     return common::Result<RecurringRuntimeInitializationResult>::failure(initialized.error());
   }
+  auto anniversary_transaction =
+      std::make_shared<storage::json::JsonAnniversaryTransaction>(
+          std::filesystem::path(std::string(storage_directory)),
+          storage::json::JsonAnniversaryTransaction::FailureHook{}, writer_lease);
+  auto anniversary_initialized = anniversary_transaction->initialize();
+  if (!anniversary_initialized.ok()) {
+    return common::Result<RecurringRuntimeInitializationResult>::failure(
+        anniversary_initialized.error());
+  }
+  auto category_repository = std::make_shared<storage::json::JsonCategoryRepository>(
+      std::filesystem::path(std::string(storage_directory)), writer_lease);
+  auto category_initialized = category_repository->initialize();
+  if (!category_initialized.ok()) {
+    return common::Result<RecurringRuntimeInitializationResult>::failure(
+        category_initialized.error());
+  }
   auto recurrence = std::make_shared<application::RecurrenceService>(resolver.value());
   auto rolling = std::make_shared<application::RollingReminderService>(recurrence);
   auto event_workflow = std::make_shared<application::RecurringEventWorkflowService>(
       transaction, recurrence, rolling, common::utc_now_iso8601, common::generate_uuid_v4);
   auto event_query = std::make_shared<application::RecurringEventQueryService>(
-      transaction, recurrence);
+      transaction, recurrence, category_repository);
   auto delivery_workflow =
       std::make_shared<application::RecurringReminderDeliveryWorkflowService>(
           transaction, rolling, common::utc_now_iso8601, common::generate_uuid_v4);
@@ -214,6 +239,14 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
       transaction, common::utc_now_iso8601);
   auto reminder_service_v2 = std::make_shared<application::ReminderServiceV2>(
       transaction, common::utc_now_iso8601, common::generate_uuid_v4);
+  auto anniversary_workflow =
+      std::make_shared<application::AnniversaryWorkflowService>(
+          anniversary_transaction, resolver.value(), common::utc_now_iso8601,
+          common::generate_uuid_v4);
+  auto anniversary_query = std::make_shared<application::AnniversaryQueryService>(
+      anniversary_transaction, resolver.value(), common::utc_now_iso8601);
+  auto category_service = std::make_shared<application::CategoryService>(
+      category_repository, common::utc_now_iso8601, common::generate_uuid_v4);
 
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -227,6 +260,11 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
     g_state.reminder_recovery_workflow_service = std::move(recovery_workflow);
     g_state.recurring_reminder_query_service = std::move(reminder_query);
     g_state.reminder_service_v2 = std::move(reminder_service_v2);
+    g_state.anniversary_transaction = std::move(anniversary_transaction);
+    g_state.anniversary_workflow_service = std::move(anniversary_workflow);
+    g_state.anniversary_query_service = std::move(anniversary_query);
+    g_state.category_repository = std::move(category_repository);
+    g_state.category_service = std::move(category_service);
     g_state.writer_lease = std::move(writer_lease);
     g_state.recurring_storage_directory = std::string(storage_directory);
   }
@@ -292,6 +330,23 @@ current_recurring_reminder_query_service() {
 std::shared_ptr<application::ReminderServiceV2> current_reminder_service_v2() {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   return g_state.reminder_service_v2;
+}
+
+std::shared_ptr<application::AnniversaryWorkflowService>
+current_anniversary_workflow_service() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.anniversary_workflow_service;
+}
+
+std::shared_ptr<application::AnniversaryQueryService>
+current_anniversary_query_service() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.anniversary_query_service;
+}
+
+std::shared_ptr<application::CategoryService> current_category_service() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.category_service;
 }
 
 std::shared_ptr<domain::LocalTimeResolver> current_local_time_resolver() {

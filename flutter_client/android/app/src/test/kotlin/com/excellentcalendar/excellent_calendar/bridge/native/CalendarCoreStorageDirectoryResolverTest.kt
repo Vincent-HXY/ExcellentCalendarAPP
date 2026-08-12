@@ -23,7 +23,7 @@ class CalendarCoreStorageDirectoryResolverTest {
     }
 
     @Test
-    fun resolveMigratesLegacyDirectoryWhenCurrentDirectoryIsMissing() {
+    fun resolveIgnoresLegacyDirectoryWithoutMigratingIt() {
         val filesDir = temporaryFolder.newFolder("files")
         val legacyDirectory = legacyDirectory(filesDir).also { it.mkdirs() }
         File(legacyDirectory, "events.json").writeText("""{"items":[]}""")
@@ -31,54 +31,8 @@ class CalendarCoreStorageDirectoryResolverTest {
         val resolved = CalendarCoreStorageDirectoryResolver.resolve(filesDir)
 
         assertEquals(currentDirectory(filesDir).canonicalFile, resolved.canonicalFile)
-        assertTrue(File(currentDirectory(filesDir), "events.json").isFile)
-        assertEquals("""{"items":[]}""", File(currentDirectory(filesDir), "events.json").readText())
-    }
-
-    @Test
-    fun resolveMigratesLegacyDirectoryWhenCurrentDirectoryIsEmpty() {
-        val filesDir = temporaryFolder.newFolder("files")
-        currentDirectory(filesDir).mkdirs()
-        val legacyDirectory = legacyDirectory(filesDir).also { it.mkdirs() }
-        File(legacyDirectory, "reminders.json").writeText("""{"items":[]}""")
-
-        val resolved = CalendarCoreStorageDirectoryResolver.resolve(filesDir)
-
-        assertEquals(currentDirectory(filesDir).canonicalFile, resolved.canonicalFile)
-        assertTrue(File(currentDirectory(filesDir), "reminders.json").isFile)
-        assertEquals("""{"items":[]}""", File(currentDirectory(filesDir), "reminders.json").readText())
-    }
-
-    @Test
-    fun resolveUsesCurrentDirectoryWhenBothDirectoriesContainData() {
-        val filesDir = temporaryFolder.newFolder("files")
-        val currentDirectory = currentDirectory(filesDir).also { it.mkdirs() }
-        val legacyDirectory = legacyDirectory(filesDir).also { it.mkdirs() }
-        File(currentDirectory, "events.json").writeText("current")
-        File(legacyDirectory, "events.json").writeText("legacy")
-
-        val resolved = CalendarCoreStorageDirectoryResolver.resolve(filesDir)
-
-        assertEquals(currentDirectory.canonicalFile, resolved.canonicalFile)
-        assertEquals("current", File(currentDirectory, "events.json").readText())
-        assertEquals("legacy", File(legacyDirectory, "events.json").readText())
-    }
-
-    @Test
-    fun resolveFallsBackToLegacyDirectoryWhenCurrentPathIsNotDirectory() {
-        val filesDir = temporaryFolder.newFolder("files")
-        val currentPath = currentDirectory(filesDir).also {
-            it.parentFile?.mkdirs()
-            it.writeText("not a directory")
-        }
-        val legacyDirectory = legacyDirectory(filesDir).also { it.mkdirs() }
-        File(legacyDirectory, "events.json").writeText("legacy")
-
-        val resolved = CalendarCoreStorageDirectoryResolver.resolve(filesDir)
-
-        assertEquals(legacyDirectory.canonicalFile, resolved.canonicalFile)
-        assertTrue(currentPath.isFile)
-        assertEquals("legacy", File(legacyDirectory, "events.json").readText())
+        assertFalse(currentDirectory(filesDir).exists())
+        assertTrue(File(legacyDirectory, "events.json").isFile)
     }
 
     private fun currentDirectory(filesDir: File): File =

@@ -27,8 +27,9 @@ internal class CalendarCoreV2RuntimeRequestProvider(
 /**
  * Resolves the Contract-owned active path without mutating storage.
  *
- * The C++ v2 bootstrap must be the only component that validates and archives a
+ * The C++ v2 bootstrap must be the only component that validates and discards a
  * formal v1 directory before creating the empty v2 stores at the same path.
+ * V1 data is not preserved.
  */
 internal object CalendarCoreV2StorageDirectoryResolver {
     private const val LocalStorageDirectoryName = "local_storage"

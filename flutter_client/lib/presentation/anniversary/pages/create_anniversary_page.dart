@@ -58,6 +58,7 @@ class _CreateAnniversaryPageState extends State<CreateAnniversaryPage> {
       initialDate: _controller.date ?? currentDate,
       firstDate: DateTime(1900),
       lastDate: DateTime(2100, 12, 31),
+      currentDate: currentDate,
       helpText: '选择纪念日日期',
       cancelText: '取消',
       confirmText: '确定',

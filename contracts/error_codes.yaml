@@ -176,6 +176,11 @@ errors:
     message: "Category not found"
     retryable: false
 
+  CATEGORY_SORT_ORDER_EXHAUSTED:
+    module: category
+    message: "Category sort order has reached the maximum safe integer"
+    retryable: false
+
   ANNIVERSARY_TITLE_EMPTY:
     module: anniversary
     message: "Anniversary title cannot be empty"
@@ -184,6 +189,11 @@ errors:
   ANNIVERSARY_DATE_INVALID:
     module: anniversary
     message: "Anniversary date is invalid"
+    retryable: false
+
+  ANNIVERSARY_CALENDAR_UNSUPPORTED:
+    module: anniversary
+    message: "Anniversary calendar type is not supported in the current version"
     retryable: false
 
   ANNIVERSARY_NOT_FOUND:

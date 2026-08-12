@@ -46,7 +46,10 @@
     "completed_at": {"type": ["string", "null"], "format": "date-time"},
     "recurrence_id": {"type": ["string", "null"], "format": "uuid"},
     "recurrence_revision": {"type": ["integer", "null"], "minimum": 1},
-    "category_id": {"type": ["string", "null"]},
+    "category_id": {
+      "type": ["string", "null"],
+      "description": "Nullable opaque weak reference. Event detail preserves this value even when the related Category is missing or soft-deleted and the category projection is null."
+    },
     "importance": {
       "type": ["string", "null"],
       "enum": [

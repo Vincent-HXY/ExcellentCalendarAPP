@@ -1,6 +1,3 @@
-import '../../native_contract/recurrence/recurrence_rule_dto.dart';
-import '../../native_contract/reminder/reminder_draft_request_dto.dart';
-
 enum RecurrencePreset { once, daily, weekly, monthly, yearly, custom }
 
 extension RecurrencePresetLabel on RecurrencePreset {
@@ -13,25 +10,6 @@ extension RecurrencePresetLabel on RecurrencePreset {
       RecurrencePreset.yearly => '每年',
       RecurrencePreset.custom => '自定义',
     };
-  }
-
-  String? get contractFrequency {
-    return switch (this) {
-      RecurrencePreset.once => null,
-      RecurrencePreset.daily => 'daily',
-      RecurrencePreset.weekly => 'weekly',
-      RecurrencePreset.monthly => 'monthly',
-      RecurrencePreset.yearly => 'yearly',
-      RecurrencePreset.custom => 'custom',
-    };
-  }
-
-  RecurrenceRuleDto? toDto() {
-    final frequency = contractFrequency;
-    if (frequency == null) {
-      return null;
-    }
-    return RecurrenceRuleDto(frequency: frequency, interval: 1);
   }
 }
 
@@ -117,13 +95,11 @@ String reminderSummary({
   return '已设置 ${presets.length} 个提醒';
 }
 
-List<ReminderDraftRequestDto> buildReminderDraftDtos({
+List<int> selectedReminderAdvanceMinutes({
   required Set<ReminderPreset> presets,
   required int? customAdvanceMinutes,
-  required bool isRingingEnabled,
 }) {
-  final methods = isRingingEnabled ? const ['popup', 'ring'] : const ['popup'];
-  final drafts = <ReminderDraftRequestDto>[];
+  final minutes = <int>[];
   for (final preset in presets) {
     final advanceMinutes = preset == ReminderPreset.custom
         ? customAdvanceMinutes
@@ -131,14 +107,7 @@ List<ReminderDraftRequestDto> buildReminderDraftDtos({
     if (advanceMinutes == null) {
       continue;
     }
-    drafts.add(
-      ReminderDraftRequestDto(
-        targetType: 'event',
-        advanceMinutes: advanceMinutes,
-        methods: methods,
-        source: 'manual',
-      ),
-    );
+    minutes.add(advanceMinutes);
   }
-  return drafts;
+  return List.unmodifiable(minutes);
 }

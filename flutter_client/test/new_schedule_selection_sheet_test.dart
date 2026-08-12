@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('unsupported presets keep explicit contract intent', () {
-    expect(RecurrencePreset.yearly.toDto()!.toJson()['frequency'], 'yearly');
-    expect(RecurrencePreset.custom.toDto()!.toJson()['frequency'], 'custom');
+  test('unsupported presets remain explicit presentation options', () {
+    expect(RecurrencePreset.yearly.label, '每年');
+    expect(RecurrencePreset.custom.label, '自定义');
   });
 
   // 目的：验证重复规则只有确认后才提交；方法：先选择并取消，再选择并确认，比较外部结果。

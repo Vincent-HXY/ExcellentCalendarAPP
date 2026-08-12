@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/update_anniversary_request.schema.json",
+  "title": "UpdateAnniversaryRequest",
+  "description": "Complete Anniversary V1 replacement plan. timezone is the explicit IANA timezone used to calculate the returned countdown. C++ atomically updates the Anniversary and its exclusively owned recurrence. Keeping recurrence yearly retains the active recurrence_id even when title or date changes; null-to-yearly creates a new rule; yearly-to-null clears recurrence_id and soft-deletes the old rule in the same transaction. Reminder replacement is not part of this Contract revision.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "date",
+    "calendar_type",
+    "category_id",
+    "recurrence",
+    "note",
+    "importance",
+    "timezone"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Replacement original date and, when recurring, the sole yearly month/day anchor."
+    },
+    "calendar_type": {
+      "type": "string",
+      "enum": [
+        "solar",
+        "lunar"
+      ]
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "recurrence": {
+      "description": "Yearly Anniversary recurrence intent, or null to make the Anniversary one-time. The client never sends recurrence_id; C++ decides whether to retain, create, or retire the owned rule.",
+      "oneOf": [
+        {
+          "$ref": "./anniversary_recurrence_rule_input.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "importance": {
+      "type": "string",
+      "enum": [
+        "unimportant_noturgent",
+        "important_noturgent",
+        "unimportant_urgent",
+        "important_urgent"
+      ]
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "IANA timezone used by C++ to derive the local date and calculate the response countdown."
+    }
+  }
+}

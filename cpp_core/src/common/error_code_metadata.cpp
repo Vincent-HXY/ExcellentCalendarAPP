@@ -10,7 +10,7 @@ namespace {
 // Contract v2 snapshot of contracts/error_codes.yaml. Keeping an explicit
 // allow-list is intentional: a newly added cross-layer error code must not be
 // accepted by an older Core until its retryability semantics are understood.
-constexpr std::array<std::pair<std::string_view, bool>, 77> kErrorCodeMetadata{{
+constexpr std::array<std::pair<std::string_view, bool>, 79> kErrorCodeMetadata{{
     {"NATIVE_INTERNAL_ERROR", false},
     {"CONTRACT_VALIDATION_FAILED", false},
     {"CONTRACT_VERSION_UNSUPPORTED", false},
@@ -46,8 +46,10 @@ constexpr std::array<std::pair<std::string_view, bool>, 77> kErrorCodeMetadata{{
     {"HABIT_CHECK_IN_DUPLICATED", false},
     {"CATEGORY_NAME_EMPTY", false},
     {"CATEGORY_NOT_FOUND", false},
+    {"CATEGORY_SORT_ORDER_EXHAUSTED", false},
     {"ANNIVERSARY_TITLE_EMPTY", false},
     {"ANNIVERSARY_DATE_INVALID", false},
+    {"ANNIVERSARY_CALENDAR_UNSUPPORTED", false},
     {"ANNIVERSARY_NOT_FOUND", false},
     {"SEARCH_QUERY_INVALID", false},
     {"AI_EXTRACTION_FAILED", true},

@@ -38,8 +38,11 @@ class NativeErrorCodes {
   static const habitCheckInDuplicated = 'HABIT_CHECK_IN_DUPLICATED';
   static const categoryNameEmpty = 'CATEGORY_NAME_EMPTY';
   static const categoryNotFound = 'CATEGORY_NOT_FOUND';
+  static const categorySortOrderExhausted = 'CATEGORY_SORT_ORDER_EXHAUSTED';
   static const anniversaryTitleEmpty = 'ANNIVERSARY_TITLE_EMPTY';
   static const anniversaryDateInvalid = 'ANNIVERSARY_DATE_INVALID';
+  static const anniversaryCalendarUnsupported =
+      'ANNIVERSARY_CALENDAR_UNSUPPORTED';
   static const anniversaryNotFound = 'ANNIVERSARY_NOT_FOUND';
   static const searchQueryInvalid = 'SEARCH_QUERY_INVALID';
   static const aiExtractionFailed = 'AI_EXTRACTION_FAILED';
@@ -94,8 +97,10 @@ class NativeErrorCodes {
     habitCheckInDuplicated,
     categoryNameEmpty,
     categoryNotFound,
+    categorySortOrderExhausted,
     anniversaryTitleEmpty,
     anniversaryDateInvalid,
+    anniversaryCalendarUnsupported,
     anniversaryNotFound,
     searchQueryInvalid,
     aiExtractionFailed,

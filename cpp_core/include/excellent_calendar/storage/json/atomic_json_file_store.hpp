@@ -1,10 +1,12 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 
 #include <picojson/picojson.h>
 
@@ -22,8 +24,17 @@ namespace excellent_calendar::storage::json {
 class AtomicJsonFileStore {
  public:
   using DirectoryLock = std::unique_lock<std::recursive_mutex>;
+  using FailureHook =
+      std::function<common::Result<common::Unit>(std::string_view phase)>;
+  enum class DirectorySyncFailurePolicy {
+    kLeaveReplacement,
+    kRestorePreviousSnapshot,
+  };
 
-  explicit AtomicJsonFileStore(std::filesystem::path storage_directory);
+  explicit AtomicJsonFileStore(std::filesystem::path storage_directory,
+                               FailureHook failure_hook = {},
+                               DirectorySyncFailurePolicy failure_policy =
+                                   DirectorySyncFailurePolicy::kLeaveReplacement);
 
   common::Result<common::Unit> initialize() const;
 
@@ -39,10 +50,14 @@ class AtomicJsonFileStore {
   const std::filesystem::path& storage_directory() const { return storage_directory_; }
 
  private:
+  common::Result<common::Unit> call_write_hook(std::string_view phase) const;
+
   std::filesystem::path file_path(const std::string& file_name) const;
 
   std::filesystem::path storage_directory_;
   std::shared_ptr<std::recursive_mutex> directory_mutex_;
+  FailureHook failure_hook_;
+  DirectorySyncFailurePolicy failure_policy_;
 };
 
 common::Error storage_data_corrupted(std::string reason, std::string field = "");

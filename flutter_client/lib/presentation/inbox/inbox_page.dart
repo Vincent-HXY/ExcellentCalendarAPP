@@ -6,6 +6,7 @@ import '../../application/event/complete_event_use_case.dart';
 import '../../application/event/create_event_use_case.dart';
 import '../../application/event/read_events_use_case.dart';
 import '../../application/timezone/timezone_application_service.dart';
+import '../../gateway_interfaces/category_repository.dart';
 import '../app_design_tokens.dart';
 import '../new_schedule/new_schedule_page.dart';
 import 'components/add_task_button.dart';
@@ -22,6 +23,7 @@ class InboxPage extends StatefulWidget {
     required this.createEventUseCase,
     required this.completeEventUseCase,
     required this.timezoneService,
+    required this.categoryRepository,
     this.onOpenAnniversaries,
     super.key,
   });
@@ -30,6 +32,7 @@ class InboxPage extends StatefulWidget {
   final CreateEventUseCase createEventUseCase;
   final CompleteEventUseCase completeEventUseCase;
   final TimezoneApplicationService timezoneService;
+  final CategoryRepository categoryRepository;
   final VoidCallback? onOpenAnniversaries;
 
   @override
@@ -84,6 +87,7 @@ class _InboxPageState extends State<InboxPage> {
           return NewSchedulePage(
             createUseCase: widget.createEventUseCase,
             timezoneService: widget.timezoneService,
+            categoryRepository: widget.categoryRepository,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

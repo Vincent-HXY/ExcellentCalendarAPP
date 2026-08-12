@@ -43,6 +43,7 @@ object NativeErrorCodes {
     const val CategoryNotFound = "CATEGORY_NOT_FOUND"
     const val AnniversaryTitleEmpty = "ANNIVERSARY_TITLE_EMPTY"
     const val AnniversaryDateInvalid = "ANNIVERSARY_DATE_INVALID"
+    const val AnniversaryCalendarUnsupported = "ANNIVERSARY_CALENDAR_UNSUPPORTED"
     const val AnniversaryNotFound = "ANNIVERSARY_NOT_FOUND"
     const val SearchQueryInvalid = "SEARCH_QUERY_INVALID"
     const val AiExtractionFailed = "AI_EXTRACTION_FAILED"
@@ -100,6 +101,7 @@ object NativeErrorCodes {
         CategoryNotFound,
         AnniversaryTitleEmpty,
         AnniversaryDateInvalid,
+        AnniversaryCalendarUnsupported,
         AnniversaryNotFound,
         SearchQueryInvalid,
         AiExtractionFailed,

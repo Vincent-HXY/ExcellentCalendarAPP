@@ -105,6 +105,39 @@ class JniNativeCalendarCoreBridge(
         nativeCancelEventSeriesV2(requestJson)
     }
 
+    override fun createAnniversary(requestJson: String) = v2Only("nativeCreateAnniversaryV2") {
+        nativeCreateAnniversaryV2(requestJson)
+    }
+
+    override fun updateAnniversary(requestJson: String) = v2Only("nativeUpdateAnniversaryV2") {
+        nativeUpdateAnniversaryV2(requestJson)
+    }
+
+    override fun deleteAnniversary(requestJson: String) = v2Only("nativeDeleteAnniversaryV2") {
+        nativeDeleteAnniversaryV2(requestJson)
+    }
+
+    override fun getAnniversaryDetail(requestJson: String) = v2Only("nativeGetAnniversaryDetailV2") {
+        nativeGetAnniversaryDetailV2(requestJson)
+    }
+
+    override fun listAnniversaries(requestJson: String) = v2Only("nativeListAnniversariesV2") {
+        nativeListAnniversariesV2(requestJson)
+    }
+
+    override fun previewAnniversaryCountdown(requestJson: String) =
+        v2Only("nativePreviewAnniversaryCountdownV2") {
+            nativePreviewAnniversaryCountdownV2(requestJson)
+        }
+
+    override fun listCategories(requestJson: String) = v2Only("nativeListCategoriesV2") {
+        nativeListCategoriesV2(requestJson)
+    }
+
+    override fun createCategory(requestJson: String) = v2Only("nativeCreateCategoryV2") {
+        nativeCreateCategoryV2(requestJson)
+    }
+
     override fun createReminder(requestJson: String) = callWithRuntime("nativeCreateReminder") {
         if (profile == NativeContractProfile.V2) nativeCreateReminderV2(requestJson) else nativeCreateReminder(requestJson)
     }
@@ -302,6 +335,14 @@ class JniNativeCalendarCoreBridge(
     external fun nativeCompleteEventSeriesV2(requestJson: String): String
     external fun nativeReopenEventSeriesV2(requestJson: String): String
     external fun nativeCancelEventSeriesV2(requestJson: String): String
+    external fun nativeCreateAnniversaryV2(requestJson: String): String
+    external fun nativeUpdateAnniversaryV2(requestJson: String): String
+    external fun nativeDeleteAnniversaryV2(requestJson: String): String
+    external fun nativeGetAnniversaryDetailV2(requestJson: String): String
+    external fun nativeListAnniversariesV2(requestJson: String): String
+    external fun nativePreviewAnniversaryCountdownV2(requestJson: String): String
+    external fun nativeListCategoriesV2(requestJson: String): String
+    external fun nativeCreateCategoryV2(requestJson: String): String
     external fun nativeCreateReminder(requestJson: String): String
     external fun nativeCreateReminderV2(requestJson: String): String
     external fun nativeUpdateReminder(requestJson: String): String

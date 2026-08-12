@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../../application/event/update_event_use_case.dart';
 import '../../application/timezone/timezone_application_service.dart';
+import '../../gateway_interfaces/category_repository.dart';
 import '../../native_contract/event/event_detail_response_dto.dart';
+import '../category/category_picker_page.dart';
+import '../category/category_picker_result.dart';
 import 'components/manual_schedule_form.dart';
 import 'date_time_picker/schedule_date_time_picker.dart';
 import 'edit_recurring_event_controller.dart';
@@ -18,12 +21,14 @@ class EditRecurringEventPage extends StatefulWidget {
     required this.detail,
     required this.updateUseCase,
     required this.timezoneService,
+    required this.categoryRepository,
     super.key,
   });
 
   final EventDetailResponseDto detail;
   final UpdateEventUseCase updateUseCase;
   final TimezoneApplicationService timezoneService;
+  final CategoryRepository categoryRepository;
 
   @override
   State<EditRecurringEventPage> createState() => _EditRecurringEventPageState();
@@ -42,6 +47,7 @@ class _EditRecurringEventPageState extends State<EditRecurringEventPage> {
   bool _timeChanged = false;
   bool _recurrenceChanged = false;
   bool _remindersChanged = false;
+  bool _categoryChanged = false;
   String? _initializationError;
   int _loadGeneration = 0;
 
@@ -53,6 +59,8 @@ class _EditRecurringEventPageState extends State<EditRecurringEventPage> {
   int? _customReminderAdvanceMinutes;
   Set<int> _additionalCustomAdvanceMinutes = {};
   Set<int> _initialReminderAdvanceMinutes = {};
+  String? _selectedCategoryId;
+  String _selectedCategoryName = '未分类';
 
   @override
   void initState() {
@@ -66,6 +74,10 @@ class _EditRecurringEventPageState extends State<EditRecurringEventPage> {
     _titleController = TextEditingController(text: event.title);
     _noteController = TextEditingController(text: event.content ?? '');
     _locationController = TextEditingController(text: event.location ?? '');
+    _selectedCategoryId = event.categoryId;
+    _selectedCategoryName = event.categoryId == null
+        ? '未分类'
+        : widget.detail.category?.name ?? '分类不可用或已删除';
     _isAllDay = event.isAllDay;
     _titleController.addListener(_handleTitleChanged);
     unawaited(_initialize());
@@ -181,6 +193,8 @@ class _EditRecurringEventPageState extends State<EditRecurringEventPage> {
         timeChanged: _timeChanged,
         recurrencePreset: _recurrencePreset,
         recurrenceChanged: _recurrenceChanged,
+        categoryId: _selectedCategoryId,
+        categoryChanged: _categoryChanged,
         effectiveReminderAdvanceMinutes: _effectiveReminderAdvanceMinutes,
         replacementReminderAdvanceMinutes: _remindersChanged
             ? _effectiveReminderAdvanceMinutes
@@ -319,6 +333,26 @@ class _EditRecurringEventPageState extends State<EditRecurringEventPage> {
     });
   }
 
+  Future<void> _pickCategory() async {
+    final result = await Navigator.of(context).push<CategoryPickerResult>(
+      MaterialPageRoute<CategoryPickerResult>(
+        builder: (_) => CategoryPickerPage(
+          repository: widget.categoryRepository,
+          selectedCategoryId: _selectedCategoryId,
+        ),
+      ),
+    );
+    if (!mounted || result == null) {
+      return;
+    }
+    final selected = result.category;
+    setState(() {
+      _selectedCategoryId = selected?.id;
+      _selectedCategoryName = selected?.name ?? '未分类';
+      _categoryChanged = selected?.id != widget.detail.event.categoryId;
+    });
+  }
+
   void _handleAllDayChanged(bool value) {
     if (value && _effectiveReminderAdvanceMinutes.isNotEmpty) {
       _showMessage('请先清空提醒；全天重复日程暂不支持提醒');
@@ -405,6 +439,7 @@ class _EditRecurringEventPageState extends State<EditRecurringEventPage> {
             isAllDay: _isAllDay,
             isRingingReminderEnabled: false,
             isMoreSettingsExpanded: _isMoreSettingsExpanded,
+            categoryLabel: _selectedCategoryName,
             recurrenceLabel: _recurrencePreset.label,
             reminderSummary: _reminderSummary,
             timezoneLabel: widget.detail.event.timezone,
@@ -424,6 +459,7 @@ class _EditRecurringEventPageState extends State<EditRecurringEventPage> {
             onEndTap: () => _pickEndDateTime(PickerInitialStep.calendar),
             onEndTimeTap: () => _pickEndDateTime(PickerInitialStep.time),
             onEndDateTap: () => _pickEndDateTime(PickerInitialStep.calendar),
+            onCategoryTap: _pickCategory,
             onRecurrenceTap: _pickRecurrence,
             onReminderTap: _pickReminders,
             onLocationMapTap: () => _showMessage('地图选择功能暂未开放'),

@@ -20,55 +20,115 @@ void main() {
     shareGateway = FakeAnniversaryShareGateway();
   });
 
-  testWidgets('list displays all five fake anniversaries by default', (
+  testWidgets(
+    'list displays all five fake anniversaries without kind filters',
+    (tester) async {
+      await _setSurface(tester, const Size(412, 915));
+      await _pumpList(
+        tester,
+        clock: clock,
+        gateway: gateway,
+        shareGateway: shareGateway,
+      );
+
+      expect(find.byType(AnniversaryListCard), findsNWidgets(5));
+      expect(find.text('周末'), findsOneWidget);
+      expect(find.text('我的生日'), findsOneWidget);
+      expect(find.text('春节'), findsOneWidget);
+      expect(find.text('与YY的约定'), findsOneWidget);
+      expect(find.text('使用滴答清单'), findsOneWidget);
+
+      expect(
+        find.byKey(const ValueKey('anniversary-filter-all')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('anniversary-filter-birthday')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets('V1 form hides unsupported kind and Reminder controls', (
+    tester,
+  ) async {
+    await _pumpList(
+      tester,
+      clock: clock,
+      gateway: gateway,
+      shareGateway: shareGateway,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('anniversary-add-button')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('anniversary-kind-countdown')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('anniversary-kind-birthday')),
+      findsNothing,
+    );
+    expect(find.text('提醒'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('anniversary-reminder-sameDay')),
+      findsNothing,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('anniversary-calendar-lunar')),
+    );
+    await tester.tap(find.byKey(const ValueKey('anniversary-calendar-lunar')));
+    await tester.pump();
+
+    expect(find.text('当前版本暂不支持农历'), findsOneWidget);
+    final solarChip = tester.widget<ChoiceChip>(
+      find.descendant(
+        of: find.byKey(const ValueKey('anniversary-calendar-solar')),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    expect(solarChip.selected, isTrue);
+  });
+
+  testWidgets('load more makes the twenty-first active anniversary reachable', (
     tester,
   ) async {
     await _setSurface(tester, const Size(412, 915));
+    final pagedGateway = FakeAnniversaryGateway(
+      clock: clock,
+      seedDefaults: false,
+    );
+    await _seedSupportedAnniversaries(pagedGateway, 21);
     await _pumpList(
       tester,
       clock: clock,
-      gateway: gateway,
+      gateway: pagedGateway,
       shareGateway: shareGateway,
     );
 
-    expect(find.byType(AnniversaryListCard), findsNWidgets(5));
-    expect(find.text('周末'), findsOneWidget);
-    expect(find.text('我的生日'), findsOneWidget);
-    expect(find.text('春节'), findsOneWidget);
-    expect(find.text('与YY的约定'), findsOneWidget);
-    expect(find.text('使用滴答清单'), findsOneWidget);
-
-    final allChip = tester.widget<ChoiceChip>(
-      find.byKey(const ValueKey('anniversary-filter-all')),
+    expect(find.text('分页纪念日 01'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('anniversary-load-more-button')),
+      400,
+      scrollable: find.byType(Scrollable).last,
     );
-    expect(allChip.selected, isTrue);
-  });
-
-  testWidgets('anniversary and countdown filters change visible records', (
-    tester,
-  ) async {
-    await _pumpList(
-      tester,
-      clock: clock,
-      gateway: gateway,
-      shareGateway: shareGateway,
-    );
-
     await tester.tap(
-      find.byKey(const ValueKey('anniversary-filter-anniversary')),
+      find.byKey(const ValueKey('anniversary-load-more-button')),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(AnniversaryListCard), findsNWidgets(2));
-    expect(find.text('与YY的约定'), findsOneWidget);
-    expect(find.text('使用滴答清单'), findsOneWidget);
-    expect(find.text('周末'), findsNothing);
-
-    await tester.tap(
-      find.byKey(const ValueKey('anniversary-filter-countdown')),
+    await tester.scrollUntilVisible(
+      find.text('分页纪念日 01'),
+      300,
+      scrollable: find.byType(Scrollable).last,
     );
-    await tester.pumpAndSettle();
-    expect(find.byType(AnniversaryListCard), findsOneWidget);
-    expect(find.text('周末'), findsOneWidget);
+
+    expect(find.text('分页纪念日 01'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('anniversary-load-more-button')),
+      findsNothing,
+    );
   });
 
   testWidgets('card opens detail with elapsed copy and 217 days', (
@@ -184,6 +244,36 @@ void main() {
     expect(find.byType(CreateAnniversaryPage), findsOneWidget);
   });
 
+  testWidgets('new date picker defaults to the injected current date', (
+    tester,
+  ) async {
+    final pickerClock = FixedAppClock(DateTime(2032, 4, 12, 23, 59));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CreateAnniversaryPage(
+          gateway: FakeAnniversaryGateway(
+            clock: pickerClock,
+            seedDefaults: false,
+          ),
+          clock: pickerClock,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('anniversary-date-field')));
+    await tester.pumpAndSettle();
+
+    final dialog = tester.widget<DatePickerDialog>(
+      find.byType(DatePickerDialog),
+    );
+    expect(dialog.initialDate, DateTime(2032, 4, 12));
+    expect(dialog.currentDate, DateTime(2032, 4, 12));
+
+    await tester.tap(find.text('确定'));
+    await tester.pumpAndSettle();
+    expect(find.text('2032.04.12'), findsOneWidget);
+  });
+
   testWidgets(
     'title and date create a record that remains in the shared gateway',
     (tester) async {
@@ -226,8 +316,8 @@ void main() {
         findsOneWidget,
       );
       final stored = await gateway.list(const AnniversaryListQuery());
-      expect(stored, hasLength(6));
-      expect(stored.first.anniversary.title, '毕业纪念日');
+      expect(stored.items, hasLength(6));
+      expect(stored.items.first.anniversary.title, '毕业纪念日');
     },
   );
 
@@ -357,4 +447,27 @@ Future<void> _setSurface(WidgetTester tester, Size size) async {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+Future<void> _seedSupportedAnniversaries(
+  FakeAnniversaryGateway gateway,
+  int count,
+) async {
+  for (var index = 1; index <= count; index += 1) {
+    await gateway.create(
+      CreateAnniversaryPlan(
+        anniversary: AnniversaryDraft(
+          title: '分页纪念日 ${index.toString().padLeft(2, '0')}',
+          date: DateTime(2026, 8, index),
+          calendarType: AnniversaryCalendarType.solar,
+          categoryId: null,
+          note: null,
+          importance: AnniversaryImportance.unimportantNotUrgent,
+        ),
+        kind: AnniversaryKind.anniversary,
+        recurrence: null,
+        reminders: const [],
+      ),
+    );
+  }
 }

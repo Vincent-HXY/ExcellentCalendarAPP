@@ -2,6 +2,7 @@ import 'package:excellent_calendar/application/event/recurring_event_detail_cont
 import 'package:excellent_calendar/application/event/update_event_use_case.dart';
 import 'package:excellent_calendar/application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'package:excellent_calendar/application/timezone/timezone_application_service.dart';
+import 'package:excellent_calendar/data/category/fake_category_repository.dart';
 import 'package:excellent_calendar/gateway_interfaces/event_native_gateway.dart';
 import 'package:excellent_calendar/gateway_interfaces/reminder_native_gateway.dart';
 import 'package:excellent_calendar/gateway_interfaces/timezone_native_gateway.dart';
@@ -31,6 +32,7 @@ void main() {
             timezoneService: const TimezoneApplicationService(
               _UnusedTimezoneGateway(),
             ),
+            categoryRepository: FakeCategoryRepository(),
           ),
         ),
       );
@@ -92,6 +94,7 @@ void main() {
           timezoneService: const TimezoneApplicationService(
             _UnusedTimezoneGateway(),
           ),
+          categoryRepository: FakeCategoryRepository(),
         ),
       ),
     );
@@ -141,6 +144,7 @@ void main() {
           timezoneService: const TimezoneApplicationService(
             _UnusedTimezoneGateway(),
           ),
+          categoryRepository: FakeCategoryRepository(),
         ),
       ),
     );
@@ -175,6 +179,7 @@ void main() {
           timezoneService: const TimezoneApplicationService(
             _UnusedTimezoneGateway(),
           ),
+          categoryRepository: FakeCategoryRepository(),
         ),
       ),
     );

@@ -1,10 +1,14 @@
 #include <jni.h>
 
 #include <exception>
+#include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "excellent_calendar/boundary/api/event_api.hpp"
+#include "excellent_calendar/boundary/api/anniversary_api.hpp"
+#include "excellent_calendar/boundary/api/category_api.hpp"
 #include "excellent_calendar/boundary/api/notification_api.hpp"
 #include "excellent_calendar/boundary/api/reminder_api.hpp"
 #include "excellent_calendar/boundary/api/recurring_v2_api.hpp"
@@ -255,6 +259,164 @@ jstring call_boundary_v2(JNIEnv* env, jstring input, std::string (*function)(std
   }
 }
 
+bool category_jstring_to_utf8(
+    JNIEnv* env,
+    jstring input,
+    std::string& output,
+    std::string& reason) {
+  if (input == nullptr) {
+    output.clear();
+    return true;
+  }
+  const auto length = env->GetStringLength(input);
+  const auto* chars = env->GetStringChars(input, nullptr);
+  if (chars == nullptr) {
+    if (env->ExceptionCheck()) env->ExceptionClear();
+    reason = "JNI could not read the Category request string";
+    return false;
+  }
+  output.clear();
+  output.reserve(static_cast<std::size_t>(length) * 3U);
+  bool valid = true;
+  for (jsize index = 0; index < length;) {
+    std::uint32_t code_point = chars[index++];
+    if (code_point >= 0xd800U && code_point <= 0xdbffU) {
+      if (index >= length || chars[index] < 0xdc00U || chars[index] > 0xdfffU) {
+        valid = false;
+        break;
+      }
+      code_point = 0x10000U + ((code_point - 0xd800U) << 10U) +
+                   (static_cast<std::uint32_t>(chars[index++]) - 0xdc00U);
+    } else if (code_point >= 0xdc00U && code_point <= 0xdfffU) {
+      valid = false;
+      break;
+    }
+    if (code_point <= 0x7fU) {
+      output.push_back(static_cast<char>(code_point));
+    } else if (code_point <= 0x7ffU) {
+      output.push_back(static_cast<char>(0xc0U | (code_point >> 6U)));
+      output.push_back(static_cast<char>(0x80U | (code_point & 0x3fU)));
+    } else if (code_point <= 0xffffU) {
+      output.push_back(static_cast<char>(0xe0U | (code_point >> 12U)));
+      output.push_back(static_cast<char>(0x80U | ((code_point >> 6U) & 0x3fU)));
+      output.push_back(static_cast<char>(0x80U | (code_point & 0x3fU)));
+    } else {
+      output.push_back(static_cast<char>(0xf0U | (code_point >> 18U)));
+      output.push_back(static_cast<char>(0x80U | ((code_point >> 12U) & 0x3fU)));
+      output.push_back(static_cast<char>(0x80U | ((code_point >> 6U) & 0x3fU)));
+      output.push_back(static_cast<char>(0x80U | (code_point & 0x3fU)));
+    }
+  }
+  env->ReleaseStringChars(input, chars);
+  if (!valid) {
+    output.clear();
+    reason = "Category request contains malformed UTF-16";
+  }
+  return valid;
+}
+
+jstring category_utf8_to_jstring(JNIEnv* env, std::string_view input) {
+  std::vector<jchar> output;
+  output.reserve(input.size());
+  for (std::size_t index = 0; index < input.size();) {
+    const auto first = static_cast<unsigned char>(input[index++]);
+    std::uint32_t code_point = 0;
+    std::size_t continuation_count = 0;
+    std::uint32_t minimum = 0;
+    if (first <= 0x7fU) {
+      code_point = first;
+    } else if (first >= 0xc2U && first <= 0xdfU) {
+      code_point = first & 0x1fU;
+      continuation_count = 1U;
+      minimum = 0x80U;
+    } else if (first >= 0xe0U && first <= 0xefU) {
+      code_point = first & 0x0fU;
+      continuation_count = 2U;
+      minimum = 0x800U;
+    } else if (first >= 0xf0U && first <= 0xf4U) {
+      code_point = first & 0x07U;
+      continuation_count = 3U;
+      minimum = 0x10000U;
+    } else {
+      return nullptr;
+    }
+    if (index + continuation_count > input.size()) return nullptr;
+    for (std::size_t offset = 0; offset < continuation_count; ++offset) {
+      const auto next = static_cast<unsigned char>(input[index++]);
+      if ((next & 0xc0U) != 0x80U) return nullptr;
+      code_point = (code_point << 6U) | (next & 0x3fU);
+    }
+    if ((continuation_count != 0U && code_point < minimum) ||
+        code_point > 0x10ffffU ||
+        (code_point >= 0xd800U && code_point <= 0xdfffU)) {
+      return nullptr;
+    }
+    if (code_point <= 0xffffU) {
+      output.push_back(static_cast<jchar>(code_point));
+    } else {
+      code_point -= 0x10000U;
+      output.push_back(static_cast<jchar>(0xd800U + (code_point >> 10U)));
+      output.push_back(static_cast<jchar>(0xdc00U + (code_point & 0x3ffU)));
+    }
+  }
+  return env->NewString(output.empty() ? nullptr : output.data(),
+                        static_cast<jsize>(output.size()));
+}
+
+jstring category_emergency_failure_result_v2(JNIEnv* env) noexcept {
+  constexpr const char* fallback =
+      R"({"contract_version":2,"data":null,"error":{"code":"NATIVE_INTERNAL_ERROR","details":{"reason":"Category JNI failure serialization failed"},"message":"Native internal error","retryable":false},"ok":false,"request_id":"00000000-0000-4000-8000-000000000000"})";
+  if (env->ExceptionCheck()) env->ExceptionClear();
+  auto result = env->NewStringUTF(fallback);
+  if (result == nullptr && env->ExceptionCheck()) env->ExceptionClear();
+  return result;
+}
+
+jstring category_failure_result_v2(
+    JNIEnv* env,
+    const char* code,
+    const char* message,
+    const char* reason) noexcept {
+  try {
+    const auto json = excellent_calendar::boundary::contract::native_failure_json_v2(
+        excellent_calendar::common::make_error(
+            code, message, {{"reason", reason == nullptr ? "unknown error" : reason}}),
+        excellent_calendar::common::generate_uuid_v4());
+    auto result = category_utf8_to_jstring(env, json);
+    if (result != nullptr) return result;
+  } catch (...) {
+  }
+  return category_emergency_failure_result_v2(env);
+}
+
+jstring call_category_boundary_v2(
+    JNIEnv* env,
+    jstring input,
+    std::string (*function)(std::string_view)) noexcept {
+  try {
+    std::string request;
+    std::string reason;
+    if (!category_jstring_to_utf8(env, input, request, reason)) {
+      return category_failure_result_v2(
+          env, "CONTRACT_VALIDATION_FAILED", "Request does not match contract schema",
+          reason.c_str());
+    }
+    const auto response = function(request);
+    auto result = category_utf8_to_jstring(env, response);
+    if (result != nullptr) return result;
+    if (env->ExceptionCheck()) env->ExceptionClear();
+    return category_failure_result_v2(
+        env, "NATIVE_INTERNAL_ERROR", "Native internal error",
+        "Category response is not valid UTF-8");
+  } catch (const std::exception& error) {
+    return category_failure_result_v2(
+        env, "NATIVE_INTERNAL_ERROR", "Native internal error", error.what());
+  } catch (...) {
+    return category_failure_result_v2(
+        env, "NATIVE_INTERNAL_ERROR", "Native internal error", "unknown exception");
+  }
+}
+
 #define CALENDAR_V2_JNI(kotlin_name, cpp_name)                                              \
   extern "C" JNIEXPORT jstring JNICALL                                                     \
       Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_##kotlin_name( \
@@ -280,6 +442,29 @@ CALENDAR_V2_JNI(nativeCancelEventOccurrenceV2, cancel_event_occurrence_v2)
 CALENDAR_V2_JNI(nativeCompleteEventSeriesV2, complete_event_series_v2)
 CALENDAR_V2_JNI(nativeReopenEventSeriesV2, reopen_event_series_v2)
 CALENDAR_V2_JNI(nativeCancelEventSeriesV2, cancel_event_series_v2)
+CALENDAR_V2_JNI(nativeCreateAnniversaryV2, create_anniversary_v2)
+CALENDAR_V2_JNI(nativeUpdateAnniversaryV2, update_anniversary_v2)
+CALENDAR_V2_JNI(nativeDeleteAnniversaryV2, delete_anniversary_v2)
+CALENDAR_V2_JNI(nativeGetAnniversaryDetailV2, get_anniversary_detail_v2)
+CALENDAR_V2_JNI(nativeListAnniversariesV2, list_anniversaries_v2)
+CALENDAR_V2_JNI(nativePreviewAnniversaryCountdownV2, preview_anniversary_countdown_v2)
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeListCategoriesV2(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_category_boundary_v2(
+      env, request_json, excellent_calendar::boundary::api::list_categories_v2);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeCreateCategoryV2(
+    JNIEnv* env,
+    jobject /* this */,
+    jstring request_json) {
+  return call_category_boundary_v2(
+      env, request_json, excellent_calendar::boundary::api::create_category_v2);
+}
 CALENDAR_V2_JNI(nativeCreateReminderV2, create_reminder_v2)
 CALENDAR_V2_JNI(nativeUpdateReminderV2, update_reminder_v2)
 CALENDAR_V2_JNI(nativeCancelReminderV2, cancel_reminder_v2)

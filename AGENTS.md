@@ -181,8 +181,15 @@ Gradle、AGP、Kotlin、JDK 等构建工具。
 - Flutter 执行相关测试、`flutter analyze` 和 Android Debug 构建。
 - 跨语言、JNI、构建工具或环境变更必须执行完整 smoke test。
 - 未实际执行的检查必须明确标记为 **未验证**，不得仅凭代码审查声称通过。
+- 在.\docs\log.md中按顺序简要写入：本次的任务所使用的skill，负责的板块，任务目标，任务结果，开发时间，用于可追溯的开发日志记录。
 
-## 10. 冲突、问题
+
+## 10. 默认允许修改的范围
+
+- .\docs\log.md 用于记录开发后的日志记录
+- .\docs\temp.md 用于记录任何临时内容
+
+## 11. 冲突、问题
 
 当用户需求、README、Contract、Data Model、代码、测试或文档互相冲突时：
 

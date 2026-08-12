@@ -1,3 +1,7 @@
+import 'package:excellent_calendar/application/timezone/timezone_application_service.dart';
+import 'package:excellent_calendar/native_contract/category/category_response_dto.dart';
+import 'package:excellent_calendar/native_contract/event/event_response_dto.dart';
+import 'package:excellent_calendar/native_contract/runtime/local_wall_date_time.dart';
 import 'package:excellent_calendar/presentation/event_detail/models/event_detail_ui_state.dart';
 import 'package:excellent_calendar/presentation/event_detail/pages/event_detail_page.dart';
 import 'package:excellent_calendar/presentation/inbox/components/task_list_item.dart';
@@ -67,6 +71,58 @@ void main() {
 
       expect(tester.takeException(), isNull, reason: 'size: $size');
     }
+  });
+
+  testWidgets('event detail renders all three category projection states', (
+    tester,
+  ) async {
+    final cases = <({EventDetailUiState state, String label})>[
+      (state: _categoryState(), label: '未分类'),
+      (
+        state: _categoryState(
+          categoryId: _categoryId,
+          category: _activeCategory,
+        ),
+        label: '工作',
+      ),
+      (state: _categoryState(categoryId: _categoryId), label: '分类不可用或已删除'),
+    ];
+
+    for (final testCase in cases) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: EventDetailPage(state: testCase.state, canComplete: false),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('event-category-status')),
+        findsOneWidget,
+      );
+      expect(find.text(testCase.label), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  test('category UI projection rejects a mismatched aggregate', () {
+    expect(
+      () => _categoryState(
+        categoryId: _categoryId,
+        category: CategoryResponseDto(
+          id: '40000000-0000-4000-8000-000000000002',
+          name: '错误分类',
+          description: null,
+          color: '#39AFBD',
+          icon: null,
+          sortOrder: 1,
+          createdAt: DateTime.utc(2026, 8, 11),
+          updatedAt: DateTime.utc(2026, 8, 11),
+          deletedAt: null,
+        ),
+      ),
+      throwsFormatException,
+    );
   });
 
   testWidgets('editing shows the temporary unavailable feedback', (
@@ -139,4 +195,52 @@ void main() {
     expect(detailTapCount, 1);
     expect(completionCount, 0);
   });
+}
+
+const _categoryId = '40000000-0000-4000-8000-000000000001';
+
+final _activeCategory = CategoryResponseDto(
+  id: _categoryId,
+  name: '工作',
+  description: null,
+  color: '#39AFBD',
+  icon: null,
+  sortOrder: 1,
+  createdAt: DateTime.utc(2026, 8, 11),
+  updatedAt: DateTime.utc(2026, 8, 11),
+  deletedAt: null,
+);
+
+EventDetailUiState _categoryState({
+  String? categoryId,
+  CategoryResponseDto? category,
+}) {
+  return EventDetailUiState.fromEvent(
+    EventResponseDto(
+      id: 'event-category-state',
+      title: '分类回显',
+      content: null,
+      startAt: DateTime.utc(2026, 8, 11, 9),
+      endAt: DateTime.utc(2026, 8, 11, 10),
+      startDate: null,
+      endDate: null,
+      isAllDay: false,
+      hasRecurrence: false,
+      status: 'active',
+      recurrenceId: null,
+      recurrenceRevision: null,
+      categoryId: categoryId,
+      timezone: 'Asia/Shanghai',
+      source: 'manual',
+      createdAt: DateTime.utc(2026, 8, 11),
+      updatedAt: DateTime.utc(2026, 8, 11),
+    ),
+    localizedTimeRange: LocalizedTimeRange(
+      start: LocalWallDateTime.parse('2026-08-11T17:00:00'),
+      end: LocalWallDateTime.parse('2026-08-11T18:00:00'),
+      timezone: 'Asia/Shanghai',
+    ),
+    displayStatusOverride: EventDisplayStatus.pending,
+    category: category,
+  );
 }

@@ -2,8 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_list_response.schema.json",
   "title": "AnniversaryListResponse",
-  "description": "Paginated anniversary list response.",
+  "description": "Paginated Anniversary list. Each item contains persisted facts plus a countdown snapshot calculated in the request timezone; no localized labels or Flutter presentation fields are transported.",
   "x-contract-version": 2,
+  "x-implementation-status": "integrated",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -14,7 +15,7 @@
     "items": {
       "type": "array",
       "items": {
-        "$ref": "./anniversary_response.schema.json"
+        "$ref": "./anniversary_summary_response.schema.json"
       }
     },
     "pagination": {

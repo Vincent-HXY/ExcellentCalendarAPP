@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/delete_anniversary_request.schema.json",
+  "title": "DeleteAnniversaryRequest",
+  "description": "Soft-deletes one Anniversary through the C++ lifecycle workflow. A successful response returns the deleted Anniversary with non-null deleted_at. Restore and hard delete are not V1 capabilities.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

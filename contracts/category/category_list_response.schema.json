@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/category/category_list_response.schema.json",
+  "title": "CategoryListResponse",
+  "description": "All active Categories ordered by sort_order (null last), created_at, then id, each ascending.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "./category_response.schema.json"
+          },
+          {
+            "properties": {
+              "deleted_at": {
+                "type": "null"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "examples": [
+    {
+      "items": []
+    }
+  ]
+}

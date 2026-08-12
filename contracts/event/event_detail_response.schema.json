@@ -2,8 +2,64 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/event/event_detail_response.schema.json",
   "title": "EventDetailResponse",
-  "description": "Detail-page aggregate response containing event plus optional related recurrence, reminders, and category.",
+  "description": "Detail-page aggregate response containing Event plus optional related Recurrence, Reminders, and the currently resolvable active Category projection. The Event keeps its original category_id even when the Category projection is null.",
   "x-contract-version": 2,
+  "x-category-resolution-invariants": [
+    "When event.category_id is null, category must be null (unclassified).",
+    "When event.category_id is non-null and resolves to an active Category, category must be that Category and category.id must equal event.category_id.",
+    "When event.category_id is non-null but dangling or resolves only to a soft-deleted Category, category must be null and event.category_id must remain unchanged."
+  ],
+  "x-category-resolution-oracles": [
+    {
+      "name": "unclassified",
+      "event_category_id": null,
+      "resolved_category_id": null,
+      "resolved_category_deleted_at": null,
+      "valid": true
+    },
+    {
+      "name": "active_match",
+      "event_category_id": "33333333-3333-4333-8333-333333333333",
+      "resolved_category_id": "33333333-3333-4333-8333-333333333333",
+      "resolved_category_deleted_at": null,
+      "valid": true
+    },
+    {
+      "name": "dangling_reference",
+      "event_category_id": "legacy-missing-category",
+      "resolved_category_id": null,
+      "resolved_category_deleted_at": null,
+      "valid": true
+    },
+    {
+      "name": "soft_deleted_reference",
+      "event_category_id": "33333333-3333-4333-8333-333333333333",
+      "resolved_category_id": null,
+      "resolved_category_deleted_at": "2026-08-11T10:00:00Z",
+      "valid": true
+    },
+    {
+      "name": "projection_for_unclassified_event",
+      "event_category_id": null,
+      "resolved_category_id": "33333333-3333-4333-8333-333333333333",
+      "resolved_category_deleted_at": null,
+      "valid": false
+    },
+    {
+      "name": "mismatched_active_projection",
+      "event_category_id": "33333333-3333-4333-8333-333333333333",
+      "resolved_category_id": "44444444-4444-4444-8444-444444444444",
+      "resolved_category_deleted_at": null,
+      "valid": false
+    },
+    {
+      "name": "soft_deleted_projection_exposed",
+      "event_category_id": "33333333-3333-4333-8333-333333333333",
+      "resolved_category_id": "33333333-3333-4333-8333-333333333333",
+      "resolved_category_deleted_at": "2026-08-11T10:00:00Z",
+      "valid": false
+    }
+  ],
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -17,7 +73,7 @@
       "$ref": "./event_response.schema.json"
     },
     "recurrence": {
-      "description": "The event recurrence rule, or null for a non-recurring event.",
+      "description": "The Event recurrence rule, or null for a non-recurring Event.",
       "oneOf": [
         {
           "$ref": "../recurrence/recurrence_response.schema.json"
@@ -35,15 +91,177 @@
       }
     },
     "category": {
-      "description": "The current category, or null when the event has no category.",
+      "description": "The active Category whose id equals event.category_id. It is null for an unclassified Event and also for a dangling or soft-deleted weak reference; those latter cases do not clear or rewrite event.category_id.",
       "oneOf": [
         {
-          "$ref": "../category/category_response.schema.json"
+          "allOf": [
+            {
+              "$ref": "../category/category_response.schema.json"
+            },
+            {
+              "properties": {
+                "deleted_at": {
+                  "type": "null"
+                }
+              }
+            }
+          ]
         },
         {
           "type": "null"
         }
       ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "properties": {
+              "category_id": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "category_id"
+            ]
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "category": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "category"
+        ]
+      },
+      "then": {
+        "properties": {
+          "event": {
+            "properties": {
+              "category_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "category_id"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "event": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "title": "Unclassified event",
+        "content": null,
+        "start_at": "2026-08-11T08:00:00Z",
+        "end_at": "2026-08-11T09:00:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "has_recurrence": false,
+        "status": "active",
+        "completed_at": null,
+        "recurrence_id": null,
+        "recurrence_revision": null,
+        "category_id": null,
+        "importance": null,
+        "location": null,
+        "timezone": "Asia/Shanghai",
+        "source": "manual",
+        "created_at": "2026-08-11T07:00:00Z",
+        "updated_at": "2026-08-11T07:00:00Z",
+        "deleted_at": null
+      },
+      "recurrence": null,
+      "reminders": [],
+      "category": null
+    },
+    {
+      "event": {
+        "id": "11111111-1111-4111-8111-111111111112",
+        "title": "Resolved category event",
+        "content": null,
+        "start_at": "2026-08-11T08:00:00Z",
+        "end_at": "2026-08-11T09:00:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "has_recurrence": false,
+        "status": "active",
+        "completed_at": null,
+        "recurrence_id": null,
+        "recurrence_revision": null,
+        "category_id": "33333333-3333-4333-8333-333333333333",
+        "importance": null,
+        "location": null,
+        "timezone": "Asia/Shanghai",
+        "source": "manual",
+        "created_at": "2026-08-11T07:00:00Z",
+        "updated_at": "2026-08-11T07:00:00Z",
+        "deleted_at": null
+      },
+      "recurrence": null,
+      "reminders": [],
+      "category": {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "工作",
+        "description": null,
+        "color": "#39AFBD",
+        "icon": null,
+        "sort_order": 0,
+        "created_at": "2026-08-11T07:00:00Z",
+        "updated_at": "2026-08-11T07:00:00Z",
+        "deleted_at": null
+      }
+    },
+    {
+      "event": {
+        "id": "11111111-1111-4111-8111-111111111113",
+        "title": "Dangling category event",
+        "content": null,
+        "start_at": "2026-08-11T08:00:00Z",
+        "end_at": "2026-08-11T09:00:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "has_recurrence": false,
+        "status": "active",
+        "completed_at": null,
+        "recurrence_id": null,
+        "recurrence_revision": null,
+        "category_id": "legacy-missing-category",
+        "importance": null,
+        "location": null,
+        "timezone": "Asia/Shanghai",
+        "source": "manual",
+        "created_at": "2026-08-11T07:00:00Z",
+        "updated_at": "2026-08-11T07:00:00Z",
+        "deleted_at": null
+      },
+      "recurrence": null,
+      "reminders": [],
+      "category": null
+    }
+  ]
 }

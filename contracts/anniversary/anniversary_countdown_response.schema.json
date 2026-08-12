@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_countdown_response.schema.json",
+  "title": "AnniversaryCountdownResponse",
+  "description": "A non-persisted solar countdown snapshot. days is a difference between local natural dates in timezone, never a rounded duration. A yearly February 29 anchor resolves to the last day of February in non-leap target years.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "relation",
+    "days",
+    "target_occurrence_date",
+    "iso_weekday",
+    "timezone",
+    "calculated_at"
+  ],
+  "properties": {
+    "relation": {
+      "type": "string",
+      "enum": [
+        "remaining",
+        "elapsed",
+        "today"
+      ]
+    },
+    "days": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "target_occurrence_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "iso_weekday": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7,
+      "description": "ISO 8601 weekday for target_occurrence_date; Monday=1 and Sunday=7."
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Validated IANA timezone used to obtain the local reference date."
+    },
+    "calculated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "relation": {
+            "const": "today"
+          }
+        },
+        "required": [
+          "relation"
+        ]
+      },
+      "then": {
+        "properties": {
+          "days": {
+            "const": 0
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "days": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  ]
+}

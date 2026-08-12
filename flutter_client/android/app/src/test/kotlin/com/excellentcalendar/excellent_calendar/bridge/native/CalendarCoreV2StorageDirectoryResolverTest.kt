@@ -7,7 +7,7 @@ import java.nio.file.Files
 
 class CalendarCoreV2StorageDirectoryResolverTest {
     @Test
-    fun v2StorageKeepsTheFormalV1DirectoryForCppBootstrap() {
+    fun v2StorageResolverDoesNotTouchFormalOrLegacyDirectories() {
         val filesDir = Files.createTempDirectory("calendar-v2-storage").toFile()
         try {
             val active = filesDir.resolve("local_storage/calendar_core_storage_json")

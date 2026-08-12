@@ -7,10 +7,12 @@
 
 #include "excellent_calendar/application/recurrence_service.hpp"
 #include "excellent_calendar/common/result.hpp"
+#include "excellent_calendar/domain/category.hpp"
 #include "excellent_calendar/domain/event.hpp"
 #include "excellent_calendar/domain/event_occurrence_state.hpp"
 #include "excellent_calendar/domain/recurrence.hpp"
 #include "excellent_calendar/domain/reminder.hpp"
+#include "excellent_calendar/repository/category_repository.hpp"
 #include "excellent_calendar/repository/recurring_event_transaction.hpp"
 
 namespace excellent_calendar::application {
@@ -71,13 +73,15 @@ struct EventDetailAggregate {
   domain::Event event;
   std::optional<domain::Recurrence> recurrence;
   std::vector<domain::Reminder> reminders;
+  std::optional<domain::Category> category;
 };
 
 class RecurringEventQueryService {
  public:
   RecurringEventQueryService(
       std::shared_ptr<repository::RecurringEventTransaction> transaction,
-      std::shared_ptr<RecurrenceService> recurrence_service);
+      std::shared_ptr<RecurrenceService> recurrence_service,
+      std::shared_ptr<repository::CategoryRepository> category_repository);
 
   common::Result<domain::Event> get_event(const std::string& event_id) const;
   common::Result<EventDetailAggregate> get_event_detail(
@@ -93,6 +97,7 @@ class RecurringEventQueryService {
  private:
   std::shared_ptr<repository::RecurringEventTransaction> transaction_;
   std::shared_ptr<RecurrenceService> recurrence_service_;
+  std::shared_ptr<repository::CategoryRepository> category_repository_;
 };
 
 }  // namespace excellent_calendar::application

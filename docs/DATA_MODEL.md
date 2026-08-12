@@ -16,14 +16,14 @@
 ## 当前阶段约定
 
 - 当前正式本地持久化仍是 JSON；SQLite 是后续目标，不与 JSON 同时作为可写真相源。
-- Calendar Core JSON Storage format 升级为 `2`。v1 不读取、不迁移；首次切换只允许先原子归档已确认的 v1 正式目录，再初始化空 v2，归档失败必须停止初始化。
-- Native Contract v2 是一次协调发布的 breaking change。C++ Domain/Boundary 与 JSON Storage v2 已进入实现和本机测试阶段，但 Dart、Kotlin、Android JNI/调度和正式数据目录尚未切换；同一发行版本全链路完成前，v2 仍不得对外宣称可用。
+- Calendar Core JSON Storage format 升级为 `2`。v1 不读取、不迁移、不保留；首次切换只允许在确认目录属于 v1 后清理该目录，再初始化空 v2；确认或初始化失败必须停止初始化且不得删除任何数据。
+- Native Contract v2 是一次协调发布的 breaking change，已于 2026-08-08 作为同一发行版本激活。Dart DTO/Gateway、Kotlin validator/bridge、JNI、Android 调度与 JSON Storage v2 均已切换，真机验证记录见 `docs/develop_record.md`。
 - 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
 - `AIExtraction`、`SyncOperation` 等模型先作为未来能力预留，字段可先保持文档级设计。
 - 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
 - `Reminder` 作为独立实体保存，不嵌入 `Event`、`Habit`、`Anniversary`。
 - 一个 `Event`、`Habit` 或 `Anniversary` 可以关联多条 `Reminder`。业务上可以理解为“提醒时间列表”，存储上是多条提醒记录。
-- 本轮重复展开、occurrence 状态和滚动 Reminder 只定义 Event 闭环。Habit/Anniversary 的重复规则仍为计划态，不能直接复用 Event v2 的派生锚点语义。
+- 本轮 occurrence 状态和滚动 Reminder 仍只定义 Event 闭环。Anniversary V1 使用本文件独立定义的 `AnniversaryRecurrence` 年度规则，不能复用 Event v2 的 revision/UTC 锚点语义；Habit 重复规则与 Anniversary Reminder 仍为计划态。
 
 ## 时区解析与运行时门禁
 
@@ -477,18 +477,91 @@
 - 可重试投递失败只追加 `Notification` attempt，Reminder 保持 `pending`。永久失败把当前 Reminder 标记 `failed`，并在同一事务创建 successor，避免无限系列中断。
 ## Category：分类
 
-分类用于组织日程、习惯、纪念日等对象。
+分类用于组织日程、习惯、纪念日等对象。Category 是独立配置实体；业务对象只保存稳定的
+`categoryId`，分类名称、颜色和列表下标都不能充当关联键。
+
+当前只冻结本地分类本身，不冻结账号归属或系统预设语义。Flutter Fake 中的“默认日程”和
+用户名分组仅是开发期数据/展示信息，不产生 `userId`、`isDefault`、`ownerName` 等领域字段。
+未分类由业务对象的 `categoryId = null` 表达，不要求存在一条名为“默认日程”的 Category。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `id` | `string` | 是 | 分类 ID |
-| `name` | `string` | 是 | 分类名称 |
-| `color` | `string` | 否 | 分类颜色，例如十六进制色值 |
-| `icon` | `string` | 否 | 图标标识 |
-| `sortOrder` | `number` | 否 | 排序值 |
-| `createdAt` | `datetime` | 是 | 创建时间 |
-| `updatedAt` | `datetime` | 是 | 更新时间 |
-| `deletedAt` | `datetime` | 否 | 软删除时间 |
+| `id` | `string` | 是 | 分类 ID；新的正式 writer 由 C++ 生成 UUIDv4 |
+| `name` | `string` | 是 | 去除首尾空白后非空，最多 40 个 Unicode 字符 |
+| `description` | `string` | 否 | 分类备注；空白规范化为 `null`，最多 200 个 Unicode 字符 |
+| `color` | `string` | 否 | 规范化的 `#RRGGBB` 大写十六进制颜色；新建分类时必填，响应保留可空以兼容旧草案 |
+| `icon` | `string` | 否 | 稳定图标标识；当前 Flutter 创建页不提交 |
+| `sortOrder` | `integer` | 否 | `0..9007199254740991`；`null` 表示没有显式顺序，范围保证 JSON Number 在 Dart/Kotlin/C++ 间精确往返 |
+| `createdAt` | `datetime` | 是 | C++ Clock 生成的创建时间 |
+| `updatedAt` | `datetime` | 是 | C++ Clock 生成的最近更新时间 |
+| `deletedAt` | `datetime` | 否 | 软删除时间；活动分类为 `null` |
+
+关系与生命周期不变量：
+
+- Category 名称不是身份，也尚未冻结账号范围内的唯一性；当前允许重名，调用方必须使用 `id` 区分。
+- `category.list` 只返回 `deletedAt = null` 的活动分类，并按 `sortOrder`（`null` 最后）、
+  `createdAt`、`id` 升序稳定排序。
+- Category 创建的领域规范化只在 C++ Application/Domain 执行：`name/description/icon` trim，空白
+  optional text 变 `null`，`color` 转大写。Flutter/Kotlin 只能校验 wire 结构并原样转发 Schema-valid 值，
+  不得提前 trim、blank-to-null 或 uppercase。
+- 创建请求未提供显式 `sortOrder` 时，C++ Category workflow 负责选择稳定的追加顺序；
+  Flutter/Kotlin 不生成 ID、时间戳或持久化排序值。活动最大值已经是 `9007199254740991` 时返回
+  `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。
+- Category 软删除不得把 Event、Habit 或 Anniversary 的 `categoryId` 改成名称、颜色或其他替代值。
+  Event detail 的 Category 聚合固定为三态：`event.categoryId = null` 时 `category = null`；非空 ID 命中
+  活动 Category 时必须返回同 ID 的 Category；非空 ID 悬空或只命中软删除 Category 时返回
+  `category = null`，同时原始 `event.categoryId` 必须保留。
+- 按分类过滤 Event 必须使用 `categoryId/category_ids`。`categoryName` 只允许作为 SearchIndex 的
+  可重建冗余文本，不是结构化过滤或引用完整性的真相源。
+- Category 归属于设备、本地资料还是具体云端用户，以及系统默认分类的初始化/隐藏/复制规则，
+  仍待账号与同步架构冻结后另行设计；本轮不得据此新增字段或预设写入。
+
+### Category Storage v2 映射（已实现，尚未通过发布集成门禁）
+
+Category 使用 Calendar Core JSON v2 目录中的独立逻辑 Store：
+
+```json
+{
+  "storage_version": 2,
+  "categories": []
+}
+```
+
+- 文件名固定为 `categories.json`，根对象只允许 `storage_version` 与 `categories`；严格格式由
+  `contracts/storage/category_store.schema.json` 定义。
+- `CategoryStorageRecord` 与 Create Request、Response DTO、领域对象分离，但使用同一组稳定事实字段：
+  `id/name/description/color/icon/sort_order/created_at/updated_at/deleted_at`。所有 nullable 字段也必须
+  显式保存，禁止依赖语言默认值补字段。
+- 正式本地 Store 比兼容性 Response reader 更严格：`color` 与 `sort_order` 在磁盘上必须非空；
+  request 的空顺序由 C++ 在持久化前物化。Response 保留这两项可空只用于既有草案/非 Store reader 兼容，
+  不能据此向新 `categories.json` 写入 null。
+- 存储快照按 `id` 升序序列化，使同一状态产生稳定文件；本地 Store 投影按
+  `sortOrder -> createdAt -> id` 排序，兼容性 Response comparator 仍把非 Store 来源的 null 放在最后；
+  任何情况下都不能把数组下标当作排序事实。
+- Request、Response 与 Store 的 `sort_order` 都限制为 `0..9007199254740991`。请求直接超限返回
+  `CONTRACT_VALIDATION_FAILED`，磁盘记录超限返回 `STORAGE_DATA_CORRUPTED`；`category.create.sort_order = null`
+  时 C++ workflow 在目录级写锁内按活动记录的最大 `sort_order + 1` 生成持久化值，没有活动记录时从
+  `0` 开始，最大值已达上界时返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。显式重复顺序值合法，
+  由列表次级键稳定消歧。
+- 当前 create 只修改 `categories.json`，完整快照校验后使用同目录临时文件、flush/fsync、原子替换和目录同步，
+  成功完成目录同步才是 Contract 提交点；任何阶段返回失败都必须让旧快照继续权威。单文件原子替换就是事务
+  边界，不需要扩展现有 Event/Reminder 或 Anniversary journal。
+- 未来若一个 Category workflow 必须同时修改其他逻辑 Store，必须先定义独立的可恢复 journal；不得静默扩大
+  两个既有 journal 的精确 Store 集合。
+- 已有 Event/Habit/Anniversary 的 `categoryId` 是弱引用：Category Store 加载不扫描、不清空也不规范化其他
+  Store 的引用。缺失或软删除 Category 时保留原 ID，聚合投影可以返回空 Category。
+- 这是 Storage v2 的可加性独立文件，不改变现有 Store 的根包络、记录 codec 或 journal。合法旧 v2 目录在
+  Category Storage 正式激活后只创建空根；若已有 `categories.json`，必须完整校验并原样保留，损坏或未知版本
+  显式失败，禁止重置。
+- 没有正式 Category v1 Store，也禁止把 Flutter Fake、“默认日程”fixture 或 owner 文案迁入正式存储。
+- 当前选择严格 JSON 完整快照，是因为 Category 属于低基数配置数据，公开操作只有 list/create，且可以直接复用
+  现有目录锁、原子替换和损坏检测。Repository 边界保持不变；以后出现账号分区同步、高频写入或明显规模压力时，
+  再用显式 migration 切换 SQLite，而不是让 UI/DTO 依赖文件格式。
+
+Category 的 C++ Domain/Repository/JSON codec、bootstrap、JNI export 与真实磁盘读写代码已经存在，故 Store
+和两条调用统一标记为 `implementation_status: implemented_unintegrated`；但 `release_status: blocked` 仍表示
+不能宣称产品闭环已完成。解除条件是 Event detail 聚合、Kotlin Event Category 校验、原子写 post-replace
+失败语义、跨层安全整数/规范化一致性、Flutter 生产 composition 与设备 smoke 全部通过。
 
 ## Recurrence：重复规则
 
@@ -619,9 +692,13 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | `titleText` | `string` | 否 | 标题索引文本 |
 | `bodyText` | `string` | 否 | 正文索引文本 |
 | `keywords` | `string[]` | 否 | 关键词 |
-| `categoryName` | `string` | 否 | 分类名称冗余字段 |
+| `categoryId` | `string` | 否 | 从目标对象派生的稳定分类 ID，用于结构化分类过滤 |
+| `categoryName` | `string` | 否 | 可重建的分类名称冗余文本，只用于展示或全文检索 |
 | `occurAt` | `datetime` | 否 | 发生时间，用于时间排序 |
 | `updatedAt` | `datetime` | 是 | 索引更新时间 |
+
+`categoryId/categoryName` 都是索引投影而非新的关系真相源。Category 更名、软删除或索引损坏时，
+SearchIndex 必须从目标对象的 `categoryId` 与当前 Category 记录重建；分类筛选不能依赖旧名称。
 
 ## AIExtraction：AI 解析结果
 
@@ -858,15 +935,47 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | --- | --- | --- | --- |
 | `id` | `string` | 是 | 纪念日 ID |
 | `title` | `string` | 是 | 纪念日名称 |
-| `date` | `date` | 是 | 纪念日日期 |
-| `calendarType` | `string` | 否 | 日历类型，例如 `solar`、`lunar` |
+| `date` | `date` | 是 | 用户保存的原始本地日期；年度重复的月、日锚点只从这里读取 |
+| `calendarType` | `string` | 是 | V1 只允许 `solar`；`lunar` 保留为协议拒绝入口 |
 | `categoryId` | `string` | 否 | 分类 ID |
-| `recurrenceId` | `string` | 否 | 计划中的 Anniversary 专用规则引用；不复用 Event v2 Recurrence revision |
+| `recurrenceId` | `string` | 否 | Anniversary 专用规则引用；`null` 表示一次性，非空必须指向有效 `AnniversaryRecurrence` |
 | `note` | `string` | 否 | 备注 |
 | `importance` | `Importance` | 否 | 重要性 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
 | `deletedAt` | `datetime` | 否 | 软删除时间 |
+
+### AnniversaryRecurrence：纪念日年度规则
+
+`AnniversaryRecurrence` 是 Anniversary 独占的轻量年度规则，持久化集合命名为 `anniversary_recurrences`。它不属于 Event v2 的不可变 Recurrence revision，也不保存 `anniversaryId`、月、日、时区、UTC occurrence 或 RRULE；关系真相只保存在 `Anniversary.recurrenceId`。
+
+当前 JSON Storage v2 已激活 `anniversaries.json` 与 `anniversary_recurrences.json`，create/update/delete 通过独立 `anniversary_workflow_transactions.json` 两 Store journal 原子提交。该 journal 不参与也不改变 Event/Reminder 既有六 Store 事务。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `recurrenceId` | `string` | 是 | UUIDv4 主键，由 C++ 在从一次性切换为年度重复或创建年度重复纪念日时生成 |
+| `frequency` | `RecurrenceFrequency` | 是 | V1 固定为 `yearly` |
+| `interval` | `integer` | 是 | V1 固定为 `1` |
+| `createdAt` | `datetime` | 是 | 规则创建时间，ISO 8601 UTC Instant |
+| `deletedAt` | `datetime` | 否 | 规则退出使用时的软删除时间；活动规则必须为 `null` |
+
+关系与生命周期不变量：
+
+- 一次性 Anniversary 必须满足 `recurrenceId = null`；年度重复 Anniversary 必须引用一条 `deletedAt = null`、`frequency = yearly`、`interval = 1` 的有效规则。
+- 一个活动 `AnniversaryRecurrence` 最多由一个 Anniversary 引用；不得共享规则，也不得在规则中反向保存 `anniversaryId` 形成双重真相源。
+- `Anniversary.date` 始终保存用户输入的原始日期及历史年份。规则不得重复保存 `monthOfYear`、`dayOfMonth` 或另一个日期锚点。
+- 创建年度重复纪念日时，C++ workflow 必须在同一事务中创建规则并写入 `Anniversary.recurrenceId`；任一步失败都不得留下半提交数据。
+- 仍为年度重复时更新标题或日期，保留原 `recurrenceId`。日期变化只替换 `Anniversary.date`，后续查询使用新日期动态计算，不创建新的规则或未来 occurrence。
+- 从一次性切换为年度重复时创建新的 UUIDv4 规则并原子建立引用；不得复活过去已软删除的规则。
+- 从年度重复切换为一次性时，必须在同一事务中把 `Anniversary.recurrenceId` 设为 `null`，并以同一 UTC Clock 值写入旧规则的 `deletedAt`。事务失败时两项都回滚。
+- 读模型发现非空 `recurrenceId` 指向缺失、已软删除或不满足 V1 常量的规则时必须显式失败，不得降级为一次性或静默新建替代规则。
+
+Occurrence 与查询不变量：
+
+- 不持久化 `2027`、`2028`、`2029` 等未来 occurrence，也不为 Anniversary V1 建立 occurrence 状态表。
+- C++ 查询以请求 IANA timezone 得到本地今日日期；年度重复的下一次日期由 `Anniversary.date` 的月、日动态计算。今年候选已过去时计算下一年候选。
+- 公历 2 月 29 日在非闰目标年落到该年 2 月最后一天；`next_occurrence_date`、`days_remaining` 和 `is_today` 都是查询投影，不回写 Anniversary 或 `anniversary_recurrences`。
+- V1 的 Anniversary occurrence 没有可变状态、Reminder 或投递身份。未来增加 Reminder 前，必须另行冻结 occurrence identity、幂等、唯一键和 reconciliation 语义。
 
 ## 主要关系
 
@@ -878,12 +987,15 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 | `Habit.categoryId -> Category.id` | 习惯可归属一个分类 |
 | `Habit.recurrenceId -> planned Habit recurrence model` | 非 Event 重复语义尚待独立设计，不指向 Event v2 Recurrence |
 | `HabitCheckIn.habitId -> Habit.id` | 习惯打卡记录归属某个习惯 |
+| `Anniversary.recurrenceId -> AnniversaryRecurrence.recurrenceId` | 一次性纪念日为空；年度重复纪念日独占引用一条有效的 `yearly + interval=1` 规则 |
+| `Anniversary.categoryId -> Category.id` | 纪念日可归属一个分类 |
 | `Reminder.targetId -> Event/Habit/Anniversary.id` | 提醒可以绑定到不同业务对象；一个业务对象可以有多条提醒 |
 | `Notification.reminderId -> Reminder.reminderId` | 通知由提醒触发后生成，用于记录投递结果 |
 | `Notification.recoveryBatchId -> ReminderRecoveryBatch.recoveryBatchId` | 恢复摘要或由 Recovery 新建的明细 attempt 归属一个恢复批次；被接管的既有 frozen attempt 不回填该字段 |
 | `Notification.resolvedByRecoveryBatchId -> ReminderRecoveryBatch.recoveryBatchId` | Recovery 对既有 frozen attempt 的接管或废弃裁决归属一个恢复批次 |
 | `ReminderRecoveryBatch.detailReminderIds/summaryReminderIds -> Reminder.reminderId` | 恢复批次记录明细与摘要覆盖范围 |
 | `SearchIndex.targetId -> Event/Habit/Anniversary.id` | 搜索索引映射到被索引对象 |
+| `SearchIndex.categoryId -> Category.id` | 分类 ID 是结构化筛选投影；分类名称仅是可重建冗余文本 |
 | `AIExtraction.candidateEventId -> Event.id` | AI 可生成待确认的候选日程 |
 | `SyncOperation.targetId -> any entity id` | 同步操作记录任意实体的变更 |
 | `UserProfile.userId -> UserAccount.id` | 账号与公开资料一对一 |
@@ -899,7 +1011,8 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 ## 未来待确认问题
 
 - Event v3 是否需要支持 `interval > 1`、有界 `endAt/count`、Yearly/Custom 或 iCalendar RRULE；这些能力不得静默塞入 v2。
-- Habit/Anniversary 的重复规则、锚点与 Reminder 生成语义需要独立设计，不能直接照搬 Event v2。
+- Habit 的重复规则仍需独立设计；Anniversary V1 的年度规则和日期锚点已冻结，但 Anniversary Reminder 的 occurrence 身份与生成语义仍需单独设计，不能照搬 Event v2。
+- Category 的用户归属范围、名称唯一性、系统默认分类及预设生命周期仍待账号/同步架构确认；当前 Flutter Fake 默认项不构成领域决策。
 - `DatedMessage` 未来是只做本地投送，还是也需要云端运营投放能力。
 - `AIExtraction.extractedData` 未来是否需要拆成强类型表，还是先以 JSON 保存。
 - 后续加入 MFA 时是否把 V1 的 8 位密码下限提升到单因素认证推荐基线。
@@ -909,14 +1022,18 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 - `Reminder` 作为独立实体保存，通过 `targetType` 和 `targetId` 关联 `Event`、`Habit`、`Anniversary`。
 - `Event` 可以有多个提醒时间。概念上是提醒时间列表，存储上是多条 `Reminder`。
 - `Event.status` 只表达整个日程或整个重复系列的生命周期状态；重复日程单次 occurrence 状态使用 `EventOccurrenceState`。
-- Native Contract 主版本为 `2`，v1 payload 和 v1 Calendar Core JSON 不兼容；旧正式目录先归档、后初始化空 v2，不做字段迁移或静默混读。
+- Native Contract 主版本为 `2`，v1 payload 和 v1 Calendar Core JSON 不兼容；v1 数据不再保留（2026-08-08 用户决策），确认旧正式目录为 v1 后直接清理并初始化空 v2，不做字段迁移或静默混读。
 - Event 使用互斥的 UTC Instant / 本地 date 时间结构，且所有 Event 必须保存有效 IANA timezone。
 - Event Recurrence 使用不可变 `(recurrenceId, revision)`；occurrence、滚动 Reminder 和 delivery 使用固定 UUIDv5 身份规范，不增加 `reminderChainId`。
+- Anniversary 年度重复使用独立 `AnniversaryRecurrence`：只保存 `yearly + interval=1`，月/日锚点来自 `Anniversary.date`，未来 occurrence 由 C++ 查询时动态计算。
 - 普通单次 Reminder 保持 UUIDv4、绝对触发、历史保留且不创建 successor；重复 Reminder v2 仅支持 popup。
 - Notification 使用 prepare/finalize 两阶段 attempt，Android 系统通知以 `deliveryId` 作为稳定 tag。
 - 恢复窗口固定为 72 小时、明细全局上限 20 条；更早 occurrence 只计数，不批量生成 Reminder。
 - 严格早于恢复窗口的已物化 open Reminder 进入 `expired`；prepared attempt 由 `planRecovery` 原子接管或废弃，投递 payload 保持冻结。
 - `Habit` 的坚持日期、完成次数、连续天数统计来源于 `HabitCheckIn`，不直接塞进 `Habit` 本体。
+- 新的正式 Category writer 使用 UUIDv4；已激活 Event v2 的 `categoryId` 仍按稳定不透明字符串读取，兼容早期 Flutter 已写入的非 UUID 引用。无法解析到活动 Category 时保留原始 ID，并在聚合投影中返回空分类。
+- Category 创建要求名称与颜色，`description/icon/sortOrder` 可空；列表只返回活动记录并使用 `sortOrder(null last) -> createdAt -> id` 的稳定顺序。
+- Category JSON Storage v2 已冻结为独立 `categories.json` 与严格 `CategoryStorageRecord`，当前代码状态为 `implemented_unintegrated`、发布状态为 `blocked`；没有历史正式 Store 或 Fake migration，已有磁盘实现不能在门禁完成前被视为正式产品闭环。
 - 当前阶段先不上 SQL，优先保证项目整体可运行。
 - 当前先做好本地能力，AI 和云端同步暂缓，但保留相关接口和数据模型。
 - 旧 `UserData` 草案拆分为 `UserAccount`、`UserProfile`、`UserPreferences` 和 `UserSyncState`；认证安全状态使用独立 Backend-only 模型。
@@ -984,11 +1101,11 @@ Native Contract v2 明确拒绝客户端 `rrule` 字段，只执行 interval=1 �
 | 版本域 | v1 reader 读 v2 | v2 reader 读 v1 | 升级策略 |
 | --- | --- | --- | --- |
 | Native Contract | 拒绝 | 拒绝 | Flutter、Kotlin、JNI、C++ 在同一发行版本同步升级 |
-| Calendar Core JSON | 不支持 | 不支持 | 原子归档 v1 正式目录，创建空 v2；不迁移业务数据 |
+| Calendar Core JSON | 不支持 | 不支持 | 确认 v1 正式目录后清理，创建空 v2；不迁移业务数据 |
 | Backend API | 不受影响 | 不受影响 | 继续使用独立 Backend Contract v1 |
 | 导入/导出/备份 | 不复用 Native 版本 | 不复用 Native 版本 | 后续使用独立文件格式版本和迁移链 |
 
-首次升级只允许对解析并确认属于 v1 Calendar Core 的正式目录执行重命名，归档名包含 UTC 时间戳。归档或新目录初始化任一步失败都返回错误并保持旧数据可恢复；不得清空、覆盖、逐文件半迁移或把 v1 当 v2 解释。回滚到旧 App 时也必须显式选择只读 v1 归档，不能让旧 App 打开 v2 目录。
+首次升级只允许对解析并确认属于 v1 Calendar Core 的正式目录执行清理；确认或新目录初始化任一步失败都返回错误且不得删除、覆盖或部分迁移数据。v1 数据不归档、不保留，回滚到旧 App 会失去本地数据（已接受）；旧 App 仍禁止打开 v2 目录。
 
 每个 v2 JSON store 根对象必须显式包含 `storage_version = 2` 和该 store 的唯一集合字段；未知版本、未知根字段或任一损坏记录都使整个 store 加载失败。Storage record 使用独立 codec，不得直接把 Contract Response Schema 当作数据库实体。
 

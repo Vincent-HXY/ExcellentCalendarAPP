@@ -2,37 +2,78 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/category/create_category_request.schema.json",
   "title": "CreateCategoryRequest",
-  "description": "Request payload for creating a user-defined category.",
+  "description": "Native Contract v2 request for creating one user-defined Category. The C++ Application/Domain writer is the sole canonicalization owner; Flutter and Kotlin validate the wire shape and forward every schema-valid value unchanged.",
   "x-contract-version": 2,
+  "x-normalization-owner": "cpp_application_domain",
+  "x-normalization-rules": {
+    "name": "Trim Unicode boundary whitespace, then reject blank or more than 40 Unicode code points.",
+    "description": "Trim Unicode boundary whitespace; map whitespace-only input to null; reject canonical text longer than 200 Unicode code points.",
+    "color": "Persist and return uppercase #RRGGBB.",
+    "icon": "Trim Unicode boundary whitespace; map whitespace-only input to null; reject canonical text longer than 64 Unicode code points."
+  },
+  "x-sort-order-boundary-oracle": {
+    "maximum_accepted": 9007199254740991,
+    "minimum_rejected_above_maximum": 9007199254740992,
+    "above_maximum_error": "CONTRACT_VALIDATION_FAILED",
+    "automatic_append_at_maximum_error": "CATEGORY_SORT_ORDER_EXHAUSTED"
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "name"
+    "name",
+    "description",
+    "color",
+    "icon",
+    "sort_order"
   ],
   "properties": {
     "name": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "maxLength": 40,
+      "pattern": ".*\\S.*",
+      "description": "Schema-valid leading and trailing whitespace is forwarded unchanged; C++ produces the canonical trimmed name."
     },
-    "color": {
+    "description": {
       "type": [
         "string",
         "null"
       ],
-      "description": "UI color token or hex string owned by presentation/design conventions."
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Optional user note. Null is preserved; a non-empty schema-valid string is forwarded unchanged. C++ trims it and maps whitespace-only input to null."
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "description": "Required RGB color. Lowercase hex is a valid wire value; C++ persists and returns the canonical uppercase #RRGGBB form."
     },
     "icon": {
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Optional stable icon key. Null is preserved; a non-empty schema-valid string is forwarded unchanged. C++ trims it and maps whitespace-only input to null."
     },
     "sort_order": {
       "type": [
         "integer",
         "null"
       ],
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Optional explicit order in the exact cross-language JSON integer range 0..9007199254740991. Null asks C++ to append deterministically; if the active maximum is already 9007199254740991, creation fails with CATEGORY_SORT_ORDER_EXHAUSTED and writes nothing."
     }
-  }
+  },
+  "examples": [
+    {
+      "name": "  工作  ",
+      "description": "  工作计划与会议  ",
+      "color": "#39afbd",
+      "icon": "  briefcase  ",
+      "sort_order": null
+    }
+  ]
 }

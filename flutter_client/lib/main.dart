@@ -12,12 +12,17 @@ import 'application/event/update_event_use_case.dart';
 import 'application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'application/timezone/timezone_application_service.dart';
 import 'application/anniversary/app_clock.dart';
+import 'boundary_adapters/dart_method_channel/method_channel_anniversary_adapter.dart';
+import 'boundary_adapters/dart_method_channel/method_channel_category_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_notification_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_reminder_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_timezone_adapter.dart';
-import 'data/anniversary/fake_anniversary_gateway.dart';
 import 'data/anniversary/fake_anniversary_share_gateway.dart';
+import 'data/anniversary/native_anniversary_gateway.dart';
+import 'data/category/native_category_repository.dart';
+import 'gateway_interfaces/anniversary_gateway.dart';
+import 'gateway_interfaces/category_repository.dart';
 import 'presentation/app_notification_host.dart';
 import 'presentation/anniversary/pages/anniversary_detail_page.dart';
 import 'presentation/anniversary/pages/anniversary_list_page.dart';
@@ -25,11 +30,27 @@ import 'presentation/event_detail/pages/event_detail_flow_page.dart';
 import 'presentation/inbox/inbox_page.dart';
 
 void main() {
-  runApp(const ExcellentCalendarApp());
+  runApp(buildProductionApp());
+}
+
+ExcellentCalendarApp buildProductionApp() {
+  return ExcellentCalendarApp(
+    anniversaryClock: const SystemAppClock(),
+    categoryRepository: NativeCategoryRepository(
+      MethodChannelCategoryAdapter(),
+    ),
+  );
 }
 
 class ExcellentCalendarApp extends StatefulWidget {
-  const ExcellentCalendarApp({super.key});
+  const ExcellentCalendarApp({
+    required this.anniversaryClock,
+    required this.categoryRepository,
+    super.key,
+  });
+
+  final AppClock anniversaryClock;
+  final CategoryRepository categoryRepository;
 
   @override
   State<ExcellentCalendarApp> createState() => _ExcellentCalendarAppState();
@@ -45,18 +66,22 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   late final TimezoneApplicationService _timezoneService;
   late final AppNotificationBootstrap _notificationBootstrap;
   late final AppClock _anniversaryClock;
-  late final FakeAnniversaryGateway _anniversaryGateway;
+  late final AnniversaryGateway _anniversaryGateway;
   late final FakeAnniversaryShareGateway _anniversaryShareGateway;
+  late final CategoryRepository _categoryRepository;
 
   @override
   void initState() {
     super.initState();
     _eventGateway = MethodChannelEventAdapter();
-    _anniversaryClock = FixedAppClock(DateTime(2026, 8, 6));
-    _anniversaryGateway = FakeAnniversaryGateway(clock: _anniversaryClock);
+    _anniversaryClock = widget.anniversaryClock;
     _anniversaryShareGateway = FakeAnniversaryShareGateway();
-    _timezoneService = TimezoneApplicationService(
-      MethodChannelTimezoneAdapter(),
+    _categoryRepository = widget.categoryRepository;
+    final timezoneGateway = MethodChannelTimezoneAdapter();
+    _timezoneService = TimezoneApplicationService(timezoneGateway);
+    _anniversaryGateway = NativeAnniversaryGateway(
+      nativeGateway: MethodChannelAnniversaryAdapter(),
+      timezoneGateway: timezoneGateway,
     );
     final reminderGateway = MethodChannelReminderAdapter();
     _reconcileReminderScheduleUseCase = ReconcileReminderScheduleUseCase(
@@ -91,6 +116,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
         createEventUseCase: _createEventUseCase,
         completeEventUseCase: _completeEventUseCase,
         timezoneService: _timezoneService,
+        categoryRepository: _categoryRepository,
         onOpenAnniversaries: () =>
             Navigator.of(context).pushNamed('/anniversaries'),
       ),
@@ -142,6 +168,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
           completeEventUseCase: _completeEventUseCase,
           updateEventUseCase: _updateEventUseCase,
           timezoneService: _timezoneService,
+          categoryRepository: _categoryRepository,
         ),
       ),
     );

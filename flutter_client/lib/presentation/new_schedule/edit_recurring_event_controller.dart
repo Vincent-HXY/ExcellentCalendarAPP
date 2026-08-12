@@ -46,6 +46,8 @@ class EditRecurringEventFormValue {
     required this.timeChanged,
     required this.recurrencePreset,
     required this.recurrenceChanged,
+    required this.categoryId,
+    required this.categoryChanged,
     required this.effectiveReminderAdvanceMinutes,
     required this.replacementReminderAdvanceMinutes,
   });
@@ -59,6 +61,8 @@ class EditRecurringEventFormValue {
   final bool timeChanged;
   final RecurrencePreset recurrencePreset;
   final bool recurrenceChanged;
+  final String? categoryId;
+  final bool categoryChanged;
   final Set<int> effectiveReminderAdvanceMinutes;
 
   /// Null keeps the existing templates. A non-null set replaces all templates.
@@ -295,6 +299,9 @@ class EditRecurringEventController {
         location: ContractField<String>.value(
           form.location.trim().isEmpty ? null : form.location.trim(),
         ),
+        categoryId: form.categoryChanged
+            ? ContractField<String>.value(form.categoryId)
+            : const ContractField<String>.absent(),
         startAt: form.timeChanged && !form.isAllDay ? resolvedStartAt : null,
         endAt: form.timeChanged && !form.isAllDay ? resolvedEndAt : null,
         startDate: form.timeChanged && form.isAllDay ? startDate : null,

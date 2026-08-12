@@ -277,3 +277,14 @@ CalendarType:
   values:
     - solar
     - lunar
+
+AnniversaryCountdownRelation:
+  values:
+    - remaining
+    - elapsed
+    - today
+
+AnniversarySortBy:
+  values:
+    - target_occurrence_date
+    - countdown_days

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/storage/category_store.schema.json",
+  "title": "CategoryStoreV2",
+  "description": "Strict JSON Storage v2 root for the implemented but release-blocked Category store. This persistence model is separate from Category request and response DTOs.",
+  "x-storage-format-version": 2,
+  "x-implementation-status": "implemented_unintegrated",
+  "x-release-status": "blocked",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "storage_version",
+    "categories"
+  ],
+  "properties": {
+    "storage_version": {
+      "const": 2
+    },
+    "categories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/category_storage_record"
+      }
+    }
+  },
+  "$defs": {
+    "category_storage_record": {
+      "title": "CategoryStorageRecord",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "color",
+        "icon",
+        "sort_order",
+        "created_at",
+        "updated_at",
+        "deleted_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-F]{6}$"
+        },
+        "icon": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "sort_order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Canonical materialized order in the exact cross-language JSON integer range."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "deleted_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "storage_version": 2,
+      "categories": []
+    },
+    {
+      "storage_version": 2,
+      "categories": [
+        {
+          "id": "33333333-3333-4333-8333-333333333333",
+          "name": "工作",
+          "description": "工作计划与会议",
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 0,
+          "created_at": "2026-08-11T08:00:00Z",
+          "updated_at": "2026-08-11T08:00:00Z",
+          "deleted_at": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import '../../../native_contract/event/event_response_dto.dart';
 import '../../../application/timezone/timezone_application_service.dart';
+import '../../../native_contract/category/category_response_dto.dart';
 import '../../../native_contract/runtime/local_wall_date_time.dart';
 
 enum EventDisplayStatus {
@@ -12,6 +13,38 @@ enum EventDisplayStatus {
 }
 
 enum EventDetailField { schedule, note, allDay }
+
+enum EventCategoryDisplayStatus { unclassified, active, unavailable }
+
+class EventCategoryUiModel {
+  const EventCategoryUiModel.unclassified()
+    : status = EventCategoryDisplayStatus.unclassified,
+      id = null,
+      name = null,
+      color = null;
+
+  const EventCategoryUiModel.active({
+    required String this.id,
+    required String this.name,
+    required this.color,
+  }) : status = EventCategoryDisplayStatus.active;
+
+  const EventCategoryUiModel.unavailable({required String this.id})
+    : status = EventCategoryDisplayStatus.unavailable,
+      name = null,
+      color = null;
+
+  final EventCategoryDisplayStatus status;
+  final String? id;
+  final String? name;
+  final String? color;
+
+  String get displayLabel => switch (status) {
+    EventCategoryDisplayStatus.unclassified => '未分类',
+    EventCategoryDisplayStatus.active => name!,
+    EventCategoryDisplayStatus.unavailable => '分类不可用或已删除',
+  };
+}
 
 class EventDetailCompletionResult {
   const EventDetailCompletionResult._({
@@ -57,6 +90,7 @@ class EventDetailUiState {
     required this.displayStatus,
     required this.priorityLabel,
     required this.reminders,
+    this.category = const EventCategoryUiModel.unclassified(),
     this.description,
     this.content,
     this.participantCount,
@@ -79,6 +113,7 @@ class EventDetailUiState {
   final int? participantCount;
   final String? location;
   final List<ReminderUiModel> reminders;
+  final EventCategoryUiModel category;
 
   String get displayStatusLabel => switch (displayStatus) {
     EventDisplayStatus.pending => '\u5f85\u5b8c\u6210',
@@ -108,6 +143,7 @@ class EventDetailUiState {
     DateTime? now,
     LocalWallDateTime? referenceLocalNow,
     EventDisplayStatus? displayStatusOverride,
+    CategoryResponseDto? category,
   }) {
     if (localizedTimeRange.timezone != event.timezone) {
       throw const FormatException(
@@ -136,6 +172,7 @@ class EventDetailUiState {
       participantCount: participantCount,
       location: event.location,
       reminders: reminders,
+      category: _categoryProjection(event, category),
     );
   }
 
@@ -204,5 +241,33 @@ class EventDetailUiState {
       'unimportant_urgent' => '\u4e2d',
       _ => '\u4f4e',
     };
+  }
+
+  static EventCategoryUiModel _categoryProjection(
+    EventResponseDto event,
+    CategoryResponseDto? category,
+  ) {
+    final categoryId = event.categoryId;
+    if (categoryId == null) {
+      if (category != null) {
+        throw const FormatException(
+          'Event without category_id cannot include a Category projection.',
+        );
+      }
+      return const EventCategoryUiModel.unclassified();
+    }
+    if (category == null) {
+      return EventCategoryUiModel.unavailable(id: categoryId);
+    }
+    if (category.id != categoryId || category.deletedAt != null) {
+      throw const FormatException(
+        'Event Category projection must match an active category_id.',
+      );
+    }
+    return EventCategoryUiModel.active(
+      id: category.id,
+      name: category.name,
+      color: category.color,
+    );
   }
 }

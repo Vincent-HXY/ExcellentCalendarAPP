@@ -2,13 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/anniversary/create_anniversary_request.schema.json",
   "title": "CreateAnniversaryRequest",
-  "description": "Request payload for creating an anniversary, birthday, or yearly date-based event.",
+  "description": "Complete Anniversary V1 create plan. timezone is the explicit IANA timezone used to calculate the returned countdown. date is the original local calendar date and remains the only yearly anchor. recurrence=null creates a one-time Anniversary with recurrence_id=null; a yearly recurrence object makes C++ create the Anniversary and a new AnniversaryRecurrence atomically. Reminder drafts are intentionally excluded until Anniversary reminder occurrence identity and local trigger-time semantics are frozen. lunar is accepted at the transport boundary so C++ can return ANNIVERSARY_CALENDAR_UNSUPPORTED.",
   "x-contract-version": 2,
+  "x-implementation-status": "integrated",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "title",
-    "date"
+    "date",
+    "calendar_type",
+    "category_id",
+    "recurrence",
+    "note",
+    "importance",
+    "timezone"
   ],
   "properties": {
     "title": {
@@ -17,29 +24,28 @@
     },
     "date": {
       "type": "string",
-      "format": "date"
+      "format": "date",
+      "description": "Original user-local date. For yearly recurrence its month/day are the occurrence anchor and its year remains the historical origin year."
     },
     "calendar_type": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": "string",
       "enum": [
         "solar",
-        "lunar",
-        null
+        "lunar"
       ]
     },
     "category_id": {
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "format": "uuid"
     },
     "recurrence": {
+      "description": "Yearly Anniversary recurrence intent, or null for a one-time Anniversary.",
       "oneOf": [
         {
-          "$ref": "../recurrence/recurrence_rule.schema.json"
+          "$ref": "./anniversary_recurrence_rule_input.schema.json"
         },
         {
           "type": "null"
@@ -53,23 +59,18 @@
       ]
     },
     "importance": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": "string",
       "enum": [
         "unimportant_noturgent",
         "important_noturgent",
         "unimportant_urgent",
-        "important_urgent",
-        null
+        "important_urgent"
       ]
     },
-    "reminders": {
-      "type": "array",
-      "items": {
-        "$ref": "../reminder/reminder_draft_request.schema.json"
-      }
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "IANA timezone used by C++ to derive the local date and calculate the response countdown."
     }
   }
 }

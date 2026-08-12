@@ -47,6 +47,17 @@ class EventDetailResponseDto {
         'EventDetailResponse recurrence projection is inconsistent.',
       );
     }
+    final category = rawCategory == null
+        ? null
+        : CategoryResponseDto.fromJson(rawCategory);
+    if (category != null &&
+        (event.categoryId == null ||
+            category.id != event.categoryId ||
+            category.deletedAt != null)) {
+      throw const FormatException(
+        'EventDetailResponse category projection is inconsistent.',
+      );
+    }
     return EventDetailResponseDto(
       event: event,
       recurrence: recurrence,
@@ -55,9 +66,7 @@ class EventDetailResponseDto {
           ReminderResponseDto.fromJson,
         ),
       ),
-      category: rawCategory == null
-          ? null
-          : CategoryResponseDto.fromJson(rawCategory),
+      category: category,
     );
   }
 }

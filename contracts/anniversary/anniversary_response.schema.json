@@ -2,21 +2,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_response.schema.json",
   "title": "AnniversaryResponse",
-  "description": "Transport representation of an anniversary, birthday, or yearly date-based event.",
+  "description": "Transport representation of the persisted Anniversary fact. date is never replaced by a calculated next occurrence. Daily-changing countdown values belong only to query projections.",
   "x-contract-version": 2,
+  "x-implementation-status": "integrated",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "id",
     "title",
     "date",
+    "calendar_type",
+    "category_id",
+    "recurrence_id",
+    "note",
+    "importance",
     "created_at",
-    "updated_at"
+    "updated_at",
+    "deleted_at"
   ],
   "properties": {
     "id": {
       "type": "string",
-      "minLength": 1
+      "format": "uuid"
     },
     "title": {
       "type": "string",
@@ -24,7 +31,8 @@
     },
     "date": {
       "type": "string",
-      "format": "date"
+      "format": "date",
+      "description": "Original user-local date. A non-null recurrence_id means this date supplies the yearly month/day anchor."
     },
     "calendar_type": {
       "type": [
@@ -41,13 +49,16 @@
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "format": "uuid"
     },
     "recurrence_id": {
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "format": "uuid",
+      "description": "Null for a one-time Anniversary. A non-null value references one active, exclusively owned Anniversary recurrence with frequency=yearly and interval=1."
     },
     "note": {
       "type": [
@@ -70,18 +81,21 @@
     },
     "created_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
     },
     "updated_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
     },
     "deleted_at": {
       "type": [
         "string",
         "null"
       ],
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
     }
   }
 }

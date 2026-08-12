@@ -2,18 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../application/category/category_models.dart';
+import '../../application/event/create_schedule_controller.dart';
 import '../../application/event/create_event_use_case.dart';
 import '../../application/timezone/timezone_application_service.dart';
-import '../../native_contract/event/create_event_request_dto.dart';
+import '../../gateway_interfaces/category_repository.dart';
 import '../../native_contract/runtime/local_wall_date_time.dart';
-import '../../native_contract/runtime/resolve_local_datetime_dto.dart';
+import '../category/category_picker_page.dart';
+import '../category/category_picker_result.dart';
 import 'components/create_mode_segmented_control.dart';
 import 'components/manual_schedule_form.dart';
 import 'components/new_schedule_top_bar.dart';
 import 'date_time_picker/schedule_date_time_picker.dart';
 import 'new_schedule_draft.dart';
 import 'new_schedule_design_tokens.dart';
-import 'schedule_submit_controller.dart';
 import 'selection/recurrence_selection_sheet.dart';
 import 'selection/reminder_selection_sheet.dart';
 
@@ -23,18 +25,20 @@ class NewSchedulePage extends StatefulWidget {
   const NewSchedulePage({
     required this.createUseCase,
     required this.timezoneService,
+    required this.categoryRepository,
     super.key,
   });
 
   final CreateEventUseCase createUseCase;
   final TimezoneApplicationService timezoneService;
+  final CategoryRepository categoryRepository;
 
   @override
   State<NewSchedulePage> createState() => _NewSchedulePageState();
 }
 
 class _NewSchedulePageState extends State<NewSchedulePage> {
-  late final ScheduleSubmitController _submitController;
+  late final CreateScheduleController _submitController;
   final _titleController = TextEditingController();
   final _noteController = TextEditingController();
   final _locationController = TextEditingController();
@@ -47,6 +51,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   RecurrencePreset _recurrencePreset = RecurrencePreset.once;
   Set<ReminderPreset> _reminderPresets = {ReminderPreset.minutes15};
   int? _customReminderAdvanceMinutes;
+  Category? _selectedCategory;
 
   late DateTime _startAt;
   late DateTime _endAt;
@@ -57,7 +62,10 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   @override
   void initState() {
     super.initState();
-    _submitController = ScheduleSubmitController(widget.createUseCase);
+    _submitController = CreateScheduleController(
+      createEventUseCase: widget.createUseCase,
+      timezoneService: widget.timezoneService,
+    );
     _startAt = _nextDefaultStartAt();
     _endAt = _startAt.add(const Duration(hours: 1));
     _titleController.addListener(_handleTitleChanged);
@@ -92,176 +100,113 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
 
   bool get _isRecurring => _recurrencePreset != RecurrencePreset.once;
 
+  String get _categoryLabel {
+    final selected = _selectedCategory;
+    if (selected != null) {
+      return selected.name;
+    }
+    return '未分类';
+  }
+
+  Future<void> _pickCategory() async {
+    final result = await Navigator.of(context).push<CategoryPickerResult>(
+      MaterialPageRoute<CategoryPickerResult>(
+        builder: (_) => CategoryPickerPage(
+          repository: widget.categoryRepository,
+          selectedCategoryId: _selectedCategory?.id,
+        ),
+      ),
+    );
+    if (!mounted || result == null) {
+      return;
+    }
+    setState(() {
+      _selectedCategory = result.category;
+    });
+  }
+
   Future<void> _handleSubmit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty || _isSubmitting) {
       return;
     }
 
-    if (_isRecurring && _reminderPresets.isNotEmpty && _isAllDay) {
-      _showTodo('全天重复日程暂不支持提醒');
-      return;
-    }
-    if (_isRecurring &&
-        _reminderPresets.isNotEmpty &&
-        _isRingingReminderEnabled) {
-      _showTodo('重复日程本期仅支持弹窗提醒');
-      return;
-    }
-
-    final startWall = LocalWallDateTime.fromDateTimeComponents(_startAt);
-    final endWall = LocalWallDateTime.fromDateTimeComponents(_endAt);
-    if ((!_isAllDay && !startWall.isBefore(endWall)) ||
-        (_isAllDay && endWall.isBefore(startWall))) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('结束时间必须晚于开始时间')));
-      return;
-    }
-
     setState(() {
       _isSubmitting = true;
     });
-
-    final previousTimezone = _timezoneId;
-    final timezone = await _refreshDeviceTimezone(showError: true);
-    if (!mounted) return;
-    if (timezone == null) {
-      setState(() {
-        _isSubmitting = false;
-      });
+    final result = await _submitController.submit(
+      CreateScheduleDraft(
+        title: title,
+        note: _noteController.text,
+        location: _locationController.text,
+        start: LocalWallDateTime.fromDateTimeComponents(_startAt),
+        end: LocalWallDateTime.fromDateTimeComponents(_endAt),
+        isAllDay: _isAllDay,
+        recurrence: _applicationRecurrence(_recurrencePreset),
+        reminderAdvanceMinutes: selectedReminderAdvanceMinutes(
+          presets: _reminderPresets,
+          customAdvanceMinutes: _customReminderAdvanceMinutes,
+        ),
+        isRingingReminderEnabled: _isRingingReminderEnabled,
+        categoryId: _selectedCategory?.id,
+        previousTimezone: _timezoneId,
+      ),
+    );
+    if (!mounted) {
       return;
     }
-    if (previousTimezone != null && previousTimezone != timezone) {
+    final timezone = result.timezone;
+    if (timezone != null && _timezoneId != timezone) {
+      setState(() {
+        _timezoneId = timezone;
+      });
+    }
+    if (result.timezoneChanged && timezone != null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('设备时区已切换为 $timezone，将按新时区保存')));
     }
-
-    DateTime? resolvedStartAt;
-    DateTime? resolvedEndAt;
-    if (!_isAllDay) {
-      final resolutions = await Future.wait([
-        widget.timezoneService.resolveLocalDateTime(
-          localDateTime: startWall,
-          timezone: timezone,
-        ),
-        widget.timezoneService.resolveLocalDateTime(
-          localDateTime: endWall,
-          timezone: timezone,
-        ),
-      ]);
-      if (!mounted) return;
-      final failed = resolutions.where((item) => !item.result.ok).firstOrNull;
-      if (failed != null) {
-        setState(() {
-          _isSubmitting = false;
-        });
-        final error = failed.result.error;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              error == null ? '时区解析失败' : '${error.code}: ${error.message}',
-            ),
-          ),
-        );
-        return;
-      }
-      final startResolution = resolutions[0].result.data!;
-      final endResolution = resolutions[1].result.data!;
-      if (startResolution.resolution == LocalDateTimeResolution.gapShifted ||
-          endResolution.resolution == LocalDateTimeResolution.gapShifted) {
-        setState(() {
-          _startAt = startResolution.resolvedLocalDateTime
-              .toComponentDateTime();
-          _endAt = endResolution.resolvedLocalDateTime.toComponentDateTime();
-          _isSubmitting = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('所选时间落在夏令时跳时区间，已移到首个合法时间，请确认后再次保存')),
-        );
-        return;
-      }
-      resolvedStartAt = startResolution.utcInstant;
-      resolvedEndAt = endResolution.utcInstant;
-    }
-
-    final note = _noteController.text.trim();
-    final location = _locationController.text.trim();
-    final allDayStart = DateTime(_startAt.year, _startAt.month, _startAt.day);
-    final selectedAllDayEnd = DateTime(_endAt.year, _endAt.month, _endAt.day);
-    final allDayEnd = selectedAllDayEnd.isAfter(allDayStart)
-        ? selectedAllDayEnd
-        : allDayStart.add(const Duration(days: 1));
-    final request = CreateEventRequestDto(
-      title: title,
-      content: note.isEmpty ? null : note,
-      startAt: resolvedStartAt,
-      endAt: resolvedEndAt,
-      startDate: _isAllDay ? _formatLocalDate(allDayStart) : null,
-      endDate: _isAllDay ? _formatLocalDate(allDayEnd) : null,
-      isAllDay: _isAllDay,
-      categoryId: '1',
-      importance: 'unimportant_noturgent',
-      location: location.isEmpty ? null : location,
-      timezone: timezone,
-      source: 'manual',
-      recurrence: _recurrencePreset.toDto(),
-      reminders: buildReminderDraftDtos(
-        presets: _reminderPresets,
-        customAdvanceMinutes: _customReminderAdvanceMinutes,
-        isRingingEnabled: _isRingingReminderEnabled,
-      ),
-    );
-
-    final invocation = await _submitController.submit(request);
-    if (!mounted) {
-      return;
-    }
-
-    if (invocation.result.ok) {
+    if (result.succeeded) {
       Navigator.of(context).pop(true);
       return;
     }
-
     setState(() {
+      if (result.outcome == CreateScheduleSubmitOutcome.gapShifted) {
+        _startAt = result.adjustedStart!.toComponentDateTime();
+        _endAt = result.adjustedEnd!.toComponentDateTime();
+      }
       _isSubmitting = false;
     });
-    final error = invocation.result.error;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          error == null
-              ? '创建失败'
-              : '${error.code}: ${error.message} request_id=${invocation.result.requestId ?? '-'}',
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.message ?? '创建失败')));
   }
 
-  static String _formatLocalDate(DateTime value) {
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '${value.year.toString().padLeft(4, '0')}-$month-$day';
+  static CreateScheduleRecurrence _applicationRecurrence(
+    RecurrencePreset recurrence,
+  ) {
+    return switch (recurrence) {
+      RecurrencePreset.once => CreateScheduleRecurrence.once,
+      RecurrencePreset.daily => CreateScheduleRecurrence.daily,
+      RecurrencePreset.weekly => CreateScheduleRecurrence.weekly,
+      RecurrencePreset.monthly => CreateScheduleRecurrence.monthly,
+      RecurrencePreset.yearly => CreateScheduleRecurrence.yearly,
+      RecurrencePreset.custom => CreateScheduleRecurrence.custom,
+    };
   }
 
   Future<String?> _refreshDeviceTimezone({required bool showError}) async {
-    final invocation = await widget.timezoneService.getDeviceTimezone();
+    final result = await _submitController.refreshDeviceTimezone();
     if (!mounted) return null;
-    if (!invocation.result.ok) {
+    if (!result.succeeded) {
       if (showError) {
-        final error = invocation.result.error;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              error == null ? '无法读取设备时区' : '${error.code}: ${error.message}',
-            ),
-          ),
+          SnackBar(content: Text(result.errorMessage ?? '无法读取设备时区')),
         );
       }
       return null;
     }
-    final timezone = invocation.result.data!.timezone;
+    final timezone = result.timezone!;
     if (_timezoneId != timezone) {
       setState(() {
         _timezoneId = timezone;
@@ -413,6 +358,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
                         isAllDay: _isAllDay,
                         isRingingReminderEnabled: _isRingingReminderEnabled,
                         isMoreSettingsExpanded: _isMoreSettingsExpanded,
+                        categoryLabel: _categoryLabel,
                         recurrenceLabel: _recurrencePreset.label,
                         reminderSummary: reminderSummary(
                           presets: _reminderPresets,
@@ -456,6 +402,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
                             _pickEndDateTime(PickerInitialStep.time),
                         onEndDateTap: () =>
                             _pickEndDateTime(PickerInitialStep.calendar),
+                        onCategoryTap: _pickCategory,
                         onRecurrenceTap: _pickRecurrence,
                         onReminderTap: _pickReminders,
                         onLocationMapTap: () => _showTodo('地图选择功能后续实现'),

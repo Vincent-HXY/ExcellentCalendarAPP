@@ -29,6 +29,7 @@
 #include "excellent_calendar/domain/local_time_resolver.hpp"
 #include "excellent_calendar/infrastructure/time/tzdb_local_time_resolver.hpp"
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
+#include "excellent_calendar/storage/json/json_category_repository.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
 #include "excellent_calendar/storage/json/json_recurring_event_transaction.hpp"
@@ -358,6 +359,9 @@ class WorkflowFixture {
         rolling(std::make_shared<excellent_calendar::application::RollingReminderService>(recurrence)),
         store(std::make_shared<excellent_calendar::storage::json::JsonRecurringEventTransaction>(
             directory.path())),
+        category_repository(std::make_shared<
+                            excellent_calendar::storage::json::JsonCategoryRepository>(
+            directory.path())),
         workflow(std::make_shared<excellent_calendar::application::RecurringEventWorkflowService>(
             store,
             recurrence,
@@ -378,12 +382,15 @@ class WorkflowFixture {
             excellent_calendar::common::generate_uuid_v4)),
         event_query(std::make_shared<excellent_calendar::application::RecurringEventQueryService>(
             store,
-            recurrence)),
+            recurrence,
+            category_repository)),
         reminder_query(std::make_shared<
                        excellent_calendar::application::RecurringReminderQueryService>(
             store,
             [this]() { return now; })) {
     require(store->initialize().ok(), "workflow store should initialize");
+    require(category_repository->initialize().ok(),
+            "Category store should initialize for Event aggregate queries");
   }
 
   excellent_calendar::application::CreateRecurringEventCommand daily_command() const {
@@ -408,6 +415,8 @@ class WorkflowFixture {
   std::shared_ptr<excellent_calendar::application::RecurrenceService> recurrence;
   std::shared_ptr<excellent_calendar::application::RollingReminderService> rolling;
   std::shared_ptr<excellent_calendar::storage::json::JsonRecurringEventTransaction> store;
+  std::shared_ptr<excellent_calendar::storage::json::JsonCategoryRepository>
+      category_repository;
   std::shared_ptr<excellent_calendar::application::RecurringEventWorkflowService> workflow;
   std::shared_ptr<
       excellent_calendar::application::RecurringReminderDeliveryWorkflowService> delivery;
@@ -544,7 +553,7 @@ void test_v2_transaction_rejects_unprepared_v1_directory_without_partial_writes(
           "failed v1 preflight must not create any partial v2 stores");
 }
 
-void test_v2_runtime_atomically_archives_confirmed_v1_before_initialization() {
+void test_v2_runtime_discards_confirmed_v1_before_initialization() {
   TemporaryDirectory parent;
   const auto active = parent.path() / "calendar_core_storage_json";
   std::filesystem::create_directories(active);
@@ -556,23 +565,18 @@ void test_v2_runtime_atomically_archives_confirmed_v1_before_initialization() {
   auto initialized = excellent_calendar::boundary::api::initialize_recurring_runtime(
       active.string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
   require(initialized.ok() && initialized.value().storage_format_version == 2,
-          "runtime should archive confirmed v1 and initialize an empty v2 store");
+          "runtime should discard confirmed v1 and initialize an empty v2 store");
   require(std::filesystem::is_directory(active) &&
               std::filesystem::exists(active / "recurrence_versions.json") &&
               std::filesystem::exists(active / "workflow_transactions.json"),
           "runtime should publish a complete v2 directory at the active path");
 
-  std::vector<std::filesystem::path> archives;
   const auto prefix = active.filename().generic_string() + ".v1.archived.";
   for (const auto& entry : std::filesystem::directory_iterator(parent.path())) {
-    if (entry.is_directory() &&
-        entry.path().filename().generic_string().rfind(prefix, 0) == 0U) {
-      archives.push_back(entry.path());
-    }
+    require(!(entry.is_directory() &&
+              entry.path().filename().generic_string().rfind(prefix, 0) == 0U),
+            "v1 must not be preserved as a sibling archive");
   }
-  require(archives.size() == 1U &&
-              std::filesystem::exists(archives.front() / "events.json"),
-          "the complete v1 directory must be retained as one timestamped sibling archive");
 
   excellent_calendar::storage::json::JsonRecurringEventTransaction v2(active);
   require(v2.initialize().ok(), "new active v2 directory should reopen cleanly");
@@ -581,7 +585,7 @@ void test_v2_runtime_atomically_archives_confirmed_v1_before_initialization() {
           "v1 data must not be reinterpreted or migrated into the empty v2 store");
 }
 
-void test_v2_runtime_refuses_corrupt_v1_without_archiving_or_partial_v2() {
+void test_v2_runtime_refuses_corrupt_v1_without_discarding_or_partial_v2() {
   TemporaryDirectory parent;
   const auto active = parent.path() / "calendar_core_storage_json";
   excellent_calendar::storage::json::AtomicJsonFileStore raw(active);
@@ -601,15 +605,15 @@ void test_v2_runtime_refuses_corrupt_v1_without_archiving_or_partial_v2() {
               !std::filesystem::exists(active / "workflow_transactions.json"),
           "failed v1 preflight must preserve the source and create no v2 files");
   const auto prefix = active.filename().generic_string() + ".v1.archived.";
-  const bool archived = std::any_of(
+  const bool discarded = std::any_of(
       std::filesystem::directory_iterator(parent.path()),
       std::filesystem::directory_iterator(), [&](const auto& entry) {
         return entry.path().filename().generic_string().rfind(prefix, 0) == 0U;
       });
-  require(!archived, "corrupt v1 must never be renamed into a seemingly valid archive");
+  require(!discarded, "corrupt v1 must never be removed or treated as valid");
 }
 
-void test_v1_archive_classifier_rejects_v2_reminder_enums() {
+void test_v1_discard_classifier_rejects_v2_reminder_enums() {
   for (const auto& variant : {std::string("expired"),
                               std::string("occurrence_reopened")}) {
     TemporaryDirectory parent;
@@ -637,14 +641,16 @@ void test_v1_archive_classifier_rejects_v2_reminder_enums() {
     auto initialized = excellent_calendar::boundary::api::initialize_recurring_runtime(
         active.string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
     require(!initialized.ok() && initialized.error().code == "STORAGE_DATA_CORRUPTED",
-            "v1 archive classifier must reject v2-only Reminder enum values");
+            "v1 discard classifier must reject v2-only Reminder enum values");
     const auto prefix = active.filename().generic_string() + ".v1.archived.";
-    const bool archived = std::any_of(
+    const bool discarded = std::any_of(
         std::filesystem::directory_iterator(parent.path()),
         std::filesystem::directory_iterator(), [&](const auto& entry) {
           return entry.path().filename().generic_string().rfind(prefix, 0) == 0U;
         });
-    require(!archived && !std::filesystem::exists(active / "recurrence_versions.json"),
+    require(!discarded &&
+                std::filesystem::exists(active / "reminders.json") &&
+                !std::filesystem::exists(active / "recurrence_versions.json"),
             "rejected v2-only values must preserve v1 data without partial v2 output");
   }
 }
@@ -1917,7 +1923,7 @@ void test_event_detail_aggregate_uses_one_storage_snapshot() {
   auto counting_transaction = std::make_shared<CountingRecurringEventTransaction>(
       fixture.store);
   excellent_calendar::application::RecurringEventQueryService query(
-      counting_transaction, fixture.recurrence);
+      counting_transaction, fixture.recurrence, fixture.category_repository);
   auto detail = query.get_event_detail(created.value().id);
   require(detail.ok() && detail.value().event.id == created.value().id &&
               detail.value().recurrence.has_value() &&
@@ -2674,9 +2680,9 @@ int main() {
     test_timed_recurrence_rejects_nonpositive_local_interval_across_fold();
     test_storage_v2_reload_and_prepared_journal_replay();
     test_v2_transaction_rejects_unprepared_v1_directory_without_partial_writes();
-    test_v2_runtime_atomically_archives_confirmed_v1_before_initialization();
-    test_v2_runtime_refuses_corrupt_v1_without_archiving_or_partial_v2();
-    test_v1_archive_classifier_rejects_v2_reminder_enums();
+    test_v2_runtime_discards_confirmed_v1_before_initialization();
+    test_v2_runtime_refuses_corrupt_v1_without_discarding_or_partial_v2();
+    test_v1_discard_classifier_rejects_v2_reminder_enums();
     test_recurring_runtime_initializes_pinned_tzdb_and_v2_services();
     test_failed_v2_reinitialization_clears_previously_published_writers();
     test_create_and_complete_occurrence_rolls_next_reminder_atomically();

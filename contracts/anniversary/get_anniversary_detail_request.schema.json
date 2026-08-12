@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/get_anniversary_detail_request.schema.json",
+  "title": "GetAnniversaryDetailRequest",
+  "description": "Reads one active Anniversary and calculates its countdown using the supplied IANA timezone.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "timezone"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "IANA timezone used to derive today's local date."
+    }
+  }
+}

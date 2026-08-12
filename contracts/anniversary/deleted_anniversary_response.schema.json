@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/deleted_anniversary_response.schema.json",
+  "title": "DeletedAnniversaryResponse",
+  "description": "Anniversary returned after a successful soft delete; deleted_at is the C++ workflow Clock instant.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "allOf": [
+    {
+      "$ref": "./anniversary_response.schema.json"
+    },
+    {
+      "properties": {
+        "deleted_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        }
+      }
+    }
+  ]
+}

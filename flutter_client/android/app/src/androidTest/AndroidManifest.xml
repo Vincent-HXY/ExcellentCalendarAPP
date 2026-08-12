@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <instrumentation
+        android:name="com.excellentcalendar.excellent_calendar.bridge.native.AnniversaryJniSmokeInstrumentation"
+        android:label="Anniversary JNI smoke"
+        android:targetPackage="com.excellentcalendar.excellent_calendar" />
+
+</manifest>

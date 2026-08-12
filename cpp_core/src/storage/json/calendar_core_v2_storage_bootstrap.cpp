@@ -35,6 +35,10 @@ const std::set<std::string> kVersionedV1Files = {
 };
 
 const std::set<std::string> kVersionedV2Files = {
+    "categories.json",
+    "anniversaries.json",
+    "anniversary_recurrences.json",
+    "anniversary_workflow_transactions.json",
     "events.json",
     "recurrence_versions.json",
     "event_occurrence_states.json",
@@ -258,9 +262,9 @@ common::Result<common::Unit> validate_reminder_methods(const picojson::object& o
   return common::Result<common::Unit>::success(common::Unit{});
 }
 
-// These sets describe the archived v1 wire/storage format. Keep them independent
+// These sets describe the discarded v1 wire/storage format. Keep them independent
 // from the evolving v2 domain validators so new v2 values cannot make a v1
-// directory look valid during the destructive archive gate.
+// directory look valid during the destructive discard gate.
 bool is_valid_v1_reminder_status(std::string_view value) {
   return value == "pending" || value == "scheduled" || value == "sent" ||
          value == "failed" || value == "cancelled";
@@ -566,35 +570,17 @@ common::Result<common::Unit> validate_v1_file(const std::string& name,
       corrupted(name + " is not a recognized v1 Calendar Core file"));
 }
 
-std::string archive_timestamp(std::string_view utc) {
-  std::string result;
-  result.reserve(16);
-  for (const char value : utc) {
-    if (std::isdigit(static_cast<unsigned char>(value)) != 0 || value == 'T' || value == 'Z') {
-      result.push_back(value);
-    }
-  }
-  return result;
-}
-
 }  // namespace
 
 common::Result<CalendarCoreV2StoragePreparation> prepare_calendar_core_v2_storage(
-    const std::filesystem::path& active_directory,
-    std::string_view archived_at_utc) {
+    const std::filesystem::path& active_directory) {
   if (active_directory.empty()) {
     return common::Result<CalendarCoreV2StoragePreparation>::failure(
         path_invalid("path is empty"));
   }
-  if (!common::is_iso8601_utc_datetime(archived_at_utc)) {
-    return common::Result<CalendarCoreV2StoragePreparation>::failure(
-        common::make_error(
-            "NATIVE_INTERNAL_ERROR", "Native internal error",
-            {{"reason", "storage archive Clock returned an invalid UTC time"}}));
-  }
 
   // Coordinate with every JSON repository using this directory so the source
-  // cannot change between the read-only validation and the directory rename.
+  // cannot change between the read-only validation and the directory removal.
   AtomicJsonFileStore lock_owner(active_directory);
   auto directory_lock = lock_owner.acquire_directory_lock();
 
@@ -675,32 +661,14 @@ common::Result<CalendarCoreV2StoragePreparation> prepare_calendar_core_v2_storag
         corrupted("non-empty directory is not a confirmed Calendar Core store"));
   }
 
-  const auto suffix = archive_timestamp(archived_at_utc);
-  if (suffix.size() != 16U) {
+  std::error_code remove_error;
+  std::filesystem::remove_all(active_directory, remove_error);
+  if (remove_error) {
     return common::Result<CalendarCoreV2StoragePreparation>::failure(
-        common::make_error(
-            "NATIVE_INTERNAL_ERROR", "Native internal error",
-            {{"reason", "storage archive timestamp could not be formatted"}}));
-  }
-  const auto archive = active_directory.parent_path() /
-                       (active_directory.filename().generic_string() +
-                        ".v1.archived." + suffix);
-  std::error_code archive_exists_error;
-  if (std::filesystem::exists(archive, archive_exists_error) || archive_exists_error) {
-    return common::Result<CalendarCoreV2StoragePreparation>::failure(
-        io_error("archive", archive_exists_error ? archive_exists_error.message()
-                                                   : "archive destination already exists"));
-  }
-
-  std::error_code rename_error;
-  std::filesystem::rename(active_directory, archive, rename_error);
-  if (rename_error) {
-    return common::Result<CalendarCoreV2StoragePreparation>::failure(
-        io_error("archive", rename_error.message()));
+        io_error("discard", remove_error.message()));
   }
   CalendarCoreV2StoragePreparation result;
-  result.archived_v1 = true;
-  result.archive_directory = archive;
+  result.discarded_v1 = true;
   return common::Result<CalendarCoreV2StoragePreparation>::success(std::move(result));
 }
 

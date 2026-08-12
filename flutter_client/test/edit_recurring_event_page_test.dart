@@ -1,11 +1,15 @@
 import 'dart:async';
 
+import 'package:excellent_calendar/application/category/category_models.dart';
 import 'package:excellent_calendar/application/event/update_event_use_case.dart';
 import 'package:excellent_calendar/application/timezone/timezone_application_service.dart';
+import 'package:excellent_calendar/data/category/fake_category_repository.dart';
+import 'package:excellent_calendar/gateway_interfaces/category_repository.dart';
 import 'package:excellent_calendar/gateway_interfaces/event_native_gateway.dart';
 import 'package:excellent_calendar/gateway_interfaces/timezone_native_gateway.dart';
 import 'package:excellent_calendar/native_contract/common/native_error_dto.dart';
 import 'package:excellent_calendar/native_contract/common/native_result_dto.dart';
+import 'package:excellent_calendar/native_contract/category/category_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/event_detail_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/event_response_dto.dart';
 import 'package:excellent_calendar/native_contract/event/update_event_request_dto.dart';
@@ -24,6 +28,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _eventId = '11111111-1111-4111-8111-111111111111';
 const _recurrenceId = '22222222-2222-4222-8222-222222222222';
+const _oldCategoryId = '40000000-0000-4000-8000-000000000099';
+const _workCategoryId = '40000000-0000-4000-8000-000000000001';
 
 void main() {
   testWidgets(
@@ -436,6 +442,126 @@ void main() {
     expect(result.value, isFalse);
     expect(eventGateway.updateRequests, isEmpty);
   });
+
+  testWidgets('restores category and submits only a user-selected new ID', (
+    tester,
+  ) async {
+    final detail = _detail(categoryId: _oldCategoryId, categoryName: '旧分类');
+    final eventGateway = _FakeEventGateway(event: detail.event);
+    final result = ValueNotifier<bool?>(null);
+    final categoryRepository = FakeCategoryRepository(
+      initialCategories: [
+        Category(
+          id: _workCategoryId,
+          name: '工作',
+          description: null,
+          color: '#39AFBD',
+          icon: null,
+          sortOrder: 1,
+          createdAt: DateTime.utc(2026, 8, 9),
+          updatedAt: DateTime.utc(2026, 8, 9),
+          deletedAt: null,
+        ),
+      ],
+    );
+    await _pumpEditor(
+      tester,
+      detail: detail,
+      eventGateway: eventGateway,
+      timezoneGateway: _FakeTimezoneGateway(),
+      categoryRepository: categoryRepository,
+      result: result,
+    );
+
+    expect(find.text('旧分类'), findsOneWidget);
+    await tester.tap(find.text('旧分类'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('category-card-$_workCategoryId')));
+    await tester.pumpAndSettle();
+    expect(find.text('工作'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('edit-series-save')));
+    await tester.pumpAndSettle();
+    expect(eventGateway.updateRequests, hasLength(1));
+    expect(
+      eventGateway.updateRequests.single.toJson()['category_id'],
+      _workCategoryId,
+    );
+  });
+
+  testWidgets('explicit unclassified choice submits category_id null', (
+    tester,
+  ) async {
+    final detail = _detail(categoryId: _oldCategoryId, categoryName: '旧分类');
+    final eventGateway = _FakeEventGateway(event: detail.event);
+    await _pumpEditor(
+      tester,
+      detail: detail,
+      eventGateway: eventGateway,
+      timezoneGateway: _FakeTimezoneGateway(),
+      result: ValueNotifier<bool?>(null),
+    );
+
+    await tester.tap(find.text('旧分类'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('category-card-unclassified')));
+    await tester.pumpAndSettle();
+    expect(find.text('未分类'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('edit-series-save')));
+    await tester.pumpAndSettle();
+    final json = eventGateway.updateRequests.single.toJson();
+    expect(json, containsPair('category_id', null));
+  });
+
+  testWidgets('cancelling picker preserves the original category field', (
+    tester,
+  ) async {
+    final detail = _detail(categoryId: _oldCategoryId, categoryName: '旧分类');
+    final eventGateway = _FakeEventGateway(event: detail.event);
+    await _pumpEditor(
+      tester,
+      detail: detail,
+      eventGateway: eventGateway,
+      timezoneGateway: _FakeTimezoneGateway(),
+      result: ValueNotifier<bool?>(null),
+    );
+
+    await tester.tap(find.text('旧分类'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('category-back-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('旧分类'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('edit-series-save')));
+    await tester.pumpAndSettle();
+    expect(
+      eventGateway.updateRequests.single.toJson(),
+      isNot(contains('category_id')),
+    );
+  });
+
+  testWidgets('dangling category ID is shown as unavailable and preserved', (
+    tester,
+  ) async {
+    final detail = _detail(categoryId: _oldCategoryId);
+    final eventGateway = _FakeEventGateway(event: detail.event);
+    await _pumpEditor(
+      tester,
+      detail: detail,
+      eventGateway: eventGateway,
+      timezoneGateway: _FakeTimezoneGateway(),
+      result: ValueNotifier<bool?>(null),
+    );
+
+    expect(find.text('分类不可用或已删除'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('edit-series-save')));
+    await tester.pumpAndSettle();
+    expect(
+      eventGateway.updateRequests.single.toJson(),
+      isNot(contains('category_id')),
+    );
+  });
 }
 
 Future<void> _markTimeChanged(WidgetTester tester) async {
@@ -457,6 +583,7 @@ Future<void> _pumpEditor(
   required _FakeEventGateway eventGateway,
   required _FakeTimezoneGateway timezoneGateway,
   required ValueNotifier<bool?> result,
+  CategoryRepository? categoryRepository,
   bool settle = true,
 }) async {
   await tester.pumpWidget(
@@ -465,6 +592,7 @@ Future<void> _pumpEditor(
         detail: detail,
         updateUseCase: UpdateEventUseCase(eventGateway),
         timezoneService: TimezoneApplicationService(timezoneGateway),
+        categoryRepository: categoryRepository ?? FakeCategoryRepository(),
         onResult: (value) => result.value = value,
       ),
     ),
@@ -479,12 +607,14 @@ class _EditorLauncher extends StatelessWidget {
     required this.detail,
     required this.updateUseCase,
     required this.timezoneService,
+    required this.categoryRepository,
     required this.onResult,
   });
 
   final EventDetailResponseDto detail;
   final UpdateEventUseCase updateUseCase;
   final TimezoneApplicationService timezoneService;
+  final CategoryRepository categoryRepository;
   final ValueChanged<bool?> onResult;
 
   @override
@@ -499,6 +629,7 @@ class _EditorLauncher extends StatelessWidget {
                   detail: detail,
                   updateUseCase: updateUseCase,
                   timezoneService: timezoneService,
+                  categoryRepository: categoryRepository,
                 ),
               ),
             );
@@ -671,6 +802,8 @@ EventDetailResponseDto _detail({
   DateTime? endAt,
   String frequency = 'daily',
   int reminderRecurrenceRevision = 3,
+  String? categoryId,
+  String? categoryName,
 }) {
   final actualStartAt = startAt ?? DateTime.parse('2026-03-28T09:00:00Z');
   final actualEndAt = endAt ?? DateTime.parse('2026-03-28T10:00:00Z');
@@ -687,6 +820,7 @@ EventDetailResponseDto _detail({
     status: 'active',
     recurrenceId: _recurrenceId,
     recurrenceRevision: 3,
+    categoryId: categoryId,
     timezone: 'Europe/London',
     source: 'manual',
     createdAt: DateTime.parse('2026-03-01T00:00:00Z'),
@@ -730,6 +864,18 @@ EventDetailResponseDto _detail({
           updatedAt: DateTime.parse('2026-03-20T00:00:00Z'),
         ),
     ],
-    category: null,
+    category: categoryName == null
+        ? null
+        : CategoryResponseDto(
+            id: categoryId!,
+            name: categoryName,
+            description: null,
+            color: '#5C93E5',
+            icon: null,
+            sortOrder: 0,
+            createdAt: DateTime.utc(2026, 1, 1),
+            updatedAt: DateTime.utc(2026, 1, 1),
+            deletedAt: null,
+          ),
   );
 }

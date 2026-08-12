@@ -107,8 +107,11 @@ int compare_event(const domain::Event& left,
 
 RecurringEventQueryService::RecurringEventQueryService(
     std::shared_ptr<repository::RecurringEventTransaction> transaction,
-    std::shared_ptr<RecurrenceService> recurrence_service)
-    : transaction_(std::move(transaction)), recurrence_service_(std::move(recurrence_service)) {}
+    std::shared_ptr<RecurrenceService> recurrence_service,
+    std::shared_ptr<repository::CategoryRepository> category_repository)
+    : transaction_(std::move(transaction)),
+      recurrence_service_(std::move(recurrence_service)),
+      category_repository_(std::move(category_repository)) {}
 
 common::Result<domain::Event> RecurringEventQueryService::get_event(
     const std::string& event_id) const {
@@ -166,6 +169,25 @@ common::Result<EventDetailAggregate> RecurringEventQueryService::get_event_detai
               }
               return left.id < right.id;
             });
+  if (event->category_id.has_value()) {
+    if (!category_repository_) {
+      return common::Result<EventDetailAggregate>::failure(
+          internal_error("CategoryRepository is unavailable for Event detail"));
+    }
+    auto categories = category_repository_->load();
+    if (!categories.ok()) {
+      return common::Result<EventDetailAggregate>::failure(categories.error());
+    }
+    const auto category = std::find_if(
+        categories.value().categories.begin(),
+        categories.value().categories.end(), [&](const auto& candidate) {
+          return candidate.id == *event->category_id &&
+                 !candidate.deleted_at.has_value();
+        });
+    if (category != categories.value().categories.end()) {
+      detail.category = *category;
+    }
+  }
   return common::Result<EventDetailAggregate>::success(std::move(detail));
 }
 

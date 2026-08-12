@@ -1,6 +1,6 @@
 version: 2
-release_status: design_only
-implementation_status: cpp_core_complete_unintegrated
+release_status: active
+implementation_status: integrated
 channel: excellent_calendar/native
 
 methods:
@@ -253,8 +253,22 @@ methods:
       data: habit/habit_check_in_response.schema.json
     event_stream: false
 
+  category.list:
+    module: category
+    implementation: cpp
+    implementation_status: implemented_unintegrated
+    release_status: blocked
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: category/category_list_response.schema.json
+    event_stream: false
+
   category.create:
     module: category
+    implementation: cpp
+    implementation_status: implemented_unintegrated
+    release_status: blocked
     request: category/create_category_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -263,10 +277,62 @@ methods:
 
   anniversary.create:
     module: anniversary
+    implementation: cpp
+    implementation_status: integrated
     request: anniversary/create_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: anniversary/anniversary_response.schema.json
+      data: anniversary/anniversary_detail_response.schema.json
+    event_stream: false
+
+  anniversary.update:
+    module: anniversary
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/update_anniversary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_detail_response.schema.json
+    event_stream: false
+
+  anniversary.delete:
+    module: anniversary
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/delete_anniversary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/deleted_anniversary_response.schema.json
+    event_stream: false
+
+  anniversary.detail:
+    module: anniversary
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/get_anniversary_detail_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_detail_response.schema.json
+    event_stream: false
+
+  anniversary.list:
+    module: anniversary
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/list_anniversaries_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_list_response.schema.json
+    event_stream: false
+
+  anniversary.preview_countdown:
+    module: anniversary
+    implementation: cpp
+    implementation_status: integrated
+    request: anniversary/preview_anniversary_countdown_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_countdown_response.schema.json
     event_stream: false
 
   ai.extract:

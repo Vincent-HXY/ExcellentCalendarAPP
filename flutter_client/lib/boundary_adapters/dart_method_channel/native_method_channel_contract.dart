@@ -49,6 +49,24 @@ class NativeReminderMethods {
   static const reconcileSchedule = 'reminder.reconcile_schedule';
 }
 
+class NativeAnniversaryMethods {
+  const NativeAnniversaryMethods._();
+
+  static const create = 'anniversary.create';
+  static const update = 'anniversary.update';
+  static const delete = 'anniversary.delete';
+  static const detail = 'anniversary.detail';
+  static const list = 'anniversary.list';
+  static const previewCountdown = 'anniversary.preview_countdown';
+}
+
+class NativeCategoryMethods {
+  const NativeCategoryMethods._();
+
+  static const list = 'category.list';
+  static const create = 'category.create';
+}
+
 class NativeNotificationMethods {
   const NativeNotificationMethods._();
 

@@ -544,6 +544,8 @@ class NotificationReminderBridgeTest {
         override fun markReminderSent(requestJson: String) = unsupported()
         override fun enableReminder(requestJson: String) = unsupported()
         override fun disableReminder(requestJson: String) = unsupported()
+        override fun listCategories(requestJson: String) = unsupported()
+        override fun createCategory(requestJson: String) = unsupported()
 
         private fun unsupported(): String = encodeResult(
             false,

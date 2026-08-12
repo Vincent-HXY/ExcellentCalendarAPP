@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:excellent_calendar/application/event/create_event_use_case.dart';
 import 'package:excellent_calendar/application/timezone/timezone_application_service.dart';
+import 'package:excellent_calendar/data/category/fake_category_repository.dart';
 import 'package:excellent_calendar/gateway_interfaces/event_native_gateway.dart';
 import 'package:excellent_calendar/native_contract/common/native_result_dto.dart';
 import 'package:excellent_calendar/native_contract/event/create_event_request_dto.dart';
@@ -333,6 +334,7 @@ Future<void> _pumpPage(
                         timezoneService: TimezoneApplicationService(
                           timezoneGateway,
                         ),
+                        categoryRepository: FakeCategoryRepository(),
                       ),
                     ),
                   );

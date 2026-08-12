@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_recurrence_response.schema.json",
+  "title": "AnniversaryRecurrenceResponse",
+  "description": "Projection of one active Anniversary V1 recurrence from the anniversary_recurrences logical collection. The rule is exclusively owned through AnniversaryResponse.recurrence_id. The anchor remains AnniversaryResponse.date; storage lifecycle timestamps, Event recurrence revisions, UTC occurrence fields and pre-generated future occurrences are intentionally not exposed.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "recurrence_id",
+    "frequency",
+    "interval"
+  ],
+  "properties": {
+    "recurrence_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "frequency": {
+      "type": "string",
+      "const": "yearly"
+    },
+    "interval": {
+      "type": "integer",
+      "const": 1
+    }
+  }
+}
