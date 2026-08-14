@@ -68,6 +68,7 @@ class CategoryMethodChannelHandlerTest {
             NativeErrorCodes.ContractVersionUnsupported,
             NativeErrorCodes.CategoryNameEmpty,
             NativeErrorCodes.CategoryNotFound,
+            NativeErrorCodes.CategorySortOrderExhausted,
             NativeErrorCodes.FeatureNotImplemented,
         )
 
@@ -92,6 +93,56 @@ class CategoryMethodChannelHandlerTest {
             assertEquals(1, result.successCount)
             assertFalse(result.errorCalled)
         }
+    }
+
+    @Test
+    fun sortOrderExhaustionPassesThroughTheMethodChannelEnvelopeUnchanged() {
+        val result = invoke(
+            handler(
+                RecordingCategoryBridge(
+                    overrideJson = nativeFailure(
+                        NativeErrorCodes.CategorySortOrderExhausted,
+                        retryable = false,
+                    ),
+                ),
+            ),
+            NativeMethodChannelHandler.MethodCategoryCreate,
+            createRequest(),
+        )
+        val returned = result.successMap()
+
+        assertEquals(false, returned["ok"])
+        assertNull(returned["data"])
+        assertEquals(2, returned["contract_version"])
+        assertEquals("category-error", returned["request_id"])
+        @Suppress("UNCHECKED_CAST")
+        val error = returned["error"] as Map<String, Any?>
+        assertEquals(NativeErrorCodes.CategorySortOrderExhausted, error["code"])
+        assertEquals("Category native failure.", error["message"])
+        assertEquals(mapOf("source" to "category-test"), error["details"])
+        assertEquals(false, error["retryable"])
+        assertEquals(1, result.successCount)
+        assertFalse(result.errorCalled)
+        assertEquals(0, result.notImplementedCount)
+    }
+
+    @Test
+    fun firstUnsafeSortOrderFailsAtTheKotlinBoundaryWithoutCallingNative() {
+        val bridge = RecordingCategoryBridge()
+        val request = createRequest().toMutableMap().also {
+            it["sort_order"] = 9_007_199_254_740_992L
+        }
+
+        val result = invoke(
+            handler(bridge),
+            NativeMethodChannelHandler.MethodCategoryCreate,
+            request,
+        )
+
+        assertEquals(NativeErrorCodes.ContractValidationFailed, result.errorCode())
+        assertEquals(1, result.successCount)
+        assertFalse(result.errorCalled)
+        assertTrue(bridge.calls.isEmpty())
     }
 
     @Test

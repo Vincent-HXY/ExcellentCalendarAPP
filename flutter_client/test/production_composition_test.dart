@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:excellent_calendar/application/anniversary/app_clock.dart';
 import 'package:excellent_calendar/application/category/category_models.dart';
 import 'package:excellent_calendar/data/category/native_category_repository.dart';
@@ -23,15 +21,8 @@ void main() {
     expect(app.anniversaryClock, isNot(isA<FixedAppClock>()));
   });
 
-  test('production source does not construct the Category fake', () {
-    final source = File('lib/main.dart').readAsStringSync();
-
-    expect(source, isNot(contains('FakeCategoryRepository')));
-    expect(source, isNot(contains('vin_star')));
-  });
-
   test(
-    'production category composition calls native list and create',
+    'production composition always calls native Category list and create',
     () async {
       final calls = <MethodCall>[];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -46,10 +37,11 @@ void main() {
             );
           });
       final app = production.buildProductionApp();
+      final repository = app.categoryRepository;
 
-      expect(app.categoryRepository, isA<NativeCategoryRepository>());
-      final listed = await app.categoryRepository.listActiveCategories();
-      await app.categoryRepository.createCategory(
+      expect(repository, isA<NativeCategoryRepository>());
+      final listed = await repository.listActiveCategories();
+      await repository.createCategory(
         const CreateCategoryCommand(
           name: '  工作  ',
           description: '   ',

@@ -256,8 +256,8 @@ methods:
   category.list:
     module: category
     implementation: cpp
-    implementation_status: implemented_unintegrated
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
     request: common/native_empty_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -267,8 +267,8 @@ methods:
   category.create:
     module: category
     implementation: cpp
-    implementation_status: implemented_unintegrated
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
     request: category/create_category_request.schema.json
     result:
       envelope: common/native_result.schema.json

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app/bootstrap/app_notification_bootstrap.dart';
+import 'app/bootstrap/category_repository_composition.dart';
 import 'app/routing/app_route_navigator.dart';
 import 'app/routing/app_router.dart';
 import 'app/routing/notification_tap_router.dart';
@@ -13,14 +14,12 @@ import 'application/reminder/reconcile_reminder_schedule_use_case.dart';
 import 'application/timezone/timezone_application_service.dart';
 import 'application/anniversary/app_clock.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_anniversary_adapter.dart';
-import 'boundary_adapters/dart_method_channel/method_channel_category_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_notification_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_reminder_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_timezone_adapter.dart';
 import 'data/anniversary/fake_anniversary_share_gateway.dart';
 import 'data/anniversary/native_anniversary_gateway.dart';
-import 'data/category/native_category_repository.dart';
 import 'gateway_interfaces/anniversary_gateway.dart';
 import 'gateway_interfaces/category_repository.dart';
 import 'presentation/app_notification_host.dart';
@@ -36,9 +35,7 @@ void main() {
 ExcellentCalendarApp buildProductionApp() {
   return ExcellentCalendarApp(
     anniversaryClock: const SystemAppClock(),
-    categoryRepository: NativeCategoryRepository(
-      MethodChannelCategoryAdapter(),
-    ),
+    categoryRepository: buildProductionCategoryRepository(),
   );
 }
 

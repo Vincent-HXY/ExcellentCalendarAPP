@@ -53,7 +53,7 @@
 30. `AnniversaryKind`、`AnniversaryCountMode`、图标、主题和本地化日期/星期文案属于当前 Flutter projection，不进入 Native Contract。Anniversary Reminder 草案也不进入本轮 create/update，直到本地触发时刻、occurrence 身份、幂等和滚动规则完成独立设计。
 31. Event、Habit、Anniversary 与 Category 只通过 `category_id` 关联。分类名称和颜色不能作为外键；`SearchIndex.category_name` 只是可重建冗余文本，结构化过滤使用 `category_id/category_ids`。
 32. `category.create` 要求显式提交 `name/description/color/icon/sort_order`，其中 nullable 字段也必须出现；C++ Application/Domain 单点负责 UUIDv4、UTC 时间、文本/颜色规范化和默认追加顺序，Flutter/Kotlin 对所有 Schema-valid 值原样转发。`sort_order` 的跨语言精确范围为 `0..9007199254740991`；自动追加已到上界时返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。`category.list` 只返回活动分类，并按 `sort_order(null last) -> created_at -> id` 升序。
-33. Category 的账号归属、名称唯一性和系统默认分类尚未冻结。Flutter Fake 的默认项与 owner 文案不进入 Native Contract。Category Native/Store 代码已经存在，但发布激活仍被 Event 聚合、Kotlin 边界、原子写失败语义、跨层数值/规范化一致性、生产 composition 和真机 smoke 阻断，因此统一标记 `implemented_unintegrated + blocked`，不能宣称产品闭环已完成。
+33. Category 的账号归属、名称唯一性和系统默认分类尚未冻结。Flutter Fake 的默认项与 owner 文案不进入 Native Contract。`category.list/create`、Category Store 与生产 composition 已在 2026-08-14 完成代码一致性和物理设备重启 smoke，统一标记为 `integrated + active`；未进入公开协议的重命名、删除、恢复、同步、用户归属与默认分类不得据此推断为可用。
 
 ## Directory
 
@@ -84,7 +84,7 @@ contracts/
 └── search/
 ```
 
-当前已接入的本地核心协议包括 `common/`、`event/`、`recurrence/`、`reminder/`、`notification/` 和 `anniversary/`。Category 已冻结 create/list Schema、Dart/Kotlin 边界和独立 JSON Storage v2 格式，且 C++ Domain/Repository/codec/bootstrap、JNI 与真实磁盘读写代码已经存在；由于审查门禁尚未全部关闭，对应方法和 Store 统一保持 `implementation_status: implemented_unintegrated`、`release_status: blocked`。`auth/`、`user/` 与 `backend_api.yaml` 是认证和个人资料模块的计划协议；在 Flutter、Kotlin 和 Backend 实现落地前保持 `implementation_status: planned`，调用方不得把它们当作已可用能力。
+当前已接入的本地核心协议包括 `common/`、`event/`、`recurrence/`、`reminder/`、`notification/`、`anniversary/` 和 Category create/list。Category 已冻结 Schema、Dart/Kotlin 边界和独立 JSON Storage v2 格式，C++ Domain/Repository/codec/bootstrap、JNI、真实磁盘读写、生产 Flutter composition 与物理设备重启验收均已闭环；对应方法和 Store 统一为 `implementation_status: integrated`、`release_status: active`。`auth/`、`user/` 与 `backend_api.yaml` 是认证和个人资料模块的计划协议；在 Flutter、Kotlin 和 Backend 实现落地前保持 `implementation_status: planned`，调用方不得把它们当作已可用能力。
 
 ## Versioning
 
@@ -162,20 +162,21 @@ Native Contract 已设计为 breaking v2，Backend API 继续使用独立的 v1�
 - Anniversary 使用独立的 `anniversaries.json`、`anniversary_recurrences.json` 与 `anniversary_workflow_transactions.json`。专用两 Store journal 不修改 Event/Reminder 既有六 Store journal；合法旧 v2 目录通过增量空 Store 初始化升级，损坏数据必须显式失败。
 - 当前 Flutter Fake 中的“周末”和“春节”仅是视觉 fixture：动态“本周末”不保存为 Anniversary，农历春节不属于公历 V1 系统预设。
 
-### Category implemented but release-blocked contract
+### Category integrated and active contract
 
 - 当前公开能力只有 `category.list` 与 `category.create`。选择分类不是持久化操作，不新增 `category.select`；Flutter 选择页返回 Category，Event/Anniversary 等请求只提交其 `category_id`。
 - Category response 使用分离的传输 DTO，不直接暴露未来 Storage record。新正式 Category ID 为 C++ 生成的规范小写 UUIDv4；创建响应中的 `deleted_at` 必须为 `null`。
 - `description` 是可空稳定领域字段；创建请求允许大小写十六进制颜色和 Schema-valid 的前后空白文本。Flutter/Kotlin 只校验结构并原样转发，C++ Application/Domain 是唯一规范化 owner：文本 trim、空白 optional text 变 `null`、颜色转大写。响应颜色暂时可空，以保留早期 Category 草案的读取兼容边界。
 - Native Contract v2 已发布过不限制 Event `category_id` 格式的 reader，早期 Flutter 也曾提交非 UUID 硬编码值。因此 Event create/update/response/search 继续把该字段当稳定不透明字符串；本轮不收紧、不重解释历史值。新 Category 返回 UUID 后，自然通过同一字段建立引用。
 - `category.list` 使用显式空对象请求与 `CategoryListResponse.items`，不使用分页。返回只包含 `deleted_at = null` 的活动记录，稳定顺序为 `sort_order`（空值最后）、`created_at`、`id`。
-- Flutter 当前生产 composition 仍使用 Fake Repository；Native Repository、MethodChannel/Kotlin handler、JNI、C++ Category API/Store 与磁盘读写代码已经存在。该不完整并存状态不是 `planned`，而是统一记录为 `implemented_unintegrated + blocked`；最终激活前生产入口不得依赖它，底层调试调用成功也不等于产品能力已发布。
+- Flutter 默认及 Release 生产 composition 均直接注入 `NativeCategoryRepository`，通过正式 MethodChannel/Kotlin handler/JNI/C++ Category API 访问 Store；不再存在验收开关或 blocked Repository。公开能力仍严格限定为 `category.list` 与 `category.create`。
 - Category Storage 已定义为 Calendar Core JSON v2 目录中的独立 `categories.json`，严格根对象为 `storage_version + categories`；持久化记录的九个字段全部显式存在，格式真相源是 `storage/category_store.schema.json`，不复用 Response Schema 充当存储记录。
 - Store 快照按 `id` 升序序列化；正式本地记录的 `color/sort_order` 必须非空，create 的空顺序在持久化前物化，因此本地业务 list 按 `sort_order -> created_at -> id` 投影。Response 的 null-last comparator 继续兼容非 Store/早期草案 reader。`sort_order` 在 Request、Response 和 Store 中统一限制为 JSON/IEEE-754 可精确往返的 `0..9007199254740991`；未指定顺序时 C++ workflow 在目录写锁中按活动记录最大值追加，空集合从 `0` 开始，到达上界则返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。
 - Category 当前操作只改一个 Store，使用完整快照校验与同目录原子替换，不接入现有两个精确 Store 集合的 journal。任何未来跨 Store Category workflow 必须先新增独立可恢复事务协议。
 - Category 与 Event/Habit/Anniversary 是弱引用：缺失或软删除分类不使业务对象不可读，也不得级联清空 `category_id`。Event detail 中，无 ID 返回空 Category；非空 ID 命中活动 Category 时必须返回同 ID 对象；悬空/软删除时返回空对象投影但保留 Event 原 ID。既有非 UUID opaque reference 继续兼容；Category 记录自身只接受新 writer 生成的 UUIDv4。
 - `categories.json` 是 Storage v2 的可加性文件，不改变既有 Store codec；旧 v2 目录激活时只可补精确空根，已有文件必须校验且禁止重置。不存在 Category v1 或 Flutter Fake migration，也不创建默认分类 fixture。
-- Storage 代码存在不等于已经通过发布门禁。Event detail 的活动/悬空/软删除聚合、Kotlin Event Category 字段校验、原子替换后的目录同步失败回滚、所有层的安全整数与 C++ 单点规范化一致性、Flutter 生产 composition 和设备 smoke 均通过后，才能把 Category 从 `implemented_unintegrated + blocked` 切换为 `integrated + active`。重命名、删除、恢复、同步、用户归属和默认分类仍未进入当前公开协议。
+- 2026-08-14 已关闭发布前的代码级一致性缺口：Event detail 三态聚合、Kotlin Event Category 校验、安全整数与 C++ 单点规范化已同步；Category 原子写增加持久化 prepared/committed 恢复状态，失败后读取与重建会先恢复旧快照，恢复持续失败则拒绝把 replacement 当作权威；Kotlin 已完整登记并透传 `CATEGORY_SORT_ORDER_EXHAUSTED`。
+- 同日物理 Android 16 设备完成隔离 max→null JNI 零写入、正式 Flutter 页面→MethodChannel→Kotlin→JNI→C++→Storage、Event 关联、清除/恢复分类、强停进程和覆盖安装后的重启读取 smoke；Category 因此在同一集成变更中切换为 `integrated + active` 并启用正式生产 composition。重命名、删除、恢复、同步、用户归属和默认分类仍未进入当前公开协议。
 
 ### TZDB 实施门禁
 

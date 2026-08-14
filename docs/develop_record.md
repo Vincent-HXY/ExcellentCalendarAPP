@@ -1,6 +1,6 @@
 # ExcellentCalendarAPP 当前进度
 
-> 更新时间：2026-08-11
+> 更新时间：2026-08-14
 >
 > description ：用来描述项目当前的一个进度，每日进行总结。按照总体结论，已完成，正在完成，未完成（结合target.md），尚未验证进行分类。并指出当前可以支持完成哪些具体的操作和内容。
 
@@ -18,7 +18,7 @@ Flutter → Dart Gateway → Kotlin MethodChannel → JNI → C++ Core → JSON 
 
 Anniversary V1 的六条公开能力已于 2026-08-10 接入 Flutter → Kotlin → JNI → C++ Core → JSON Storage，Contract 状态切换为 `implementation_status: integrated`。Anniversary 使用独立两 Store 事务和专用 journal，不改变 Event/Reminder 六 Store journal；真实 Android create → detail 持久化 → soft-delete smoke 已通过。
 
-Category 的稳定领域模型、`category.list` / `category.create` 传输协议、Flutter typed Gateway/MethodChannel/Repository，以及 Kotlin Contract/Handler/窄 Bridge 已于 2026-08-10 补齐；2026-08-11 又冻结了独立 `categories.json` 的 Storage v2 根包络与严格记录 Schema。当前工作区已存在真实 C++ Domain/Repository/codec/bootstrap、JNI 和磁盘读写实现，因此状态不再写作 `planned`，统一改为 `implemented_unintegrated + blocked`。正式 App 仍注入 Fake，Event detail 聚合、Kotlin Event Category 校验、原子写 post-replace 失败语义、跨层数值/规范化一致性和设备 smoke 尚未完成，Category 不能宣称已发布闭环。
+Category 的稳定领域模型、`category.list` / `category.create` Contract、Flutter typed 边界、Kotlin/JNI、C++ Domain/Repository 与独立 `categories.json` Storage v2 已形成真实实现。2026-08-14 已关闭原子写失败后新快照可见、Kotlin 漏登记 `CATEGORY_SORT_ORDER_EXHAUSTED` 和生产入口状态冲突三项 P1，并在物理 Android 16 设备完成隔离 JNI、正式 Flutter 页面到 Storage、Event 关联、清除/恢复分类与强停进程重启 smoke。MethodChannel、Native Call、Category Store 与默认/Release production composition 已统一切换为 `integrated + active`。
 
 真实设备（realme RMX5100, Android 16 / API 36）首轮验证通过：冷启动、runtime 初始化、TZDB 2026c 解压、7 个 v2 store、事件/提醒读写、CAS 调度、Dispatcher Alarm 注册、两阶段通知投递与 Recovery 接管均正常，无崩溃。V1 数据不再保留：C++ bootstrap 确认 v1 目录后直接清理，不再创建时间戳归档；Kotlin 不再迁移 `test_storage_json`。
 
@@ -54,7 +54,7 @@ Category 的稳定领域模型、`category.list` / `category.create` 传输协�
 - occurrence reopen 会以 `occurrence_reopened` 暂存同模板较晚 open successor，再恢复原 Reminder；滚动链复用确定性 successor，维持每模板最多一条 open Reminder。
 - Recovery 会把严格早于窗口的已物化 open Reminder 终结为 `expired`；对既有 frozen prepared attempt 原子选择接管明细、废弃到摘要或废弃到窗口外，旧 attempt 不再允许 finalize。
 - Anniversary 已实现 Domain、workflow/query service、Boundary、Repository、JSON codec/storage、prepared/committed journal 和六条 Native API；支持日期校验、动态 countdown、2 月 29 日、过滤排序、软删除、重启恢复与损坏数据显式失败。
-- Category 已存在 Domain、Application Service、Repository、JSON codec/Store、runtime bootstrap、Boundary/JNI 和重启/损坏文件测试。当前 C++ 阻断项是 Event detail 仍无条件返回空 Category，以及原子替换后目录同步失败不能保证旧快照继续权威；安全整数上界也需同步到 codec/service。
+- Category 已存在 Domain、Application Service、Repository、JSON codec/Store、runtime bootstrap、Boundary/JNI 和重启/损坏文件测试。Event detail 三态、安全整数与规范化已同步；原子替换现用持久化 prepared/committed sidecar 记录旧快照或“原文件不存在”事实，read/write 会先收敛未完成恢复，恢复持续失败时拒绝暴露 replacement。
 
 ### Flutter
 
@@ -64,7 +64,7 @@ Category 的稳定领域模型、`category.list` / `category.create` 传输协�
 - 已接入 Application Layer、Gateway、DTO 和 NativeResult 解析。
 - 已完成“倒数纪念日”Flutter 原型及 Native Gateway 接入：六个 typed operation 已连接 MethodChannel；create/update/detail/list 使用既有设备时区 Gateway 提供显式 IANA timezone。非默认 kind、Reminder plan 与高层 preview recurrence 签名差异仍在 transport 前显式失败，不静默丢字段。
 - 2026-08-09 已完成 Flutter 职责审查整改：新建日程的时区/DST/DTO workflow 移入 `CreateScheduleController`；重复日程详情拆为状态 façade、Detail Loader、Occurrence/Series Action UseCase；通知启动拆出 permission controller 与 Reminder schedule lifecycle coordinator。未修改 Contract、MethodChannel、JNI 或领域语义。
-- Category 已具备严格 Request/Response/List DTO、Domain mapper、typed Native Gateway、MethodChannel adapter 与 Native repository；Fake fixtures 和新建 ID 也遵守正式 Contract。UI 仍通过既有 `CategoryRepository`/Application controller 工作，不直接调用 MethodChannel。
+- Category 已具备严格 Request/Response/List DTO、Domain mapper、typed Native Gateway、MethodChannel adapter 与 Native repository；UI 仍只依赖 `CategoryRepository`/Application controller。默认及 Release production composition 均注入正式 Native Repository，不再保留验收开关或 blocked Repository。
 
 ### Android Native
 
@@ -74,7 +74,7 @@ Category 的稳定领域模型、`category.list` / `category.create` 传输协�
 - 已完成 Reminder reconcile 和 Popup 通知投递。
 - Kotlin v2 validator 已按 Recovery 双归属字段校验 finalize response，并复用完整 `ReminderStatus` 集合校验 list request，避免已提交成功被误报为 `CONTRACT_VALIDATION_FAILED`。
 - Anniversary Kotlin handler/validator、窄 Native bridge 和六个 JNI external/export 已接入；Debug-only ADB smoke 与 AndroidTest instrumentation 共用正式 factory runner，release 不暴露 smoke 入口。
-- Category 已增加 Kotlin request/response validator、MethodChannel handler、独立 `NativeCategoryBridge`、聚合 bridge 签名和真实 JNI 调用。Event validator 仍漏检 `category_id/category_ids/category`，窄 Bridge 仍有默认 throwing stub，且安全整数上界尚未同步。
+- Category 已增加 Kotlin request/response validator、MethodChannel handler、独立 `NativeCategoryBridge`、聚合 bridge 签名和真实 JNI 调用；Event Category 字段、safe integer 上界和 `CATEGORY_SORT_ORDER_EXHAUSTED` 注册/透传均已闭合。Debug APK 的独立进程/独立 Store max→null JNI 零写入验收已在物理设备通过，正式 Store 哈希未改变且测试目录自动清理。
 
 ## 正在完成
 
@@ -86,7 +86,7 @@ Category 的稳定领域模型、`category.list` / `category.create` 传输协�
 
 ## 尚未完成
 
-- Habit/HabitCheckIn；Category 的 Event detail 聚合、Kotlin 边界、原子写失败一致性、安全整数/规范化跨层同步、生产 composition 与真机 smoke。
+- Habit/HabitCheckIn；Category 后续仅在产品规则冻结后扩展 update/delete/reorder/sync、用户归属和默认分类，不再属于当前 create/list 发布阻断。
 - 完整月/周/日历视图、搜索、全文索引和四象限。
 - Notification 历史、点击记录、Event 编辑和完整删除/恢复交互。
 - AI 导入/OCR、微信、账号登录、云同步、云备份和多设备同步。
@@ -109,6 +109,7 @@ Contract 或目录中已有设计，不代表对应生产功能已经完成。
 
 ## 验证结果
 
+- 2026-08-14 Category 三项 P1 整改与激活验证：Contract 静态审计确认 131 个 JSON 可解析、56 个 Native Schema 错误码与 Kotlin `All` 56/56 精确一致。C++ `excellent_calendar_check` 6/6，通过 rollback 三阶段、同 Repository、Repository/runtime/真子进程重建、旧文件不存在、持续恢复失败拒读、committed cleanup 和单次安全重试回归；一次早期全量运行曾无日志瞬时崩溃，随后连续 50 次 Category 重跑及完整 check 均稳定。激活后 Flutter 全量 205/205、`flutter analyze`、无开关 Debug/Release APK、Android JVM 107 项（0 failure/0 error/1 skipped）及 AndroidTest APK 均通过；`lintDebug` 仍被既有 29 errors/20 warnings 阻断，本次 Category 文件 0 finding。物理 Android 16 设备随后通过隔离 max→null JNI 零写入、正式页面 create/list、Event create/detail/search、分类清除/恢复、强停进程后覆盖安装重启读取，以及移除验收开关后的再次 restart 读取；`categories.json` SHA-256 始终一致。Category 已统一切换为 `integrated + active`。
 - 2026-08-11 Category Contracts 审查整改：131 个 JSON Schema 均可解析、Draft 声明正确、`$id` 唯一，73 个本地 `$ref`/JSON Pointer 闭合；7 个 YAML 通过禁重键解析。专项断言覆盖 `9007199254740991`/`9007199254740992` 边界、C++ 规范化 owner/raw wire 示例、Event detail 三个正例与七组正反 oracle，以及 MethodChannel/JNI/Store 的 `implemented_unintegrated + blocked` 一致状态；重新配置后的 C++ `excellent_calendar_check` 6/6、`git diff --check` 通过。非 Contract 层仍未整改，整体发布结论保持 BLOCK。
 - 2026-08-11 Category Storage v2 设计验证（当时状态，已被本日后续审查更新）：131 个 JSON Schema 全部通过语法、Draft 2020-12 声明、`$id` 唯一和 73 个本地 `$ref`/JSON Pointer 闭合检查；新增 Category Store 的严格根字段、九字段记录、非空 canonical `color/sort_order`、UUIDv4 和示例断言通过。7 个 YAML 清单使用禁重键设置解析成功，当时 per-store/API 的 `planned` 断言通过；按项目命令执行 C++ check 5/5。随后 C++/JNI/Store 实现进入工作区，当前状态与风险以上方最新记录为准。
 - 2026-08-10 Category Contract/边界设计验证（历史状态）：130 个 JSON Schema、7 个 YAML、Dart/Flutter/Kotlin/Android/C++ 基线检查通过；当时 Category C++/JSON Storage/JNI export 尚未实现，因此未执行真实持久化或真机端到端验证。该代码存在状态已被 2026-08-11 的实现与审查记录替代。
@@ -133,7 +134,7 @@ Contract 或目录中已有设计，不代表对应生产功能已经完成。
 1. 完成 Alarm 到点真实触发验证（2026-08-09 11:45 北京时间）并确认通知展示、重试与状态回写。
 2. 补做崩溃/杀进程 journal 重放与 Recovery `abandoned_*` 分支的真机验证；继续覆盖国产 ROM 后台限制。
 3. 完成通知点击到真实详情页的真机验证；Habit 与 Anniversary Reminder 重复/occurrence 语义另立协议任务。
-4. 按已冻结的 Category Contract 依次修复 C++ Event detail/原子写、Kotlin Category 关联校验、Flutter null-last/原样转发/生产 composition，完成跨层和设备 smoke 后再统一切换 `integrated + active`；update/delete/sync 继续等待对应产品规则。
+4. Category create/list 已解除发布阻断；后续物理设备回归可复用 `integration_test/category_release_acceptance_test.dart` 的 write/restart 两阶段与独立 max→null instrumentation。update/delete/reorder/sync、用户归属和默认分类继续等待对应产品规则。
 5. 保持契约状态、代码与 `docs/develop_record.md` 同步；后续协议变更按破坏性变更流程提升版本。
 
 ## 2026-08-09 Kotlin 职责审查整改
@@ -184,3 +185,10 @@ Contract 或目录中已有设计，不代表对应生产功能已经完成。
 - CAT-009 统一 C++ Application/Domain 为唯一规范化 owner；Flutter/Kotlin 必须原样转发 Schema-valid 前后空白文本与小写颜色。
 - CAT-004 协作项在 Event detail Schema 中冻结未分类、活动命中、悬空/软删除三态，并补正反 oracle；CAT-006 保留旧快照权威保证，明确目录同步成功才是提交点。
 - Contracts 主责语义已冻结，但 Category 整体仍为 BLOCK；C++、Kotlin、Flutter 和设备 smoke 完成后才可最终激活。
+
+## 2026-08-14 Category 三项发布阻断整改
+
+- C++ Category 单文件 mutation 在 replace 前持久化旧快照或旧文件不存在事实，并记录 prepared/committed 状态；即时读取、Repository/runtime 重建和真子进程启动都会先恢复未完成写入。`rollback_replace`、`rollback_directory_fsync`、`rollback_verify` 再失败时保留恢复状态，持续失败则拒读，不再把新快照当作权威。
+- Kotlin `NativeErrorCodes` 已补齐 `CATEGORY_SORT_ORDER_EXHAUSTED`，MethodChannel 错误外壳原样透传；不安全整数在 JNI 前失败。Debug-only instrumentation 使用独立进程和独立 Store 验证 max→null 返回精确领域错误且文件 size/mtime/SHA-256 与列表不变。
+- Flutter production composition 已在设备门禁通过后移除临时发布闸门；默认及 Release 现在统一接入 Native，不使用 Fake、空列表或 blocked Repository。
+- 物理设备已完成隔离错误码零写入和正式 Flutter→MethodChannel→Kotlin→JNI→C++→Storage/Event/重启链路，MethodChannel、Native Call 和 Category Store 已统一激活为 `integrated + active`。

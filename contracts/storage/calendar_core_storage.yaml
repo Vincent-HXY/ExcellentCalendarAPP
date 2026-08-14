@@ -47,14 +47,13 @@ logical_stores:
 
 logical_store_implementation:
   categories:
-    implementation_status: implemented_unintegrated
-    release_status: blocked
-    activation_gate: >-
-      Category Domain, Repository, JSON codec, bootstrap integration, JNI
-      export, and persistence tests exist, but release activation remains
-      blocked until Event detail aggregation, Kotlin Event validation, atomic
-      post-replace failure handling, cross-layer sort/normalization conformance,
-      production Flutter composition, and device smoke all pass together.
+    implementation_status: integrated
+    release_status: active
+    activation_evidence: >-
+      Event detail aggregation, Kotlin validation, durable post-replace
+      recovery, cross-layer normalization and sort conformance, production
+      Flutter composition, isolated max-sort JNI verification, and physical
+      device Flutter-to-Storage restart smoke passed together on 2026-08-14.
 
 root_envelopes:
   events: {version_field: storage_version, version: 2, collection_field: events}
@@ -135,8 +134,8 @@ lifecycle_invariants:
     - v2-only expired and occurrence_reopened values never qualify a directory for automatic v1 removal
 
 category_store:
-  implementation_status: implemented_unintegrated
-  release_status: blocked
+  implementation_status: integrated
+  release_status: active
   file: categories.json
   schema: storage/category_store.schema.json
   strategy:

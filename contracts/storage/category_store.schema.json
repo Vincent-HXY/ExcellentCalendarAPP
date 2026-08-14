@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/storage/category_store.schema.json",
   "title": "CategoryStoreV2",
-  "description": "Strict JSON Storage v2 root for the implemented but release-blocked Category store. This persistence model is separate from Category request and response DTOs.",
+  "description": "Strict JSON Storage v2 root for the integrated Category store. This persistence model is separate from Category request and response DTOs.",
   "x-storage-format-version": 2,
-  "x-implementation-status": "implemented_unintegrated",
-  "x-release-status": "blocked",
+  "x-implementation-status": "integrated",
+  "x-release-status": "active",
   "type": "object",
   "additionalProperties": false,
   "required": [

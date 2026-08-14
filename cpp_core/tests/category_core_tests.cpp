@@ -13,6 +13,10 @@
 #include <utility>
 #include <vector>
 
+#if defined(_WIN32)
+#include <process.h>
+#endif
+
 #include <picojson/picojson.h>
 
 #include "excellent_calendar/application/category_service.hpp"
@@ -30,6 +34,7 @@ using excellent_calendar::application::CategoryService;
 using excellent_calendar::application::CreateCategoryCommand;
 using excellent_calendar::repository::CategoryRepository;
 using excellent_calendar::repository::CategoryState;
+using excellent_calendar::storage::json::AtomicJsonFileStore;
 using excellent_calendar::storage::json::JsonCategoryRepository;
 
 constexpr const char *kId1 = "11111111-1111-4111-8111-111111111111";
@@ -107,6 +112,45 @@ void write_file(const std::filesystem::path &path, const std::string &content) {
   output << content;
   output.flush();
   require(output.good(), "test fixture write failed");
+}
+
+excellent_calendar::common::Result<excellent_calendar::common::Unit>
+injected_storage_failure(std::string_view phase) {
+  return excellent_calendar::common::
+      Result<excellent_calendar::common::Unit>::failure(
+          excellent_calendar::common::make_error(
+              "STORAGE_IO_ERROR", "Storage input/output operation failed",
+              {{"operation", std::string(phase)},
+               {"reason", "injected Category write failure"}},
+              true));
+}
+
+bool recovery_artifact_exists(const std::filesystem::path &target) {
+  const std::vector<std::string> suffixes = {
+      ".rollback", ".rollback.state", ".rollback.state.tmp",
+      ".rollback.restore.tmp"};
+  for (const auto &suffix : suffixes) {
+    if (std::filesystem::exists(target.string() + suffix))
+      return true;
+  }
+  return false;
+}
+
+void require_old_category_snapshot(const std::filesystem::path &directory,
+                                   const std::string &expected_bytes,
+                                   const std::string &context) {
+  const auto target = directory / "categories.json";
+  auto repository = std::make_shared<JsonCategoryRepository>(directory);
+  require(repository->initialize().ok(), context + " must initialize");
+  CategoryService service(
+      repository, [] { return std::string(kTime3); },
+      [] { return std::string(kId4); });
+  auto listed = service.list();
+  require(listed.ok() && listed.value().size() == 1U &&
+              listed.value().front().id == kId1 &&
+              read_file(target) == expected_bytes &&
+              !recovery_artifact_exists(target),
+          context + " must expose only the exact previous snapshot");
 }
 
 picojson::object parse_native_result(const std::string &json,
@@ -663,7 +707,8 @@ void test_storage_corruption_unknown_version_and_write_failure() {
 
 void test_atomic_write_failure_injection_and_retry() {
   const std::vector<std::string> phases = {
-      "write", "temp_fsync", "replace", "directory_fsync"};
+      "write", "temp_fsync", "replace", "directory_fsync",
+      "commit_state_fsync"};
   for (const auto &phase : phases) {
     TemporaryDirectory directory("atomic_" + phase);
     bool armed = false;
@@ -713,7 +758,7 @@ void test_atomic_write_failure_injection_and_retry() {
                 " failure must return STORAGE_IO_ERROR with the previous "
                 "Category snapshot still authoritative");
     require(!std::filesystem::exists(path.string() + ".tmp") &&
-                !std::filesystem::exists(path.string() + ".rollback"),
+                !recovery_artifact_exists(path),
             phase + " failure must clean temporary recovery artifacts");
 
     auto reopened = std::make_shared<JsonCategoryRepository>(directory.path());
@@ -738,6 +783,337 @@ void test_atomic_write_failure_injection_and_retry() {
             phase +
                 " retry must create exactly one Category and never expose "
                 "the failed attempt");
+  }
+}
+
+std::string leave_pending_rollback(const std::filesystem::path &directory,
+                                   std::string_view rollback_phase,
+                                   bool persistent_rollback_failure = false,
+                                   bool recover_immediately = false) {
+  struct HookState {
+    bool armed = false;
+    bool directory_fsync_failed = false;
+    bool rollback_failed = false;
+  };
+  auto state = std::make_shared<HookState>();
+  JsonCategoryRepository::FailureHook failure_hook =
+      [state, rollback_phase,
+       persistent_rollback_failure](std::string_view actual_phase) {
+        if (!state->armed)
+          return excellent_calendar::common::
+              Result<excellent_calendar::common::Unit>::success({});
+        if (!state->directory_fsync_failed &&
+            actual_phase == "directory_fsync") {
+          state->directory_fsync_failed = true;
+          return injected_storage_failure(actual_phase);
+        }
+        if (actual_phase == rollback_phase &&
+            (persistent_rollback_failure || !state->rollback_failed)) {
+          state->rollback_failed = true;
+          return injected_storage_failure(actual_phase);
+        }
+        return excellent_calendar::common::
+            Result<excellent_calendar::common::Unit>::success({});
+      };
+
+  auto repository = std::make_shared<JsonCategoryRepository>(
+      directory,
+      std::shared_ptr<excellent_calendar::storage::RuntimeStorageLease>{},
+      failure_hook);
+  require(repository->initialize().ok(),
+          std::string(rollback_phase) + " fixture must initialize");
+  auto id_index = std::make_shared<std::size_t>(0U);
+  CategoryService service(
+      repository, [] { return std::string(kTime1); },
+      [id_index] {
+        const std::vector<std::string> ids{kId1, kId2};
+        return ids.at((*id_index)++);
+      });
+  require(service
+              .create(CreateCategoryCommand{"Existing", std::nullopt,
+                                            "#112233", std::nullopt, 0})
+              .ok(),
+          std::string(rollback_phase) + " fixture must persist old state");
+  const auto target = directory / "categories.json";
+  const auto previous = read_file(target);
+  state->armed = true;
+  auto failed = service.create(CreateCategoryCommand{
+      "Retry once", std::nullopt, "#445566", std::nullopt, 1});
+  require(!failed.ok() && failed.error().code == "STORAGE_IO_ERROR" &&
+              state->directory_fsync_failed && state->rollback_failed &&
+              std::filesystem::exists(target.string() + ".rollback.state"),
+          std::string(rollback_phase) +
+              " must leave a durable pending rollback after the combined "
+              "failure");
+
+  if (persistent_rollback_failure) {
+    auto blocked = service.list();
+    require(!blocked.ok() && blocked.error().code == "STORAGE_IO_ERROR",
+            "an unresolved rollback must reject Category reads instead of "
+            "accepting the replacement snapshot");
+  } else if (recover_immediately) {
+    auto listed = service.list();
+    require(listed.ok() && listed.value().size() == 1U &&
+                listed.value().front().id == kId1 &&
+                read_file(target) == previous &&
+                !recovery_artifact_exists(target),
+            std::string(rollback_phase) +
+                " must recover the previous bytes and list on the same "
+                "repository immediately after failure");
+  }
+  return previous;
+}
+
+void retry_once_after_recovery(const std::filesystem::path &directory,
+                               const std::string &context) {
+  auto repository = std::make_shared<JsonCategoryRepository>(directory);
+  require(repository->initialize().ok(), context + " retry must initialize");
+  CategoryService service(
+      repository, [] { return std::string(kTime3); },
+      [] { return std::string(kId4); });
+  require(service
+              .create(CreateCategoryCommand{"Retry once", std::nullopt,
+                                            "#445566", std::nullopt, 1})
+              .ok(),
+          context + " retry must succeed");
+  auto listed = service.list();
+  require(listed.ok() && listed.value().size() == 2U &&
+              listed.value()[0].id == kId1 && listed.value()[1].id == kId4,
+          context +
+              " retry must add exactly one Category after recovery");
+}
+
+void test_rollback_phase_failures_recover_across_read_and_runtime() {
+  const std::vector<std::string> rollback_phases = {
+      "rollback_replace", "rollback_directory_fsync", "rollback_verify"};
+  for (const auto &phase : rollback_phases) {
+    {
+      TemporaryDirectory directory("immediate_" + phase);
+      const auto previous =
+          leave_pending_rollback(directory.path(), phase, false, true);
+      require_old_category_snapshot(directory.path(), previous,
+                                    phase + " immediate read recovery");
+      retry_once_after_recovery(directory.path(),
+                                phase + " immediate read recovery");
+    }
+    {
+      TemporaryDirectory directory("repository_restart_" + phase);
+      const auto previous = leave_pending_rollback(directory.path(), phase);
+      require_old_category_snapshot(directory.path(), previous,
+                                    phase + " repository rebuild recovery");
+    }
+    {
+      TemporaryDirectory directory("runtime_restart_" + phase);
+      const auto previous = leave_pending_rollback(directory.path(), phase);
+      const auto initialize = runtime_request(directory.path());
+      require_success(
+          parse_native_result(
+              excellent_calendar::boundary::api::initialize_runtime_v2_json(
+                  picojson::value(initialize).serialize()),
+              phase + " runtime rebuild"),
+          phase + " runtime rebuild");
+      const auto listed = picojson::object(require_success(
+          parse_native_result(
+              excellent_calendar::boundary::api::list_categories_v2("{}"),
+              phase + " runtime list"),
+          phase + " runtime list"));
+      require(listed.at("items").get<picojson::array>().size() == 1U &&
+                  read_file(directory.path() / "categories.json") == previous &&
+                  !recovery_artifact_exists(directory.path() /
+                                            "categories.json"),
+              phase +
+                  " runtime rebuild must recover the exact previous snapshot");
+    }
+  }
+}
+
+void test_persistent_recovery_failure_blocks_reads_until_recoverable() {
+  TemporaryDirectory directory("persistent_rollback_failure");
+  const auto previous =
+      leave_pending_rollback(directory.path(), "rollback_replace", true);
+  require(std::filesystem::exists(
+              directory.path() / "categories.json.rollback.state"),
+          "persistent rollback failure must retain its recovery state");
+  require_old_category_snapshot(directory.path(), previous,
+                                "later recoverable repository");
+}
+
+void test_previously_absent_file_recovery() {
+  const std::vector<std::string> rollback_phases = {
+      "rollback_replace", "rollback_directory_fsync", "rollback_verify"};
+  for (const auto &phase : rollback_phases) {
+    TemporaryDirectory directory("absent_" + phase);
+    struct HookState {
+      bool directory_fsync_failed = false;
+      bool rollback_failed = false;
+    } state;
+    JsonCategoryRepository::FailureHook failure_hook =
+        [&](std::string_view actual_phase) {
+          if (!state.directory_fsync_failed &&
+              actual_phase == "directory_fsync") {
+            state.directory_fsync_failed = true;
+            return injected_storage_failure(actual_phase);
+          }
+          if (!state.rollback_failed && actual_phase == phase) {
+            state.rollback_failed = true;
+            return injected_storage_failure(actual_phase);
+          }
+          return excellent_calendar::common::
+              Result<excellent_calendar::common::Unit>::success({});
+        };
+    JsonCategoryRepository repository(
+        directory.path(),
+        std::shared_ptr<excellent_calendar::storage::RuntimeStorageLease>{},
+        failure_hook);
+    auto initialized = repository.initialize();
+    const auto target = directory.path() / "categories.json";
+    require(!initialized.ok() &&
+                initialized.error().code == "STORAGE_IO_ERROR" &&
+                state.directory_fsync_failed && state.rollback_failed &&
+                std::filesystem::exists(target.string() + ".rollback.state"),
+            phase +
+                " must persist the previous-file-absent recovery fact");
+
+    AtomicJsonFileStore recovery_store(
+        directory.path(), {},
+        AtomicJsonFileStore::DirectorySyncFailurePolicy::
+            kRestorePreviousSnapshot);
+    auto recovered = recovery_store.read_json_file("categories.json");
+    require(recovered.ok() && !recovered.value().has_value() &&
+                !std::filesystem::exists(target) &&
+                !recovery_artifact_exists(target),
+            phase +
+                " recovery must restore the exact previous absence before "
+                "initialization retries");
+    JsonCategoryRepository reopened(directory.path());
+    require(reopened.initialize().ok() && std::filesystem::exists(target),
+            phase + " initialization retry must create one clean empty store");
+    auto listed = reopened.load();
+    require(listed.ok() && listed.value().categories.empty(),
+            phase + " initialization retry must remain empty");
+  }
+}
+
+void test_committed_marker_never_rolls_back_successful_write() {
+  TemporaryDirectory directory("committed_marker");
+  bool armed = false;
+  bool cleanup_failed = false;
+  JsonCategoryRepository::FailureHook failure_hook =
+      [&](std::string_view phase) {
+        if (armed && !cleanup_failed && phase == "post_commit_cleanup") {
+          cleanup_failed = true;
+          return injected_storage_failure(phase);
+        }
+        return excellent_calendar::common::
+            Result<excellent_calendar::common::Unit>::success({});
+      };
+  auto repository = std::make_shared<JsonCategoryRepository>(
+      directory.path(),
+      std::shared_ptr<excellent_calendar::storage::RuntimeStorageLease>{},
+      failure_hook);
+  require(repository->initialize().ok(),
+          "committed-marker fixture must initialize");
+  CategoryService service(
+      repository, [] { return std::string(kTime1); },
+      [] { return std::string(kId1); });
+  armed = true;
+  require(service
+              .create(CreateCategoryCommand{"Committed", std::nullopt,
+                                            "#123456", std::nullopt, 0})
+              .ok() &&
+              cleanup_failed,
+          "post-commit cleanup interruption must not report a committed "
+          "Category as failed");
+  const auto target = directory.path() / "categories.json";
+  const auto committed_bytes = read_file(target);
+  require(std::filesystem::exists(target.string() + ".rollback.state"),
+          "interrupted post-commit cleanup must leave an explicit committed "
+          "state");
+
+  auto reopened = std::make_shared<JsonCategoryRepository>(directory.path());
+  require(reopened->initialize().ok(),
+          "committed state must be recoverable on repository restart");
+  CategoryService reopened_service(
+      reopened, [] { return std::string(kTime2); },
+      [] { return std::string(kId2); });
+  auto listed = reopened_service.list();
+  require(listed.ok() && listed.value().size() == 1U &&
+              listed.value().front().id == kId1 &&
+              read_file(target) == committed_bytes &&
+              !recovery_artifact_exists(target),
+          "a stale committed marker must preserve the successful replacement "
+          "and clean its sidecars");
+}
+
+void test_default_atomic_store_policy_regression() {
+  TemporaryDirectory directory("default_atomic_policy");
+  AtomicJsonFileStore store(directory.path());
+  require(store.initialize().ok(), "default atomic store must initialize");
+  picojson::object object;
+  object["value"] = picojson::value("unchanged");
+  require(store.write_json_file("other.json", picojson::value(object)).ok(),
+          "default atomic store must keep its existing write behavior");
+  auto loaded = store.read_json_file("other.json");
+  const auto target = directory.path() / "other.json";
+  require(loaded.ok() && loaded.value().has_value() &&
+              loaded.value()->get<picojson::object>()
+                      .at("value")
+                      .get<std::string>() == "unchanged" &&
+              !recovery_artifact_exists(target),
+          "the opt-in rollback protocol must not affect other JSON stores");
+}
+
+int verify_recovery_in_child_process(
+    const std::filesystem::path &directory) {
+  try {
+    const auto target = directory / "categories.json";
+    auto repository = std::make_shared<JsonCategoryRepository>(directory);
+    require(repository->initialize().ok(),
+            "child process repository must initialize");
+    CategoryService service(
+        repository, [] { return std::string(kTime3); },
+        [] { return std::string(kId4); });
+    auto listed = service.list();
+    require(listed.ok() && listed.value().size() == 1U &&
+                listed.value().front().id == kId1 &&
+                !recovery_artifact_exists(target),
+            "child process must recover only the previous Category snapshot");
+    return EXIT_SUCCESS;
+  } catch (const std::exception &error) {
+    std::cerr << "category recovery child failed: " << error.what() << '\n';
+    return EXIT_FAILURE;
+  }
+}
+
+void test_subprocess_restart_recovers_pending_rollback(
+    const std::filesystem::path &executable) {
+  const std::vector<std::string> rollback_phases = {
+      "rollback_replace", "rollback_directory_fsync", "rollback_verify"};
+  for (const auto &phase : rollback_phases) {
+    TemporaryDirectory directory("process_restart_" + phase);
+    const auto previous = leave_pending_rollback(directory.path(), phase);
+#if defined(_WIN32)
+    const auto executable_path = std::filesystem::absolute(executable).wstring();
+    const std::wstring mode = L"--verify-category-recovery";
+    const auto directory_path = directory.path().wstring();
+    const wchar_t *arguments[] = {executable_path.c_str(), mode.c_str(),
+                                  directory_path.c_str(), nullptr};
+    const auto exit_code =
+        _wspawnv(_P_WAIT, executable_path.c_str(), arguments);
+#else
+    const auto command = "\"" + std::filesystem::absolute(executable).string() +
+                         "\" --verify-category-recovery \"" +
+                         directory.path().string() + "\"";
+    const auto exit_code = std::system(command.c_str());
+#endif
+    require(exit_code == 0,
+            phase + " child-process recovery must succeed");
+    const auto target = directory.path() / "categories.json";
+    require(read_file(target) == previous &&
+                !recovery_artifact_exists(target),
+            phase +
+                " child process must leave the exact previous bytes "
+                "authoritative");
   }
 }
 
@@ -995,7 +1371,11 @@ void test_boundary_storage_restart_and_event_category_id() {
 
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
+  if (argc == 3 &&
+      std::string_view(argv[1]) == "--verify-category-recovery") {
+    return verify_recovery_in_child_process(argv[2]);
+  }
   try {
     test_boundary_contract_codecs_and_unicode();
     test_service_rules_and_error_mapping();
@@ -1003,6 +1383,12 @@ int main() {
     test_repository_persistence_sort_and_restart();
     test_storage_corruption_unknown_version_and_write_failure();
     test_atomic_write_failure_injection_and_retry();
+    test_rollback_phase_failures_recover_across_read_and_runtime();
+    test_persistent_recovery_failure_blocks_reads_until_recoverable();
+    test_previously_absent_file_recovery();
+    test_committed_marker_never_rolls_back_successful_write();
+    test_default_atomic_store_policy_regression();
+    test_subprocess_restart_recovers_pending_rollback(argv[0]);
     test_additive_runtime_initialization_preserves_existing_v2_data();
     test_boundary_storage_restart_and_event_category_id();
     std::cout << "category core tests passed\n";

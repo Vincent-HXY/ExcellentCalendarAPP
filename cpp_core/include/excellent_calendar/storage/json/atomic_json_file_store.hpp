@@ -52,6 +52,9 @@ class AtomicJsonFileStore {
  private:
   common::Result<common::Unit> call_write_hook(std::string_view phase) const;
 
+  common::Result<common::Unit> recover_pending_write(
+      const std::string& file_name) const;
+
   std::filesystem::path file_path(const std::string& file_name) const;
 
   std::filesystem::path storage_directory_;

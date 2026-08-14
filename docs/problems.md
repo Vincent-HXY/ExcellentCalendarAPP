@@ -419,7 +419,7 @@ Flutter 和 Kotlin 测试使用 Fake Gateway/Fake Native Bridge/Fake Notificatio
 
 验证：Contract 129 个 JSON 的语法、唯一 `$id`、本地 `$ref` 与 Anniversary sort 结构断言通过；Dart 定向/全量、Kotlin 定向/全量 JVM、C++ `excellent_calendar_check` 5/5、Flutter analyze、主 APK Debug 和 Native Smoke 构建均通过。该变更不涉及持久化或 migration；未重复执行真机 Anniversary list。
 
-## 九、Category Native/Storage 已实现，但发布仍阻断
+## 九、Category Native/Storage 发布阻断（2026-08-14 已关闭）
 
 ### [P1] `implemented_unintegrated + blocked` 与生产 Composition 冲突
 
@@ -432,6 +432,8 @@ Flutter 和 Kotlin 测试使用 Fake Gateway/Fake Native Bridge/Fake Notificatio
 当前要求：在状态保持 blocked 期间，生产入口不得无条件依赖 Native Category；如果当前工作区不做中间合并，则必须先关闭下述 C++、Kotlin 和完整设备 smoke 门禁，再在同一集成变更中把 MethodChannel、Native Call、Store/schema 和正式文档统一切换为 `integrated + active`。禁止为配合已提前接入的生产代码而提前修改 Contract 状态。
 
 验收：静态 release-gate 必须保证二选一——blocked 时生产不依赖 Native；生产依赖 Native 时所有正式状态均为 active。最终同一 APK 还必须完成 Flutter UI→MethodChannel→Kotlin→JNI→C++→Storage 全链验证。
+
+2026-08-14 修复状态：已关闭。设备门禁通过前，默认及 Release composition 曾由 `ReleaseBlockedCategoryRepository` 安全隔离；隔离 JNI 与正式 Flutter 全链、Event 关联及强停重启验收通过后，MethodChannel、Native Call、Category Store 和默认/Release production composition 在同一变更中统一切换为 `integrated + active`，临时验收开关与 blocked Repository 已删除。
 
 ### [P1] Category 回滚自身失败时，旧快照权威保证失效
 
@@ -447,6 +449,8 @@ Flutter 和 Kotlin 测试使用 Fake Gateway/Fake Native Bridge/Fake Notificatio
 
 验收：新增 `rollback_replace`、`rollback_directory_fsync`、`rollback_verify` 故障注入；任何返回失败的场景在即时读取、runtime 重建和进程重启后都保持旧文件字节与旧列表；恢复后单次重试只创建一条记录。
 
+2026-08-14 修复状态：已关闭。`AtomicJsonFileStore` 的 Category opt-in 策略在 replace 前持久化旧快照或“旧文件不存在”事实及 prepared 状态；目录提交成功后持久化 committed 状态。read/write、Repository 初始化和 load 都会先收敛 sidecar；恢复再次失败时保留状态并拒读。三种 rollback 故障、同 Repository 即时读取、Repository/runtime/真子进程重建、旧文件不存在、持续失败拒读、成功提交清理中断和单次安全重试均有回归。未执行真实物理断电或介质损坏测试。
+
 ### [P1] Kotlin 未登记 `CATEGORY_SORT_ORDER_EXHAUSTED`
 
 根因：Contract、NativeError Schema、C++ 和 Dart 已加入 `CATEGORY_SORT_ORDER_EXHAUSTED`，但 Kotlin `NativeErrorCodes` 常量及 `All` 集合仍只有 `CATEGORY_NAME_EMPTY` 和 `CATEGORY_NOT_FOUND`。`NativeResultContract` 会拒绝不在 `All` 中的错误码，`NativeCallExecutor` 随后把它改写为 `CONTRACT_VALIDATION_FAILED`。
@@ -456,6 +460,8 @@ Flutter 和 Kotlin 测试使用 Fake Gateway/Fake Native Bridge/Fake Notificatio
 影响：C++ 正确返回的稳定领域错误无法到达 Flutter，CAT-008 仅完成数值范围同步，没有完成跨层错误语义闭环。独立 JVM 负例已确认合法耗尽错误会触发 `NativeContractViolation`。
 
 当前要求：Kotlin 增加同名常量并加入 `NativeErrorCodes.All`，把该码加入 Category MethodChannel 错误透传参数测试，并增加隔离 Store 下 max→null 的 JNI 验收。成功标准是 Flutter 收到精确的 `CATEGORY_SORT_ORDER_EXHAUSTED`，且失败请求不写入 Store；请求 `9007199254740992` 仍应作为非法输入失败。
+
+2026-08-14 修复状态：已关闭。Kotlin 常量及 `All` 已补齐，Native Schema 与 Kotlin 注册表为 56/56；Handler→`NativeCallExecutor` 精确保留错误外壳，`9007199254740992` 在 JNI 前返回 Contract failure 且 Bridge 调用数为 0。物理 Android 16 设备已执行独立进程、独立 Store 的 max→null instrumentation，精确返回 `CATEGORY_SORT_ORDER_EXHAUSTED`，列表与文件 size/mtime/SHA-256 零变化，专用测试目录自动清理，正式 Category Store 哈希未改变。
 
 ### Category 用户归属、默认项、名称唯一性和变更生命周期尚未冻结
 
@@ -468,27 +474,25 @@ Flutter 和 Kotlin 测试使用 Fake Gateway/Fake Native Bridge/Fake Notificatio
 - Flutter 生产代码已移除 `FakeCategoryRepository` 和 `vin_star` 耦合；新建默认未分类，选择器区分取消、未分类和具体分类，编辑可显式清空引用。
 - Event create/update/read/search 均传输稳定 `category_id`；C++ Event detail 已实现未分类、活动命中、悬空和软删除三态，Flutter 普通/重复详情均展示三态。
 - Kotlin Event validator 已校验 `category_id`、`category_ids`、EventResponse 和 Event detail Category 投影；`NativeCategoryBridge` 默认 throwing stub 已删除。
-- `sort_order` 已冻结为 `0..9007199254740991`，C++/Kotlin/Dart 的数值范围和 Flutter null-last 排序已同步；剩余问题仅是上述 Kotlin 错误码漏项。
+- `sort_order` 已冻结为 `0..9007199254740991`，C++/Kotlin/Dart 的数值范围、Flutter null-last 排序与 Kotlin `CATEGORY_SORT_ORDER_EXHAUSTED` 注册/透传均已同步。
 - C++ Application/Domain 是唯一 Category 规范化负责人；Flutter/Kotlin 原样转发 Schema-valid 输入。
 - Category Request、Response DTO、Domain Model、Repository 和 Storage Record 已分离；Category list/create 的 MethodChannel、Native Call、JNI 签名和三个 ABI 导出一致。
 
-### 验证残余风险与发布门禁
+### 验证结果与残余风险
 
-- 已通过 Flutter Category/Event 定向 52 项、Flutter 全量 206 项、`flutter analyze`、Debug APK；Kotlin 定向 25 项、全量 JVM 105 项、Debug/Test APK；C++ `excellent_calendar_check` 6/6。
-- RMX5100 上 Factory→JNI→C++→JSON Store 的 Category create/list、runtime 重建和新 instrumentation 进程恢复已通过，但该 smoke 绕过 Flutter 和 Kotlin MethodChannel Handler，也没有覆盖 Event 关联。
-- 尚未完成同一正式 APK 的 Category 创建→列表→Event 创建→详情→编辑清空/替换→按 Category 搜索→杀进程重启→再次列表/详情/搜索。未完成前不能证明 Category 产品链路已闭合。
-- 当前只验证了 runtime/进程级恢复，没有执行物理设备重启。
+- 2026-08-14 桌面侧已通过 Flutter 全量 208 项、`flutter analyze`、默认/验收开关 composition、默认与验收开关 Debug APK，以及误传验收开关的 Release APK；Android JVM 107 项（0 failure/0 error/1 skipped）及 Debug/Test APK；C++ `excellent_calendar_check` 6/6。Category CTest 曾出现一次无日志瞬时崩溃，随后 50 次连续定向重跑与完整 check 稳定通过，保留为需观察的测试信号。
+- 物理 Android 16 设备已通过正式 Flutter 分类页创建/列表、日程页绑定分类、Event 搜索/详情、分类清除/恢复、详情页展示、强停进程及覆盖安装后的重启读取；重启前后 `categories.json` SHA-256 保持 `fbd1622d6a5963eaa7c1f04c1b6f0da04b0e4e99d0f21434b5921c8093338ca5`。当前未执行整机重启或真实断电/介质损坏测试。
+- 首次尝试使用 `flutter test integration_test` 与 `flutter drive` 时，Flutter 工具在测试收尾自动卸载正式应用包并删除其私有沙盒数据；这导致设备原有本地数据不可恢复。最终验收改用 `flutter run --no-resident --target=integration_test/category_release_acceptance_test.dart`，确认应用包与 Store 在测试后保留，再执行 `force-stop` 和 restart 阶段。后续正式 Store 真机测试禁止使用会自动卸载目标应用的命令，应使用独立 application id/Store 或上述保留安装流程。
 - 当前无公开 Category delete API，因此悬空/软删除三态只通过 C++ fixture 验证；这不是要求临时新增 delete API 的理由。
 - 当前环境缺少 `jsonschema`/Ajv，已完成 JSON、Draft、唯一 `$id`、本地引用和专项 oracle，但完整 metaschema/实例校验仍需在具备依赖的正式校验环境补跑。
 - Android `lintDebug` 仍因既有、范围外的 Reminder API 兼容问题失败；Category/Event 本轮整改文件为 0 finding。该结果不能被记录成全仓 lint 通过。
-- 真机 Debug Store 保留一个 smoke Category：`JNI 分类重启🗓️`，ID `a70bbcb3-daf3-4a25-83a0-41bc1c909eee`。当前无 delete API，后续 smoke 应复用该幂等记录，避免重复污染。
+- 真机 Debug Store 当前保留以 `CodexCategoryAcceptance-` 开头的验收 Category 及其关联 Event；当前无公开 delete API，后续 smoke 应优先复用或明确接受新增验收记录，避免重复污染。
 
-### 发布处理顺序
+### 已完成的发布处理顺序
 
-1. C++ 先关闭可恢复回滚缺口。
-2. Kotlin 同步并透传 `CATEGORY_SORT_ORDER_EXHAUSTED`。
-3. 使用同一正式 APK 完成 Flutter→MethodChannel→Kotlin→JNI→C++→Storage、Event 关联和进程重启 smoke。
-4. 更新 `contracts/README.md`、`docs/develop_record.md`、本问题记录和 Category 审查结果，使已关闭项与剩余门禁一致。
-5. 最后在同一集成变更中把 Category 从 `implemented_unintegrated + blocked` 切为 `integrated + active`，并确保生产 Composition 与该状态同时生效。
+1. C++ 可恢复回滚、Kotlin 耗尽错误码和 Flutter 静态 release gate 已于 2026-08-14 关闭。
+2. 已在物理设备运行独立 Store 的 max→null JNI instrumentation，确认精确错误码与零写入。
+3. 已完成正式 Flutter→MethodChannel→Kotlin→JNI→C++→Storage、Event 关联和杀进程重启 smoke。
+4. 已把 Category 从 `implemented_unintegrated + blocked` 切为 `integrated + active`，同时启用默认及 Release 正式 Native composition 并更新真机记录。
 
 可复用规则：实现状态和发布状态必须分开记录。`planned` 只用于没有可依赖实现的能力；已有代码但端到端或一致性门禁未通过时使用 `implemented_unintegrated + blocked`；只有全部门禁通过才使用 `integrated + active`。不得用“底层可调用”替代发布判断，也不得用放宽 Contract 的方式迁就不满足事务、类型或错误码保证的实现。

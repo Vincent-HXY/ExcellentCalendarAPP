@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Required by Flutter tooling for debugger and hot-reload communication. -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <instrumentation
+        android:name="com.excellentcalendar.excellent_calendar.bridge.native.CategorySortOrderExhaustionJniInstrumentation"
+        android:label="Category sort-order exhaustion JNI smoke"
+        android:targetPackage="com.excellentcalendar.excellent_calendar"
+        android:targetProcesses="com.excellentcalendar.excellent_calendar:category_sort_order_exhaustion_jni_test"
+        tools:targetApi="o" />
 
     <application>
         <receiver
@@ -12,5 +20,9 @@
                 <action android:name="com.excellentcalendar.excellent_calendar.ANNIVERSARY_JNI_SMOKE" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name="com.excellentcalendar.excellent_calendar.bridge.native.CategorySortOrderExhaustionProcessAnchorReceiver"
+            android:exported="false"
+            android:process=":category_sort_order_exhaustion_jni_test" />
     </application>
 </manifest>

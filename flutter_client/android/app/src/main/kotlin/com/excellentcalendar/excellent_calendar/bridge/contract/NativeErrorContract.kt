@@ -41,6 +41,7 @@ object NativeErrorCodes {
     const val HabitCheckInDuplicated = "HABIT_CHECK_IN_DUPLICATED"
     const val CategoryNameEmpty = "CATEGORY_NAME_EMPTY"
     const val CategoryNotFound = "CATEGORY_NOT_FOUND"
+    const val CategorySortOrderExhausted = "CATEGORY_SORT_ORDER_EXHAUSTED"
     const val AnniversaryTitleEmpty = "ANNIVERSARY_TITLE_EMPTY"
     const val AnniversaryDateInvalid = "ANNIVERSARY_DATE_INVALID"
     const val AnniversaryCalendarUnsupported = "ANNIVERSARY_CALENDAR_UNSUPPORTED"
@@ -99,6 +100,7 @@ object NativeErrorCodes {
         HabitCheckInDuplicated,
         CategoryNameEmpty,
         CategoryNotFound,
+        CategorySortOrderExhausted,
         AnniversaryTitleEmpty,
         AnniversaryDateInvalid,
         AnniversaryCalendarUnsupported,

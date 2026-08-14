@@ -1,5 +1,45 @@
 # 开发日志
 
+## 2026-08-14 18:31 +08:00 Category 物理设备验收与解除阻断
+
+- 使用 Skill：`cross-layer-feature`（只读跨层验收）、`android-kotlin-native-feature`、`calendar-data-contracts`、`frontend-flutter-feature`。
+- 负责板块：Android 物理设备 JNI/正式 Flutter 全链验收、Category Contract/Store 发布状态、Flutter production composition、可重复 integration test 及进度/问题/审查记录。
+- 任务目标：在不放宽既有 Contract 的前提下验证隔离耗尽错误零写入、正式 Category create/list、Event 关联、分类清除/恢复与强停重启；仅在全部通过后统一解除 Category create/list 发布阻断。
+- 任务结果：Android 16 arm64 设备通过 max→null JNI instrumentation，精确返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且独立/正式 Store 无写入；正式 Category 页面→MethodChannel→Kotlin→JNI→C++→Storage、Event create/search/detail/update、详情展示及 `force-stop` 后覆盖安装重启读取全部通过，强停前后 `categories.json` SHA-256 一致。MethodChannel、Native Call 和 Category Store 已切换为 `integrated + active`，默认/Release composition 直接使用 Native Repository，验收开关与 blocked Repository 已删除。激活后 Flutter 205/205、analyze、无开关 Debug/Release APK、Android JVM/AndroidTest 与 C++ 6/6 均通过；无验收开关的设备 restart 再次通过，最后已覆盖安装并启动正常 `main.dart` Debug 应用。新增可复用 write/restart integration test。已知影响：首次 `flutter test integration_test` 与 `flutter drive` 会自动卸载正式包并删除设备私有沙盒，导致原设备本地数据不可恢复；最终改用保留安装的 `flutter run --no-resident` 完成有效证据，后续禁止对正式 Store 使用会自动卸载的测试命令。
+- 开发时间：2026-08-14 18:31（Asia/Shanghai）。
+
+## 2026-08-14 17:07 +08:00 Category 三项发布阻断整改
+
+- 使用 Skill：`cpp-core-feature`、`android-kotlin-native-feature`、`frontend-flutter-feature`、`calendar-data-contracts`。
+- 负责板块：Category JSON 原子恢复协议与 C++ 回归、Kotlin 稳定错误码与独立 JNI 验收入口、Flutter production release gate、Contract 状态复核及进度/问题/审查记录；由三个智能体分别实施三项代码修复，主代理完成跨层审阅和复验。
+- 任务目标：关闭“写入失败但新 Category 可见”“Kotlin 丢失 `CATEGORY_SORT_ORDER_EXHAUSTED`”“生产入口无条件使用 blocked Native”三项 P1，同时不影响其他 JSON Store、Android 正式 runtime 或既有 Flutter 功能；手机连接前不得提前激活 Category。
+- 任务结果：Category 原子写现持久化 prepared/committed 恢复状态并在读写前收敛，三种 rollback 再失败可恢复或拒读；Kotlin 错误码 56/56 对齐并新增独立进程/Store 的 max→null 零写入 instrumentation；Flutter 默认和 Release 显式阻断，Debug/Profile 仅由验收开关接入 Native。Contract 保持 `implemented_unintegrated + blocked`。C++ check 6/6 且一次早期瞬时崩溃后连续 50 次 Category 重跑稳定；Flutter 208/208、analyze、默认/验收开关 Debug APK 及误传开关的 Release APK，Android JVM 107 项（0 failure/0 error/1 skipped）及 Debug/Test APK 均通过；lint 仍为既有 29 errors/20 warnings，且本次 Category 文件 0 finding。ADB 无设备，最终 JNI 与 Flutter 全链真机验收待后续执行。
+- 开发时间：2026-08-14 17:07（Asia/Shanghai）。
+
+## 2026-08-14 15:55 +08:00 全仓库实时代码进度研判
+
+- 使用 Skill：未使用专项 Skill；本任务为跨模块只读代码盘点与状态报告，不实施业务代码修改。
+- 负责板块：Flutter、Kotlin/Android、JNI、C++ Core、JSON Storage、Contracts、Cloud Backend、AI/平台占位目录及自动化验证；输出 `A:\calendar\docs\status\current.md`。
+- 任务目标：不采用进度文档中的既有结论，仅依据当前生产代码、真实调用链、占位实现和本次验证结果，判断已实现、部分实现、未实现功能及后续顺序。
+- 任务结果：研判整体产品范围约完成 40%，本地 Event/Recurrence/Reminder/Anniversary 主链已形成，Category 仍有发布阻断，Habit、完整日历/搜索、账号云端、SQLite/FTS、AI、微信和桌面组件等尚未实现；Flutter 206 项、C++ 6/6、后端 15 项、Android JVM 与 Debug APK 均通过，`flutter analyze` 0 issue；Android Lint 失败（29 errors/20 warnings），当前无连接设备，均已在报告中列为发布风险。
+- 开发时间：2026-08-14 15:55（Asia/Shanghai）。
+
+## 2026-08-14 14:58 +08:00 DATA_MODEL 枚举汇总文件
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责板块：`A:\calendar\ExcellentCalendarAPP\docs\DATA_MODEL.md` 枚举章节的无损提取，以及 `A:\calendar\docs\domains` 汇总索引；未修改原始 Data Model、已有模型文件、Contract 或任何运行时代码。
+- 任务目标：在保留各模型文件枚举副本的同时，把 `DATA_MODEL.md` 中全部枚举额外汇总到独立的 `enums.md`，便于一次性指定或读取枚举定义。
+- 任务结果：新增 `A:\calendar\docs\domains\enums.md`，逐字包含源文档完整枚举章节，并在 domains `README.md` 增加入口；枚举内容与源片段逐字一致，原始 `DATA_MODEL.md` 未发生改动。
+- 开发时间：2026-08-14 14:58（Asia/Shanghai）。
+
+## 2026-08-12 13:40 +08:00 DATA_MODEL 领域文档拆分
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责板块：`A:\calendar\ExcellentCalendarAPP\docs\DATA_MODEL.md` 的无损结构拆分、枚举归属与 `A:\calendar\docs\domains` 文档索引；未修改原始 Data Model、Contract、Dart、Kotlin、JNI、C++ 或存储实现。
+- 任务目标：把统一 Data Model 按单个领域数据结构拆为独立 Markdown 文件，并把枚举原文复制到每个实际使用该枚举的模型文件，便于后续按需读取单一结构。
+- 任务结果：生成 25 个模型文件和 1 个 `README.md` 通用语义/索引文件；全部 21 个枚举均已归属，模型章节与枚举块可逐字还原源文档，输出统一为无 BOM UTF-8。源文件 SHA-256 保持 `050F73411E87D5A30BCFCEF30FA74AEF6C566743A7BB606659BAC72A1265F682`，未发生改动。
+- 开发时间：2026-08-12 13:40（Asia/Shanghai）。
+
 ## 2026-08-11 21:26 +08:00 Category Flutter 审查整改
 
 - 使用 Skill：`frontend-flutter-feature`。
