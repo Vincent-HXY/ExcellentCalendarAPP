@@ -31,7 +31,7 @@ flutter_client/android/**
 开始开发前按需核对：
 
 1. 当前目录及父目录的 `AGENTS.md`；
-2. `DATA_MODEL.md` 的实体职责和当前阶段决策；
+2. `.\docs\domains\` 的相关的实体职责和当前阶段决策；
 3. `contracts/method_channels.yaml`：Flutter → Kotlin 的公开方法与事件流；
 4. `contracts/native_calls.yaml`：Kotlin → JNI/C++ 的内部调用；
 5. 相关 schema、`error_codes.yaml`、`enums.yaml` 和 `NativeResult<T>`；
@@ -41,8 +41,8 @@ flutter_client/android/**
 不同问题使用不同真相源：
 
 - 跨层方法、字段、enum、错误码、版本和返回外壳：以 `contracts/**` 为准；
-- 领域对象职责：以 `DATA_MODEL.md` 的已确认决策为准；
-- 工具版本与构建基线：以根 `README.md` 为准；
+- 领域对象职责：以 `.\docs\domains\` 的已确认决策为准；
+- 工具版本与构建基线：以根 `.\docs\guides\version.md` 为准；
 - 具体目录、命名和可复用实现：以当前代码与测试为准。
 
 用户需求、本 Skill、Contract、数据模型或实际代码存在影响正确性、兼容性或职责边界的冲突时，不得猜测。进入 `DECISION_REQUIRED` 或 `BLOCKED`，说明冲突、影响和可选方案，等待用户决定或上游补齐后再开发。
@@ -51,7 +51,7 @@ flutter_client/android/**
 
 除非项目或用户另有明确要求：
 
-- 使用 ` DEV_ENV_INSTALL.md` **团队统一版本**中已验证的 Android SDK、JDK、NDK、CMake、Gradle 与 Flutter 版本；不升级工具链；
+- 使用 ` .\docs\guides\version.md` **团队统一版本**中已验证的 Android SDK、JDK、NDK、CMake、Gradle 与 Flutter 版本；不升级工具链；
 - 复用现有 coroutine/executor、依赖组装、错误模型、日志、序列化和测试设施；
 - 不新增第三方依赖、代码生成器、服务定位器或第二套 Bridge 框架；
 - 不做无关重构、全局格式化、包迁移或“顺便现代化”；

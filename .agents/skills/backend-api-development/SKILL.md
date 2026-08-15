@@ -103,7 +103,7 @@ test_environment/**
 
 1. 当前目录及父目录中的 `AGENTS.md`；
 2. Local-first 和 Contract 规则；
-3. `DATA_MODEL.md` 的实体职责、关系与安全模型；
+3. `.\docs\guides\version.md` 的实体职责、关系与安全模型；
 4. `contracts/backend_api.yaml`；
 5. 当前功能相关 schema、`error_codes.yaml`、`enums.yaml`；
 6. `backend` 构建、配置、迁移、代码和测试；

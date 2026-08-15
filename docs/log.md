@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-08-14 20:23 +08:00 Anniversary C++ 开发过程归档
+
+- 使用 Skill：未使用专项 Skill；本任务为既有开发过程的纯 Markdown 总结。
+- 负责板块：`A:\calendar\docs\plan\completed\纪念日-01-CPP.md`。
+- 任务目标：按“最开始的开发要求、为什么改、探索过什么、拒绝了什么、验证过什么、当时有哪些限制、最终结果”归档 Anniversary C++/JNI 开发过程。
+- 任务结果：完成纪念日 CPP 层首次完整开发记录，覆盖独立两 Store journal、显式 timezone、真实 JNI smoke、runtime 竞争与 Android lint/Manifest 修复，以及 Reminder/农历/cursor 等明确边界。
+- 开发时间：2026-08-14 20:23（Asia/Shanghai）。
+
+## 2026-08-14 18:51 +08:00 R0–R5 产品路线图整理
+
+- 使用 Skill：未使用专项 Skill；本任务为纯文档规划。
+- 负责板块：`A:\calendar\docs\status\roadmap.md`；未修改 Contract 或运行时代码。
+- 任务目标：依据当前代码基线补齐 R0，并为 R1–R5 制定精炼、可执行的周期目标。
+- 任务结果：完成六阶段路线图；R0 纳入已激活的 Category 与本地核心现状，R1–R5 依次覆盖本地 V1/账号、效率视图/同步、领域增强、AI/微信生态及多设备发布质量；全文 1492 字符，符合不超过 1500 字要求。
+- 开发时间：2026-08-14 18:51（Asia/Shanghai）。
+
 ## 2026-08-14 18:31 +08:00 Category 物理设备验收与解除阻断
 
 - 使用 Skill：`cross-layer-feature`（只读跨层验收）、`android-kotlin-native-feature`、`calendar-data-contracts`、`frontend-flutter-feature`。
@@ -167,3 +183,36 @@
 - 任务目标：研判 `docs/review/审查职责功能.md` 中 Flutter 层职责问题；修复属实项并在原审查文档标记
 - 任务结果：完成新建日程 workflow、重复日程详情加载/操作、通知 permission/schedule lifecycle 三项职责拆分；相关 35 项测试、`flutter analyze`、165 项全量 Flutter 测试与 Android Debug APK 构建通过；全库格式检查仅剩未修改的 category DTO 既有格式差异
 - 开发时间：2026-08-09 15:28:03 +08:00
+
+## 2026-08-14 22:57 +08:00 问题登记册迁移与归档
+
+- 使用 skill：无；本次是 Markdown 问题清单整理，没有适用的专项开发或文档制品 skill。
+- 负责板块：`docs/problems.md` 问题提取、当前状态交叉核验，以及 `A:\calendar\docs\issues\open.md` 和 `A:\calendar\docs\issues\resolved\` 的登记册结构。
+- 任务目标：提取原问题清单中的全部问题，将仍存在的问题写入开放登记册，并将已解决问题按 Contract/Reminder、Notification/Alarm、Flutter、Kotlin 架构、Anniversary、Category/Storage 模块归档，补齐根因、严重程度、解决方式和教训。
+- 任务结果：建立 1 份开放登记册、6 份模块化已解决档案和 1 份源问题覆盖索引；依据 `develop_record.md` 与关键运行时代码纠正源文档中已过期的 v1/design-only 描述，将“代码缺陷已修复但真机/故障验证仍不足”的情况拆成已解决实现与开放验证风险。未修改原 `docs/problems.md`，未覆盖工作区既有修改。
+- 开发时间：2026-08-14 22:57 +08:00。
+
+## 2026-08-15 Architecture Overview 架构地图提取
+
+- 使用 skill：无；本次为 Markdown 架构信息提取，没有适用的专项代码或 Office 文档 skill。
+- 负责板块：完整阅读根 `README.md`，并结合 `docs/develop_record.md`、`docs/problems.md`、`docs/target.md` 与实际目录，编写 `A:\calendar\docs\architecture\overview.md`。
+- 任务目标：把长篇 README 中的系统分层、职责边界、Contract 规则、领域不变量、当前持久化事实、代表性调用流和文档入口提炼为可快速阅读的当前架构地图，明确区分已实现能力与规划能力。
+- 任务结果：完成 Android-first / Local-first 主链、Flutter→Kotlin→JNI→C++→JSON Storage v2 分层、可选云端边界、真实源码地图、Contract-first 规则、Event/Reminder/Notification/Recurrence/Anniversary/Habit/Category 不变量、运行时/事务约束与开发放置规则；明确当前生产持久化仍为 JSON Storage v2，SQLite/FTS 尚属后续迁移，避免把 README 的目标描述误写为当前事实。未修改生产代码、Contract 或实时进度文档。
+- 开发时间：2026-08-15（Asia/Shanghai）。
+
+## 2026-08-15 Architecture Overview 收敛与领域 ADR 拆分
+
+- 使用 skill：无；本次为 Markdown 架构文档重组，没有适用的专项代码或 Office 文档 skill。
+- 负责板块：`A:\calendar\docs\architecture\overview.md` 与 `architecture/decisions/` 的模块化 ADR。
+- 任务目标：移除概览中的实时状态和开发守则内容，把 Core Domain Invariants 按 Event、Recurrence、Anniversary、Habit、Category、Common 模块拆成可独立查阅的 Accepted ADR。
+- 任务结果：删除 `Current Reality` 与原 `Architecture Guardrails`；概览改为九节纯架构导航，并增加六份 `ADR-模块-01-标题` 决策记录，保留原有领域不变量、决策背景和直接后果，不新增未确认的业务规则。
+- 开发时间：2026-08-15（Asia/Shanghai）。
+
+## 2026-08-15 15:18 +08:00 Data Model 拆分文档一致性与歧义审查
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责板块：`A:\calendar\docs\domains\**` 与项目内 `docs/DATA_MODEL.md` 的领域模型、枚举、时间、状态和文档来源一致性。
+- 任务目标：详细核对拆分领域文档与项目数据模型是否一致，并识别内容冲突、未定义边界和可能产生多种实现解释的表述。
+- 任务结果：确认 27 份拆分文档中的 64 个对应内容块与项目 `docs/DATA_MODEL.md` 逐字符一致，26 个索引链接有效；发现外部父目录另有一份较旧 `A:\calendar\docs\DATA_MODEL.md`、三处文档均可能被误认作事实源，以及 DST gap occurrence 身份、字段“必填”层级、Habit recurrence、Reminder/Notification 状态与若干计划态模型的语义缺口。未修改被审查文档或代码。
+- 验证状态：完成 Markdown 标题/区块逐项比较、索引目标存在性检查、两份聚合 Data Model 哈希与定向差异检查，并对 Event、Habit、Reminder、Notification 的机器 Contract 做定向交叉核对；未执行构建或运行测试（纯文档审查，不适用）。
+- 开发时间：2026-08-15 15:18 +08:00（Asia/Shanghai）。

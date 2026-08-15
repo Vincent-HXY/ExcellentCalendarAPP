@@ -16,7 +16,7 @@ description: 为 ExcellentCalendarAPP 设计、审查并实施数据领域模型
 
 根据用户请求执行架构设计、代码实施或审查。用户只要求分析或设计时，不修改代码；用户要求实现时，负责完整数据变更，可修改：
 
-- `docs/DATA_MODEL.md`；
+- `.\docs\domains\`；
 - `contracts/` 下的 schema、枚举、错误码、`method_channels.yaml` 和 `native_calls.yaml`；
 - Dart DTO、Gateway interface 与 adapter；
 - Kotlin contract、MethodChannel/EventChannel handler 与 JNI bridge；
@@ -28,23 +28,21 @@ description: 为 ExcellentCalendarAPP 设计、审查并实施数据领域模型
 
 # Sources of truth
 
-开始工作前，依次读取并核对：
+开始工作前,按照任务需求读取核对：
 
 1. 用户当前确认的需求和验收标准；
 2. 当前目录及父目录中的 `AGENTS.md`；
-3. 仓库根目录 `README.md` 的架构、环境和验证说明；
-4. `docs/DATA_MODEL.md`；
-5. `contracts/` 中相关 schema、公共包装、枚举、错误码、`method_channels.yaml` 和 `native_calls.yaml`；
-6. 持久化 schema、格式版本和完整 migration 链；
-7. Dart、Kotlin、C++ 实现与测试。
+3. `.\docs\domains\`；
+4. `contracts/` 中相关 schema、公共包装、枚举、错误码、`method_channels.yaml` 和 `native_calls.yaml`；
+5. 持久化 schema、格式版本和完整 migration 链；
 
-固定使用 `docs/DATA_MODEL.md`，不要在仓库根目录另建 `DATA_MODEL.md`。
+
 
 按以下职责解释事实源：
 
 ```text
 用户确认的需求
-→ docs/DATA_MODEL.md：领域语义真相源
+→ .\docs\domains\：领域语义真相源
 → contracts/：跨层传输协议真相源
 → schema / migration：持久化真相源
 → Dart / Kotlin / C++ 实现与测试：落地证据
@@ -271,7 +269,7 @@ contracts/native_calls.yaml
 
 对已授权的完整数据变更，按以下顺序实施：
 
-1. 更新 `docs/DATA_MODEL.md` 的领域语义、关系、不变量和迁移说明；
+1. 更新 `.\docs\domains\` 的领域语义、关系、不变量和迁移说明；
 2. 更新公共 schema、枚举、错误码和版本；
 3. 更新 `method_channels.yaml` 与 `native_calls.yaml`，并验证公开方法实现路径；
 4. 更新 C++ Domain、workflow、Boundary 和 Repository；
@@ -315,7 +313,7 @@ contracts/native_calls.yaml
 
 遇到以下情况时停止受影响的实现：
 
-- 用户需求与 `docs/DATA_MODEL.md`、contracts、migration 或已落地代码冲突；
+- 用户需求与 `.\docs\domains\`、contracts、migration 或已落地代码冲突；
 - 无法确定旧字段、旧版本、用户时区或历史数据的安全解释；
 - breaking change 缺少版本、迁移、调用方升级或弃用方案；
 - 重复/多渠道提醒触发强制门禁但身份、幂等或状态语义未明确；
@@ -339,7 +337,7 @@ contracts/native_calls.yaml
 按以下顺序汇报：
 
 1. 结果：完整完成、部分完成、仅设计完成或被阻塞；
-2. 数据设计：实体、关系、不变量和 `docs/DATA_MODEL.md` 变化；
+2. 数据设计：实体、关系、不变量和 `.\docs\domains\` 变化；
 3. 跨层影响：Contract、Dart、Kotlin/JNI、C++、Storage 的修改矩阵；
 4. 兼容与迁移：版本域、migration 链、旧数据和回滚/恢复；
 5. 验证：逐条列出实际命令及结果；

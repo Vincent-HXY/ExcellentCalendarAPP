@@ -65,7 +65,6 @@ Do not infer module ownership from file extensions alone.
 Read only the documents needed to govern the changed paths:
 
 - applicable `AGENTS.md` files;
-- root and nearest-module `README.md` files;
 - architecture/design documents linked from those READMEs;
 - applicable ADRs, interface specifications, schemas, and module boundary documents;
 - build manifests and public interfaces when they encode dependency or ownership boundaries.

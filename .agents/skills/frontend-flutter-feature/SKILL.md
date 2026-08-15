@@ -27,7 +27,7 @@ flutter_client/test/**
 
 ## Sources of truth
 
-开始开发前按需核对：
+开始开发前按实际开发需求核对：
 
 1. 当前目录及父目录的 `AGENTS.md`；
 2. 目标功能附近的 Dart 代码、路由、测试和命名；
@@ -43,7 +43,7 @@ flutter_client/test/**
 
 除非项目或用户另有明确要求：
 
-- 使用 ` .\docs\DEV_ENV_INSTALL.md `中**团队统一版本**已验证的 Flutter、Dart、Android SDK、JDK、NDK 和 CMake 版本；
+- 使用 ` .\docs\guides\version.md `中**团队统一版本**已验证的 Flutter、Dart、Android SDK、JDK、NDK 和 CMake 版本；
 - Android 优先，不执行 `flutter upgrade`，不升级工具链；
 - 复用现有状态管理、导航、Theme、组件、错误模型和测试方式；
 - 不新增第三方 UI、图标、路由、序列化、状态管理或测试依赖；

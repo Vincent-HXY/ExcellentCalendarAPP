@@ -51,7 +51,7 @@ metadata:
 
 路径判断按 Windows 大小写不敏感语义执行。上述内容只读。
 
-`DATA_MODEL.md` 默认作为只读领域依据；除非用户明确要求修改它，否则不要改动。
+`.\docs\domains\` 默认作为只读领域依据；除非用户明确要求修改它，否则不要改动。
 
 如果完成需求必须修改受保护内容，立即停止开发，报告所需修改及其原因，不得绕过协议临时接线。
 
@@ -69,11 +69,10 @@ metadata:
 
 # 项目真相源
 
-开始任务后按顺序读取：
+开始任务后按任务实际需求顺序读取：
 
 1. 当前目录及父目录中的 `AGENTS.md`；
-2. 根 `README.md` 的环境基线、架构和验证命令；
-3. `DATA_MODEL.md` 的实体职责、关系和当前阶段决策；
+3. `.\docs\domains\` 的实体职责、关系和当前阶段决策；
 4. `contracts/method_channels.yaml`；
 5. `contracts/native_calls.yaml`；
 6. 与任务可能相关 request、response、common schema、枚举和错误码；
@@ -236,7 +235,7 @@ SPECIALIST_SPLIT   修改规模或风险过大，停止并拆给专业负责人
 - 必须修改 `contracts/**`、`docs/**` 或根 README；
 - 用户需求与本skill流程环节和要求出现矛盾，需待用户确定怎么样解决矛盾；
 - Contract 缺少所需方法、字段、枚举、错误码或版本约定；
-- README、DATA_MODEL、Contract 和实际代码存在影响正确性的冲突；
+- overview.md、.\docs\domains\、Contract 和实际代码存在影响正确性的冲突；
 - 必需的下层能力只是占位、Mock 或根本不存在；
 - 数据持久化需要迁移，但项目没有可靠迁移机制或兼容策略；
 - 关键需求含义不明确，不同理解会改变数据模型、协议或架构；

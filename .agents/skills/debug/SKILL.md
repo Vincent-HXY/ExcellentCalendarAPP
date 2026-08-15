@@ -30,37 +30,31 @@ description: 使用可复现、证据驱动的工作流，诊断并修复 Excell
 
 # 一、项目真相源
 
-开始诊断前，按以下顺序读取并核对：
+开始诊断前，按实际任务需求顺序读取并核对：
 
 1. 当前目录及父目录中的 `AGENTS.md`。
-2. 仓库根目录 `README.md`，尤其是：
-   - 开发环境基线；
-   - C++ Core 构建与测试命令；
-   - Flutter Native Smoke Test；
-   - 分层架构；
-   - Contract Layer 规则。
-3. `DATA_MODEL.md` 中与缺陷相关的领域对象、状态和关系。
-4. `contracts/method_channels.yaml`：Flutter/Dart 到 Kotlin 的公开 MethodChannel 与 EventChannel 协议。
-5. `contracts/native_calls.yaml`：Kotlin 到 C++ 的内部 JNI 调用协议。
-6. `contracts/error_codes.yaml`、`contracts/enums.yaml`、相关 request/response/common schema。
-7. 缺陷附近的 Dart、Kotlin、JNI、C++、Storage、SQLite 和测试代码。
-8. 当前分支、提交、`git status`、最近相关 diff 和最后已知正常版本。
+2. `.\docs\domains\` 中与缺陷相关的领域对象、状态和关系。
+3. `contracts/method_channels.yaml`：Flutter/Dart 到 Kotlin 的公开 MethodChannel 与 EventChannel 协议。
+4. `contracts/native_calls.yaml`：Kotlin 到 C++ 的内部 JNI 调用协议。
+5. `contracts/error_codes.yaml`、`contracts/enums.yaml`、相关 request/response/common schema。
+6. 缺陷附近的 Dart、Kotlin、JNI、C++、Storage、SQLite 和测试代码。
+7. 当前分支、提交、`git status`、最近相关 diff 和最后已知正常版本。
 
 真相源职责必须区分：
 
 ```text
-DATA_MODEL.md              领域对象和业务不变量
+.\docs\domains\             领域对象和业务不变量
 method_channels.yaml       Flutter ↔ Kotlin 公开跨层入口
 native_calls.yaml          Kotlin ↔ C++ 内部调用入口
 JSON Schema                请求、响应和公共数据结构
 error_codes.yaml           跨层错误码
 现有代码与测试             当前真实实现行为
-README.md                  架构、环境和验证基线
+overview.md                 架构、环境和验证基线
 ```
 
 `method_channels.yaml` 与 `native_calls.yaml` 不要求机械一一对应。一个公开方法可以在 Kotlin 内部编排多个 Native 调用；Android 系统能力也可能不进入 C++。只有当实际调用违反已声明的职责或协议时，才可判定为边界缺陷。
 
-如果 README、DATA_MODEL、contracts、实际代码或用户期望发生冲突：
+如果 overview、domains、contracts、实际代码或用户期望发生冲突：
 
 - 明确列出冲突；
 - 区分“文档过期”“实现偏离”“需求改变”三种可能；
@@ -183,7 +177,7 @@ Flutter Presentation
 
 诊断前完成以下检查：
 
-1. 阅读适用的 `AGENTS.md`、README、DATA_MODEL 和相关 contracts。
+1. 阅读适用的 `AGENTS.md`、overview.md、.\docs\domains\ 和相关 contracts。
 2. 确认缺陷涉及哪些层：
    - Flutter UI；
    - Application/State；

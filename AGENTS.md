@@ -1,204 +1,147 @@
 # ExcellentCalendarAPP 项目级 Agent 指南
 
-## 1. 项目目的
+## 1. 定位
 
-ExcellentCalendarAPP 是一个 Android 优先、本地优先的日历与个人效率应用。
-产品范围包括日程、提醒、习惯、日历视图、搜索、纪念日、通知、四象限、桌面组件，
-以及后续的 AI 导入、微信能力、云同步、备份和投送。
+ExcellentCalendarAPP 是 Android 优先、本地优先的日历与个人效率应用。
 
-工程目标不是堆叠功能，而是先建立稳定的本地核心、清晰的跨语言边界、
-可测试的业务规则和可持续演进的架构，避免字段、错误码、时间格式和职责漂移。
+本文件只规定 Agent 的工作方式，不重复维护项目架构、实时计划、Contract 规则、领域不变量或版本清单：
 
-## 2. 开发阅读
+- 架构与设计理念：`docs/architecture/overview.md`
+- 文档和模块索引：`docs/index.md`
+- 当前计划与阶段目标：`docs/plan/`
+- 专项约束：对应 Skill 或权威文档
 
-开始规划或修改代码前，按顺序必须阅读：
+## 2. 开发阅读与上下文加载
 
-1. 从仓库根目录到目标目录范围内的全部 `AGENTS.md`。
-2. `docs/develop_record.md`：实时进度的一个详细概述
-3. `docs/problems.md`：已知缺陷、未解决风险、历史错误和规避要求。
-4. `docs/target.md`：当前目标、未完成内容和下一步重点。
+开始规划或修改代码前，按以下顺序执行：
 
-本文件不记录实时进度；实际进度始终以 `docs/develop_record.md` 为准。
-不得因为当前代码表面可运行，就忽略 `docs/problems.md` 中已记录的问题。
+1. 阅读从仓库根目录到目标目录范围内实际生效的 `AGENTS.md`，不要扫描无关目录。
+2. 首次了解项目时只读取 `docs/architecture/overview.md`，不要默认全文读取根目录 `README.md` 或整个 `docs/`。
+3. 先解析任务，明确目标行为、验收标准、范围外内容、相关模块、涉及层级、依赖关系、开发顺序和验证范围。
+4. 再读取 `docs/index.md`，按任务类型、模块、功能关键词和开发阶段，定位与本次任务强相关的文档、Skill、计划、决策、状态、代码入口和测试。
+5. 按关联程度加载这些内容。优先读取相关章节、符号和行段，仅在确有必要时读取完整大文件。
 
-如果当前任务需求需要更加详细的项目背景，项目配置信息，可以在
+单个任务的默认读取顺序是：
 
-1. 仓库根目录下面的readme.md
-2. 仓库根目录下面的docs里面的文档。
+> 任务与验收标准 → 当前权威文档和专项 Skill → 接口与调用链 → 目标及相邻实现 → 测试与构建入口
 
-如果本次开发不需要涉及了解背景信息的时候，无需全量分析读取readme.md的内容。
+`docs/index.md` 只负责导航，不是业务真相源。最终判断必须来自其指向的权威文件和实际实现。
 
-## 3. 当前方向与计划原则
+例如开发 Anniversary 时，只定位 Anniversary 相关的数据模型、专项规则、ADR、有效计划、当前状态、调用链和测试；除非存在真实依赖，不加载 Habit、Search 等其他模块。
 
-项目基线方向是 Android 优先、本地优先。
-优先打通 Event、Reminder、Recurrence、Category、持久化、查询、通知调度，
-以及 Flutter→Kotlin→JNI→C++ 的本地核心闭环。
-Habit 与 HabitCheckIn 构成下一条独立业务闭环。
-搜索和通知历史应在核心行为稳定后完善。
-AI、云同步、云端投送、微信和高级导出可以先保留模型与协议，
-不代表当前必须完成生产级实现。
+只有在以下情况下才扩大搜索：现有信息不足、调用链或影响范围不明确、来源冲突、需要确认历史兼容原因，或构建测试结果异常。扩展顺序为：
 
-以上仅是长期优先级，不是实时进度。选择任务前必须与
-`docs/develop_record.md` 中的当前目标核对。
+> 相邻代码与测试 → 当前 ADR、有效计划、状态和问题 → 历史计划、评审与 Issue → README、大型文档或更广范围仓库
 
-## 4. 总体架构
+禁止默认全量读取 README、`docs/`、`docs/plan/`、`docs/log.md`、历史记录或无关模块。代码已经存在，也不等于设计正确或任务已完成。
 
-```text
-Flutter Presentation / State
-    ↓
-Flutter Application Layer
-    ↓
-Dart Gateway Interface + Contract DTO
-    ↓ MethodChannel / EventChannel
-Kotlin Handler / Android Services
-    ↓ JNI
-C++ Boundary Contract
-    ↓
-C++ Core Engines
-    ↓
-Storage Repository / SQLite
-```
+如果 `docs/index.md` 缺失、无相关条目或明显过期，应使用模块名、符号、方法名、错误码和路径定向检索，并报告索引缺口；不得退化为无差别全仓库阅读。
 
-AI 管道和可选云端属于扩展路径，不得绕过既有 Application、Contract、
-Domain 或 Persistence 边界。
+## 3. 计划、专项规则与版本
 
-### 各层职责
+当前方向、实时进度和下一步计划以 `docs/plan/` 中由 `docs/index.md` 标记为有效且与本任务相关的内容为准。历史计划、已完成任务、旧评审和旧 Issue 默认只作为背景证据。
 
-- Flutter Presentation：页面、输入、导航、弹窗、loading 和视觉状态。
-- Flutter Application：业务流程编排、重试、状态转换和 Gateway 调用。
-- State Management：明确、合法、尽量不可变的 UI 状态。
-- Dart Gateway / DTO：类型安全的边界访问、序列化和 NativeResult 解析。
-- Kotlin：Android 权限、通知、闹钟、服务、系统回调、桌面组件、分享、
-  微信 SDK，以及轻量 MethodChannel/JNI 适配。
-- C++ Boundary：Contract 数据与领域命令、领域结果之间的转换。
-- C++ Core：校验、重复规则、提醒规则、搜索、习惯、日历聚合、四象限、
-  AI 结果校验、同步日志、加密导出等平台无关业务逻辑。
-- Storage Repository：SQLite 语句和持久化访问的统一入口。
-- SQLite / FTS / 附件 / 日志：保存数据和索引，不承担核心业务规则。
+任务涉及 Contract、领域模型、平台能力、存储、测试等专项时，只加载并遵守对应 Skill；不要预加载全部 Skill。
 
-界面规则放 Flutter，用户流程放 Application，领域规则放 C++，
-Android 系统能力放 Kotlin，序列化和调用细节放边界适配层。
+未经用户明确要求，不得擅自升级任何工具链、SDK、构建组件、第三方依赖或协议版本。任务明确要求升级时，将升级作为独立变更并完成兼容性与回归验证。
 
-## 5. Contract Layer 强制规则
+## 4. 任务完成标准
 
-`contracts/` 是所有跨语言调用和未来后端边界的协议真相源。
-任何 Dart↔Kotlin、Kotlin↔C++、客户端↔后端调用，都必须先在 contracts 中声明。
-禁止临时新增未声明的 MethodChannel 方法、JNI 函数、字段、枚举值或错误字符串。
+只有同时满足以下条件，任务才可以报告为“完成”：
 
-跨层变更应先更新适用的协议文件：
+1. **没有破坏其他内容**：保护了用户现有修改，没有无关改动或已知回归。
+2. **主体功能可以实现**：核心验收标准真实满足，不依赖占位代码或伪造 Native、Backend、持久化及系统行为。
+3. **项目可以构建成功**：受影响目标成功构建，且没有破坏要求的整体构建链路。
+4. **通过测试**：相关新增、单元、集成和必要回归测试通过。
+5. **有足够的理论支撑**：方案符合当前真相源、架构边界和专项规则，能够解释设计依据、边界条件与失败路径，不能只以“代码能跑”为依据。
 
-- Flutter 对外方法：`method_channels.yaml`；
-- Kotlin 调用 C++：`native_calls.yaml`；
-- request / response schema；
-- `error_codes.yaml` 与 `enums.yaml`；
-- 受影响的协议版本、说明和示例。
+必要构建或测试未实际执行时，不得声称完整完成，必须标记为 **未验证** 并说明缺失项。
 
-随后再同步修改各语言本土化实现及测试。
+## 5. 开发与验证流程
 
-必须遵守：
+### 开发前
 
-- Request、Response、Domain Model、数据库实体和 ViewModel 相互分离。
-- 跨层 payload 只能使用 Contract 已声明字段。
-- Contract 字段统一 `snake_case`；语言内部可以本土化命名。
-- 所有跨层返回统一使用 `NativeResult<T>` 和 `NativeError`。
-- 错误码必须来自 `error_codes.yaml`，禁止依赖自由文本判断业务。
-- 传输枚举使用稳定字符串，不使用数字序号。
-- `datetime` 使用 ISO 8601 UTC 时间点；`date` 是不带时分秒的本地日期。
-- 缺少必填字段、未知枚举、非法返回外壳或版本不兼容必须显式失败，
-  不得用默认值掩盖协议错误。
-- C++ Domain Model 不得直接暴露给 Dart 或 Kotlin。
-- 原始 JSON、`Map<String, dynamic>`、`JSONObject` 只应存在于边界适配范围。
+1. 检查 `git status`，识别并保护用户已有修改。
+2. 解析任务和验收标准，确定相关模块、层级、范围外内容、修改顺序、影响范围和验证入口。
+3. 按第 2 节通过 `docs/index.md` 和定向检索加载关键信息，不先全量读取文档、代码或历史记录。
+4. 梳理完整调用链和数据流；当前信息不足或无法判断安全性时，再逐步扩大搜索。
+5. 先复用既有模式，选择最小但完整的方案，避免无关重构和过早抽象。
 
-## 6. 核心领域不变量
+### 实现中
 
-- `Event` 是日程实体；创建请求、更新请求和返回对象必须分离。
-- `Reminder` 是未来待执行任务；多个提醒时间对应多条 Reminder。
-- `Notification` 是投递结果日志，绝不能作为未来提醒扫描入口。
-- `Recurrence` 是独立规则；某次 occurrence 状态不能污染整个系列状态。
-- `Habit` 定义习惯；`HabitCheckIn` 记录每日行为并作为统计来源。
-- overdue、in_progress 等派生状态应动态计算，除非模型明确要求持久化。
-- 软删除数据默认不参与普通查询，除非用例明确要求。
-- Engine 不得分散编写 SQL；持久化统一经过 Storage Repository。
-- 边界校验不能替代 C++ Core 内部的防御性领域校验。
+- 将逻辑放在所属层，边界适配保持轻薄，并遵守相关专项 Skill。
+- 在不可信边界和核心入口进行必要的防御性校验。
+- 未经任务明确要求，不实施破坏性变更、无关重构或版本升级。
+- 覆盖正常路径、边界条件、非法输入和回归场景。
+- 不得伪造底层行为让功能表面可用。
+- 仅在当前信息无法解决问题、验证失败或影响范围不明确时，继续读取更多代码、历史决策、旧计划、完成记录或 Issue。
 
-需求与 `DATA_MODEL.md` 冲突时，不得静默改变模型，必须报告并等待决策。
+### 实现后
 
-## 7. 目录与模块职责
+- 检查 `git diff` 和 `git status`，确认没有覆盖用户修改或混入无关文件。
 
-- `contracts/`：方法、Native 调用、schema、错误码、枚举和协议版本。
-- `flutter_client/`：Flutter UI、Application、状态、Dart Gateway、DTO 和客户端测试。
-- Android Native：MethodChannel Handler、JNI Adapter、权限、闹钟、通知、服务、
-  Share Receiver、Widget Provider 和 WeChat Bridge。
-- `cpp_core/`：边界对象、领域模型、核心 Engine、Repository 和原生测试。
-- Local Storage：SQLite、FTS、附件和操作日志，通过 Repository 访问。
-- AI Pipeline：OCR、文本提取、时间解析、分类/提醒推荐、候选构建和结果校验。
-- Optional Backend：认证、同步、备份、AI Proxy 和微信推送网关。
-- `test_environment/flutter_native_smoke/`：Flutter→Kotlin→JNI→C++ 全链路验证。
-- `docs/`：实时开发记录、问题记录、决策和补充设计文档。
+- 执行适用的格式化、静态分析、单元测试、集成测试和构建。
 
-以仓库实际目录为准，不得为了匹配本摘要而擅自重组项目。
+- C++ 必须使用“构建后测试”的目标，不能只运行可能陈旧的 CTest 二进制：
 
-## 8. 工具与环境基线
+  ```text
+  cmake -S cpp_core -B cpp_core/build-ninja -G Ninja -DEXCELLENT_CALENDAR_BUILD_TESTS=ON
+  cmake --build cpp_core/build-ninja --target excellent_calendar_check
+  ```
 
-使用已验证版本：
+- Flutter 执行相关测试、`flutter analyze` 和适用的 Android Debug 构建。
 
-- Flutter 3.41.9 stable；Dart 3.11.5；DevTools 2.54.2。
-- Android Studio AI-253.32098.37.2534.15336583；JBR 21.0.10。
-- Android SDK 36 / 36.1；Platform Tools 37.0.0；NDK 28.2.13676358。
-- CMake 3.22.1；SQLite CLI 3.50.6；Git 2.53.0.2。
+- 涉及跨语言、JNI、构建工具或运行环境时，执行对应完整 smoke test。
 
-禁止随手执行 `flutter upgrade`，或升级 Android Studio、SDK、NDK、CMake、
-Gradle、AGP、Kotlin、JDK 等构建工具。
-确实需要升级时，必须先在 `test_environment/flutter_native_smoke` 完成全量验证，
-再在同一变更中更新 `README.md`、相关锁定/配置文件、兼容性说明和本节。
+- 未执行的检查必须标记为 **未验证**，不得根据代码审查推断通过。
 
-## 9. 开发与验证流程
+- 无论完成、部分完成还是阻塞，都向 `docs/log.md` 追加记录。
 
-开发前：
+## 6. 默认允许修改的范围与日志
 
-1. 检查 `git status`，保护用户现有修改，不覆盖无关内容。
-2. 明确需求行为、验收标准、涉及层级和本次不做的内容。
-3. 检查 Contract、DTO、Gateway、Kotlin/JNI、C++ Boundary、Domain、Repository、
-   测试是否形成完整调用链；缺失时明确阻塞点。
-4. 先查找可复用模式，再新增抽象或依赖。
-5. 选择最小且完整的方案，避免无关重构和提前设计复杂框架。
+除完成当前任务所必需的目标代码、测试和文档外，默认只允许额外修改：
 
-实现中：
+- `docs/log.md`：记录开发日志。
+- `docs/temp.md`：记录必要的临时内容。
 
-- 业务规则放在所属层，Adapter 保持轻薄。
-- 跨边界实现前先更新 Contract。
-- 在不可信边界和核心领域入口都进行防御性校验。
-- 未经批准，不实施破坏性协议变更。
-- 覆盖正常、边界、非法输入和回归测试。
-- 不得伪造 Native 或 Backend 行为来让 UI 看似可用。
+不得借任务修改无关文件、整理整个仓库或扩大重构范围。
 
-实现后：
+每次任务都必须向 `docs/log.md` **追加**一条记录，至少包含：开发时间、使用的 Skill、负责模块、任务目标、任务结果和验证状态。任务被阻塞或仅部分完成时也要如实记录。
 
-- 执行格式化、静态分析、相关单元/集成测试和构建。
-- C++ 使用构建加测试目标，不能只运行可能陈旧的 CTest 二进制：
-  `cmake -S cpp_core -B cpp_core/build-ninja -G Ninja -DEXCELLENT_CALENDAR_BUILD_TESTS=ON`
-  然后执行 `cmake --build cpp_core/build-ninja --target excellent_calendar_check`。
-- Flutter 执行相关测试、`flutter analyze` 和 Android Debug 构建。
-- 跨语言、JNI、构建工具或环境变更必须执行完整 smoke test。
-- 未实际执行的检查必须明确标记为 **未验证**，不得仅凭代码审查声称通过。
-- 在.\docs\log.md中按顺序简要写入：本次的任务所使用的skill，负责的板块，任务目标，任务结果，开发时间，用于可追溯的开发日志记录。
+正常开发不需要全文读取 `docs/log.md`。直接追加即可；只有需要确认格式或避免重复时，才读取文件尾部少量内容。不得为追加日志而重写、整理或删除历史记录。
 
+`docs/temp.md` 不是正式规格或长期真相源。
 
-## 10. 默认允许修改的范围
+## 7. 冲突、问题与 Source of Truth
 
-- .\docs\log.md 用于记录开发后的日志记录
-- .\docs\temp.md 用于记录任何临时内容
+当任务要求、Contract、Schema、领域规则、ADR、计划、架构文档、代码、测试或历史记录冲突时，不得猜测、静默选边或制造未记录的兼容绕过。
 
-## 11. 冲突、问题
+必须报告：
 
-当用户需求、README、Contract、Data Model、代码、测试或文档互相冲突时：
+1. 冲突的具体文件及章节、字段、接口或行为；
+2. 各方分别规定了什么；
+3. 本次采用哪个 Source of Truth 及理由；
+4. 对模块、验收标准和已完成工作的影响；
+5. 需要暂停的部分，以及仍可安全继续的部分。
 
-1. 不猜测、不擅自选边、不制作未记录的兼容绕过方案。
-2. 指出冲突位置、涉及文件/层级、用户影响和可选方案。
-3. 暂停冲突部分并与用户协商；仅继续不受影响且安全的工作。
+当前任务没有明确要求修改真相源时，使用以下优先级：
 
-开发前必须阅读 `docs/problems.md`，主动避免重复错误。
-发现缺陷根因后，最终报告必须突出说明根因、触发条件、影响范围、修复、
-验证结果和剩余风险。
-可复用经验或未解决问题写入 `docs/problems.md`；完成内容、当前状态和下一步
-写入 `docs/develop_record.md`。
+1. Machine-verifiable contracts and schemas
+2. Current domain invariants
+3. Accepted ADRs
+4. Active plan requirements
+5. Architecture documentation
+6. Historical plans, reviews, issues and completion records
+
+该优先级不得机械套用：
+
+> **当前任务明确要求变更某个真相源时，以任务验收标准定义目标状态；否则以当前权威真相源为准。**
+
+因此：
+
+- 旧 Contract、旧测试或旧实现不能否定一个明确要求更新它们的任务。
+- 任务未要求改变既有规则时，不能用低优先级历史文档或代码偶然行为覆盖当前权威定义。
+- Code existence alone does not prove intended behavior.
+- Historical documents are not current specifications.
+
+修复缺陷时，最终报告应说明根因、触发条件、影响范围、修复、验证结果和剩余风险。只有确有复用价值或仍未解决的问题，才通过 `docs/index.md` 定位对应问题文档进行记录；不要默认全文读取全部问题历史。

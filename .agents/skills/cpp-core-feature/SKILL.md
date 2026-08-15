@@ -37,7 +37,7 @@ cpp_core/**
 ```text
 AGENTS.md
 README.md
-DATA_MODEL.md 或 docs/DATA_MODEL.md
+.\docs\domains\
 contracts/**
 flutter_client/**
 android/**
@@ -102,10 +102,10 @@ CMake 登记
 
 # Sources of truth
 
-开始开发前按需定位并核对：
+开始开发前按开发任务需求定位并核对：
 
 1. 当前目录及父目录中的 `AGENTS.md`；
-2. `.\docs\DATA_MODEL.md`的实体职责和阶段决策；
+2. `.\docs\domains\`的与任务相关的实体职责和阶段决策；
 3. `contracts/method_channels.yaml`、`native_calls.yaml`；
 4. 当前功能相关的 request、response、common schema、枚举和错误码；
 5. `cpp_core/CMakeLists.txt`；
@@ -114,9 +114,8 @@ CMake 登记
 
 “核对”不等于完整读取全部文件。先搜索标题、键名和符号，再读相关片段。
 
-跨层方法名、字段、枚举、错误码、时间格式、版本和 `NativeResult<T>` 以只读 `contracts/` 为协议真相源。README 或 DATA_MODEL 中的规划目录、未来模型和 SQLite 目标不能被当作已实现能力。
+跨层方法名、字段、枚举、错误码、时间格式、版本和 `NativeResult<T>` 以只读 `contracts/` 为协议真相源。
 
-用户需求、本 Skill、Contract、DATA_MODEL、README 或实际代码若存在影响正确性的冲突，不得自行选一个版本继续。报告冲突和影响，提出明确问题并等待用户决定。
 
 # Current baseline
 
