@@ -2,14 +2,14 @@
 
 > R0 为当前基线，R1–R5 为后续周期；各阶段以前置 Contract 和稳定性门禁通过为准。
 
-## R0｜本地核心闭环（当前阶段）
+## R0｜本地核心闭环
 
 - 已打通 Flutter → Kotlin → JNI → C++ → JSON Storage → Android Alarm/Notification 主链路。
 - Event 已支持定时/全天、创建、查询、详情、完成及重复 occurrence；Reminder、时区和通知调度已接入。
 - Anniversary 公历 V1 已支持 CRUD、年度重复与倒计时；Category list/create、Event 关联和真机全链验收已完成。
-- 当前仍属于本地开发版：普通日程编辑体验、通知历史、完整导航和 Android 低版本兼容仍需收口。
+- 当前仍属于本地开发版
 
-## R1｜可发布的本地 V1 与账号基础
+## R1｜可发布的本地 V1 与账号基础（当前阶段）
 
 - 将核心实体从 JSON Repository 迁移到 SQLite，建立事务、Schema 版本、迁移回滚和 FTS 基础，确保旧数据可验证迁移。
 - 补齐普通日程编辑/删除/重开、全天提醒、响铃、通知历史、权限失败恢复及 API 24–25 兼容，完成多 ROM 真机回归。

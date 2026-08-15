@@ -216,3 +216,11 @@
 - 任务结果：确认 27 份拆分文档中的 64 个对应内容块与项目 `docs/DATA_MODEL.md` 逐字符一致，26 个索引链接有效；发现外部父目录另有一份较旧 `A:\calendar\docs\DATA_MODEL.md`、三处文档均可能被误认作事实源，以及 DST gap occurrence 身份、字段“必填”层级、Habit recurrence、Reminder/Notification 状态与若干计划态模型的语义缺口。未修改被审查文档或代码。
 - 验证状态：完成 Markdown 标题/区块逐项比较、索引目标存在性检查、两份聚合 Data Model 哈希与定向差异检查，并对 Event、Habit、Reminder、Notification 的机器 Contract 做定向交叉核对；未执行构建或运行测试（纯文档审查，不适用）。
 - 开发时间：2026-08-15 15:18 +08:00（Asia/Shanghai）。
+
+## 2026-08-15 17:45 +08:00 HXY 分支归拢与并行工作树规划
+
+- 使用 Skill：`openai-docs`；依据官方 Codex Worktrees 说明确认并行任务的工作区约束。
+- 负责模块：Git 分支与工作树开发流程；不修改产品代码。
+- 任务目标：将 `HXY-study` 上的现有提交及未提交文档变化归拢到 `HXY`，并说明从 `HXY` 建立 `HXY-backend`、`HXY-user` 两个独立工作树的安全流程。
+- 任务结果：提交当前文档变化，并以 fast-forward 方式同步本地 `HXY`；工作树与派生分支仅提供方案，未在本任务中创建。
+- 验证状态：已核对分支祖先关系、工作区状态与工作树列表；纯 Git/文档流程，未执行产品构建或运行测试。
