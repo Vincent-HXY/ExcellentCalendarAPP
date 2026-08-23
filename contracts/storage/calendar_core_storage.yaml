@@ -3,6 +3,9 @@ release_status: active
 implementation_status: integrated
 format_name: excellent_calendar_core_json
 storage_format_version: 2
+planned_storage_format_version: 3
+planned_release_status: blocked
+planned_implementation_status: planned
 
 directories:
   active_android: files/local_storage/calendar_core_storage_json
@@ -336,3 +339,225 @@ anniversary_workflow_journal:
     - write and fsync commit only after both data-store snapshots are durable
     - replay a prepared transaction during runtime.initialize before serving calls
     - corrupted or unverifiable journal data fails initialization without resetting storage
+
+calendar_core_v3:
+  format_name: excellent_calendar_core_json
+  storage_format_version: 3
+  implementation_status: planned
+  release_status: blocked
+  activation_gate: >-
+    v3 remains blocked until the v2-to-v3 migration, shared coordinator,
+    Anniversary Reminder/Occurrence readers and writers, Kotlin/JNI/Dart
+    mappings, build-after-test, cross-layer smoke, and physical-device
+    scheduling verification pass in one APK.
+  directory: files/local_storage/calendar_core_storage_json
+  downgrade_policy: >-
+    A v2 runtime must reject and preserve a v3 directory. Downgrade is unsafe;
+    it must never clear, partially read, or recreate the directory as v2.
+
+  logical_stores:
+    events: events.json
+    recurrence_versions: recurrence_versions.json
+    event_occurrence_states: event_occurrence_states.json
+    reminders: reminders.json
+    notifications: notifications.json
+    reminder_recovery_batches: reminder_recovery_batches.json
+    anniversaries: anniversaries.json
+    anniversary_recurrences: anniversary_recurrences.json
+    anniversary_reminder_templates: anniversary_reminder_templates.json
+    categories: categories.json
+    calendar_workflow_transactions: calendar_workflow_transactions.json
+    storage_migrations: storage_migrations.json
+  legacy_v2_journals:
+    - workflow_transactions.json
+    - anniversary_workflow_transactions.json
+  legacy_journal_policy: >-
+    v3 bootstrap first recovers every prepared v2 journal using the frozen v2
+    codec. Migration may start only after both journals contain no unresolved
+    prepared transaction. They are migration inputs and are never v3 writers.
+
+  root_envelopes:
+    events: {version_field: storage_version, version: 3, collection_field: events}
+    recurrence_versions: {version_field: storage_version, version: 3, collection_field: recurrence_versions}
+    event_occurrence_states: {version_field: storage_version, version: 3, collection_field: event_occurrence_states}
+    reminders: {version_field: storage_version, version: 3, collection_field: reminders}
+    notifications: {version_field: storage_version, version: 3, collection_field: notifications}
+    reminder_recovery_batches: {version_field: storage_version, version: 3, collection_field: reminder_recovery_batches}
+    anniversaries: {version_field: storage_version, version: 3, collection_field: anniversaries}
+    anniversary_recurrences: {version_field: storage_version, version: 3, collection_field: anniversary_recurrences}
+    anniversary_reminder_templates: {version_field: storage_version, version: 3, collection_field: anniversary_reminder_templates}
+    categories: {version_field: storage_version, version: 3, collection_field: categories}
+    calendar_workflow_transactions: {version_field: storage_version, version: 3, collection_field: transactions}
+    storage_migrations: {version_field: storage_version, version: 3, collection_field: migrations}
+
+  record_changes:
+    anniversaries:
+      added_required_fields:
+        reminders_enabled:
+          type: boolean
+          v2_default: false
+      invariants:
+        - Existing v2 records migrate with reminders_enabled false.
+        - Soft-deleted and active records preserve every existing field verbatim.
+        - Reminder templates are not embedded; the dedicated template store is the configuration truth source.
+    anniversary_reminder_templates:
+      record: AnniversaryReminderTemplateStorageRecord
+      exact_fields:
+        - template_key
+        - anniversary_id
+        - advance_days
+        - local_time
+        - timezone_mode
+        - method
+        - is_enabled
+        - created_at
+        - updated_at
+        - deleted_at
+      nullable_fields: [deleted_at]
+      uniques:
+        - [template_key]
+        - [anniversary_id, advance_days, local_time, timezone_mode, method]
+      invariants:
+        - advance_days is an integer from 0 through 365
+        - local_time is exact zero-padded HH:mm
+        - timezone_mode is follow_device and method is popup
+        - each Anniversary has at most five non-deleted templates
+        - template_key matches contracts/identity.yaml and is never accepted from an unverified writer
+        - a missing or soft-deleted Anniversary makes an active template corrupted storage
+      v2_initial_root: {storage_version: 3, anniversary_reminder_templates: []}
+    reminders:
+      added_required_nullable_fields:
+        - template_key
+        - occurrence_date
+        - advance_days
+        - local_time
+        - timezone_mode
+        - fulfillment_delivery_id
+      migration_defaults_for_v2_records:
+        template_key: null
+        occurrence_date: null
+        advance_days: null
+        local_time: null
+        timezone_mode: null
+        fulfillment_delivery_id: null
+      target_specific_invariant: >-
+        Event and Habit records retain every v2 value and require all new fields
+        null. Anniversary v3 records require the strict branch declared by
+        reminder/reminder_response.schema.json. No v2 Anniversary Reminder can
+        exist because the v2 domain rejected it.
+    notifications:
+      added_required_fields:
+        covered_reminder_ids:
+          type: array
+          v2_default: []
+      invariants:
+        - Every v2 attempt preserves all existing identity, status, timestamp, failure, soft-delete, and audit values.
+        - Existing reminder and recovery_summary records migrate with covered_reminder_ids empty.
+        - anniversary_catch_up requires one through five unique sorted members and a matching deterministic delivery_id.
+    reminder_recovery_batches:
+      added_required_fields:
+        anniversary_catch_up_groups:
+          type: array
+          v2_default: []
+      invariants:
+        - Existing detail_reminder_ids, summary_reminder_ids, counts, summary_delivery_id, status, and completed_at remain unchanged.
+        - Anniversary group members are disjoint from ordinary detail and summary members.
+        - Ring five-minute and global 20-detail behavior is identical to v2.
+    unchanged_records:
+      - events
+      - recurrence_versions
+      - event_occurrence_states
+      - anniversary_recurrences
+      - categories
+
+  required_uniques:
+    anniversary_reminder_templates:
+      - [template_key]
+      - [anniversary_id, advance_days, local_time, timezone_mode, method]
+    anniversary_reminders:
+      - [reminder_id]
+      - [target_id, occurrence_key, template_key]
+    anniversary_catch_up_deliveries:
+      - [delivery_id]
+    anniversary_catch_up_membership:
+      - [recovery_batch_id, reminder_id]
+
+  shared_workflow_coordinator:
+    file: calendar_workflow_transactions.json
+    lock_scope: Calendar Core directory-wide recursive mutex and process single-writer lease
+    purpose: >-
+      Every v3 workflow that writes reminders.json uses this one storage-level
+      coordinator, including existing Event/Occurrence/Recovery delivery flows
+      and new Anniversary create/update/delete/toggle/recovery/finalize flows.
+      This prevents a prepared journal from replaying a stale reminders after-image.
+    states: [prepared, committed]
+    record_fields:
+      transaction_id: required_uuid_v4
+      operation: required_stable_string
+      intent_version: required_positive_integer
+      affected_stores: required_unique_v3_logical_store_names
+      before_generation: required_non_negative_integer_by_store
+      after_stores: required_complete_validated_v3_roots_for_affected_stores
+      state: required_prepared_or_committed
+      prepared_at: required_utc_instant
+      committed_at: nullable_utc_instant
+    operations:
+      - event_recurrence_and_first_reminder_create_or_update
+      - occurrence_state_and_reminder_transition
+      - delivery_finalize_notification_reminder_and_successor
+      - recovery_batch_reminders_and_summary
+      - series_complete_cancel_delete_or_reopen
+      - anniversary_create_with_reminders
+      - anniversary_update_with_reminders
+      - anniversary_delete_with_reminders
+      - anniversary_toggle_reminders
+      - anniversary_recovery_plan
+      - anniversary_delivery_finalize
+      - anniversary_timezone_recalculate
+    invariants:
+      - Application receives narrow intent-level Repository ports, never a mutable CalendarCoreState or journal record.
+      - affected_stores exactly equals the keys of after_stores and every after root is fully validated before prepare.
+      - before_generation is compared under the directory lock; stale after-images fail with CALENDAR_WORKFLOW_COMMIT_FAILED.
+      - prepared intent is flushed before the first Store replacement; committed state is flushed only after every Store and directory entry are durable.
+      - replay uses the persisted after_stores and transaction_id and never generates new identity or timestamps.
+      - runtime initializes no Query, Scheduler, or JNI service until all prepared commits are recovered.
+      - corrupted or unverifiable journal data returns CALENDAR_WORKFLOW_RECOVERY_FAILED and preserves every file.
+
+  migration_v2_to_v3:
+    migration_id: calendar_core_json_v2_to_v3_anniversary_reminder_r1
+    source_version: 2
+    target_version: 3
+    idempotency: >-
+      A complete v3 directory returns already_migrated without rewriting. A
+      prepared migration resumes from the persisted validated after-images. A
+      mixed directory without a valid migration record is corruption and is
+      preserved unchanged.
+    ordered_steps:
+      - acquire the directory lock and prevent runtime services from starting
+      - recognize and strictly validate one complete v2 directory; v1 and mixed versions are not migration inputs
+      - recover workflow_transactions.json and anniversary_workflow_transactions.json with their frozen v2 codecs
+      - reload and validate every v2 Store after journal recovery
+      - build all v3 roots in memory, preserving unknown data only where the v2 codec explicitly designates it preservable
+      - set anniversaries.reminders_enabled false and create an empty anniversary_reminder_templates root
+      - add null Anniversary-specific fields to every v2 Reminder, add empty covered_reminder_ids to every Notification, and add empty anniversary_catch_up_groups to every RecoveryBatch
+      - preserve Event, Ring, recurrence, occurrence-state, Category, tombstone, timestamp, failure, cancellation, notification, and Recovery audit values field-for-field
+      - validate cross-store references, uniques, target-specific branches, identity fields, and every complete v3 root
+      - persist and fsync a prepared storage_migrations record containing hashes and complete after-images
+      - atomically replace each declared v3 Store under the directory lock, then fsync the directory
+      - write and fsync committed migration state; only then allow v3 workflow recovery and runtime services
+    failure_recovery:
+      before_prepare: leave the complete v2 directory authoritative
+      after_prepare: resume forward from the validated migration after-images
+      after_any_store_replace: resume forward; never attempt an inferred reverse migration
+      corrupted_migration_record: fail initialization, preserve all files, and return CALENDAR_WORKFLOW_RECOVERY_FAILED
+    rollback: >-
+      There is no automatic v3-to-v2 downgrade. A pre-migration external backup
+      may be restored only by an explicit user-authorized recovery flow; normal
+      App rollback must refuse the v3 directory.
+    test_requirements:
+      - empty and populated v2 directories
+      - Event popup, ordinary Ring, recurring Reminder, prepared/finalized Notification, RecoveryBatch, Anniversary active and tombstone records
+      - rerun after complete migration
+      - failure after migration prepare and after every Store replacement
+      - corrupted v2 record, corrupted migration record, unknown version, and mixed-version directory rejection
+      - exact preservation of soft deletion and delivery audit fields

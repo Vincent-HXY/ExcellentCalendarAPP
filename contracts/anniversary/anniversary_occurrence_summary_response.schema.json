@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_occurrence_summary_response.schema.json",
+  "title": "AnniversaryOccurrenceSummaryResponse",
+  "description": "Lightweight date-only Anniversary occurrence projection. It contains no note, Reminder task, Notification history, localized text, timestamps, or start/end Instant.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "anniversary_id",
+    "occurrence_key",
+    "occurrence_date",
+    "source_date",
+    "title",
+    "calendar_type",
+    "is_repeating",
+    "years_elapsed",
+    "category_id",
+    "importance",
+    "has_active_reminders",
+    "reminder_count"
+  ],
+  "properties": {
+    "anniversary_id": {"type": "string", "format": "uuid"},
+    "occurrence_key": {"type": "string", "format": "uuid"},
+    "occurrence_date": {"type": "string", "format": "date"},
+    "source_date": {"type": "string", "format": "date"},
+    "title": {"type": "string", "minLength": 1},
+    "calendar_type": {"const": "solar"},
+    "is_repeating": {"type": "boolean"},
+    "years_elapsed": {"type": "integer", "minimum": 0},
+    "category_id": {"type": ["string", "null"], "format": "uuid"},
+    "importance": {
+      "type": ["string", "null"],
+      "enum": ["unimportant_noturgent", "important_noturgent", "unimportant_urgent", "important_urgent", null]
+    },
+    "has_active_reminders": {"type": "boolean"},
+    "reminder_count": {"type": "integer", "minimum": 0, "maximum": 5}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"has_active_reminders": {"const": false}}, "required": ["has_active_reminders"]},
+      "then": {"properties": {"reminder_count": {"const": 0}}},
+      "else": {"properties": {"reminder_count": {"minimum": 1, "maximum": 5}}}
+    },
+    {
+      "if": {"properties": {"is_repeating": {"const": false}}, "required": ["is_repeating"]},
+      "then": {"properties": {"occurrence_date": {"description": "Must equal source_date for a one-time Anniversary."}, "years_elapsed": {"const": 0}}}
+    }
+  ]
+}

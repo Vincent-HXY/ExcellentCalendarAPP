@@ -1,0 +1,12 @@
+{
+  "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "title": "删除全部提醒模板",
+  "date": "2026-09-01",
+  "calendar_type": "solar",
+  "category_id": null,
+  "recurrence": {"frequency": "yearly", "interval": 1},
+  "note": null,
+  "importance": "important_noturgent",
+  "timezone": "Asia/Shanghai",
+  "reminder_plan": {"reminders_enabled": false, "templates": []}
+}

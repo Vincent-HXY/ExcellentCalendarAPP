@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_mutation_response.schema.json",
+  "title": "AnniversaryMutationResponse",
+  "description": "Public create/update/toggle result after the C++ logical commit and Kotlin scheduling attempt. NativeResult failure has data=null and means data was not saved. Every successful instance has data_saved=true even when capability says reconciliation remains pending.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["data_saved", "detail", "capability"],
+  "properties": {
+    "data_saved": {"const": true},
+    "detail": {"$ref": "./anniversary_detail_response.schema.json"},
+    "capability": {"$ref": "./anniversary_schedule_capability_response.schema.json"}
+  },
+  "x-reconciliation-invariant": "detail.reminder_settings.schedule_reconciliation_required equals capability.schedule_reconciliation_required after Kotlin finishes its immediate reconciliation attempt."
+}

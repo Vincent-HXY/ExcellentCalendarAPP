@@ -206,6 +206,111 @@ errors:
     message: "Anniversary not found"
     retryable: false
 
+  ANNIVERSARY_TARGET_DELETED:
+    module: anniversary
+    message: "Anniversary target is deleted"
+    retryable: false
+    boundaries: [native, notification_tap]
+    data_saved_allowed: false
+
+  ANNIVERSARY_REMINDER_CONFIG_INVALID:
+    module: anniversary
+    message: "Anniversary reminder configuration is invalid"
+    retryable: false
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE:
+    module: anniversary
+    message: "Anniversary reminder templates contain a duplicate identity tuple"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED:
+    module: anniversary
+    message: "Anniversary reminder plan contains more than five templates"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_RANGE_INVALID:
+    module: anniversary
+    message: "Anniversary occurrence date range is empty or reversed"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE:
+    module: anniversary
+    message: "Anniversary occurrence date range exceeds 400 natural days"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_FILTER_INVALID:
+    module: anniversary
+    message: "Anniversary occurrence filter contains a duplicate or unsupported value"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_CURSOR_INVALID:
+    module: anniversary
+    message: "Anniversary occurrence cursor is malformed"
+    retryable: false
+    boundaries: [native]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED:
+    module: anniversary
+    message: "Anniversary occurrence cursor is expired or does not match the query snapshot"
+    retryable: true
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_STALE:
+    module: anniversary
+    message: "Anniversary occurrence identity no longer matches the current target facts"
+    retryable: false
+    boundaries: [native, domain, delivery]
+    data_saved_allowed: false
+
+  ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED:
+    module: anniversary
+    message: "Anniversary reminder is past the occurrence-day catch-up deadline"
+    retryable: false
+    boundaries: [domain, delivery, recovery]
+    data_saved_allowed: false
+
+  ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT:
+    module: notification
+    message: "Anniversary aggregate delivery does not match the frozen RecoveryBatch membership"
+    retryable: false
+    boundaries: [native, domain, delivery, recovery]
+    data_saved_allowed: false
+
+  CALENDAR_WORKFLOW_COMMIT_FAILED:
+    module: storage
+    message: "Calendar workflow logical commit failed before becoming authoritative"
+    retryable: true
+    boundaries: [storage, native]
+    data_saved_allowed: false
+
+  CALENDAR_WORKFLOW_RECOVERY_FAILED:
+    module: storage
+    message: "Calendar workflow recovery could not prove a complete authoritative state"
+    retryable: false
+    boundaries: [storage, runtime_initialize]
+    data_saved_allowed: false
+
+  SCHEDULER_RECONCILIATION_PENDING:
+    module: android
+    message: "Business data is saved but Android scheduling requires later reconciliation"
+    retryable: true
+    boundaries: [method_channel, android_scheduler]
+    data_saved_allowed: true
+
   SEARCH_QUERY_INVALID:
     module: search
     message: "Search query is invalid"

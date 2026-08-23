@@ -1,0 +1,21 @@
+{
+  "title": "六条提醒",
+  "date": "2026-09-01",
+  "calendar_type": "solar",
+  "category_id": null,
+  "recurrence": null,
+  "note": null,
+  "importance": "important_noturgent",
+  "timezone": "Asia/Shanghai",
+  "reminder_plan": {
+    "reminders_enabled": true,
+    "templates": [
+      {"advance_days": 0, "local_time": "09:00", "method": "popup", "is_enabled": true},
+      {"advance_days": 1, "local_time": "09:00", "method": "popup", "is_enabled": true},
+      {"advance_days": 2, "local_time": "09:00", "method": "popup", "is_enabled": true},
+      {"advance_days": 3, "local_time": "09:00", "method": "popup", "is_enabled": true},
+      {"advance_days": 4, "local_time": "09:00", "method": "popup", "is_enabled": true},
+      {"advance_days": 5, "local_time": "09:00", "method": "popup", "is_enabled": true}
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "title": "项目纪念日",
+  "date": "2026-09-01",
+  "calendar_type": "solar",
+  "category_id": null,
+  "recurrence": {"frequency": "yearly", "interval": 1},
+  "note": "仅详情页可见",
+  "importance": "important_noturgent",
+  "timezone": "Asia/Shanghai",
+  "reminder_plan": {
+    "reminders_enabled": true,
+    "templates": [
+      {"advance_days": 7, "local_time": "09:00", "method": "popup", "is_enabled": true}
+    ]
+  }
+}

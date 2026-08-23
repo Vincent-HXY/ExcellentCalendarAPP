@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/anniversary/update_anniversary_request.schema.json",
   "title": "UpdateAnniversaryRequest",
-  "description": "Complete Anniversary V1 replacement plan. timezone is the explicit IANA timezone used to calculate the returned countdown. C++ atomically updates the Anniversary and its exclusively owned recurrence. Keeping recurrence yearly retains the active recurrence_id even when title or date changes; null-to-yearly creates a new rule; yearly-to-null clears recurrence_id and soft-deletes the old rule in the same transaction. Reminder replacement is not part of this Contract revision.",
+  "description": "Complete Anniversary replacement plan. C++ atomically updates the Anniversary, its exclusively owned recurrence, templates, and affected Reminder chains. reminder_plan omitted means preserve the complete existing plan; an object replaces it; explicit null is invalid. An empty templates array deletes every template, while reminders_enabled=false with non-empty templates pauses without deleting them.",
   "x-contract-version": 2,
   "x-implementation-status": "integrated",
   "type": "object",
@@ -76,6 +76,10 @@
       "type": "string",
       "minLength": 1,
       "description": "IANA timezone used by C++ to derive the local date and calculate the response countdown."
+    },
+    "reminder_plan": {
+      "$ref": "./anniversary_reminder_plan_input.schema.json",
+      "description": "Missing preserves the current total switch and templates. Present replaces both. Null is forbidden."
     }
   }
 }

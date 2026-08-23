@@ -11,10 +11,12 @@
     "older_skipped_reminder_count": 0,
     "window_overflow_count": 1,
     "summary_delivery_id": "66666666-6666-4666-8666-666666666663",
+    "anniversary_catch_up_groups": [],
     "status": "in_progress",
     "completed_at": null
   },
   "detail_reminders": [],
+  "anniversary_catch_up_groups": [],
   "prepared_attempt_resolutions": [],
   "idempotent_replay": false
 }

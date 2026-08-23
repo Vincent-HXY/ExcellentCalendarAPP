@@ -13,8 +13,8 @@
 - `backend_api.yaml` 定义 Flutter ↔ Backend 的 HTTPS API 入口、鉴权、幂等和 schema 映射。
 - `error_codes.yaml` 定义所有跨层失败返回可使用的错误码。
 - `enums.yaml` 定义跨语言传输时使用的字符串枚举。
-- `identity.yaml` 定义 occurrence、滚动 Reminder、snooze Reminder 和 delivery 的 UUIDv5 namespace、规范化输入和固定测试向量。
-- `storage/calendar_core_storage.yaml` 定义 Calendar Core JSON v2 的兼容、v1 清理和事务规则。
+- `identity.yaml` 定义 Event/Anniversary occurrence、滚动 Reminder、Anniversary template/Reminder、snooze 和 delivery 的 UUIDv5 namespace、规范化输入和固定测试向量。
+- `storage/calendar_core_storage.yaml` 同时记录已激活 Calendar Core JSON v2 与 blocked 的 v3 目标、连续 migration 和共享 commit/recovery 规则。
 - `*.schema.json` 定义 request、response 和通用返回外壳的 JSON Schema。
 
 本层不放业务流程编排、不放 Android 系统能力实现、不放 C++ 核心领域规则、不放 Flutter 页面状态，也不直接等于数据库表。
@@ -50,7 +50,7 @@
 27. `Anniversary.recurrence_id` 非空时必须指向一条活动且独占的 Anniversary 规则。仍为年度重复的标题/日期更新保留原 ID；一次性切到年度重复时创建规则；年度重复切到一次性时必须在同一 C++ transaction 中解除引用并软删除旧规则。
 28. Anniversary countdown 是按请求 IANA timezone 动态计算的 query projection，不持久化或预生成未来 occurrence。`days` 按本地自然日计算，当天为 `0`；公历 2 月 29 日在非闰目标年落到二月最后一天。
 29. Anniversary V1 只成功处理 `calendar_type=solar`。输入 `lunar` 必须返回 `ANNIVERSARY_CALENDAR_UNSUPPORTED`；不得固定映射为某个公历月日，也不得返回看似成功但不可计算的空快照。
-30. `AnniversaryKind`、`AnniversaryCountMode`、图标、主题和本地化日期/星期文案属于当前 Flutter projection，不进入 Native Contract。Anniversary Reminder 草案也不进入本轮 create/update，直到本地触发时刻、occurrence 身份、幂等和滚动规则完成独立设计。
+30. `AnniversaryKind`、`AnniversaryCountMode`、图标、主题和本地化日期/星期文案属于 Flutter projection，不进入 Native Contract。Anniversary Reminder R1 使用 `reminder_plan`、`HH:mm`、`follow_device` 和 `popup`；其 occurrence/template/reminder/aggregate identity 只能由 C++ 按 `identity.yaml` 生成。
 31. Event、Habit、Anniversary 与 Category 只通过 `category_id` 关联。分类名称和颜色不能作为外键；`SearchIndex.category_name` 只是可重建冗余文本，结构化过滤使用 `category_id/category_ids`。
 32. `category.create` 要求显式提交 `name/description/color/icon/sort_order`，其中 nullable 字段也必须出现；C++ Application/Domain 单点负责 UUIDv4、UTC 时间、文本/颜色规范化和默认追加顺序，Flutter/Kotlin 对所有 Schema-valid 值原样转发。`sort_order` 的跨语言精确范围为 `0..9007199254740991`；自动追加已到上界时返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。`category.list` 只返回活动分类，并按 `sort_order(null last) -> created_at -> id` 升序。
 33. Category 的账号归属、名称唯一性和系统默认分类尚未冻结。Flutter Fake 的默认项与 owner 文案不进入 Native Contract。`category.list/create`、Category Store 与生产 composition 已在 2026-08-14 完成代码一致性和物理设备重启 smoke，统一标记为 `integrated + active`；未进入公开协议的重命名、删除、恢复、同步、用户归属与默认分类不得据此推断为可用。
@@ -60,6 +60,11 @@
 37. snooze 固定 10 分钟且只接受 `source_delivery_id`。ID 为 `UUIDv5(reminder namespace, [source_delivery_id,"snooze",10])`；首次成功时由 C++ Clock 保存 `now + 10min`，任何重放返回同一对象和原 `remind_at`。
 38. `ActiveRingItem` 只包含 delivery/reminder/event 身份与时间，不得包含 Event 标题、正文、Reminder message、铃声 URI 或文件路径。`ring.state_changed` 可重复且可能丢失，事件身份是 `(runtime_instance_id, sequence)`；Flutter 必须先订阅再 `ring.get_state`，并结合持久化 `session_revision` 拒绝旧状态。
 39. Recovery 的 ring 宽限区间是 `[started_at - 5min, started_at]`：4:59 与恰好 5:00 具备明细资格，5:01 强制进入 popup 摘要。C++ 从持久化 `started_at` 推导边界；Kotlin 不重算。为保持 JSON v2 记录兼容，`window_overflow_count` 保留原字段并固定等于 `summary_reminder_ids.length`，其计数同时包含超时 ring 与 20 条上限溢出。
+40. Anniversary create 中 `reminder_plan` 缺失是唯一旧 writer 兼容入口，明确解释为关闭且空模板；显式 `null` 非法。Update 省略表示保留，传对象整体替换，空 `templates` 删除全部模板，关闭总开关但保留非空模板表示暂停。
+41. Anniversary Reminder 使用严格 target-specific 分支：必须携带 `template_key/occurrence_key/occurrence_date/advance_days/local_time/follow_device/fulfillment_delivery_id` 的适用值，并把 Event 专用字段写成 `null`。Event/Habit reader/writer 必须把 Anniversary 专用字段写成 `null`。
+42. `anniversary_catch_up` 是一个真实聚合 popup attempt。其 `covered_reminder_ids` 在 RecoveryBatch 中冻结、唯一且按 UUID 文本升序；所有 covered Reminder 通过同一 `fulfillment_delivery_id` 履约，禁止伪造每成员 attempt。
+43. `anniversary.list_occurrences` 使用当地日期半开区间、最多 400 个自然日、每页最多 500 项和绑定查询快照的 opaque cursor。结果按 `(occurrence_date, anniversary_id, occurrence_key)` 升序，无 200 条总量上限。
+44. Anniversary mutation 的 NativeResult 失败表示业务数据未保存。成功 response 固定 `data_saved=true`；`pending_permission/pending_reconciliation` 是数据已保存后的平台状态，不能改写为业务保存失败。
 
 ## Directory
 
@@ -107,7 +112,7 @@ Native Contract 已设计为 breaking v2，Backend API 继续使用独立的 v1�
 | Native MethodChannel / JNI | `method_channels.yaml`、`native_calls.yaml` | 2（active） | Flutter、Kotlin、JNI、C++ 同一发行版本同步升级；v1/v2 双向拒绝 |
 | Backend HTTP API | `backend_api.yaml` | 1 | 正式发布后至少支持 N-1 |
 | Flutter 用户资料缓存 | `user/cached_current_user.schema.json` | 1 | 使用连续本地格式迁移，不复用 API 版本 |
-| Calendar Core JSON | `storage/calendar_core_storage.yaml` | 2（active） | 不读、不迁移、不保留 v1；确认 v1 后清理，再初始化空 v2 |
+| Calendar Core JSON | `storage/calendar_core_storage.yaml` | 2（active）；3（planned/blocked） | v1 仍按既有决策清理；v2→v3 必须先恢复 v2 journal，再执行可恢复的连续无损 migration；旧 App 不得打开 v3 |
 
 在协议版本正式发布或被外部客户端依赖前，为使 Schema 与已确定的领域不变量保持一致而进行的修正，可以继续使用当前版本。协议一旦正式发布，收紧已有字段的合法取值范围也属于破坏性变更。
 
@@ -133,6 +138,33 @@ Native Contract 已设计为 breaking v2，Backend API 继续使用独立的 v1�
 - 本地 v1 数据不是协议迁移输入，也不再保留；按 Storage Contract 在确认后清理。
 - v1 数据不归档、不恢复；回滚到旧版会失去本地数据（已接受）。旧 App 仍禁止打开 v2 目录。
 - Backend、用户资料缓存、未来导入/导出和备份各自使用独立版本，不随 Native v2 自动升级。
+
+### Anniversary Reminder R1 Wire 兼容矩阵（Native v2 内部能力 revision）
+
+Native envelope、错误外壳和 `contract_version=2` 不变。R1 是同一 APK 内同步升级的模块能力 revision；受影响方法在 Flutter、Kotlin、JNI、C++ 和 JSON v3 全部接线前保持 `implemented_unintegrated/planned + blocked`，禁止新旧组件混跑。
+
+| Reader / Writer | 旧 Anniversary v2 shape | Reminder R1 shape | 结论 |
+| --- | --- | --- | --- |
+| 新 C++ reader 读取旧 create | `reminder_plan` 缺失 | 显式 plan | 缺失只在 create 解释为关闭且空模板；可兼容 |
+| 新 C++ reader 读取旧 update | `reminder_plan` 缺失 | 显式 replacement | 缺失明确表示保留；可兼容 |
+| 旧 Kotlin/C++ reader 读取新 request | 不认识 `reminder_plan`/新方法 | 新字段与方法 | 严格拒绝；不得混跑 |
+| 新 Dart/Kotlin reader 读取旧 detail | 无 `reminder_settings/capability` | 新聚合字段必填 | 严格拒绝；能力保持 blocked |
+| 旧 Dart reader 读取新 public response | 旧 detail 直接作为 data | mutation/detail wrapper | 严格拒绝；同一 APK 必须同步升级 |
+| Event/Ring Reminder reader/writer | 无 Anniversary 专用字段 | 专用字段显式 `null` | 升级 writer 后兼容；旧 Store 由 v2→v3 migration 补全 |
+| Notification/Recovery reader/writer | 无 aggregate kind/covered groups | target-specific R1 | 必须同步升级并迁移；不可降级 |
+
+不提升全局 Native version 的理由是该边界不支持独立部署或滚动混跑，且 `NativeResult` v2 外壳、公共时间/错误语义均未改变；模块 revision 通过 blocked gate 保证只在同一 APK 全量升级后激活。若未来允许动态组件、跨发行版 native 库或任一旧 reader 与新 writer 混跑，必须提升全局 Native version，而不能复用本例。
+
+### Calendar Core JSON v2 → v3 兼容矩阵
+
+| Reader / Writer | v2 directory | v3 directory |
+| --- | --- | --- |
+| v2 reader/writer | 继续作为当前 active 能力读写 | 必须拒绝；不允许清理、降级或部分读取 |
+| v3 bootstrap | 先恢复全部 v2 prepared journal，再验证并迁移 | 恢复 v3 migration/shared workflow journal 后读取 |
+| v3 writer | 禁止在未完成 migration 的 v2 目录写部分 v3 字段 | 只写完整严格 v3 roots |
+| 回滚旧 App | 可继续使用未迁移的完整 v2 目录 | 不安全且禁止；保留 v3 数据并提示升级 |
+
+迁移后现有 Anniversary 固定 `reminders_enabled=false`、模板集合为空；旧 Reminder/Notification 的新 target-specific 字段按类型补成显式 `null`/空数组，既有 Event、Ring、Recovery、软删除与审计值逐字段保留。具体相邻迁移、journal 和失败恢复规则见 `storage/calendar_core_storage.yaml`。
 
 实施依赖顺序为：领域/Contract 定稿 → C++ Domain、Clock、TZDB、workflow、Repository 与 Storage v2 → JNI/Kotlin contract 与调度 → Dart DTO/Gateway → 同一 APK 全链路验证与激活。该顺序已执行完毕（2026-08-08）；v2 writer 已写入用户正式目录，剩余未验证项（Alarm 到点触发、崩溃 journal 重放、Recovery 废弃分支、OEM 后台限制）记录在 `docs/develop_record.md`。
 

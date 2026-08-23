@@ -15,6 +15,7 @@
 | `olderSkippedReminderCount` | `integer` | 是 | 72 小时以前未生成的 Reminder 数，加上本事务终结为 `expired` 的已物化 open Reminder 数 |
 | `windowOverflowCount` | `integer` | 是 | 为兼容 v2 保留的字段名；表示窗口内进入摘要的总 Reminder 数，既包括超过 5 分钟的 ring，也包括超过全局 20 条上限的其他候选 |
 | `summaryDeliveryId` | `string` | 否 | 有摘要时的稳定 delivery UUIDv5 |
+| `anniversaryCatchUpGroups` | `AnniversaryCatchUpGroup[]` | 是 | Anniversary occurrence 专用聚合组；与普通 detail/summary 成员互斥 |
 | `status` | `ReminderRecoveryBatchStatus` | 是 | 批次状态 |
 | `completedAt` | `datetime` | 否 | 批次完成时间 |
 
@@ -37,6 +38,11 @@
 - 当摘要（如有）和全部明细逻辑 delivery 都已 `sent` 或永久失败时批次进入 `completed`；仍有 prepared/可重试失败时保持 `in_progress`。没有任何 delivery 的空批次在计划事务内直接完成。
 - 恢复摘要 Notification 的 `plannedAt = startedAt`，`targetType = reminder_recovery_batch`，`targetId = recoveryBatchId`；标题和正文由 C++ 根据持久化计数生成。
 - `expired` 重复 Reminder 不补发，但必须在同一事务通过滚动规则确保首个未来 successor；不得因此生成第二条同模板 open Reminder。
+- Anniversary 分支不套用 72 小时窗口：候选必须满足 `remindAt <= startedAt < occurrence_date 次日 00:00`（按本次请求的设备 IANA timezone）。已到 occurrence 次日 00:00 的任务以 `anniversary_occurrence_elapsed` 终结并分别滚动 successor。
+- 合法 Anniversary 候选先按 `(anniversaryId, occurrenceKey)` 分组；每组 `coveredReminderIds` 去重后按 UUID 小写文本升序冻结，并生成独立 `anniversary_catch_up` delivery。不同 occurrence 永不合并。
+- Anniversary group 成员不进入 `detailReminderIds`、`summaryReminderIds` 或 `windowOverflowCount`，因此既有 Ring 五分钟规则、全局 20 条明细上限、72 小时 older 计数和普通摘要语义保持不变。
+- group membership 在 batch 持久化后不可变化。prepare/finalize 只能引用该冻结 group；delivery、attempt 或成员不匹配返回 `ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT`，不能由 Kotlin 重新推导。
+- Batch 只有在普通 summary/detail 与全部 Anniversary group delivery 都终结后才完成。可重试 group 保持 batch `in_progress`；永久失败和过期均按各 covered Reminder 的年度 successor 规则收口。
 
 ## 枚举定义
 

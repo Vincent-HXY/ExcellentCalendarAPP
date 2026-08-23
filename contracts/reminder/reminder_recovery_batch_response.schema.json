@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json",
   "title": "ReminderRecoveryBatchResponse",
-  "description": "Persisted idempotent recovery batch for the fixed 72-hour window, inclusive 5-minute ring grace rule, and global 20-detail limit. The legacy field name window_overflow_count is retained for storage compatibility and counts every in-window Reminder placed in the summary.",
+  "description": "Persisted idempotent recovery batch. Ordinary Event/Ring candidates retain the fixed 72-hour window, inclusive 5-minute ring grace rule, and global 20-detail limit. Anniversary candidates use separate occurrence-day catch-up groups and never enter ordinary detail/summary counts.",
   "x-recovery-count-invariants": [
     "window_start_at equals started_at minus 72 hours; the ring grace boundary is derived as started_at minus 5 minutes and is not persisted separately.",
     "A ring Reminder with remind_at exactly equal to started_at minus 5 minutes remains detail-eligible; one earlier by any positive duration is forced to summary.",
@@ -24,6 +24,7 @@
     "older_skipped_reminder_count",
     "window_overflow_count",
     "summary_delivery_id",
+    "anniversary_catch_up_groups",
     "status",
     "completed_at"
   ],
@@ -59,6 +60,11 @@
       "minimum": 0
     },
     "summary_delivery_id": {"type": ["string", "null"], "format": "uuid"},
+    "anniversary_catch_up_groups": {
+      "type": "array",
+      "items": {"$ref": "./anniversary_catch_up_group_response.schema.json"},
+      "x-order": ["occurrence_date", "anniversary_id", "occurrence_key"]
+    },
     "status": {"type": "string", "enum": ["in_progress", "completed"]},
     "completed_at": {"type": ["string", "null"], "format": "date-time"}
   },
@@ -94,5 +100,10 @@
         }
       }
     }
+  ],
+  "x-membership-invariants": [
+    "All IDs across detail_reminder_ids, summary_reminder_ids, and every anniversary_catch_up_groups.covered_reminder_ids are pairwise disjoint.",
+    "Anniversary groups do not contribute to window_overflow_count or the 20-detail limit.",
+    "A batch completes only after ordinary deliveries and every Anniversary group delivery reach a terminal result."
   ]
 }

@@ -22,6 +22,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | `targetType` | `string` | 是 | 业务目标类型；恢复摘要使用 `reminder_recovery_batch` |
 | `targetId` | `string` | 是 | 业务目标 ID；恢复摘要等于 batch ID |
 | `occurrenceKey` | `string` | 否 | 重复 Reminder 的 occurrence 身份；普通 Reminder/摘要为空 |
+| `coveredReminderIds` | `string[]` | 是 | Anniversary catch-up 聚合的完整、唯一、按 UUID 文本升序冻结成员；其他 kind 固定空数组 |
 | `method` | `ReminderMethod` | 是 | 通知渠道 |
 | `title` | `string` | 是 | 通知标题 |
 | `body` | `string` | 否 | 通知正文 |
@@ -49,6 +50,10 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 - Ring Notification 只允许 `kind=reminder`、`targetType=event`、`occurrenceKey=null`。`status=sent` 额外要求 Android 前台控制通知已展示，且 MediaPlayer 声音或 Vibrator 振动至少一种真实启动；两种输出都失败时必须 finalize `failed`，不得用通知已展示冒充 ring 已发送。
 - Recovery summary 永远是 `popup`。5 分钟宽限窗内且未被 20 条明细上限溢出的 ring 可以作为明细继续响铃；更早的 ring 及明细溢出项只由 popup 摘要覆盖。
 - `prepare_delivery` 返回的 PendingIntent payload 必须携带 `notificationId/deliveryId/deliveryAttemptId/reminderId/targetId/occurrenceKey`；不适用的字段显式为 `null`。Android 收到点击后才追加非空 `openedAt`，再作为 `NotificationTapPayload` 发给 Flutter。
+- `kind=anniversary_catch_up` 表示同一 Anniversary occurrence 的一个真实聚合 popup attempt：`reminderId=null`、`targetType=anniversary`、`occurrenceKey/recoveryBatchId` 非空、`coveredReminderIds` 至少一项。它不计入普通 Recovery 的 20 条 detail 上限，也不改变 `recovery_summary` 的既有含义。
+- Anniversary catch-up 的 `deliveryId` 由 target、occurrence、冻结且排序后的 covered IDs 和 `popup` 计算。prepare 后 membership、title/body、tap payload 和 attempt identity 全部冻结；后来到期的 Reminder 必须进入另一个合法 recovery 计划，不能加入既有 attempt。
+- finalize `sent` 在同一 logical commit 中把唯一 Notification 标为 sent、全部 covered Reminder 标为 sent 并写入同一 `fulfillmentDeliveryId`、分别创建年度 successor、更新 RecoveryBatch。retryable 失败保留全部成员为 pending；permanent/expired 分别终结成员并滚动年度 successor。
+- Anniversary 正常与聚合 tap payload 都携带真实 `targetId + occurrenceKey` 并路由 Anniversary detail。目标已软删除时消费者得到稳定 `ANNIVERSARY_TARGET_DELETED`；通知内容和 payload 不包含 note。
 
 ## 枚举定义
 
@@ -79,6 +84,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | --- | --- |
 | `reminder` | 某条 Reminder 的某个渠道投递 |
 | `recovery_summary` | 一次恢复批次的聚合摘要投递 |
+| `anniversary_catch_up` | 同一 Anniversary occurrence 下一个或多个逾期 Reminder 的单次真实聚合 popup |
 
 ### NotificationFailureClass
 

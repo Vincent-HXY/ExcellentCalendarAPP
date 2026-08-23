@@ -9,6 +9,7 @@
   "target_type": "reminder_recovery_batch",
   "target_id": "44444444-4444-4444-8444-444444444443",
   "occurrence_key": null,
+  "covered_reminder_ids": [],
   "method": "ring",
   "title": "恢复摘要",
   "body": null,

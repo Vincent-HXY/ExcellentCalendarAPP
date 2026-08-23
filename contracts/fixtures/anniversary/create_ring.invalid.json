@@ -1,0 +1,16 @@
+{
+  "title": "非法渠道",
+  "date": "2026-09-01",
+  "calendar_type": "solar",
+  "category_id": null,
+  "recurrence": null,
+  "note": null,
+  "importance": "important_noturgent",
+  "timezone": "Asia/Shanghai",
+  "reminder_plan": {
+    "reminders_enabled": true,
+    "templates": [
+      {"advance_days": 0, "local_time": "09:00", "method": "ring", "is_enabled": true}
+    ]
+  }
+}

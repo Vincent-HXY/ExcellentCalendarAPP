@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/set_anniversary_reminders_enabled_request.schema.json",
+  "title": "SetAnniversaryRemindersEnabledRequest",
+  "description": "Pauses or resumes the complete Anniversary reminder plan without deleting templates. C++ uses timezone and its Clock to choose the first still-meaningful occurrence and materialize deterministic tasks.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "reminders_enabled", "timezone"],
+  "properties": {
+    "id": {"type": "string", "format": "uuid"},
+    "reminders_enabled": {"type": "boolean"},
+    "timezone": {"type": "string", "minLength": 1}
+  }
+}

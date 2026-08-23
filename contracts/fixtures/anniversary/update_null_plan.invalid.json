@@ -1,0 +1,12 @@
+{
+  "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "title": "null 不允许猜测",
+  "date": "2026-09-01",
+  "calendar_type": "solar",
+  "category_id": null,
+  "recurrence": {"frequency": "yearly", "interval": 1},
+  "note": null,
+  "importance": "important_noturgent",
+  "timezone": "Asia/Shanghai",
+  "reminder_plan": null
+}

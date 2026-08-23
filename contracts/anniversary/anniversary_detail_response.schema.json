@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_detail_response.schema.json",
   "title": "AnniversaryDetailResponse",
-  "description": "Detail aggregate for the current active solar Anniversary. recurrence is null exactly when anniversary.recurrence_id is null; otherwise it is the matching active yearly rule. A missing, soft-deleted or invalid referenced rule is a failure, not a one-time fallback. Reminder summaries are intentionally absent until Anniversary reminder scheduling semantics pass the recurring-reminder design gate.",
+  "description": "C++ detail aggregate for the current active solar Anniversary. recurrence is null exactly when anniversary.recurrence_id is null; otherwise it is the matching active yearly rule. reminder_settings exposes configuration and a reconciliation hint without platform permission, Alarm, journal, or delivery-history details.",
   "x-contract-version": 2,
   "x-implementation-status": "integrated",
   "type": "object",
@@ -10,7 +10,8 @@
   "required": [
     "anniversary",
     "recurrence",
-    "countdown"
+    "countdown",
+    "reminder_settings"
   ],
   "properties": {
     "anniversary": {
@@ -29,6 +30,9 @@
     },
     "countdown": {
       "$ref": "./anniversary_countdown_response.schema.json"
+    },
+    "reminder_settings": {
+      "$ref": "./anniversary_reminder_settings_response.schema.json"
     }
   },
   "allOf": [

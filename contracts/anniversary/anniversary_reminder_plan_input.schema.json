@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_reminder_plan_input.schema.json",
+  "title": "AnniversaryReminderPlanInput",
+  "description": "Complete replacement of the Anniversary-owned reminder configuration. The overall switch and each template switch must both be true for a template to materialize a future Reminder. An empty templates array deletes every template. A false overall switch with a non-empty array pauses delivery while retaining configuration.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reminders_enabled", "templates"],
+  "properties": {
+    "reminders_enabled": {"type": "boolean"},
+    "templates": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {"$ref": "./anniversary_reminder_template_input.schema.json"},
+      "x-unique-by": ["advance_days", "local_time", "method"]
+    }
+  }
+}

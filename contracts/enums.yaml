@@ -33,6 +33,10 @@ ReminderMethod:
     - popup
     - wechat
 
+AnniversaryReminderTimezoneMode:
+  values:
+    - follow_device
+
 RecurrenceFrequency:
   values:
     - daily
@@ -62,10 +66,16 @@ ReminderCancellationReason:
     - series_cancelled
     - series_deleted
     - series_updated
+    - anniversary_paused
+    - anniversary_template_disabled
+    - anniversary_updated
+    - anniversary_template_replaced
+    - anniversary_deleted
 
 ReminderExpirationReason:
   values:
     - recovery_window_elapsed
+    - anniversary_occurrence_elapsed
 
 NotificationStatus:
   values:
@@ -78,6 +88,21 @@ NotificationKind:
   values:
     - reminder
     - recovery_summary
+    - anniversary_catch_up
+
+AnniversaryScheduleStatus:
+  values:
+    - not_required
+    - scheduled_exact
+    - scheduled_approximate
+    - pending_permission
+    - pending_reconciliation
+
+AnniversaryScheduleDegradationReason:
+  values:
+    - notification_permission_unavailable
+    - exact_alarm_permission_unavailable
+    - scheduler_retry_required
 
 NotificationFailureClass:
   values:
