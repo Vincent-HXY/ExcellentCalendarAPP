@@ -76,7 +76,14 @@ common::Error unsupported_reminder_method() {
   return common::make_error(
       "UNSUPPORTED_REMINDER_METHOD",
       "Reminder method is not supported in current version",
-      {{"methods", "ordinary Event v2 currently supports popup only"}});
+      {{"methods", "wechat"}});
+}
+
+common::Error ring_reminder_invalid(std::string field) {
+  return common::make_error(
+      "REMINDER_METHOD_INVALID", "Reminder method is invalid",
+      {{"field", std::move(field)},
+       {"reason", "ring requires an ordinary non-all-day Event"}});
 }
 
 common::Error recovery_conflict(const std::string& batch_id) {
@@ -407,17 +414,15 @@ common::Result<domain::Reminder> ordinary_reminder_from_input(
     return common::Result<domain::Reminder>::failure(
         contract_invalid(parent, "ordinary Event Reminder draft is invalid"));
   }
-  std::set<std::string> methods;
-  for (const auto& method : input.methods) {
-    if (!domain::is_valid_reminder_method(method) || !methods.insert(method).second) {
-      return common::Result<domain::Reminder>::failure(reminder_method_invalid());
-    }
-  }
-  if (input.methods.empty()) {
+  if (input.methods.size() != 1U ||
+      !domain::is_valid_reminder_method(input.methods.front())) {
     return common::Result<domain::Reminder>::failure(reminder_method_invalid());
   }
-  if (input.methods != std::vector<std::string>{"popup"}) {
+  if (input.methods.front() == domain::kReminderMethodWechat) {
     return common::Result<domain::Reminder>::failure(unsupported_reminder_method());
+  }
+  if (input.methods.front() == domain::kReminderMethodRing && event.is_all_day) {
+    return common::Result<domain::Reminder>::failure(ring_reminder_invalid(parent + ".methods"));
   }
   if (input.remind_at.has_value() == input.advance_minutes.has_value() ||
       (input.advance_minutes.has_value() && *input.advance_minutes < 0)) {
@@ -639,6 +644,20 @@ common::Result<domain::Event> RecurringEventWorkflowService::update_event(
                                      stored->is_all_day != replacement.is_all_day;
           if (start_changed) {
             if (replacement.is_all_day) {
+              const bool has_mutable_ring_reminder = std::any_of(
+                  state.reminders.begin(), state.reminders.end(), [&](const auto& reminder) {
+                    return reminder.target_type == domain::kReminderTargetEvent &&
+                           reminder.target_id == stored->id &&
+                           !reminder.recurrence_revision.has_value() &&
+                           reminder.methods == std::vector<std::string>{"ring"} &&
+                           !reminder.deleted_at.has_value() &&
+                           (reminder.status == domain::kReminderStatusPending ||
+                            reminder.status == domain::kReminderStatusScheduled);
+                  });
+              if (has_mutable_ring_reminder) {
+                return common::Result<common::Unit>::failure(
+                    ring_reminder_invalid("reminders.methods"));
+              }
               const bool has_mutable_advance_reminder = std::any_of(
                   state.reminders.begin(), state.reminders.end(), [&](const auto& reminder) {
                     return reminder.target_type == domain::kReminderTargetEvent &&

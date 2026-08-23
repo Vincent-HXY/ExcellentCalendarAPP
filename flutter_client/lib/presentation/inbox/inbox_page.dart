@@ -7,6 +7,7 @@ import '../../application/event/create_event_use_case.dart';
 import '../../application/event/read_events_use_case.dart';
 import '../../application/timezone/timezone_application_service.dart';
 import '../../gateway_interfaces/category_repository.dart';
+import '../../gateway_interfaces/ring_native_gateway.dart';
 import '../app_design_tokens.dart';
 import '../new_schedule/new_schedule_page.dart';
 import 'components/add_task_button.dart';
@@ -25,6 +26,8 @@ class InboxPage extends StatefulWidget {
     required this.timezoneService,
     required this.categoryRepository,
     this.onOpenAnniversaries,
+    this.onOpenRingSettings,
+    this.ringGateway,
     super.key,
   });
 
@@ -34,6 +37,8 @@ class InboxPage extends StatefulWidget {
   final TimezoneApplicationService timezoneService;
   final CategoryRepository categoryRepository;
   final VoidCallback? onOpenAnniversaries;
+  final VoidCallback? onOpenRingSettings;
+  final RingNativeGateway? ringGateway;
 
   @override
   State<InboxPage> createState() => _InboxPageState();
@@ -88,6 +93,7 @@ class _InboxPageState extends State<InboxPage> {
             createUseCase: widget.createEventUseCase,
             timezoneService: widget.timezoneService,
             categoryRepository: widget.categoryRepository,
+            ringGateway: widget.ringGateway,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -126,7 +132,10 @@ class _InboxPageState extends State<InboxPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                InboxTopBar(onOpenAnniversaries: widget.onOpenAnniversaries),
+                InboxTopBar(
+                  onOpenAnniversaries: widget.onOpenAnniversaries,
+                  onOpenRingSettings: widget.onOpenRingSettings,
+                ),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(

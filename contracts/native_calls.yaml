@@ -304,6 +304,18 @@ calls:
       envelope: common/native_result.schema.json
       data: reminder/plan_recovery_response.schema.json
 
+  reminder.snooze:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: reminder/snooze_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/snooze_reminder_response.schema.json
+
   category.list:
     module: category
     visibility: internal

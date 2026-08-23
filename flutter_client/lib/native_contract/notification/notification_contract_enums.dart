@@ -47,7 +47,9 @@ enum NotificationPermissionRequestSource {
 enum NotificationSettingsTarget {
   notification('notification'),
   exactAlarm('exact_alarm'),
-  application('application');
+  application('application'),
+  ringChannel('ring_channel'),
+  fullScreenIntent('full_screen_intent');
 
   const NotificationSettingsTarget(this.wireValue);
   final String wireValue;

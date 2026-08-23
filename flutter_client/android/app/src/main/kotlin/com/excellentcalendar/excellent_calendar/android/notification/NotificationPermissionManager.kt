@@ -115,7 +115,7 @@ class AndroidNotificationPermissionManager(
         } else {
             true
         }
-        val exactAllowed = if (sdk >= Build.VERSION_CODES.S) {
+        val exactAllowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             activity.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
         } else {
             true
@@ -170,6 +170,21 @@ class AndroidNotificationPermissionManager(
             }
             "application" -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 .setData(Uri.parse("package:${activity.packageName}"))
+            "ring_channel" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+                    .putExtra(Settings.EXTRA_CHANNEL_ID, AndroidNotificationChannelManager.RingControlChannelId)
+            } else {
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+            }
+            "full_screen_intent" -> if (Build.VERSION.SDK_INT >= 34) {
+                Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
+                    .setData(Uri.parse("package:${activity.packageName}"))
+            } else {
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.parse("package:${activity.packageName}"))
+            }
             else -> return false
         }
         return try {

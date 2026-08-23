@@ -117,6 +117,18 @@ conditional_uniques:
     where: status == in_progress
 
 lifecycle_invariants:
+  ring_reminder:
+    - an ordinary Reminder persists exactly one method, popup or ring
+    - a ring Reminder targets an active non-all-day non-recurring Event and has no occurrence identity
+    - recurring Reminders remain exactly popup; wechat and multi-method arrays are never successful stored values
+  ring_notification:
+    - a ring Notification is kind reminder, targets Event, and has no occurrence_key
+    - ring sent means Kotlin showed the foreground control notification and actually started sound or vibration
+    - recovery summary Notifications remain popup
+  ring_recovery:
+    - the inclusive grace boundary is derived from persisted started_at minus five minutes and is never recomputed by Kotlin
+    - in-window ring Reminders strictly earlier than that boundary are assigned to summary before the 20-detail selection
+    - window_overflow_count retains its v2 field shape and equals summary_reminder_ids length, including both late ring and capacity-overflow members
   reminder_expiration:
     - only recovery_batch_reminders_and_summary may transition an open Reminder to expired
     - expired requires is_enabled false, scheduled_at null, expiration_reason recovery_window_elapsed, and expired_at UTC

@@ -12,6 +12,7 @@
 #include "excellent_calendar/application/recurring_reminder_delivery_workflow_service.hpp"
 #include "excellent_calendar/application/recurring_reminder_query_service.hpp"
 #include "excellent_calendar/application/reminder_recovery_workflow_service.hpp"
+#include "excellent_calendar/application/reminder_snooze_workflow_service.hpp"
 #include "excellent_calendar/application/reminder_service_v2.hpp"
 #include "excellent_calendar/boundary/api/native_runtime.hpp"
 #include "excellent_calendar/boundary/contract/recurring_v2_json.hpp"
@@ -691,6 +692,31 @@ std::string plan_recurring_reminder_recovery_v2(std::string_view request_json) {
                ? common::Result<picojson::value>::success(
                      contract::plan_recovery_response_v2_to_json(planned.value()))
                : common::Result<picojson::value>::failure(planned.error());
+  });
+}
+
+std::string snooze_reminder_v2(std::string_view request_json) {
+  return respond_v2([&]() -> common::Result<picojson::value> {
+    auto parsed = parse_object(request_json);
+    if (!parsed.ok()) return common::Result<picojson::value>::failure(parsed.error());
+    auto known = reject_unknown(
+        parsed.value(), {"source_delivery_id"}, "SnoozeReminderRequest");
+    if (!known.ok()) return common::Result<picojson::value>::failure(known.error());
+    auto source_delivery_id = require_string(
+        parsed.value(), "source_delivery_id", "SnoozeReminderRequest");
+    if (!source_delivery_id.ok()) {
+      return common::Result<picojson::value>::failure(source_delivery_id.error());
+    }
+    const auto service = current_reminder_snooze_workflow_service();
+    if (!service) {
+      return common::Result<picojson::value>::failure(
+          storage_not_initialized_error("reminder.snooze"));
+    }
+    auto snoozed = service->snooze({source_delivery_id.value()});
+    return snoozed.ok()
+               ? common::Result<picojson::value>::success(
+                     contract::snooze_reminder_response_v2_to_json(snoozed.value()))
+               : common::Result<picojson::value>::failure(snoozed.error());
   });
 }
 

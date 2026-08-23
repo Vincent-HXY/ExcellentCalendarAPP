@@ -41,6 +41,14 @@ identities:
     notes:
       - message is not part of identity.
       - Contract v2 recurring reminders require canonical_methods to equal ["popup"].
+  snoozed_reminder:
+    algorithm: UUIDv5
+    namespace: reminder
+    name: '[source_delivery_id, "snooze", 10]'
+    notes:
+      - The integer 10 is the frozen snooze duration in minutes and is never supplied by Dart or Kotlin.
+      - The first successful workflow call stores remind_at from the C++ Clock plus 10 minutes.
+      - Replays return the same stored Reminder and never recompute remind_at from a later Clock value.
   reminder_delivery:
     algorithm: UUIDv5
     namespace: delivery
@@ -60,6 +68,12 @@ test_vectors:
   recurring_reminder:
     canonical_name: '["11111111-1111-4111-8111-111111111111",1,"24c7eda2-669c-5400-bf21-b8291b40395e",15,["popup"]]'
     uuid: a5c24834-aa63-5130-a5f7-3fbcec2468c0
+  ring_reminder_delivery:
+    canonical_name: '["33333333-3333-4333-8333-333333333333","ring"]'
+    uuid: be8443d8-44c1-5ade-ad4a-4f35c9077510
+  snoozed_reminder:
+    canonical_name: '["be8443d8-44c1-5ade-ad4a-4f35c9077510","snooze",10]'
+    uuid: ea67fe35-87fe-5f0d-b5bf-a491495bdc1d
   reminder_delivery:
     canonical_name: '["a5c24834-aa63-5130-a5f7-3fbcec2468c0","popup"]'
     uuid: b35d3bf5-f666-54e6-8340-423379f37a77

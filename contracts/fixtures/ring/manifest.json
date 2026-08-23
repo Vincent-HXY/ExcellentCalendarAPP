@@ -1,0 +1,141 @@
+{
+  "fixture_version": 1,
+  "cases": [
+    {
+      "name": "ordinary ring response",
+      "schema": "../../reminder/reminder_response.schema.json",
+      "instance": "ordinary_ring_reminder.valid.json",
+      "expected_valid": true
+    },
+    {
+      "name": "ordinary popup regression",
+      "schema": "../../reminder/reminder_response.schema.json",
+      "instance": "ordinary_popup_reminder.valid.json",
+      "expected_valid": true
+    },
+    {
+      "name": "recurring popup regression",
+      "schema": "../../reminder/reminder_response.schema.json",
+      "instance": "recurring_popup_reminder.valid.json",
+      "expected_valid": true
+    },
+    {
+      "name": "popup and ring are mutually exclusive",
+      "schema": "../../reminder/reminder_response.schema.json",
+      "instance": "ordinary_popup_ring_methods.invalid.json",
+      "expected_valid": false
+    },
+    {
+      "name": "single wechat request reaches stable unsupported domain error",
+      "schema": "../../reminder/create_reminder_request.schema.json",
+      "instance": "ordinary_wechat_request.valid.json",
+      "expected_valid": true
+    },
+    {
+      "name": "multi-method request is structurally invalid",
+      "schema": "../../reminder/create_reminder_request.schema.json",
+      "instance": "ordinary_multi_method_request.invalid.json",
+      "expected_valid": false
+    },
+    {
+      "name": "all-day Event ring is structurally invalid",
+      "schema": "../../event/create_event_request.schema.json",
+      "instance": "all_day_event_ring.invalid.json",
+      "expected_valid": false
+    },
+    {
+      "name": "recurring ring is forbidden",
+      "schema": "../../reminder/reminder_response.schema.json",
+      "instance": "recurring_ring_reminder.invalid.json",
+      "expected_valid": false
+    },
+    {
+      "name": "active item is privacy safe",
+      "schema": "../../ring/active_ring_item.schema.json",
+      "instance": "active_ring_item_privacy.valid.json",
+      "expected_valid": true
+    },
+    {
+      "name": "active item rejects lock-screen sensitive title",
+      "schema": "../../ring/active_ring_item.schema.json",
+      "instance": "active_ring_item_sensitive.invalid.json",
+      "expected_valid": false
+    },
+    {
+      "name": "recoverable ring state golden",
+      "schema": "../../ring/ring_state_snapshot.schema.json",
+      "instance": "ring_state_snapshot.golden.json",
+      "expected_valid": true
+    },
+    {
+      "name": "ring get_state NativeResult golden",
+      "schema": "../../common/native_result.schema.json",
+      "data_schema": "../../ring/ring_state_snapshot.schema.json",
+      "instance": "ring_get_state_success.golden.json",
+      "expected_valid": true
+    },
+    {
+      "name": "ring stale-session NativeResult golden",
+      "schema": "../../common/native_result.schema.json",
+      "instance": "ring_session_conflict_failure.golden.json",
+      "expected_valid": true
+    },
+    {
+      "name": "snooze request has no caller-controlled duration",
+      "schema": "../../reminder/snooze_reminder_request.schema.json",
+      "instance": "snooze_request.golden.json",
+      "expected_valid": true
+    },
+    {
+      "name": "snooze deterministic response",
+      "schema": "../../reminder/snooze_reminder_response.schema.json",
+      "instance": "snooze_response.golden.json",
+      "expected_valid": true
+    },
+    {
+      "name": "ring recovery at 4m59s remains detail",
+      "schema": "../../reminder/plan_recovery_response.schema.json",
+      "instance": "recovery_ring_4m59s.valid.json",
+      "expected_valid": true,
+      "recovery_oracle": {
+        "started_at": "2026-08-22T10:00:00Z",
+        "candidate_remind_at": "2026-08-22T09:55:01Z",
+        "candidate_reminder_id": "33333333-3333-4333-8333-333333333341",
+        "expected_bucket": "detail",
+        "expected_lateness_seconds": 299
+      }
+    },
+    {
+      "name": "ring recovery at exactly 5m remains detail",
+      "schema": "../../reminder/plan_recovery_response.schema.json",
+      "instance": "recovery_ring_5m00s.valid.json",
+      "expected_valid": true,
+      "recovery_oracle": {
+        "started_at": "2026-08-22T10:00:00Z",
+        "candidate_remind_at": "2026-08-22T09:55:00Z",
+        "candidate_reminder_id": "33333333-3333-4333-8333-333333333342",
+        "expected_bucket": "detail",
+        "expected_lateness_seconds": 300
+      }
+    },
+    {
+      "name": "ring recovery at 5m01s becomes summary",
+      "schema": "../../reminder/plan_recovery_response.schema.json",
+      "instance": "recovery_ring_5m01s.valid.json",
+      "expected_valid": true,
+      "recovery_oracle": {
+        "started_at": "2026-08-22T10:00:00Z",
+        "candidate_remind_at": "2026-08-22T09:54:59Z",
+        "candidate_reminder_id": "33333333-3333-4333-8333-333333333343",
+        "expected_bucket": "summary",
+        "expected_lateness_seconds": 301
+      }
+    },
+    {
+      "name": "recovery summary remains popup",
+      "schema": "../../notification/notification_response.schema.json",
+      "instance": "recovery_summary_ring_notification.invalid.json",
+      "expected_valid": false
+    }
+  ]
+}

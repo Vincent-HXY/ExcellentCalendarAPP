@@ -15,7 +15,7 @@
 | `expiresAt` | `datetime` | 是 | 注册/改邮箱 10 分钟，密码重置 15 分钟 |
 | `resendAvailableAt` | `datetime` | 是 | 创建后 60 秒 |
 | `consumedAt` | `datetime` | 否 | 验证成功时间 |
-| `invalidatedAt` | `datetime` | 否 | 重发、取消或安全事件导致的失效时间 |
+| `invalidatedAt` | `datetime` | 否 | 重发、注册邮箱更正、取消或安全事件导致的失效时间 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 
 ## 枚举定义

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/snooze_reminder_response.schema.json",
+  "title": "SnoozeReminderResponse",
+  "description": "Idempotent result of reminder.snooze. The first call uses the C++ Clock plus 10 minutes; replay returns the same stored Reminder without moving remind_at.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_delivery_id",
+    "snooze_minutes",
+    "snoozed_reminder",
+    "idempotent_replay"
+  ],
+  "properties": {
+    "source_delivery_id": {"type": "string", "format": "uuid"},
+    "snooze_minutes": {"type": "integer", "const": 10},
+    "snoozed_reminder": {
+      "allOf": [
+        {"$ref": "./reminder_response.schema.json"},
+        {
+          "properties": {
+            "target_type": {"const": "event"},
+            "recurrence_revision": {"type": "null"},
+            "occurrence_key": {"type": "null"},
+            "occurrence_start_at": {"type": "null"},
+            "methods": {"const": ["ring"]}
+          },
+          "required": [
+            "target_type",
+            "recurrence_revision",
+            "occurrence_key",
+            "occurrence_start_at",
+            "methods"
+          ]
+        }
+      ]
+    },
+    "idempotent_replay": {"type": "boolean"}
+  }
+}

@@ -205,6 +205,18 @@ void validate_reminders(
         throw DecodeFailure("Reminder methods are invalid");
       }
     }
+    if (!recurring) {
+      if (reminder.methods.size() != 1U ||
+          (reminder.methods.front() != domain::kReminderMethodPopup &&
+           reminder.methods.front() != domain::kReminderMethodRing)) {
+        throw DecodeFailure("Ordinary Reminder methods are invalid");
+      }
+      if (reminder.methods.front() == domain::kReminderMethodRing) {
+        if (reminder.target_type != domain::kReminderTargetEvent) {
+          throw DecodeFailure("Ring Reminder target invariant is invalid");
+        }
+      }
+    }
     if ((reminder.cancellation_reason.has_value() &&
          !domain::is_valid_reminder_cancellation_reason(*reminder.cancellation_reason)) ||
          (reminder.recovery_batch_id.has_value() &&
@@ -261,7 +273,8 @@ void validate_notifications(
           notification.status != domain::kNotificationStatusAbandoned) ||
         !domain::is_valid_notification_target_type(notification.target_type) ||
         !common::is_uuid(notification.target_id) ||
-        notification.method != domain::kReminderMethodPopup ||
+        (notification.method != domain::kReminderMethodPopup &&
+         notification.method != domain::kReminderMethodRing) ||
         common::trim_ascii(notification.title).empty() ||
         !common::is_iso8601_utc_datetime(notification.planned_at) ||
          !notification.prepared_at.has_value() ||
@@ -273,19 +286,35 @@ void validate_notifications(
       throw DecodeFailure("Notification invariant is invalid");
     }
     if (notification.kind == "reminder") {
+      const auto reminder = notification.reminder_id.has_value()
+                                ? std::find_if(
+                                      state.reminders.begin(), state.reminders.end(),
+                                      [&](const auto& value) {
+                                        return value.id == *notification.reminder_id;
+                                      })
+                                : state.reminders.end();
       if (!notification.reminder_id.has_value() ||
-          !common::is_uuid(*notification.reminder_id) ||
-          std::find_if(state.reminders.begin(), state.reminders.end(), [&](const auto& reminder) {
-            return reminder.id == *notification.reminder_id;
-          }) == state.reminders.end() ||
+          !common::is_uuid(*notification.reminder_id) || reminder == state.reminders.end() ||
           notification.target_type == "reminder_recovery_batch") {
         throw DecodeFailure("Reminder Notification identity is invalid");
+      }
+      if (reminder->methods.size() != 1U ||
+          reminder->methods.front() != notification.method) {
+        throw DecodeFailure("Reminder Notification method is invalid");
+      }
+      if (notification.method == domain::kReminderMethodRing &&
+          (notification.target_type != domain::kReminderTargetEvent ||
+           notification.target_id != reminder->target_id ||
+           reminder->recurrence_revision.has_value() ||
+           notification.occurrence_key.has_value())) {
+        throw DecodeFailure("Ring Notification identity is invalid");
       }
     } else if (notification.kind == "recovery_summary") {
       if (notification.reminder_id.has_value() || !notification.recovery_batch_id.has_value() ||
           !common::is_uuid(*notification.recovery_batch_id) ||
           notification.target_type != "reminder_recovery_batch" ||
           notification.target_id != *notification.recovery_batch_id ||
+          notification.method != domain::kReminderMethodPopup ||
           notification.occurrence_key.has_value()) {
         throw DecodeFailure("Recovery summary Notification identity is invalid");
       }

@@ -53,7 +53,7 @@ data class OpenNotificationSettingsContract(
                 map,
                 "settings_target",
                 parent,
-                setOf("notification", "exact_alarm", "application"),
+                setOf("notification", "exact_alarm", "application", "ring_channel", "full_screen_intent"),
             )
             return OpenNotificationSettingsContract(map["settings_target"] as String)
         }

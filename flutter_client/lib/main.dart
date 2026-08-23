@@ -17,16 +17,22 @@ import 'boundary_adapters/dart_method_channel/method_channel_anniversary_adapter
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_notification_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_reminder_adapter.dart';
+import 'boundary_adapters/dart_method_channel/method_channel_ring_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_timezone_adapter.dart';
 import 'data/anniversary/fake_anniversary_share_gateway.dart';
 import 'data/anniversary/native_anniversary_gateway.dart';
 import 'gateway_interfaces/anniversary_gateway.dart';
 import 'gateway_interfaces/category_repository.dart';
+import 'gateway_interfaces/ring_native_gateway.dart';
+import 'application/ring/active_ring_session_controller.dart';
 import 'presentation/app_notification_host.dart';
 import 'presentation/anniversary/pages/anniversary_detail_page.dart';
 import 'presentation/anniversary/pages/anniversary_list_page.dart';
 import 'presentation/event_detail/pages/event_detail_flow_page.dart';
 import 'presentation/inbox/inbox_page.dart';
+import 'presentation/ring/active_ring_session_page.dart';
+import 'presentation/ring/ring_session_host.dart';
+import 'presentation/ring/ring_settings_page.dart';
 
 void main() {
   runApp(buildProductionApp());
@@ -36,6 +42,7 @@ ExcellentCalendarApp buildProductionApp() {
   return ExcellentCalendarApp(
     anniversaryClock: const SystemAppClock(),
     categoryRepository: buildProductionCategoryRepository(),
+    ringGateway: MethodChannelRingAdapter(),
   );
 }
 
@@ -43,11 +50,13 @@ class ExcellentCalendarApp extends StatefulWidget {
   const ExcellentCalendarApp({
     required this.anniversaryClock,
     required this.categoryRepository,
+    required this.ringGateway,
     super.key,
   });
 
   final AppClock anniversaryClock;
   final CategoryRepository categoryRepository;
+  final RingNativeGateway ringGateway;
 
   @override
   State<ExcellentCalendarApp> createState() => _ExcellentCalendarAppState();
@@ -66,11 +75,18 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   late final AnniversaryGateway _anniversaryGateway;
   late final FakeAnniversaryShareGateway _anniversaryShareGateway;
   late final CategoryRepository _categoryRepository;
+  late final RingNativeGateway _ringGateway;
+  late final ActiveRingSessionController _activeRingController;
 
   @override
   void initState() {
     super.initState();
     _eventGateway = MethodChannelEventAdapter();
+    _ringGateway = widget.ringGateway;
+    _activeRingController = ActiveRingSessionController(
+      ringGateway: _ringGateway,
+      eventGateway: _eventGateway,
+    );
     _anniversaryClock = widget.anniversaryClock;
     _anniversaryShareGateway = FakeAnniversaryShareGateway();
     _categoryRepository = widget.categoryRepository;
@@ -116,6 +132,9 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
         categoryRepository: _categoryRepository,
         onOpenAnniversaries: () =>
             Navigator.of(context).pushNamed('/anniversaries'),
+        onOpenRingSettings: () =>
+            Navigator.of(context).pushNamed('/settings/ring'),
+        ringGateway: _ringGateway,
       ),
     );
   }
@@ -139,33 +158,41 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return RingSessionHost(
+      controller: _activeRingController,
       navigatorKey: _navigatorKey,
-      title: 'Excellent Calendar',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF38B9C5)),
-        fontFamily: 'Roboto',
-        useMaterial3: true,
-      ),
-      initialRoute: '/today',
-      onGenerateRoute: (settings) => AppRouter.onGenerateRoute(
-        settings,
-        todayBuilder: _buildToday,
-        anniversaryListBuilder: _buildAnniversaryList,
-        anniversaryDetailBuilder: _buildAnniversaryDetail,
-        eventDetailBuilder: (context, routeData) => EventDetailFlowPage(
-          controller: RecurringEventDetailController(
-            eventId: routeData.eventId,
-            gateway: _eventGateway,
+      child: MaterialApp(
+        navigatorKey: _navigatorKey,
+        title: 'Excellent Calendar',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF38B9C5)),
+          fontFamily: 'Roboto',
+          useMaterial3: true,
+        ),
+        initialRoute: '/today',
+        onGenerateRoute: (settings) => AppRouter.onGenerateRoute(
+          settings,
+          todayBuilder: _buildToday,
+          anniversaryListBuilder: _buildAnniversaryList,
+          anniversaryDetailBuilder: _buildAnniversaryDetail,
+          ringSettingsBuilder: (_) => RingSettingsPage(gateway: _ringGateway),
+          activeRingBuilder: (_) =>
+              ActiveRingSessionPage(controller: _activeRingController),
+          eventDetailBuilder: (context, routeData) => EventDetailFlowPage(
+            controller: RecurringEventDetailController(
+              eventId: routeData.eventId,
+              gateway: _eventGateway,
+              timezoneService: _timezoneService,
+              reconcileReminderScheduleUseCase:
+                  _reconcileReminderScheduleUseCase,
+              focusOccurrenceKey: routeData.occurrenceKey,
+            ),
+            completeEventUseCase: _completeEventUseCase,
+            updateEventUseCase: _updateEventUseCase,
             timezoneService: _timezoneService,
-            reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
-            focusOccurrenceKey: routeData.occurrenceKey,
+            categoryRepository: _categoryRepository,
           ),
-          completeEventUseCase: _completeEventUseCase,
-          updateEventUseCase: _updateEventUseCase,
-          timezoneService: _timezoneService,
-          categoryRepository: _categoryRepository,
         ),
       ),
     );
@@ -173,6 +200,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
 
   @override
   void dispose() {
+    _activeRingController.dispose();
     _notificationBootstrap.dispose();
     super.dispose();
   }

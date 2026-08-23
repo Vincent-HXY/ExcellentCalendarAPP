@@ -180,6 +180,16 @@ struct index_entry_t {
 #  endif //!USE_SHELL_API
 #endif  // !_WIN32
 
+// Excellent Calendar uses the vendored IANA source files on Android. Keep the
+// platform macros visible while libc++ and Bionic headers are parsed, but make
+// date's remaining platform selection follow its POSIX source-database path.
+// Undefining these macros for the whole translation unit breaks Android libc++
+// iostream state handling at runtime.
+#if defined(EXCELLENT_CALENDAR_DATE_SOURCE_TZDB_ANDROID)
+#  undef ANDROID
+#  undef __ANDROID__
+#endif
+
 
 #if HAS_REMOTE_API
    // Note curl includes windows.h so we must include curl AFTER definitions of things
@@ -3833,6 +3843,8 @@ init_tzdb()
         while (infile)
         {
             std::getline(infile, line);
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
             if (!line.empty() && line[0] != '#')
             {
                 std::istringstream in(line);

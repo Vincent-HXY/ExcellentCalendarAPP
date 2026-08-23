@@ -1,6 +1,7 @@
 import 'package:excellent_calendar/application/anniversary/app_clock.dart';
 import 'package:excellent_calendar/application/category/category_models.dart';
 import 'package:excellent_calendar/data/category/native_category_repository.dart';
+import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_channel_ring_adapter.dart';
 import 'package:excellent_calendar/main.dart' as production;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +20,7 @@ void main() {
 
     expect(app.anniversaryClock, isA<SystemAppClock>());
     expect(app.anniversaryClock, isNot(isA<FixedAppClock>()));
+    expect(app.ringGateway, isA<MethodChannelRingAdapter>());
   });
 
   test(

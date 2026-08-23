@@ -131,6 +131,11 @@ errors:
     message: "Reminder schedule changed before the Android registration acknowledgement"
     retryable: true
 
+  REMINDER_SNOOZE_NOT_ALLOWED:
+    module: reminder
+    message: "The source ring delivery cannot create a snoozed Reminder"
+    retryable: false
+
   DELIVERY_ATTEMPT_INVALID:
     module: notification
     message: "Delivery attempt is missing, not prepared, or finalized with a conflicting outcome"
@@ -261,6 +266,16 @@ errors:
     message: "The account is disabled"
     retryable: false
 
+  AUTH_ACCOUNT_NOT_FOUND:
+    module: auth
+    message: "The referenced account does not exist"
+    retryable: false
+
+  AUTH_ACCOUNT_ALREADY_VERIFIED:
+    module: auth
+    message: "The account email is already verified"
+    retryable: false
+
   AUTH_EMAIL_ALREADY_EXISTS:
     module: auth
     message: "The email is already associated with an account"
@@ -284,6 +299,11 @@ errors:
   AUTH_VERIFICATION_USED:
     module: auth
     message: "The verification challenge has already been used"
+    retryable: false
+
+  AUTH_VERIFICATION_ATTEMPTS_EXCEEDED:
+    module: auth
+    message: "The verification challenge exceeded the maximum failed attempts and was invalidated"
     retryable: false
 
   AUTH_PASSWORD_POLICY_VIOLATION:
@@ -375,6 +395,56 @@ errors:
     module: reminder
     message: "Exact alarm permission is denied"
     retryable: true
+
+  RING_CAPABILITY_UNAVAILABLE:
+    module: ring
+    message: "Required Android capability for ring reminders is unavailable"
+    retryable: true
+
+  RING_SETTINGS_CONFLICT:
+    module: ring
+    message: "Ring settings changed before the requested update"
+    retryable: true
+
+  RING_SETTINGS_STORAGE_FAILED:
+    module: ring
+    message: "Device-local ring settings could not be persisted"
+    retryable: true
+
+  RING_SETTINGS_CORRUPTED:
+    module: ring
+    message: "Device-local ring settings cannot be decoded safely"
+    retryable: false
+
+  RING_SESSION_NOT_FOUND:
+    module: ring
+    message: "No matching active ring session exists"
+    retryable: false
+
+  RING_SESSION_CONFLICT:
+    module: ring
+    message: "Active ring session changed before the requested action"
+    retryable: true
+
+  RING_ITEM_NOT_FOUND:
+    module: ring
+    message: "No matching item exists in the active ring session"
+    retryable: false
+
+  RINGTONE_PICKER_FAILED:
+    module: ring
+    message: "Android system ringtone picker failed"
+    retryable: true
+
+  RING_CONTROL_NOTIFICATION_FAILED:
+    module: ring
+    message: "Ring foreground control notification could not be shown"
+    retryable: true
+
+  RING_OUTPUT_UNAVAILABLE:
+    module: ring
+    message: "Neither ring sound nor vibration could be started"
+    retryable: false
 
   UNSUPPORTED_REMINDER_METHOD:
     module: reminder

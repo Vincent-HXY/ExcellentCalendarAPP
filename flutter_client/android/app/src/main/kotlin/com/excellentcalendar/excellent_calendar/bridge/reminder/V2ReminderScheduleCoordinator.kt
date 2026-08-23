@@ -37,8 +37,9 @@ class V2ReminderScheduleCoordinator(
 
             val recovered = recoveryCoordinator.recover(request.trigger) { elapsedRealtime() < deadline }
             val recoveryFailure: NativeResultContract?
+            var continuationEnqueued = false
             if (!recovered.ok) {
-                if (recovered.error?.retryable == true) enqueueContinuation()
+                if (recovered.error?.retryable == true) continuationEnqueued = enqueueContinuation()
                 logger.log(
                     "reminder.plan_recovery",
                     null,
@@ -56,6 +57,7 @@ class V2ReminderScheduleCoordinator(
 
             val currentNow = nowUtc()
             var processed = 0
+            val failedReminderIds = linkedSetOf<String>()
             var cursor: V2SchedulableCursor? = null
             do {
                 val listed = listSchedulable(toAt = currentNow, cursor = cursor, includeScheduled = true, limit = DeliveryBatchSize)
@@ -63,13 +65,22 @@ class V2ReminderScheduleCoordinator(
                 val batch = V2SchedulableBatch.fromData(listed.data)
                 for (reminder in batch.reminders) {
                     if (elapsedRealtime() >= deadline) {
-                        val continuation = continuationResponse(processed)
+                        val continuation = continuationResponse(processed, failedReminderIds, continuationEnqueued)
                         return@withLock recoveryFailure ?: continuation
                     }
-                    val delivered = deliveryService.deliverReminder(reminder.reminderId, reminder.remindAt)
+                    val delivered = deliveryService.deliverReminder(reminder.reminderId, reminder.remindAt, null, reminder.method)
                     if (!delivered.ok) {
-                        if (delivered.error?.retryable == true) enqueueContinuation()
-                        return@withLock delivered
+                        failedReminderIds += reminder.reminderId
+                        if (delivered.error?.retryable == true && !continuationEnqueued) {
+                            continuationEnqueued = enqueueContinuation()
+                        }
+                        logger.log(
+                            "reminder.deliver_due",
+                            reminder.reminderId,
+                            "failed code=${delivered.error?.code ?: "UNKNOWN"} " +
+                                "retryable=${delivered.error?.retryable == true} batch_continues=true",
+                        )
+                        continue
                     }
                     processed += 1
                 }
@@ -83,7 +94,13 @@ class V2ReminderScheduleCoordinator(
                 val head = V2SchedulableBatch.fromData(headResult.data).reminders.firstOrNull()
                 if (head == null) {
                     return@withLock when (val cancelled = alarmScheduler.cancel()) {
-                        CancelResult.Success -> recoveryFailure ?: success("cancelled", null, processed)
+                        CancelResult.Success -> recoveryFailure ?: success(
+                            "cancelled",
+                            null,
+                            processed,
+                            failedReminderIds,
+                            continuationEnqueued,
+                        )
                         is CancelResult.Failure -> NativeResultContract.failure(cancelled.code, cancelled.message, retryable = cancelled.retryable, contractVersion = 2)
                     }
                 }
@@ -99,7 +116,13 @@ class V2ReminderScheduleCoordinator(
                         val marked = markScheduled(head)
                         if (marked.ok) {
                             logger.log("reminder.reconcile_schedule", head.reminderId, "trigger_source=${request.trigger.wireValue} next_remind_at=${head.remindAt}")
-                            return@withLock recoveryFailure ?: success("scheduled", head.remindAt, processed)
+                            return@withLock recoveryFailure ?: success(
+                                "scheduled",
+                                head.remindAt,
+                                processed,
+                                failedReminderIds,
+                                continuationEnqueued,
+                            )
                         }
                         if (marked.error?.code != NativeErrorCodes.ReminderScheduleConflict || conflictRetries++ >= MaxScheduleConflictRetries) {
                             return@withLock marked
@@ -125,7 +148,7 @@ class V2ReminderScheduleCoordinator(
             "cursor" to cursor?.toMap(),
             "limit" to limit,
             "include_scheduled" to includeScheduled,
-            "supported_methods" to listOf("popup"),
+            "supported_methods" to listOf("popup", "ring"),
         )
         return parse(nativeBridge.listSchedulableReminders(NativeContractJsonCodec.encodeObject(request))) {
             V2SchedulableBatch.fromData(it)
@@ -155,9 +178,13 @@ class V2ReminderScheduleCoordinator(
         )
     }
 
-    private fun continuationResponse(processed: Int = 0): NativeResultContract {
-        val enqueued = enqueueContinuation()
-        return success("unchanged", null, processed, continuationEnqueued = enqueued)
+    private fun continuationResponse(
+        processed: Int = 0,
+        failedReminderIds: Collection<String> = emptyList(),
+        alreadyEnqueued: Boolean = false,
+    ): NativeResultContract {
+        val enqueued = alreadyEnqueued || enqueueContinuation()
+        return success("unchanged", null, processed, failedReminderIds, continuationEnqueued = enqueued)
     }
 
     private fun enqueueContinuation(): Boolean = try {
@@ -172,15 +199,16 @@ class V2ReminderScheduleCoordinator(
         action: String,
         nextRemindAt: String?,
         processed: Int,
+        failedReminderIds: Collection<String> = emptyList(),
         continuationEnqueued: Boolean = false,
     ): NativeResultContract = NativeResultContract.success(
         linkedMapOf(
             "action" to action,
             "next_remind_at" to nextRemindAt,
             "processed_due_count" to processed,
-            "failed_count" to 0,
+            "failed_count" to failedReminderIds.size,
             "continuation_enqueued" to continuationEnqueued,
-            "failed_reminder_ids" to emptyList<String>(),
+            "failed_reminder_ids" to failedReminderIds.toList(),
         ),
         contractVersion = 2,
     )

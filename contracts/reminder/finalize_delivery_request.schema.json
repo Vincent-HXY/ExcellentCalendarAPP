@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/finalize_delivery_request.schema.json",
   "title": "FinalizeDeliveryRequest",
-  "description": "Finalizes one prepared attempt. Finalized and sent timestamps come from the C++ Clock; Kotlin supplies only the system outcome.",
+  "description": "Finalizes one prepared attempt. Finalized and sent timestamps come from the C++ Clock; Kotlin supplies only the system outcome. For a ring attempt, outcome=sent is permitted only after the foreground control notification is visible and at least one of sound or vibration has actually started.",
   "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,

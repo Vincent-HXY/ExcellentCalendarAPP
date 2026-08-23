@@ -343,11 +343,25 @@ RecurringReminderDeliveryWorkflowService::prepare_delivery(
           if (!is_open(*reminder)) {
             return common::Result<common::Unit>::failure(reminder_not_deliverable(*reminder));
           }
-          if (command.method != domain::kReminderMethodPopup ||
-              !contains(reminder->methods, command.method)) {
+          const bool supported_method = command.method == domain::kReminderMethodPopup ||
+                                        command.method == domain::kReminderMethodRing;
+          if (!supported_method || !contains(reminder->methods, command.method)) {
             return common::Result<common::Unit>::failure(common::make_error(
                 "UNSUPPORTED_REMINDER_METHOD",
                 "Reminder method is not supported in current version", {{"method", command.method}}));
+          }
+          if (command.method == domain::kReminderMethodRing) {
+            const auto* event = find_event(state, reminder->target_id);
+            if (reminder->target_type != domain::kReminderTargetEvent ||
+                reminder->recurrence_revision.has_value() ||
+                reminder->occurrence_key.has_value() ||
+                reminder->occurrence_start_at.has_value() || event == nullptr ||
+                event->deleted_at.has_value() || event->status != domain::kEventStatusActive ||
+                event->is_all_day || event->has_recurrence ||
+                event->recurrence_id.has_value() || event->recurrence_revision.has_value()) {
+              return common::Result<common::Unit>::failure(
+                  reminder_not_deliverable(*reminder));
+            }
           }
           if (reminder->remind_at != *command.expected_remind_at) {
             return common::Result<common::Unit>::failure(common::make_error(

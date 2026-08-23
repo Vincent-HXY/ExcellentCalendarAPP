@@ -10,7 +10,7 @@
   "properties": {
     "settings_target": {
       "type": "string",
-      "enum": ["notification", "exact_alarm", "application"]
+      "enum": ["notification", "exact_alarm", "application", "ring_channel", "full_screen_intent"]
     }
   }
 }

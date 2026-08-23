@@ -63,6 +63,17 @@ object NativeErrorCodes {
     const val ReminderNotDue = "REMINDER_NOT_DUE"
     const val ReminderNotDeliverable = "REMINDER_NOT_DELIVERABLE"
     const val NotificationInitializationFailed = "NOTIFICATION_INITIALIZATION_FAILED"
+    const val ReminderSnoozeNotAllowed = "REMINDER_SNOOZE_NOT_ALLOWED"
+    const val RingCapabilityUnavailable = "RING_CAPABILITY_UNAVAILABLE"
+    const val RingSettingsConflict = "RING_SETTINGS_CONFLICT"
+    const val RingSettingsStorageFailed = "RING_SETTINGS_STORAGE_FAILED"
+    const val RingSettingsCorrupted = "RING_SETTINGS_CORRUPTED"
+    const val RingSessionNotFound = "RING_SESSION_NOT_FOUND"
+    const val RingSessionConflict = "RING_SESSION_CONFLICT"
+    const val RingItemNotFound = "RING_ITEM_NOT_FOUND"
+    const val RingtonePickerFailed = "RINGTONE_PICKER_FAILED"
+    const val RingControlNotificationFailed = "RING_CONTROL_NOTIFICATION_FAILED"
+    const val RingOutputUnavailable = "RING_OUTPUT_UNAVAILABLE"
 
     /** 用于校验 native 返回的错误码是否是协议中声明过的值。 */
     val All = setOf(
@@ -122,6 +133,17 @@ object NativeErrorCodes {
         ReminderNotDue,
         ReminderNotDeliverable,
         NotificationInitializationFailed,
+        ReminderSnoozeNotAllowed,
+        RingCapabilityUnavailable,
+        RingSettingsConflict,
+        RingSettingsStorageFailed,
+        RingSettingsCorrupted,
+        RingSessionNotFound,
+        RingSessionConflict,
+        RingItemNotFound,
+        RingtonePickerFailed,
+        RingControlNotificationFailed,
+        RingOutputUnavailable,
     )
 }
 

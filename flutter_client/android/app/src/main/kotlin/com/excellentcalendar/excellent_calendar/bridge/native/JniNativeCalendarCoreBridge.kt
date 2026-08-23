@@ -196,6 +196,10 @@ class JniNativeCalendarCoreBridge(
         nativePlanReminderRecoveryV2(requestJson)
     }
 
+    override fun snoozeReminder(requestJson: String) = v2Only("nativeSnoozeReminderV2") {
+        nativeSnoozeReminderV2(requestJson)
+    }
+
     override fun createNotification(requestJson: String): String = if (profile == NativeContractProfile.V1) {
         callWithRuntime("nativeCreateNotification") { nativeCreateNotification(requestJson) }
     } else unsupported("notification.create")
@@ -366,6 +370,7 @@ class JniNativeCalendarCoreBridge(
     external fun nativePrepareReminderDeliveryV2(requestJson: String): String
     external fun nativeFinalizeReminderDeliveryV2(requestJson: String): String
     external fun nativePlanReminderRecoveryV2(requestJson: String): String
+    external fun nativeSnoozeReminderV2(requestJson: String): String
     external fun nativeCreateNotification(requestJson: String): String
     external fun nativeConsumeReminderAfterDelivery(requestJson: String): String
 

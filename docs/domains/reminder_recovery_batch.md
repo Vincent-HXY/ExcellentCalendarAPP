@@ -13,7 +13,7 @@
 | `summaryReminderIds` | `string[]` | 是 | 窗口内其余通过摘要投递的 Reminder ID |
 | `olderSkippedOccurrenceCount` | `integer` | 是 | 72 小时以前未展开的 occurrence 数 |
 | `olderSkippedReminderCount` | `integer` | 是 | 72 小时以前未生成的 Reminder 数，加上本事务终结为 `expired` 的已物化 open Reminder 数 |
-| `windowOverflowCount` | `integer` | 是 | 窗口内超过 20 条上限的 Reminder 数 |
+| `windowOverflowCount` | `integer` | 是 | 为兼容 v2 保留的字段名；表示窗口内进入摘要的总 Reminder 数，既包括超过 5 分钟的 ring，也包括超过全局 20 条上限的其他候选 |
 | `summaryDeliveryId` | `string` | 否 | 有摘要时的稳定 delivery UUIDv5 |
 | `status` | `ReminderRecoveryBatchStatus` | 是 | 批次状态 |
 | `completedAt` | `datetime` | 否 | 批次完成时间 |
@@ -21,8 +21,11 @@
 约束：
 
 - `recoveryRequestId` 唯一；重复调用返回同一批次。同一时间最多一个 `in_progress` 批次，否则返回 `RECOVERY_BATCH_CONFLICT`。
-- `detailReminderIds` 与 `summaryReminderIds` 必须互斥，`windowOverflowCount` 必须等于 `summaryReminderIds.length`；`planRecovery.detailReminders` 必须与 `detailReminderIds` 同序且一一对应。
-- `planRecovery.preparedAttemptResolutions` 必须完整、稳定地返回本批次裁决的既有 prepared attempts：最近 20 条为 `adopted_detail`，窗口内其余为 `abandoned_to_summary`，严格早于窗口为 `abandoned_outside_window`。后两者的 `replacementDeliveryId` 等于 `summaryDeliveryId`。
+- `windowStartAt = startedAt - 72h`。Ring 的 5 分钟边界由 C++ 从同一个已持久化 `startedAt` 推导，不新增持久化字段；宽限区间为闭区间 `[startedAt - 5min, startedAt]`：迟到 4:59 与恰好 5:00 仍具备明细资格，迟到 5:01 强制进入摘要。
+- 先把 `remindAt < startedAt - 5min` 的窗口内 ring 放入摘要；再将其余 popup 与宽限窗 ring 按 `remindAt desc, reminderId desc` 选最近 20 条明细，超出部分作为 overflow 摘要。因此宽限窗 ring 仍受全局 20 条安全上限约束。
+- `detailReminderIds` 与 `summaryReminderIds` 必须互斥并覆盖全部窗口内候选；`windowOverflowCount = summaryReminderIds.length`。这里的 legacy 名称不再只表示容量溢出，而是 ring 超时与容量溢出的合计摘要数；`planRecovery.detailReminders` 必须与 `detailReminderIds` 同序且一一对应。
+- `planRecovery.preparedAttemptResolutions` 必须完整、稳定地返回本批次裁决的既有 prepared attempts：最终进入明细的至多 20 条为 `adopted_detail`，窗口内被 ring 宽限规则或数量上限归入摘要的为 `abandoned_to_summary`，严格早于 72 小时窗口的为 `abandoned_outside_window`。后两者的 `replacementDeliveryId` 等于 `summaryDeliveryId`。
+- 5 分钟宽限窗外的既有 ring prepared attempt 必须裁决为 `abandoned_to_summary`；宽限窗内且进入明细的 attempt 使用 `adopted_detail`。Kotlin 不得自行重算 5 分钟边界。
 - 只要摘要列表非空或任一 older skipped 计数大于 `0`，`summaryDeliveryId` 就必须存在；三者都为空/为 `0` 时必须为 `null`。
 - 只为 `[windowStartAt, startedAt]` 内的合法 occurrence 生成真实 Reminder；72 小时以前只记计数，不批量生成对象。
 - 已经物化且严格早于 `windowStartAt` 的 open Reminder 不再留在调度队列：同一计划事务把它终结为 `expired` 并计入 `olderSkippedReminderCount`；恰好等于边界的 Reminder 仍参加窗口内明细/摘要选择。

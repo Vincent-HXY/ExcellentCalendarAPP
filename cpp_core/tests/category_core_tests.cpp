@@ -171,8 +171,8 @@ picojson::object parse_native_result(const std::string &json,
   return result;
 }
 
-const picojson::object &require_success(const picojson::object &result,
-                                        const std::string &context) {
+picojson::object require_success(const picojson::object &result,
+                                 const std::string &context) {
   require(result.at("ok").is<bool>() && result.at("ok").get<bool>() &&
               result.at("data").is<picojson::object>() &&
               result.at("error").is<picojson::null>(),

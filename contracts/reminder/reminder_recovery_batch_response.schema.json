@@ -2,7 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json",
   "title": "ReminderRecoveryBatchResponse",
-  "description": "Persisted idempotent recovery batch for the fixed 72-hour window and global 20-detail limit. C++ additionally enforces disjoint detail/summary IDs and window_overflow_count == summary_reminder_ids.length.",
+  "description": "Persisted idempotent recovery batch for the fixed 72-hour window, inclusive 5-minute ring grace rule, and global 20-detail limit. The legacy field name window_overflow_count is retained for storage compatibility and counts every in-window Reminder placed in the summary.",
+  "x-recovery-count-invariants": [
+    "window_start_at equals started_at minus 72 hours; the ring grace boundary is derived as started_at minus 5 minutes and is not persisted separately.",
+    "A ring Reminder with remind_at exactly equal to started_at minus 5 minutes remains detail-eligible; one earlier by any positive duration is forced to summary.",
+    "detail_reminder_ids and summary_reminder_ids are disjoint and contain every selected in-window Reminder exactly once.",
+    "window_overflow_count equals summary_reminder_ids.length and includes both ring Reminders outside the five-minute grace window and otherwise eligible Reminders excluded by the global 20-detail limit."
+  ],
   "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
@@ -47,7 +53,11 @@
       "type": "integer",
       "minimum": 0
     },
-    "window_overflow_count": {"type": "integer", "minimum": 0},
+    "window_overflow_count": {
+      "description": "Compatibility name for the total number of in-window Reminders assigned to summary, whether due to ring grace expiry or the 20-detail limit. Must equal summary_reminder_ids.length.",
+      "type": "integer",
+      "minimum": 0
+    },
     "summary_delivery_id": {"type": ["string", "null"], "format": "uuid"},
     "status": {"type": "string", "enum": ["in_progress", "completed"]},
     "completed_at": {"type": ["string", "null"], "format": "date-time"}

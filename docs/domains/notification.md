@@ -6,8 +6,8 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 
 - `Notification` 回答“哪个逻辑 delivery 的哪次 attempt 是否真的投递、什么时候终结、失败是否可重试”。
 - `Notification` 是结果日志，不参与未来提醒扫描。
-- 本地系统通知、响铃、弹窗、微信提醒都可以生成 `Notification` 记录。
-- 一条 Reminder 的每个 `method` 都是独立逻辑 delivery；部分成功通过各自 Notification attempt 表达，不把渠道结果压成自由文本。
+- 本地系统 popup 与 ring 都生成 `Notification` 记录；wechat 保留未来独立渠道身份，但当前 revision 不产生成功记录。
+- 当前成功持久化的 Reminder 恰好只有一个 `method`：普通 Reminder 为 `popup` 或 `ring`，重复 Reminder固定为 `popup`。Notification 仍按 `(reminderId, method)` 生成独立逻辑 delivery，为未来协议扩展保留稳定身份，但本 revision 不存在多渠道部分成功聚合。
 - Android 固定使用 `NotificationManager.notify(tag = deliveryId, id = 0, ...)`。同一逻辑 delivery 重试覆盖同一通知栏条目，不会制造重复条目。
 
 | 字段 | 类型 | 必填 | 说明 |
@@ -36,7 +36,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
 
-两阶段与渠道聚合不变量：
+两阶段与单渠道不变量：
 
 - `prepare_delivery` 由 C++ 校验 Reminder 仍可投递且 `expectedRemindAt` 与当前记录严格相等，并创建或复用唯一 `prepared` attempt；普通调度还必须已到期，绑定有效恢复批次的明细 Reminder 才允许使用窗口内的历史 `remindAt`。响应同时提供真实 Notification ID、展示内容和点击 payload。
 - 已存在 `sent` attempt 的 `deliveryId` 不得再次 prepare；C++ 返回 `REMINDER_ALREADY_CONSUMED` 或等价已声明错误，Kotlin 不展示重复通知。
@@ -45,7 +45,9 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 - Recovery 把既有 attempt 归入摘要或窗口外时，必须在同一事务写为 `abandoned`、记录 `abandonReason/resolvedByRecoveryBatchId/finalizedAt`。Kotlin 取消旧 `deliveryId` 的 Android notification tag，且旧 attempt 的任何 finalize 都返回 `DELIVERY_ATTEMPT_INVALID` 而不修改状态。
 - `deliveryId` 按 `contracts/identity.yaml` 使用 UUIDv5；`notificationId` 与新建的 `deliveryAttemptId` 由 C++ 使用 UUIDv4 生成，幂等复用 prepared attempt 时必须返回原值。
 - `sent` 要求 `finalizedAt/sentAt` 非空且失败字段为空；`failed` 要求 `finalizedAt/failureClass/errorCode` 非空且 `sentAt` 为空。
-- 多渠道 Reminder 只有当所有方法均已有 `sent` attempt 时才进入 `sent`。任何可重试失败使 Reminder 保持 `pending`，已成功渠道不重复投递；任一永久失败使 Reminder 进入 `failed`。v2 重复 Reminder 仅允许 popup，因此 successor 生成没有多渠道歧义。
+- 普通 Reminder 的单一渠道 attempt 成功后 Reminder 进入 `sent`；可重试失败使 Reminder 保持 `pending`，永久失败使 Reminder 进入 `failed`。重复 Reminder 仅允许 popup，因此 successor 生成没有多渠道歧义。
+- Ring Notification 只允许 `kind=reminder`、`targetType=event`、`occurrenceKey=null`。`status=sent` 额外要求 Android 前台控制通知已展示，且 MediaPlayer 声音或 Vibrator 振动至少一种真实启动；两种输出都失败时必须 finalize `failed`，不得用通知已展示冒充 ring 已发送。
+- Recovery summary 永远是 `popup`。5 分钟宽限窗内且未被 20 条明细上限溢出的 ring 可以作为明细继续响铃；更早的 ring 及明细溢出项只由 popup 摘要覆盖。
 - `prepare_delivery` 返回的 PendingIntent payload 必须携带 `notificationId/deliveryId/deliveryAttemptId/reminderId/targetId/occurrenceKey`；不适用的字段显式为 `null`。Android 收到点击后才追加非空 `openedAt`，再作为 `NotificationTapPayload` 发给 Flutter。
 
 ## 枚举定义

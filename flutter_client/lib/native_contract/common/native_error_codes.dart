@@ -28,6 +28,7 @@ class NativeErrorCodes {
   static const reminderMethodInvalid = 'REMINDER_METHOD_INVALID';
   static const reminderIdempotencyConflict = 'REMINDER_IDEMPOTENCY_CONFLICT';
   static const reminderScheduleConflict = 'REMINDER_SCHEDULE_CONFLICT';
+  static const reminderSnoozeNotAllowed = 'REMINDER_SNOOZE_NOT_ALLOWED';
   static const deliveryAttemptInvalid = 'DELIVERY_ATTEMPT_INVALID';
   static const recoveryBatchConflict = 'RECOVERY_BATCH_CONFLICT';
   static const notificationDeliveryFailed = 'NOTIFICATION_DELIVERY_FAILED';
@@ -56,6 +57,17 @@ class NativeErrorCodes {
   static const alarmCancelFailed = 'ALARM_CANCEL_FAILED';
   static const notificationPermissionDenied = 'NOTIFICATION_PERMISSION_DENIED';
   static const exactAlarmPermissionDenied = 'EXACT_ALARM_PERMISSION_DENIED';
+  static const ringCapabilityUnavailable = 'RING_CAPABILITY_UNAVAILABLE';
+  static const ringSettingsConflict = 'RING_SETTINGS_CONFLICT';
+  static const ringSettingsStorageFailed = 'RING_SETTINGS_STORAGE_FAILED';
+  static const ringSettingsCorrupted = 'RING_SETTINGS_CORRUPTED';
+  static const ringSessionNotFound = 'RING_SESSION_NOT_FOUND';
+  static const ringSessionConflict = 'RING_SESSION_CONFLICT';
+  static const ringItemNotFound = 'RING_ITEM_NOT_FOUND';
+  static const ringtonePickerFailed = 'RINGTONE_PICKER_FAILED';
+  static const ringControlNotificationFailed =
+      'RING_CONTROL_NOTIFICATION_FAILED';
+  static const ringOutputUnavailable = 'RING_OUTPUT_UNAVAILABLE';
   static const unsupportedReminderMethod = 'UNSUPPORTED_REMINDER_METHOD';
   static const reminderAlreadyConsumed = 'REMINDER_ALREADY_CONSUMED';
   static const reminderNotDue = 'REMINDER_NOT_DUE';
@@ -88,6 +100,7 @@ class NativeErrorCodes {
     reminderMethodInvalid,
     reminderIdempotencyConflict,
     reminderScheduleConflict,
+    reminderSnoozeNotAllowed,
     deliveryAttemptInvalid,
     recoveryBatchConflict,
     notificationDeliveryFailed,
@@ -114,6 +127,16 @@ class NativeErrorCodes {
     alarmCancelFailed,
     notificationPermissionDenied,
     exactAlarmPermissionDenied,
+    ringCapabilityUnavailable,
+    ringSettingsConflict,
+    ringSettingsStorageFailed,
+    ringSettingsCorrupted,
+    ringSessionNotFound,
+    ringSessionConflict,
+    ringItemNotFound,
+    ringtonePickerFailed,
+    ringControlNotificationFailed,
+    ringOutputUnavailable,
     unsupportedReminderMethod,
     reminderAlreadyConsumed,
     reminderNotDue,

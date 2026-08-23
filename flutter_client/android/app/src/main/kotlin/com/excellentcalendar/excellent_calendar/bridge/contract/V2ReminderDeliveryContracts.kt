@@ -4,6 +4,7 @@ data class V2ReminderItem(
     val reminderId: String,
     val remindAt: String,
     val status: String,
+    val method: String,
 ) {
     val isTerminal: Boolean get() = status in TerminalStatuses
 
@@ -58,6 +59,12 @@ data class V2PreparedDelivery(
 ) {
     val deliveryId: String get() = requiredString(notification, "delivery_id", "NotificationResponse")
     val attemptId: String get() = requiredString(notification, "delivery_attempt_id", "NotificationResponse")
+    val notificationId: String get() = requiredString(notification, "notification_id", "NotificationResponse")
+    val reminderId: String get() = requiredString(notification, "reminder_id", "NotificationResponse")
+    val eventId: String get() = requiredString(notification, "target_id", "NotificationResponse")
+    val recoveryBatchId: String? get() = notification["recovery_batch_id"] as String?
+    val plannedAt: String get() = requiredString(notification, "planned_at", "NotificationResponse")
+    val method: String get() = requiredString(notification, "method", "NotificationResponse")
     val title: String get() = requiredString(notification, "title", "NotificationResponse")
     val body: String? get() = notification["body"] as String?
 
@@ -211,6 +218,8 @@ private fun reminderItem(value: Any?, parent: String): V2ReminderItem {
         reminderId = requiredString(map, "reminder_id", parent),
         remindAt = requiredString(map, "remind_at", parent),
         status = requiredString(map, "status", parent),
+        method = (map["methods"] as? List<*>)?.singleOrNull() as? String
+            ?: throw NativeContractViolation("$parent.methods must contain exactly one method.", "$parent.methods"),
     )
 }
 

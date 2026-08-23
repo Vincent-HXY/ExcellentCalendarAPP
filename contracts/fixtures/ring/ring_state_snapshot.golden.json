@@ -1,0 +1,55 @@
+{
+  "captured_at": "2026-08-22T10:00:02Z",
+  "runtime_instance_id": "77777777-7777-4777-8777-777777777777",
+  "sequence": 5,
+  "session_revision": 3,
+  "settings": {
+    "revision": 2,
+    "ringtone_display_name": "系统默认闹钟铃声",
+    "ringtone_available": true,
+    "strong_reminder_enabled": true
+  },
+  "capability": {
+    "evaluated_at": "2026-08-22T10:00:02Z",
+    "sdk_int": 36,
+    "notification_permission": "granted",
+    "exact_alarm_permission": "granted",
+    "full_screen_intent_permission": "denied",
+    "can_post_notifications": true,
+    "can_schedule_exact_alarms": true,
+    "can_use_full_screen_intent": false,
+    "ring_channel_enabled": true,
+    "has_audio_output": true,
+    "has_vibrator": true,
+    "can_enable_ring": true,
+    "blocking_reasons": [],
+    "degradation_reasons": ["full_screen_intent_unavailable"]
+  },
+  "active_session": {
+    "session_id": "88888888-8888-4888-8888-888888888888",
+    "revision": 3,
+    "phase": "audible",
+    "generation": 1,
+    "started_at": "2026-08-22T10:00:00Z",
+    "phase_changed_at": "2026-08-22T10:00:01Z",
+    "audible_started_at": "2026-08-22T10:00:01Z",
+    "audible_deadline_at": "2026-08-22T10:05:01Z",
+    "quiet_since": null,
+    "control_notification_visible": true,
+    "sound_active": true,
+    "vibration_active": true,
+    "items": [
+      {
+        "notification_id": "99999999-9999-4999-8999-999999999991",
+        "delivery_id": "be8443d8-44c1-5ade-ad4a-4f35c9077510",
+        "delivery_attempt_id": "99999999-9999-4999-8999-999999999992",
+        "reminder_id": "33333333-3333-4333-8333-333333333333",
+        "event_id": "11111111-1111-4111-8111-111111111111",
+        "recovery_batch_id": null,
+        "planned_at": "2026-08-22T10:00:00Z",
+        "added_at": "2026-08-22T10:00:01Z"
+      }
+    ]
+  },
+  "test_state": "inactive"
+}

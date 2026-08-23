@@ -2,7 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/notification/notification_response.schema.json",
   "title": "NotificationResponse",
-  "description": "Contract v2 record for one prepared or finalized delivery attempt. Notification is an audit log, never a scheduling queue.",
+  "description": "Contract v2 record for one prepared or finalized delivery attempt. Notification is an audit log, never a scheduling queue. A sent ring attempt means the foreground control notification was shown and at least one of sound or vibration actually started.",
+  "x-ring-sent-invariant": "kind=reminder and method=ring and status=sent is valid only after Kotlin observes control-notification visibility and sound_started || vibration_started; a prepared or shown-only control notification is not sent.",
   "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
@@ -45,7 +46,7 @@
     },
     "target_id": {"type": "string", "format": "uuid"},
     "occurrence_key": {"type": ["string", "null"], "format": "uuid"},
-    "method": {"type": "string", "enum": ["ring", "popup", "wechat"]},
+    "method": {"type": "string", "enum": ["ring", "popup"]},
     "title": {"type": "string", "minLength": 1},
     "body": {"type": ["string", "null"]},
     "planned_at": {"type": "string", "format": "date-time"},
@@ -180,6 +181,19 @@
       },
       "then": {
         "properties": {
+          "occurrence_key": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"method": {"const": "ring"}},
+        "required": ["method"]
+      },
+      "then": {
+        "properties": {
+          "kind": {"const": "reminder"},
+          "target_type": {"const": "event"},
           "occurrence_key": {"type": "null"}
         }
       }

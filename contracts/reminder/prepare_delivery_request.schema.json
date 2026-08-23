@@ -11,7 +11,7 @@
     "kind": {"type": "string", "enum": ["reminder", "recovery_summary"]},
     "reminder_id": {"type": ["string", "null"], "format": "uuid"},
     "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
-    "method": {"type": "string", "enum": ["ring", "popup", "wechat"]},
+    "method": {"type": "string", "enum": ["ring", "popup"]},
     "expected_remind_at": {"type": ["string", "null"], "format": "date-time"}
   },
   "oneOf": [

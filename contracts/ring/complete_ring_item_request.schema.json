@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/ring/complete_ring_item_request.schema.json",
+  "title": "CompleteRingItemRequest",
+  "description": "Completes the Event associated with one active ring item through the existing event.complete workflow, then removes that item from the Kotlin session only after success.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runtime_instance_id",
+    "session_id",
+    "expected_session_revision",
+    "delivery_id"
+  ],
+  "properties": {
+    "runtime_instance_id": {"type": "string", "format": "uuid"},
+    "session_id": {"type": "string", "format": "uuid"},
+    "expected_session_revision": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "delivery_id": {"type": "string", "format": "uuid"}
+  }
+}

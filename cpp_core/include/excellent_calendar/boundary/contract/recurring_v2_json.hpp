@@ -8,6 +8,7 @@
 #include "excellent_calendar/application/recurring_reminder_delivery_workflow_service.hpp"
 #include "excellent_calendar/application/recurring_reminder_query_service.hpp"
 #include "excellent_calendar/application/reminder_recovery_workflow_service.hpp"
+#include "excellent_calendar/application/reminder_snooze_workflow_service.hpp"
 #include "excellent_calendar/common/result.hpp"
 #include "excellent_calendar/domain/event.hpp"
 #include "excellent_calendar/domain/event_occurrence_state.hpp"
@@ -46,5 +47,7 @@ picojson::value finalize_delivery_response_v2_to_json(
     const application::FinalizeDeliveryResult& result);
 picojson::value plan_recovery_response_v2_to_json(
     const application::PlanReminderRecoveryResult& result);
+picojson::value snooze_reminder_response_v2_to_json(
+    const application::SnoozeReminderResult& result);
 
 }  // namespace excellent_calendar::boundary::contract

@@ -13,6 +13,7 @@
 #include "excellent_calendar/application/notification_service.hpp"
 #include "excellent_calendar/application/recurrence_service.hpp"
 #include "excellent_calendar/application/reminder_recovery_workflow_service.hpp"
+#include "excellent_calendar/application/reminder_snooze_workflow_service.hpp"
 #include "excellent_calendar/application/reminder_service.hpp"
 #include "excellent_calendar/application/reminder_service_v2.hpp"
 #include "excellent_calendar/application/recurring_event_query_service.hpp"
@@ -58,6 +59,9 @@ current_recurring_reminder_delivery_workflow_service();
 
 std::shared_ptr<application::ReminderRecoveryWorkflowService>
 current_reminder_recovery_workflow_service();
+
+std::shared_ptr<application::ReminderSnoozeWorkflowService>
+current_reminder_snooze_workflow_service();
 
 std::shared_ptr<application::RecurringReminderQueryService>
 current_recurring_reminder_query_service();

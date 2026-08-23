@@ -18,6 +18,7 @@ namespace {
 
 constexpr const char* kDeliveryNamespace = "74f9acf9-a4ce-59d1-9934-5cd7ce796976";
 constexpr std::int64_t kRecoveryWindowSeconds = 72 * 60 * 60;
+constexpr std::int64_t kRingDetailGraceSeconds = 5 * 60;
 constexpr std::size_t kMaximumDetailCount = 20;
 constexpr int kMaximumExpansionCount = 1000000;
 
@@ -472,12 +473,31 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
           reminder->updated_at = now;
           candidates.push_back(*reminder);
         }
-        std::sort(candidates.begin(), candidates.end(), [](const auto& left, const auto& right) {
-          if (left.remind_at != right.remind_at) return left.remind_at > right.remind_at;
-          return left.id > right.id;
-        });
-        const auto detail_count = std::min(kMaximumDetailCount, candidates.size());
-        std::vector<domain::Reminder> details(candidates.begin(), candidates.begin() + detail_count);
+        const auto ring_detail_start_epoch = *now_epoch - kRingDetailGraceSeconds;
+        std::vector<domain::Reminder> detail_eligible;
+        std::vector<domain::Reminder> forced_summaries;
+        for (const auto& reminder : candidates) {
+          const auto remind_at = common::parse_iso8601_utc_epoch_seconds(reminder.remind_at);
+          if (!remind_at.has_value()) {
+            return common::Result<common::Unit>::failure(
+                internal_error("recovery candidate time is invalid"));
+          }
+          if (reminder.methods == std::vector<std::string>{"ring"} &&
+              *remind_at < ring_detail_start_epoch) {
+            forced_summaries.push_back(reminder);
+          } else {
+            detail_eligible.push_back(reminder);
+          }
+        }
+        std::sort(
+            detail_eligible.begin(), detail_eligible.end(),
+            [](const auto& left, const auto& right) {
+              if (left.remind_at != right.remind_at) return left.remind_at > right.remind_at;
+              return left.id > right.id;
+            });
+        const auto detail_count = std::min(kMaximumDetailCount, detail_eligible.size());
+        std::vector<domain::Reminder> details(
+            detail_eligible.begin(), detail_eligible.begin() + detail_count);
         std::sort(details.begin(), details.end(), [](const auto& left, const auto& right) {
           if (left.remind_at != right.remind_at) return left.remind_at < right.remind_at;
           return left.id < right.id;
@@ -486,7 +506,9 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
           batch.detail_reminder_ids.push_back(reminder.id);
         }
 
-        std::vector<domain::Reminder> summaries(candidates.begin() + detail_count, candidates.end());
+        std::vector<domain::Reminder> summaries = std::move(forced_summaries);
+        summaries.insert(
+            summaries.end(), detail_eligible.begin() + detail_count, detail_eligible.end());
         std::sort(summaries.begin(), summaries.end(), [](const auto& left, const auto& right) {
           if (left.remind_at != right.remind_at) return left.remind_at < right.remind_at;
           return left.id < right.id;

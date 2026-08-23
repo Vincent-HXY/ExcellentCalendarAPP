@@ -44,6 +44,7 @@ add_library(
     src/application/recurring_reminder_delivery_workflow_service.cpp
     src/application/recurring_reminder_query_service.cpp
     src/application/reminder_recovery_workflow_service.cpp
+    src/application/reminder_snooze_workflow_service.cpp
     src/application/reminder_service.cpp
     src/application/reminder_service_v2.cpp
     src/application/rolling_reminder_service.cpp

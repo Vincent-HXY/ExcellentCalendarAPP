@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/ring/ring_capability_snapshot.schema.json",
+  "title": "RingCapabilitySnapshot",
+  "description": "Fresh Kotlin-owned Android capability snapshot. Flutter consumes blocking and degradation reasons and must not reproduce SDK or permission policy.",
+  "x-contract-version": 2,
+  "x-capability-invariants": [
+    "can_enable_ring is true exactly when blocking_reasons is empty.",
+    "Full-screen unavailability is a degradation, never by itself a blocker.",
+    "At least one of has_audio_output or has_vibrator must be true when can_enable_ring is true."
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evaluated_at",
+    "sdk_int",
+    "notification_permission",
+    "exact_alarm_permission",
+    "full_screen_intent_permission",
+    "can_post_notifications",
+    "can_schedule_exact_alarms",
+    "can_use_full_screen_intent",
+    "ring_channel_enabled",
+    "has_audio_output",
+    "has_vibrator",
+    "can_enable_ring",
+    "blocking_reasons",
+    "degradation_reasons"
+  ],
+  "properties": {
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "sdk_int": {"type": "integer", "minimum": 1},
+    "notification_permission": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "permanently_denied", "unknown"]
+    },
+    "exact_alarm_permission": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "unknown"]
+    },
+    "full_screen_intent_permission": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "unknown"]
+    },
+    "can_post_notifications": {"type": "boolean"},
+    "can_schedule_exact_alarms": {"type": "boolean"},
+    "can_use_full_screen_intent": {"type": "boolean"},
+    "ring_channel_enabled": {"type": "boolean"},
+    "has_audio_output": {"type": "boolean"},
+    "has_vibrator": {"type": "boolean"},
+    "can_enable_ring": {"type": "boolean"},
+    "blocking_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "notification_permission_unavailable",
+          "exact_alarm_permission_unavailable",
+          "ring_channel_unavailable",
+          "no_output_available"
+        ]
+      }
+    },
+    "degradation_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "full_screen_intent_unavailable",
+          "selected_ringtone_unavailable",
+          "audio_output_unavailable",
+          "vibration_unavailable"
+        ]
+      }
+    }
+  },
+  "if": {
+    "properties": {"blocking_reasons": {"minItems": 1}},
+    "required": ["blocking_reasons"]
+  },
+  "then": {
+    "properties": {"can_enable_ring": {"const": false}}
+  },
+  "else": {
+    "properties": {"can_enable_ring": {"const": true}}
+  }
+}

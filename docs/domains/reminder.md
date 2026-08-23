@@ -21,7 +21,7 @@
 | `occurrenceKey` | `string` | 否 | 重复 Event occurrence 的稳定 UUIDv5；普通 Reminder 为空 |
 | `occurrenceStartAt` | `datetime` | 否 | 重复定时 occurrence 的 UTC 开始 Instant；普通 Reminder 为空 |
 | `remindAt` | `datetime` | 是 | 提醒触发时间 |
-| `methods` | `ReminderMethod[]` | 是 | 提醒方式 |
+| `methods` | `ReminderMethod[]` | 是 | 成功持久化时恰好一个值：普通 Reminder 为 `[popup]` 或 `[ring]`，重复 Reminder 固定为 `[popup]` |
 | `advanceMinutes` | `number` | 否 | 提前提醒分钟数 |
 | `message` | `string` | 否 | 提醒文案 |
 | `isEnabled` | `boolean` | 是 | 是否启用，初始化为true |
@@ -41,7 +41,8 @@
 
 身份与模板不变量：
 
-- 普通 Reminder 的 `recurrenceRevision/occurrenceKey/occurrenceStartAt` 必须全部为空，`reminderId` 使用 UUIDv4，原有绝对 `remindAt`、多渠道和历史保留行为不变。
+- 普通 Reminder 的 `recurrenceRevision/occurrenceKey/occurrenceStartAt` 必须全部为空，`reminderId` 通常使用 UUIDv4；成功态 `methods` 只允许恰好一个 `[popup]` 或 `[ring]`，不再创建多渠道 Reminder。`wechat` 保留为稳定枚举入口，但当前请求返回 `UNSUPPORTED_REMINDER_METHOD`，不得持久化为成功记录。
+- `ring` 只允许关联活动、非全天、非重复的普通 Event；全天 Event、重复 Event、Habit 与 Anniversary 的 ring 请求必须在领域入口失败。`popup` 与 `ring` 互斥，`['popup','ring']`、空数组、重复值和未知值均为非法输入。
 - 重复 Reminder 的三个 occurrence 字段必须全部存在；由于全天重复 Event 不支持 Reminder，`occurrenceStartAt` 始终是 UTC Instant。
 - 重复 Reminder draft 只提交 `advanceMinutes`，不得提交绝对 `remindAt`；`advanceMinutes = 0` 合法。
 - v2 重复 Reminder 的 `methods` 必须规范化为 `['popup']`。同一 revision 中 `(advanceMinutes, canonicalMethods)` 模板唯一，`message` 不参与身份计算。
@@ -53,6 +54,16 @@
 - occurrence reopen 恢复较早 Reminder 前，必须把同 event/revision/模板且时间更晚的 open successor 以 `occurrence_reopened` 暂存；滚动链随后只恢复仍在未来的确定性 successor，同模板任何时刻最多一条 open Reminder。
 - `expired` 是仅由 `planRecovery` 写入的终结状态：严格满足 `remindAt < windowStartAt` 的 open `pending/scheduled` Reminder 被禁用、清空 `scheduledAt` 并保留原 `remindAt` 与审计历史；普通 Reminder 不生成 successor，重复 Reminder 在同一事务确保首个未来 successor。
 - 可重试投递失败只追加 `Notification` attempt，Reminder 保持 `pending`。永久失败把当前 Reminder 标记 `failed`，并在同一事务创建 successor，避免无限系列中断。
+
+## Ring 与稍后提醒
+
+- Ring 继续复用 `Reminder -> Notification attempt` 的两阶段投递，不创建第二套领域投递记录。Ring attempt 的 `sent` 只能表示 Android 前台控制通知已经展示，并且声音或振动至少一种真实启动；仅完成 prepare、仅启动 Service 或仅展示控制通知都不能 finalize 为 `sent`。
+- Android `ActiveRingSession` 是可恢复的平台会话，不是 Reminder 或 Notification 的第二真相源。`stop_active` 只停止/移除 Android 会话项，不完成 Event、不改变 Reminder/Notification 的既有终态，也不保存“关闭响铃”历史。
+- `ring.complete_item` 先通过现有 `event.complete` workflow 完成对应普通 Event，再从 Android 会话移除该项；Event 完成失败时会话项必须保留。
+- `ring.snooze_active` 对每个 item 调用 C++ `reminder.snooze(source_delivery_id)`。稍后时长固定为 10 分钟，由首次成功调用时的 C++ Clock 计算；Flutter/Kotlin 不提交分钟数。
+- snooze Reminder 使用 `UUIDv5(reminder namespace, [source_delivery_id, "snooze", 10])`，方法固定为 `[ring]`。首次调用原子保存 `now + 10min`，同一 `source_delivery_id` 的重放返回完全相同的 Reminder 与原 `remindAt`，不得按重试时间顺延。
+- snooze 前必须确认源 delivery 是已成功的普通 Event ring attempt，且源 Reminder 与 Event 仍存在、未删除、Event 仍活动且保持非全天/非重复；否则返回 `REMINDER_SNOOZE_NOT_ALLOWED`，不创建对象。
+
 ## 枚举定义
 
 ### ReminderMethod

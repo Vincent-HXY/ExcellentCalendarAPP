@@ -1,0 +1,47 @@
+{
+  "batch": {
+    "recovery_batch_id": "44444444-4444-4444-8444-444444444442",
+    "recovery_request_id": "55555555-5555-4555-8555-555555555552",
+    "trigger_source": "device_boot",
+    "started_at": "2026-08-22T10:00:00Z",
+    "window_start_at": "2026-08-19T10:00:00Z",
+    "detail_reminder_ids": ["33333333-3333-4333-8333-333333333342"],
+    "summary_reminder_ids": [],
+    "older_skipped_occurrence_count": 0,
+    "older_skipped_reminder_count": 0,
+    "window_overflow_count": 0,
+    "summary_delivery_id": null,
+    "status": "in_progress",
+    "completed_at": null
+  },
+  "detail_reminders": [
+    {
+      "reminder_id": "33333333-3333-4333-8333-333333333342",
+      "target_type": "event",
+      "target_id": "11111111-1111-4111-8111-111111111111",
+      "recurrence_revision": null,
+      "occurrence_key": null,
+      "occurrence_start_at": null,
+      "remind_at": "2026-08-22T09:55:00Z",
+      "advance_minutes": null,
+      "methods": ["ring"],
+      "message": null,
+      "is_enabled": true,
+      "status": "pending",
+      "scheduled_at": null,
+      "last_triggered_at": null,
+      "failure_reason": null,
+      "last_cancellation_reason": null,
+      "last_cancelled_at": null,
+      "expiration_reason": null,
+      "expired_at": null,
+      "reactivated_at": null,
+      "reactivation_count": 0,
+      "created_at": "2026-08-22T09:00:00Z",
+      "updated_at": "2026-08-22T10:00:00Z",
+      "deleted_at": null
+    }
+  ],
+  "prepared_attempt_resolutions": [],
+  "idempotent_replay": false
+}

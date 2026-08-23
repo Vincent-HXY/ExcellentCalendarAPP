@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/snooze_reminder_request.schema.json",
+  "title": "SnoozeReminderRequest",
+  "description": "Internal Kotlin-to-C++ snooze request. Duration is intentionally absent and fixed by Contract at 10 minutes.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source_delivery_id"],
+  "properties": {
+    "source_delivery_id": {"type": "string", "format": "uuid"}
+  }
+}

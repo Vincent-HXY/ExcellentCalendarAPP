@@ -13,7 +13,7 @@
 - `backend_api.yaml` 定义 Flutter ↔ Backend 的 HTTPS API 入口、鉴权、幂等和 schema 映射。
 - `error_codes.yaml` 定义所有跨层失败返回可使用的错误码。
 - `enums.yaml` 定义跨语言传输时使用的字符串枚举。
-- `identity.yaml` 定义 occurrence、滚动 Reminder 和 delivery 的 UUIDv5 namespace、规范化输入和固定测试向量。
+- `identity.yaml` 定义 occurrence、滚动 Reminder、snooze Reminder 和 delivery 的 UUIDv5 namespace、规范化输入和固定测试向量。
 - `storage/calendar_core_storage.yaml` 定义 Calendar Core JSON v2 的兼容、v1 清理和事务规则。
 - `*.schema.json` 定义 request、response 和通用返回外壳的 JSON Schema。
 
@@ -54,6 +54,12 @@
 31. Event、Habit、Anniversary 与 Category 只通过 `category_id` 关联。分类名称和颜色不能作为外键；`SearchIndex.category_name` 只是可重建冗余文本，结构化过滤使用 `category_id/category_ids`。
 32. `category.create` 要求显式提交 `name/description/color/icon/sort_order`，其中 nullable 字段也必须出现；C++ Application/Domain 单点负责 UUIDv4、UTC 时间、文本/颜色规范化和默认追加顺序，Flutter/Kotlin 对所有 Schema-valid 值原样转发。`sort_order` 的跨语言精确范围为 `0..9007199254740991`；自动追加已到上界时返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。`category.list` 只返回活动分类，并按 `sort_order(null last) -> created_at -> id` 升序。
 33. Category 的账号归属、名称唯一性和系统默认分类尚未冻结。Flutter Fake 的默认项与 owner 文案不进入 Native Contract。`category.list/create`、Category Store 与生产 composition 已在 2026-08-14 完成代码一致性和物理设备重启 smoke，统一标记为 `integrated + active`；未进入公开协议的重命名、删除、恢复、同步、用户归属与默认分类不得据此推断为可用。
+34. 成功持久化的普通 Reminder 只能有单一 `["popup"]` 或 `["ring"]`；重复 Reminder 固定为 `["popup"]`。普通 request 的 `methods` 结构只允许一个稳定枚举值，使 `["wechat"]` 能到达领域层返回 `UNSUPPORTED_REMINDER_METHOD`，但空数组、未知值和多 method 在 Contract 边界失败。
+35. `ring` 只适用于活动、非全天、非重复 Event。Ring Notification 的 `sent` 必须表示前台控制通知已展示，且声音或振动至少一种真实启动；仅 prepare、仅 Service 启动或仅显示控制通知都不能 finalize `sent`。
+36. `ring.stop_active` 只改变 Kotlin 私有的活动会话，不完成 Event、不改写 Reminder/Notification 终态且不保存关闭历史。`ring.complete_item` 必须先成功调用既有 `event.complete`；`ring.snooze_active` 必须逐项调用内部 `reminder.snooze` 并用 per-item result 表达部分失败。
+37. snooze 固定 10 分钟且只接受 `source_delivery_id`。ID 为 `UUIDv5(reminder namespace, [source_delivery_id,"snooze",10])`；首次成功时由 C++ Clock 保存 `now + 10min`，任何重放返回同一对象和原 `remind_at`。
+38. `ActiveRingItem` 只包含 delivery/reminder/event 身份与时间，不得包含 Event 标题、正文、Reminder message、铃声 URI 或文件路径。`ring.state_changed` 可重复且可能丢失，事件身份是 `(runtime_instance_id, sequence)`；Flutter 必须先订阅再 `ring.get_state`，并结合持久化 `session_revision` 拒绝旧状态。
+39. Recovery 的 ring 宽限区间是 `[started_at - 5min, started_at]`：4:59 与恰好 5:00 具备明细资格，5:01 强制进入 popup 摘要。C++ 从持久化 `started_at` 推导边界；Kotlin 不重算。为保持 JSON v2 记录兼容，`window_overflow_count` 保留原字段并固定等于 `summary_reminder_ids.length`，其计数同时包含超时 ring 与 20 条上限溢出。
 
 ## Directory
 
@@ -74,6 +80,7 @@ contracts/
 ├── recurrence/
 ├── reminder/
 ├── notification/
+├── ring/
 ├── habit/
 ├── category/
 ├── ai/
@@ -84,7 +91,7 @@ contracts/
 └── search/
 ```
 
-当前已接入的本地核心协议包括 `common/`、`event/`、`recurrence/`、`reminder/`、`notification/`、`anniversary/` 和 Category create/list。Category 已冻结 Schema、Dart/Kotlin 边界和独立 JSON Storage v2 格式，C++ Domain/Repository/codec/bootstrap、JNI、真实磁盘读写、生产 Flutter composition 与物理设备重启验收均已闭环；对应方法和 Store 统一为 `implementation_status: integrated`、`release_status: active`。`auth/`、`user/` 与 `backend_api.yaml` 是认证和个人资料模块的计划协议；在 Flutter、Kotlin 和 Backend 实现落地前保持 `implementation_status: planned`，调用方不得把它们当作已可用能力。
+当前已接入的本地核心协议包括 `common/`、`event/`、`recurrence/`、`reminder/`、`notification/`、`anniversary/`、Ring 和 Category create/list。Category 已冻结 Schema、Dart/Kotlin 边界和独立 JSON Storage v2 格式，C++ Domain/Repository/codec/bootstrap、JNI、真实磁盘读写、生产 Flutter composition 与物理设备重启验收均已闭环；对应方法和 Store 统一为 `implementation_status: integrated`、`release_status: active`。Ring 与内部 `reminder.snooze` 已完成 C++、Kotlin、Flutter、AlarmManager、前台服务、五分钟安全停止和进程恢复闭环，并在 realme RMX5100 / Android 16（API 36）国产 ROM 通过一期发布验收；经 2026-08-23 明确批准，以该设备验收替代一期完整 API 矩阵，相关公开与内部能力统一为 `implementation_status: integrated`、`release_status: active`。API 24、31、33、34、35 保留为后续兼容验证，不再阻塞一期发布。`auth/`、`user/` 与 `backend_api.yaml` 是认证和个人资料模块的计划协议；在 Flutter、Kotlin 和 Backend 实现落地前保持 `implementation_status: planned`，调用方不得把它们当作已可用能力。
 
 ## Versioning
 
@@ -138,6 +145,26 @@ Native Contract 已设计为 breaking v2，Backend API 继续使用独立的 v1�
 - `runtime.resolve_local_datetime` 与 `runtime.localize_instants` 同时出现在 MethodChannel 和 JNI 能力图中；Flutter 不得用 Dart/设备 offset 代替 C++ 捆绑 TZDB 的解析结果。
 - `runtime.localize_instants` 单次最多接收 400 个 UTC Instant，响应严格保留输入顺序与重复项；任一元素无效时整批失败。
 - `reminder.reconcile_schedule` 是 Kotlin 本地系统能力编排，可以组合多个 JNI workflow；MethodChannel 与 JNI 方法数量无需一一相等。
+- `ring.get_state/pick_ringtone/update_settings/test/stop_active` 是 Kotlin 本地平台能力；`ring.snooze_active` 逐项组合内部 `reminder.snooze`，`ring.complete_item` 组合既有 `event.complete`。这些公开方法不要求在 `native_calls.yaml` 一一出现。
+- `ring.state_changed` 是独立 EventChannel；允许重复、不能保证无丢失。公开恢复协议固定为“先订阅，再调用 `ring.get_state`”，并用 `runtime_instance_id + sequence + session_revision` 仲裁。
+
+### Ring Contract revision R1（integrated / active）
+
+- 本 revision 冻结 `RingSettings`、`RingCapabilitySnapshot`、`ActiveRingSession`、`ActiveRingItem`、`RingStateSnapshot` 与 `RingStateChangedEvent`，以及七个 `ring.*` 方法、一个 EventChannel 和内部 `reminder.snooze`。C++、Kotlin、Flutter 与 realme RMX5100 / Android 16（API 36）国产 ROM 已在同一 APK 闭环；2026-08-23 已明确批准以该真机验收作为一期发布门禁，相关能力现为 integrated / active。API 24、31、33、34、35 作为后续兼容矩阵继续验证，但不阻塞一期发布。
+- Ring Settings 是设备本地平台配置。原始 ringtone URI 只允许保存在 Kotlin 私有、版本化存储中；Flutter 只接收显示名称、可用状态与强提醒开关。URI 失效时 Kotlin 回退默认 Alarm ringtone，并通过 degradation reason 告知 Flutter。
+- ActiveRingSession 不是领域真相源。全局最多一个会话/播放器/振动器/控制通知；`prepared -> audible -> quiet_pending` 为公开活动阶段，resolved 通过 `active_session=null` 表达。audible 期间加入 item 不改变当前 generation 的五分钟 deadline；quiet_pending 收到新 ring 才创建新的 audible generation。
+- Capability 的 blocking/degradation reason 由 Kotlin 统一计算。全屏 Intent 不可用只降级为高优先级通知；Flutter 禁止复制 SDK 版本判断。
+- Recovery 先强制汇总 `remind_at < started_at - 5min` 的 ring，再在其余候选中按既有 `(remind_at, reminder_id)` 降序选择最多 20 条明细。最终明细和摘要仍各自升序投递；摘要 Notification 始终是 popup。
+
+| 读写方/数据 | R1 前 v2 | Ring R1 | 兼容结论 |
+| --- | --- | --- | --- |
+| 既有普通 Reminder writer | 只会成功写 `["popup"]` | 继续接受 | 双向兼容 |
+| 既有理论 Schema 调用方 | 曾可提交多 method/`wechat`，但 integrated C++ 已拒绝且不会持久化 | 多 method 在 Schema 拒绝；单一 `wechat` 稳定返回 unsupported | 无历史成功数据；属于对真实 active 行为的收口 |
+| 旧 Flutter/Kotlin/C++ APK | 不理解 ring 会话或 ring Storage 值 | 不接收新 ring payload | 必须同一发行版本同步升级，不做滚动混跑 |
+| Calendar Core JSON v2 旧数据 | Reminder/Notification 正式 writer 只保存 popup；RecoveryBatch 保持既有字段 | 新 writer 可保存普通 ring；Recovery 复用既有记录形状 | 无数据迁移；升级 reader 先上线，降级旧 APK 不受支持 |
+| Ring Method/EventChannel | 不存在 | additive，integrated / active | 旧调用方不调用；新调用方随同一 APK 使用冻结的 v2 协议 |
+
+Compatibility fixture 位于 `fixtures/ring/`。4:59、5:00、5:01 三个 Recovery golden 固定边界；`identity.yaml` 固定 ring delivery 与 snoozed Reminder UUIDv5 向量。
 
 ### Event recurrence v2
 
@@ -230,12 +257,16 @@ ApiResult<T>
 
 忘记密码申请必须对已注册与未注册邮箱返回相同的成功结构。网络断开和请求超时属于 Flutter transport failure，不得伪装成 Backend 业务错误码。
 
+所有已声明端点对一切应用层结果统一返回 HTTP 200 + `ApiResult` 信封，包括声明路径上的认证失败（信封内 `API_UNAUTHENTICATED` / `AUTH_SESSION_EXPIRED` / `API_FORBIDDEN`）；无有效 `ApiResult` 信封的非 200 响应属于传输/协议失败，只能进入 Flutter 网络层错误路径。限流重试信号只使用 `ApiError.retry_after_seconds`，不定义 `Retry-After` 头语义。
+
 ## Authentication Boundaries
 
 - 登录、注册、资料、密码、邮箱和头像请求由 Flutter 直接调用 Backend，不经过 Kotlin 或 C++。
 - MethodChannel 只声明 `auth.refresh_token.store/read/delete/exists`，由 Kotlin 本地安全存储实现，不进入 `native_calls.yaml`。
 - Access Token 只保存在 Flutter 内存；Refresh Token 只允许出现在 Token 响应、刷新/退出请求和敏感 MethodChannel schema 中。
 - `CurrentUserResponse` 与 `CachedCurrentUser` 明确禁止密码、Token、验证 Challenge 和对象存储内部键。
+- 尚未验证的注册账号允许通过 `auth.registration.email.update` 在激活前更正登录邮箱（返回新 Challenge）。该端点是公开端点，但必须携带注册时设置的密码作为所有权证明，`account_id` 单独出现不构成授权凭证；密码校验失败返回 `AUTH_CURRENT_PASSWORD_INVALID`。已激活账号的邮箱变更必须走登录态 `auth.email_change.request/confirm` 流程，两条路径不得混用。
+- `AUTH_EMAIL_UNVERIFIED` 只由 `auth.login` 返回，且 Schema 强制其 `context.verification_challenge` 非空必填（`challenge_id` + `account_id` + 掩码邮箱 + 过期与重发时间），保证客户端总能继续验证、重发或更正邮箱；后端不得返回不带上下文或 `context=null` 的该错误码。
 
 ## Ownership
 

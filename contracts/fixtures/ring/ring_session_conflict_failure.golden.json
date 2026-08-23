@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "RING_SESSION_CONFLICT",
+    "message": "Active ring session changed before the requested action",
+    "details": {
+      "expected_session_revision": 2,
+      "actual_session_revision": 3
+    },
+    "retryable": true
+  },
+  "contract_version": 2,
+  "request_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab"
+}

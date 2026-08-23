@@ -8,6 +8,8 @@ import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCore
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCategoryBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeContractProfile
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
+import com.excellentcalendar.excellent_calendar.android.ring.RingRuntime
+import com.excellentcalendar.excellent_calendar.bridge.ring.RingMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderScheduleReconciler
@@ -58,6 +60,8 @@ class NativeMethodChannelHandler(
     private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
     private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
     private val reminderScheduleCoordinator: ReminderScheduleReconciler? = null,
+    private val ringRuntime: RingRuntime? = null,
+    private val ringOrchestrator: RingMethodOrchestrator? = null,
     private val contractProfile: NativeContractProfile = NativeContractProfile.V1,
     private val reconcileRetryEnqueuer: (() -> Unit)? = null,
     private val executor: Executor = Executors.newSingleThreadExecutor(),
@@ -105,6 +109,7 @@ class NativeMethodChannelHandler(
                 reminderScheduleCoordinator,
             ),
             NotificationMethodHandler(notificationOrchestrator, nativeCallExecutor),
+            RingMethodHandler(contractProfile, nativeCallExecutor, ringRuntime, ringOrchestrator),
         ),
     )
 
@@ -118,6 +123,7 @@ class NativeMethodChannelHandler(
             executor.shutdownNow()
         }
         notificationOrchestrator?.close()
+        ringOrchestrator?.close()
     }
 
     private fun createMethodRegistry(handlers: List<ChannelMethodHandler>): Map<String, ChannelMethodHandler> {
@@ -171,6 +177,13 @@ class NativeMethodChannelHandler(
         const val MethodNotificationRequestPermission = "notification.request_permission"
         const val MethodNotificationOpenSettings = "notification.open_settings"
         const val MethodNotificationGetInitialTapPayload = "notification.get_initial_tap_payload"
+        const val MethodRingGetState = "ring.get_state"
+        const val MethodRingPickRingtone = "ring.pick_ringtone"
+        const val MethodRingUpdateSettings = "ring.update_settings"
+        const val MethodRingTest = "ring.test"
+        const val MethodRingStopActive = "ring.stop_active"
+        const val MethodRingSnoozeActive = "ring.snooze_active"
+        const val MethodRingCompleteItem = "ring.complete_item"
         const val LogTag = "ExcellentCalendarNative"
     }
 }

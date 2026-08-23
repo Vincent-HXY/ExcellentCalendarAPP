@@ -165,6 +165,61 @@ class V2ReminderPipelineTest {
     }
 
     @Test
+    fun oneDueDeliveryFailureDoesNotBlockLaterReminderOrNextAlarmRearm() {
+        val bridge = DueFailureIsolationScheduleBridge()
+        val alarm = RecordingAlarm()
+        val deliveredReminderIds = mutableListOf<String>()
+        var continuationCount = 0
+        val coordinator = V2ReminderScheduleCoordinator(
+            nativeBridge = bridge,
+            alarmScheduler = alarm,
+            deliveryService = object : V2ReminderDeliverer {
+                override fun deliverReminder(reminderId: String, expectedRemindAt: String, recoveryBatchId: String?): NativeResultContract {
+                    deliveredReminderIds += reminderId
+                    return if (reminderId == "broken-ring") {
+                        NativeResultContract.failure(
+                            NativeErrorCodes.RingSettingsStorageFailed,
+                            "ring session persistence failed",
+                            retryable = true,
+                            contractVersion = 2,
+                        )
+                    } else {
+                        NativeResultContract.success(emptyMap<String, Any?>(), contractVersion = 2)
+                    }
+                }
+
+                override fun deliverSummary(recoveryBatchId: String) =
+                    NativeResultContract.success(emptyMap<String, Any?>(), contractVersion = 2)
+            },
+            recoveryCoordinator = object : ReminderRecoveryRunner {
+                override fun recover(trigger: ReminderScheduleTrigger, canContinue: () -> Boolean) =
+                    NativeResultContract.success(mapOf("recovery_performed" to false), contractVersion = 2)
+            },
+            continuationEnqueuer = { continuationCount += 1 },
+            logger = { _, _, _ -> },
+            nowUtc = { "2026-08-04T00:30:00Z" },
+            elapsedRealtime = { 0L },
+        )
+
+        val result = coordinator.reconcile(
+            ReconcileReminderScheduleContract(ReminderScheduleTrigger.AlarmFired, force = true),
+            Long.MAX_VALUE,
+        )
+
+        assertTrue(result.ok)
+        @Suppress("UNCHECKED_CAST")
+        val data = result.data as Map<String, Any?>
+        assertEquals(1, data["processed_due_count"])
+        assertEquals(1, data["failed_count"])
+        assertEquals(listOf("broken-ring"), data["failed_reminder_ids"])
+        assertEquals(true, data["continuation_enqueued"])
+        assertEquals(listOf("broken-ring", "healthy-ring"), deliveredReminderIds)
+        assertEquals(1, continuationCount)
+        assertEquals(listOf("2026-08-04T01:00:00Z"), alarm.scheduled)
+        assertEquals(listOf("2026-08-04T01:00:00Z"), bridge.markRequests.map { it["expected_remind_at"] })
+    }
+
+    @Test
     fun recoveryCancelsAbandonedThenPostsSummaryBeforeOrderedDetailsAndClearsCompletedRequest() {
         val bridge = RecoveryBridge()
         val display = RecordingDisplay()
@@ -433,6 +488,28 @@ class V2ReminderPipelineTest {
             val request = NativeContractJsonCodec.decodeObject(requestJson)
             val reminders = if (request["to_at"] != null) {
                 listOf(reminder("2026-08-04T00:00:00Z", "due-reminder"))
+            } else {
+                listOf(reminder("2026-08-04T01:00:00Z", "future-reminder"))
+            }
+            return success(batch(reminders))
+        }
+
+        override fun markReminderScheduled(requestJson: String): String {
+            markRequests += NativeContractJsonCodec.decodeObject(requestJson)
+            return success(mapOf("reminder_id" to "future-reminder"))
+        }
+    }
+
+    private class DueFailureIsolationScheduleBridge : ReminderBridgeAdapter() {
+        val markRequests = mutableListOf<Map<String, Any?>>()
+
+        override fun listSchedulableReminders(requestJson: String): String {
+            val request = NativeContractJsonCodec.decodeObject(requestJson)
+            val reminders = if (request["to_at"] != null) {
+                listOf(
+                    reminder("2026-08-04T00:00:00Z", "broken-ring") + mapOf("methods" to listOf("ring")),
+                    reminder("2026-08-04T00:05:00Z", "healthy-ring") + mapOf("methods" to listOf("ring")),
+                )
             } else {
                 listOf(reminder("2026-08-04T01:00:00Z", "future-reminder"))
             }

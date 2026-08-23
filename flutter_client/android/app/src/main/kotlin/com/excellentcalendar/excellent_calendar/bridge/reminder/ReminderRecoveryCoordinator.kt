@@ -91,7 +91,7 @@ class ReminderRecoveryCoordinator(
         for (reminder in planned.detailReminders) {
             if (reminder.isTerminal) continue
             if (!canContinue()) return continuationRequired()
-            val detail = deliveryService.deliverReminder(reminder.reminderId, reminder.remindAt, planned.batchId)
+            val detail = deliveryService.deliverReminder(reminder.reminderId, reminder.remindAt, planned.batchId, reminder.method)
             if (!detail.completesRecoveryDelivery()) return detail
         }
 

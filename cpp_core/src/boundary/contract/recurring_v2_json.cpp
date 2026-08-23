@@ -333,4 +333,14 @@ picojson::value plan_recovery_response_v2_to_json(
   return picojson::value(std::move(object));
 }
 
+picojson::value snooze_reminder_response_v2_to_json(
+    const application::SnoozeReminderResult& result) {
+  picojson::object object;
+  object["source_delivery_id"] = picojson::value(result.source_delivery_id);
+  object["snooze_minutes"] = picojson::value(static_cast<double>(result.snooze_minutes));
+  object["snoozed_reminder"] = reminder_response_v2_to_json(result.snoozed_reminder);
+  object["idempotent_replay"] = picojson::value(result.idempotent_replay);
+  return picojson::value(std::move(object));
+}
+
 }  // namespace excellent_calendar::boundary::contract

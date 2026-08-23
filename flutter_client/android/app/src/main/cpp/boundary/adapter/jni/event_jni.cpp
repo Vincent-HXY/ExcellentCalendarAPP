@@ -477,5 +477,6 @@ CALENDAR_V2_JNI(nativeDisableReminderV2, disable_reminder_v2)
 CALENDAR_V2_JNI(nativePrepareReminderDeliveryV2, prepare_reminder_delivery_v2)
 CALENDAR_V2_JNI(nativeFinalizeReminderDeliveryV2, finalize_reminder_delivery_v2)
 CALENDAR_V2_JNI(nativePlanReminderRecoveryV2, plan_reminder_recovery_v2)
+CALENDAR_V2_JNI(nativeSnoozeReminderV2, snooze_reminder_v2)
 
 #undef CALENDAR_V2_JNI

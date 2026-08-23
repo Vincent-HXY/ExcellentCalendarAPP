@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/ring/ring_state_changed_event.schema.json",
+  "title": "RingStateChangedEvent",
+  "description": "At-least-once EventChannel snapshot. Duplicate events are legal; identity is (state.runtime_instance_id, state.sequence). Event loss is repaired by ring.get_state.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reason", "state"],
+  "properties": {
+    "reason": {
+      "type": "string",
+      "enum": [
+        "settings_changed",
+        "capability_changed",
+        "test_changed",
+        "session_changed",
+        "session_recovered"
+      ]
+    },
+    "state": {"$ref": "./ring_state_snapshot.schema.json"}
+  }
+}

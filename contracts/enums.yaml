@@ -138,6 +138,63 @@ NotificationSettingsTarget:
     - notification
     - exact_alarm
     - application
+    - ring_channel
+    - full_screen_intent
+
+FullScreenIntentPermissionStatus:
+  values:
+    - granted
+    - denied
+    - not_required
+    - unknown
+
+RingSessionPhase:
+  values:
+    - prepared
+    - audible
+    - quiet_pending
+
+RingTestState:
+  values:
+    - inactive
+    - audible
+
+RingTestAction:
+  values:
+    - start
+    - stop
+
+RingRingtoneSelectionStatus:
+  values:
+    - selected
+    - cancelled
+
+RingCapabilityBlockingReason:
+  values:
+    - notification_permission_unavailable
+    - exact_alarm_permission_unavailable
+    - ring_channel_unavailable
+    - no_output_available
+
+RingCapabilityDegradationReason:
+  values:
+    - full_screen_intent_unavailable
+    - selected_ringtone_unavailable
+    - audio_output_unavailable
+    - vibration_unavailable
+
+RingStateChangeReason:
+  values:
+    - settings_changed
+    - capability_changed
+    - test_changed
+    - session_changed
+    - session_recovered
+
+RingItemActionStatus:
+  values:
+    - succeeded
+    - failed
 
 HabitCheckInStatus:
   values:

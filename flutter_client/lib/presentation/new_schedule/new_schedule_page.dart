@@ -7,6 +7,7 @@ import '../../application/event/create_schedule_controller.dart';
 import '../../application/event/create_event_use_case.dart';
 import '../../application/timezone/timezone_application_service.dart';
 import '../../gateway_interfaces/category_repository.dart';
+import '../../gateway_interfaces/ring_native_gateway.dart';
 import '../../native_contract/runtime/local_wall_date_time.dart';
 import '../category/category_picker_page.dart';
 import '../category/category_picker_result.dart';
@@ -26,12 +27,14 @@ class NewSchedulePage extends StatefulWidget {
     required this.createUseCase,
     required this.timezoneService,
     required this.categoryRepository,
+    this.ringGateway,
     super.key,
   });
 
   final CreateEventUseCase createUseCase;
   final TimezoneApplicationService timezoneService;
   final CategoryRepository categoryRepository;
+  final RingNativeGateway? ringGateway;
 
   @override
   State<NewSchedulePage> createState() => _NewSchedulePageState();
@@ -48,6 +51,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   bool _isRingingReminderEnabled = false;
   bool _isMoreSettingsExpanded = true;
   bool _isSubmitting = false;
+  bool _isCheckingRingCapability = false;
   RecurrencePreset _recurrencePreset = RecurrencePreset.once;
   Set<ReminderPreset> _reminderPresets = {ReminderPreset.minutes15};
   int? _customReminderAdvanceMinutes;
@@ -65,6 +69,7 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     _submitController = CreateScheduleController(
       createEventUseCase: widget.createUseCase,
       timezoneService: widget.timezoneService,
+      ringGateway: widget.ringGateway,
     );
     _startAt = _nextDefaultStartAt();
     _endAt = _startAt.add(const Duration(hours: 1));
@@ -309,10 +314,53 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     if (result == null || !mounted) {
       return;
     }
+    final disabledRing = _isRingingReminderEnabled && result.presets.isEmpty;
     setState(() {
       _reminderPresets = result.presets;
       _customReminderAdvanceMinutes = result.customAdvanceMinutes;
+      if (disabledRing) {
+        _isRingingReminderEnabled = false;
+      }
     });
+    if (disabledRing) {
+      _showTodo('未设置提醒时间，已关闭响铃提醒');
+    }
+  }
+
+  Future<void> _setRingingReminderEnabled(bool value) async {
+    if (!value) {
+      setState(() {
+        _isRingingReminderEnabled = false;
+      });
+      return;
+    }
+    if (_isAllDay) {
+      _showTodo('全天日程不支持响铃提醒');
+      return;
+    }
+    if (_isRecurring) {
+      _showTodo('重复日程本期仅支持弹窗提醒');
+      return;
+    }
+    if (_reminderPresets.isEmpty) {
+      _showTodo('请先设置提醒时间再开启响铃');
+      return;
+    }
+    if (_isCheckingRingCapability) return;
+    setState(() {
+      _isCheckingRingCapability = true;
+    });
+    final result = await _submitController.checkRingCapability();
+    if (!mounted) return;
+    setState(() {
+      _isCheckingRingCapability = false;
+      if (result.canEnable) {
+        _isRingingReminderEnabled = true;
+      }
+    });
+    if (!result.canEnable) {
+      _showTodo(result.message ?? '当前设备无法启用响铃提醒');
+    }
   }
 
   @override
@@ -372,19 +420,19 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
                             _showTodo('全天重复日程暂不支持提醒');
                             return;
                           }
+                          final disabledRing =
+                              value && _isRingingReminderEnabled;
                           setState(() {
                             _isAllDay = value;
+                            if (disabledRing) {
+                              _isRingingReminderEnabled = false;
+                            }
                           });
-                        },
-                        onRingingReminderChanged: (value) {
-                          if (value && _isRecurring) {
-                            _showTodo('重复日程本期仅支持弹窗提醒');
-                            return;
+                          if (disabledRing) {
+                            _showTodo('全天日程不支持响铃提醒，已关闭响铃');
                           }
-                          setState(() {
-                            _isRingingReminderEnabled = value;
-                          });
                         },
+                        onRingingReminderChanged: _setRingingReminderEnabled,
                         onMoreSettingsToggle: () {
                           setState(() {
                             _isMoreSettingsExpanded = !_isMoreSettingsExpanded;

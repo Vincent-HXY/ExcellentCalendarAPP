@@ -201,7 +201,8 @@ RecurringReminderQueryService::list_schedulable(
   }
   std::set<std::string> supported;
   for (const auto& method : command.supported_methods) {
-    if (method != domain::kReminderMethodPopup || !supported.insert(method).second) {
+    if ((method != domain::kReminderMethodPopup && method != domain::kReminderMethodRing) ||
+        !supported.insert(method).second) {
       return common::Result<RecurringSchedulableReminderPage>::failure(common::make_error(
           "UNSUPPORTED_REMINDER_METHOD", "Reminder method is not supported in current version",
           {{"method", method}}));
