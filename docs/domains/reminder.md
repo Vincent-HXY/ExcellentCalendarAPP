@@ -64,6 +64,7 @@
 - Anniversary Reminder ID 按 `contracts/identity.yaml` 由 target、occurrence 和 template 生成。同一模板链任何时刻最多一条 open Reminder；相同 ID 与相同业务内容重放幂等，内容冲突返回 `REMINDER_IDEMPOTENCY_CONFLICT`。
 - Anniversary 的 `sent` 表示该 Reminder 的义务已被一个真实成功的 Notification 履行。正常单条投递和 catch-up 聚合都必须写非空 `fulfillmentDeliveryId`；聚合时多个 Reminder 可以共享该值，但不能为未展示的成员伪造独立 Notification attempt。
 - Anniversary 可重试失败保持 `pending` 且不创建 successor；永久失败或 occurrence 日末过期进入终态，并为年度模板分别创建首个未来 successor。日末过期使用 `anniversary_occurrence_elapsed`，不改变普通 Event/Ring 的 `recovery_window_elapsed` 语义。
+- Anniversary 单条或聚合 attempt 的 `finalizeDelivery` 在加载 prepared attempt 后要求非空、有效的当前设备 IANA timezone；共享 Wire 字段保持可选以兼容 Event、Ring 和普通 Recovery。第一次成功 finalize 使用该时区计算并持久化年度 successor；journal/transaction 已提交后的重放只返回原 successor，不使用后来传入的时区重新计算。timezone 不参与 Reminder、delivery 或 attempt identity。
 - `anniversary_paused` 与 `anniversary_template_disabled` 只允许 workflow 在仍有意义时恢复确定性任务；`anniversary_updated`、`anniversary_template_replaced` 与 `anniversary_deleted` 不可恢复。所有原因都保留取消审计。
 
 ## Ring 与稍后提醒

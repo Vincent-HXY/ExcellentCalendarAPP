@@ -11,10 +11,11 @@ import json
 import sys
 import uuid
 import warnings
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urldefrag, urljoin
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 try:
     warnings.filterwarnings("ignore", message=r"jsonschema\.RefResolver is deprecated.*", category=DeprecationWarning)
@@ -158,6 +159,78 @@ def semantic_mutation_reconciliation(instance: dict[str, Any]) -> str | None:
     return None
 
 
+def semantic_finalize_timezone(instance: dict[str, Any], case: dict[str, Any]) -> str | None:
+    prepared_attempt_kind = case.get("prepared_attempt_kind")
+    requires_timezone = prepared_attempt_kind in {"anniversary_reminder", "anniversary_catch_up"}
+    timezone = instance.get("timezone")
+    if requires_timezone and timezone is None:
+        return "CONTRACT_VALIDATION_FAILED"
+    if timezone is None:
+        return None
+    try:
+        ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        return "TIMEZONE_ID_INVALID"
+    return None
+
+
+def semantic_finalize_replay_timezone(instance: dict[str, Any], identity: dict[str, Any]) -> str | None:
+    first = instance["first_finalize"]
+    replay = instance["replay"]
+    retryable = instance["retryable_failure"]
+    first_request = first["request"]
+    replay_request = replay["request"]
+    context = {"prepared_attempt_kind": instance["prepared_attempt_kind"]}
+
+    if semantic_finalize_timezone(first_request, context) is not None:
+        return "CONTRACT_VALIDATION_FAILED"
+    if semantic_finalize_timezone(replay_request, context) is not None:
+        return "CONTRACT_VALIDATION_FAILED"
+    if first_request["delivery_attempt_id"] != replay_request["delivery_attempt_id"]:
+        return "DELIVERY_ATTEMPT_INVALID"
+    if first_request["timezone"] == replay_request["timezone"]:
+        return "CONTRACT_VALIDATION_FAILED"
+    if first["committed_result"]["idempotent_replay"] is not False:
+        return "CONTRACT_VALIDATION_FAILED"
+    if replay["expected_result"]["idempotent_replay"] is not True:
+        return "CONTRACT_VALIDATION_FAILED"
+    if first["committed_result"]["successor"] != replay["expected_result"]["successor"]:
+        return "REMINDER_IDEMPOTENCY_CONFLICT"
+    projection = first["projection_input"]
+    reminder_date = date.fromisoformat(projection["occurrence_date"]) - timedelta(days=projection["advance_days"])
+    local_clock = datetime.strptime(projection["local_time"], "%H:%M").time()
+    first_instant = datetime.combine(reminder_date, local_clock, ZoneInfo(first_request["timezone"]))
+    first_remind_at = first_instant.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if first["committed_result"]["successor"]["remind_at"] != first_remind_at:
+        return "CONTRACT_VALIDATION_FAILED"
+    replay_instant = datetime.combine(reminder_date, local_clock, ZoneInfo(replay_request["timezone"]))
+    replay_remind_at = replay_instant.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if replay_remind_at == first_remind_at or replay["expected_result"]["successor"]["remind_at"] == replay_remind_at:
+        return "REMINDER_IDEMPOTENCY_CONFLICT"
+    reminder_namespace = uuid.UUID(identity["namespaces"]["anniversary_reminder"]["uuid"])
+    reminder_name = json.dumps(
+        [
+            "anniversary",
+            projection["anniversary_id"],
+            projection["occurrence_key"],
+            projection["template_key"],
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    expected_reminder_id = str(uuid.uuid5(reminder_namespace, reminder_name))
+    if first["committed_result"]["successor"]["reminder_id"] != expected_reminder_id:
+        return "REMINDER_IDEMPOTENCY_CONFLICT"
+    if retryable["request"]["failure_class"] != "retryable" or retryable["expected_successor"] is not None:
+        return "CONTRACT_VALIDATION_FAILED"
+    identity_policy = instance["identity_policy"]
+    if identity_policy["timezone_participates"] is not False:
+        return "REMINDER_IDEMPOTENCY_CONFLICT"
+    if identity_policy["identity_fields"] != ["reminder_id", "delivery_id", "delivery_attempt_id"]:
+        return "CONTRACT_VALIDATION_FAILED"
+    return None
+
+
 def semantic_storage_migration(instance: dict[str, Any]) -> str | None:
     source = instance["source"]["anniversary"]
     expected = instance["expected"]["anniversary"]
@@ -240,6 +313,9 @@ def validate_yaml_and_capabilities() -> dict[str, Any]:
                 fail(f"Missing {capability} response: {data}")
 
     errors = yaml_documents["error_codes.yaml"]["errors"]
+    finalize_semantic_errors = {"CONTRACT_VALIDATION_FAILED", "TIMEZONE_ID_INVALID"}
+    if missing := finalize_semantic_errors - set(errors):
+        fail(f"Missing finalize timezone errors: {sorted(missing)}")
     required_errors = {
         "ANNIVERSARY_REMINDER_CONFIG_INVALID", "ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE",
         "ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED", "ANNIVERSARY_OCCURRENCE_RANGE_INVALID",
@@ -259,16 +335,43 @@ def validate_yaml_and_capabilities() -> dict[str, Any]:
     return identity
 
 
+def validate_finalize_timezone_shape(schemas: dict[str, Any]) -> None:
+    finalize = schemas[
+        "https://excellent-calendar.local/contracts/reminder/finalize_delivery_request.schema.json"
+    ]
+    if "timezone" not in finalize["properties"]:
+        fail("finalize_delivery.timezone is missing")
+    if "timezone" in finalize["required"]:
+        fail("finalize_delivery.timezone must remain optional for Event/Ring compatibility")
+    policy = finalize.get("x-semantic-timezone-policy", {})
+    if policy.get("required_after_attempt_load_for") != ["anniversary_reminder", "anniversary_catch_up"]:
+        fail("finalize_delivery Anniversary timezone policy drift")
+
+    recovery = schemas[
+        "https://excellent-calendar.local/contracts/reminder/plan_recovery_request.schema.json"
+    ]
+    if "timezone" not in recovery["required"]:
+        fail("plan_recovery.timezone must remain required")
+
+    prepare = schemas[
+        "https://excellent-calendar.local/contracts/reminder/prepare_delivery_request.schema.json"
+    ]
+    if "timezone" in prepare.get("properties", {}):
+        fail("prepare_delivery must not accept timezone")
+
+
 def validate_manifests(schemas: dict[str, Any], identity: dict[str, Any]) -> int:
     semantic_handlers = {
-        "unique_templates": lambda value: semantic_unique_templates(value),
-        "occurrence_range": lambda value: semantic_occurrence_range(value),
-        "occurrence_order": lambda value: semantic_occurrence_order(value),
-        "covered_order_and_identity": lambda value: semantic_covered_order_and_identity(value, identity),
-        "recovery_membership": lambda value: semantic_recovery_membership(value, identity),
-        "mutation_reconciliation": lambda value: semantic_mutation_reconciliation(value),
-        "storage_migration": lambda value: semantic_storage_migration(value),
-        "semantic_vectors": lambda value: semantic_vectors(value),
+        "unique_templates": lambda value, case: semantic_unique_templates(value),
+        "occurrence_range": lambda value, case: semantic_occurrence_range(value),
+        "occurrence_order": lambda value, case: semantic_occurrence_order(value),
+        "covered_order_and_identity": lambda value, case: semantic_covered_order_and_identity(value, identity),
+        "recovery_membership": lambda value, case: semantic_recovery_membership(value, identity),
+        "finalize_timezone": lambda value, case: semantic_finalize_timezone(value, case),
+        "finalize_replay_timezone": lambda value, case: semantic_finalize_replay_timezone(value, identity),
+        "mutation_reconciliation": lambda value, case: semantic_mutation_reconciliation(value),
+        "storage_migration": lambda value, case: semantic_storage_migration(value),
+        "semantic_vectors": lambda value, case: semantic_vectors(value),
     }
     count = 0
     for manifest_path in [FIXTURE_ROOT / "ring" / "manifest.json", ANNIVERSARY_FIXTURES / "manifest.json"]:
@@ -283,7 +386,7 @@ def validate_manifests(schemas: dict[str, Any], identity: dict[str, Any]) -> int
                     fail(f"Fixture {case['name']} expected_valid={case['expected_valid']} errors={errors}")
             check = case.get("semantic_check")
             if check:
-                actual_error = semantic_handlers[check](instance)
+                actual_error = semantic_handlers[check](instance, case)
                 expected_error = case.get("expected_error")
                 if actual_error != expected_error:
                     fail(f"Fixture {case['name']} semantic error expected {expected_error}, got {actual_error}")
@@ -293,6 +396,7 @@ def validate_manifests(schemas: dict[str, Any], identity: dict[str, Any]) -> int
 def main() -> int:
     schemas, paths = collect_schemas()
     validate_ref_closure(schemas, paths)
+    validate_finalize_timezone_shape(schemas)
     identity = validate_yaml_and_capabilities()
     fixture_count = validate_manifests(schemas, identity)
     print(f"validated schemas={len(schemas)} fixtures={fixture_count} identity_vectors={len(identity['test_vectors'])}")

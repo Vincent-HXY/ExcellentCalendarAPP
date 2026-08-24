@@ -19,6 +19,7 @@ Anniversary 已经是 date-only 的独立实体，并使用专属年度规则。
 - runtime bootstrap 必须先恢复旧 v2 journal，再完成 v2→v3 migration，再重放所有 v3 prepared commit；这些步骤完成前不得向 Query、Scheduler 或 JNI 开放能力。
 - 领域 logical commit 先于 Scheduler reconciliation。Kotlin 在 commit 成功后执行 exact/approximate 调度或记录待恢复状态；权限或系统调度失败不得回滚已保存业务数据。
 - Anniversary 迟到窗口截止当地 occurrence 次日 00:00。同 occurrence 的到期 Reminder 由一个 `anniversary_catch_up` Notification 履约，membership 在 RecoveryBatch/prepare 前冻结；每个成员通过共同 `fulfillment_delivery_id` 与唯一真实投递闭环。
+- `plan_recovery.timezone` 必填并负责 Anniversary 日末边界、过期任务的年度 successor 与 Recovery 重物化；`prepare_delivery` 不接收 timezone，只消费冻结 membership。共享 `finalize_delivery.timezone` 保持可选以兼容 Event/Ring/普通 Recovery，但 Anniversary 单条与 catch-up attempt 在加载后语义必填。首次成功 finalize 用当前时区持久化 successor，提交后重放返回原对象且不重新投影；timezone 不参与任何身份。
 - 普通 Event/Ring Recovery 继续使用 72 小时窗口、Ring 五分钟宽限和全局 20 条明细上限。Anniversary groups 是 target-specific 分支，不进入普通 detail/summary 选择与计数。
 
 ## Consequences

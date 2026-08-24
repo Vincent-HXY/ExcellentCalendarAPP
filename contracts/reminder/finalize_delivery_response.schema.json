@@ -5,6 +5,12 @@
   "description": "Atomic finalize result. Single Reminder deliveries retain reminder/successor. Ordinary recovery summaries expose batch-only bulk effects. Anniversary catch-up exposes the complete covered Reminder set and each generated yearly successor without fabricating per-member Notification attempts.",
   "x-contract-version": 2,
   "x-anniversary-reminder-revision": 1,
+  "x-idempotency-invariants": [
+    "The first successful Anniversary finalize uses the request timezone to project and persist each yearly successor.",
+    "After the transaction or journal is committed, replay returns the persisted successor set exactly and does not reproject it when a later request supplies a different timezone.",
+    "timezone is excluded from Reminder, delivery, and delivery-attempt identity.",
+    "A retryable failure creates no successor."
+  ],
   "type": "object",
   "additionalProperties": false,
   "required": ["notification", "reminder", "successor", "covered_reminders", "successors", "recovery_batch", "idempotent_replay"],
@@ -69,7 +75,8 @@
       "x-finalize-invariants": [
         "covered_reminders contains exactly notification.covered_reminder_ids in that order.",
         "For outcome sent, every covered Reminder is sent and fulfillment_delivery_id equals notification.delivery_id.",
-        "successors contains at most one future Reminder per recurring template and is empty for retryable failure."
+        "successors contains at most one future Reminder per recurring template and is empty for retryable failure.",
+        "The first committed result freezes successors; an idempotent replay returns those persisted objects even when the replay timezone differs."
       ]
     }
   ]

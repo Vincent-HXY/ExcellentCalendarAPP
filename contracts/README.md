@@ -65,6 +65,7 @@
 42. `anniversary_catch_up` 是一个真实聚合 popup attempt。其 `covered_reminder_ids` 在 RecoveryBatch 中冻结、唯一且按 UUID 文本升序；所有 covered Reminder 通过同一 `fulfillment_delivery_id` 履约，禁止伪造每成员 attempt。
 43. `anniversary.list_occurrences` 使用当地日期半开区间、最多 400 个自然日、每页最多 500 项和绑定查询快照的 opaque cursor。结果按 `(occurrence_date, anniversary_id, occurrence_key)` 升序，无 200 条总量上限。
 44. Anniversary mutation 的 NativeResult 失败表示业务数据未保存。成功 response 固定 `data_saved=true`；`pending_permission/pending_reconciliation` 是数据已保存后的平台状态，不能改写为业务保存失败。
+45. 共享 `finalize_delivery.timezone` 是可选 additive 字段，不得加入全局 `required`。新 Kotlin writer 统一传当前设备 IANA timezone；C++ 只有在加载 attempt 后确认其为 Anniversary Reminder 或 `anniversary_catch_up` 时才语义必填，缺失返回 `CONTRACT_VALIDATION_FAILED`、非法 ID 返回 `TIMEZONE_ID_INVALID`。首次成功 finalize 用该时区持久化 successor；已提交重放返回原 successor，timezone 不进入 Reminder/delivery/attempt identity；retryable failure 不生成 successor。Event、Ring 与普通 Recovery 的旧 payload 继续合法。
 
 ## Directory
 
@@ -152,6 +153,9 @@ Native envelope、错误外壳和 `contract_version=2` 不变。R1 是同一 APK
 | 旧 Dart reader 读取新 public response | 旧 detail 直接作为 data | mutation/detail wrapper | 严格拒绝；同一 APK 必须同步升级 |
 | Event/Ring Reminder reader/writer | 无 Anniversary 专用字段 | 专用字段显式 `null` | 升级 writer 后兼容；旧 Store 由 v2→v3 migration 补全 |
 | Notification/Recovery reader/writer | 无 aggregate kind/covered groups | target-specific R1 | 必须同步升级并迁移；不可降级 |
+| 新 C++ finalize reader 读取 Event/Ring/普通 Recovery 旧 payload | 无 `timezone` | 可选 `timezone` | 继续接受；共享字段不能全局必填 |
+| 新 C++ finalize reader 读取 Anniversary payload | 无 `timezone` | 当前 IANA `timezone` | Schema 保持兼容，但加载 attempt 后语义拒绝旧 payload；新 Kotlin writer 必须传入 |
+| Anniversary finalize 幂等重放 | 重放无时区投影规则 | 可传与首次不同的当前时区 | 返回已提交 successor，不重新投影且身份不变 |
 
 不提升全局 Native version 的理由是该边界不支持独立部署或滚动混跑，且 `NativeResult` v2 外壳、公共时间/错误语义均未改变；模块 revision 通过 blocked gate 保证只在同一 APK 全量升级后激活。若未来允许动态组件、跨发行版 native 库或任一旧 reader 与新 writer 混跑，必须提升全局 Native version，而不能复用本例。
 

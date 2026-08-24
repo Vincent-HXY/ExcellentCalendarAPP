@@ -39,6 +39,7 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 | Occurrence cursor | 字段必须出现 | 第一页 | 非空值必须满足 opaque cursor 格式并绑定原查询快照 |
 | Target-specific Reminder fields | 所有字段必须出现 | 仅不适用分支使用 null | 不使用空字符串/默认值代替 null |
 | Notification `covered_reminder_ids` | 非法 | 非法 | 非 aggregate 固定空数组；aggregate 至少一项 |
+| `finalize_delivery.timezone` | Event/Ring/普通 Recovery 合法；Anniversary attempt 语义非法 | 非法 | 非空字符串还必须是有效 IANA ID |
 
 ## Method capability matrix
 
@@ -52,6 +53,11 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 | `anniversary.list_occurrences` | 严格透传一页 | 同名 | `list_anniversary_occurrences_request` | occurrence page | planned, blocked |
 
 `reminder.prepare_delivery/finalize_delivery/plan_recovery` 继续是 Kotlin 内部调用，不暴露给 Flutter。Kotlin 不生成 occurrence/template/reminder/delivery UUID，不重算 membership、72 小时窗口、Ring 五分钟边界或 Anniversary 日末边界。
+
+- `finalize_delivery.timezone` 是共享请求中的可选 additive 字段；Kotlin 新实现统一传当前设备 IANA timezone。C++ 加载 prepared attempt 后，仅当目标是 Anniversary Reminder 或 kind 为 `anniversary_catch_up` 时把它视为语义必填：缺失返回 `CONTRACT_VALIDATION_FAILED`，非法 ID 返回 `TIMEZONE_ID_INVALID`。Event、Ring、普通 Recovery 的旧 payload 仍合法。
+- 第一次成功 Anniversary finalize 使用本次 timezone 生成并持久化 successor；transaction/journal 已提交后的重放必须直接返回原 successor，即使重放传入不同 timezone。timezone 不进入 Reminder、delivery 或 attempt identity；retryable failure 不生成 successor。
+- `plan_recovery.timezone` 继续全局必填，负责 Anniversary occurrence 日末边界、expired Anniversary Reminder 的年度 successor，以及 Recovery 中重新物化的 Anniversary Reminder。
+- `prepare_delivery` 不新增 timezone。它只消费 `plan_recovery` 已冻结的 batch/group membership；真正生成 successor 的 finalize 使用当时的当前时区。
 
 ## Identity and time
 
@@ -117,6 +123,6 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 - Event/Ring/普通 Recovery 回归：`contracts/fixtures/ring/manifest.json`。
 - 领域、DST、补发、finalize、tap、migration oracle：`semantic_vectors.golden.json`。
 - v2→v3 字段保留 golden：`storage_v2_to_v3.golden.json`。
-- 验证入口：`python contracts/validate_anniversary_r1.py`（验证环境需提供 `jsonschema` 与 `PyYAML`；它们不是产品依赖）。
+- 自举验证入口：`python contracts/run_anniversary_r1_validation.py`。它按 `requirements-validation.txt` 把 `jsonschema`、`PyYAML` 与 IANA `tzdata` 安装到系统临时缓存后执行门禁；这些包不是产品依赖。依赖已准备的环境也可直接运行 `python contracts/validate_anniversary_r1.py`。
 
 激活前，各语言必须把同一 fixtures 作为独立 round-trip/negative tests；Schema parse 不能替代真实 C++ migration、JNI、APK、Alarm/Notification 或真机验证。
