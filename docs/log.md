@@ -748,3 +748,12 @@
 - 任务结果：**CHANGES REQUIRED**。裁定：契约实际仅 16 个端点且不含 `auth.registration.email.update`（git 历史确认），前端报告"协议缺口"结论正确、该切片属合规跳过待排期；review 计划第 1 节"17 端点/envelope_only_errors"两处基线错误（契约中均不存在）。复现：`flutter test` 336/336、`flutter analyze` 0 issue、`flutter build apk --debug` 成功、Kotlin 131 项 0 失败（1 skipped）；**`dart format --set-exit-if-changed` 未通过（32 个增量文件）**，与报告"格式检查通过"矛盾；报告"新增约 60"实测约 131。发现 P1×2（退出/刷新竞态复活会话并以独立黑盒测试复现、刷新成功后新 RT 写回失败被忽略）、P2×7（非 2xx 无信封分类与死代码、presentation 持有下层类型、三 controller 未捕获 SessionEnded/SecureTokenStore、expires_at 整秒重编码过严、格式检查声称不实、Keystore 原子写顺序、测试覆盖缺口含真实 Keystore cipher 零覆盖与敏感日志无断言）、P3×9。分层/Token 主体合规，无 debug 降级假实现。
 - 验证状态：上述命令均实测执行并记录退出码；审查临时测试文件已删除，`git status` 与初始清单一致；未修改任何生产代码。真机 Keystore、真实刷新链路与九条端到端仍未验证（报告中如实保留）。
 - 开发时间：2026-08-17（Asia/Shanghai）。
+
+## 2026-08-25 21:10 +08:00 HXY-study、HXY-backend、HXY-user 三分支整合
+
+- 使用 Skill：`cross-layer-feature`。
+- 负责模块：Git 分支整合，以及 Contract、C++ Core/Storage、Flutter/Dart、Kotlin/Android/JNI、CloudBackend 共同生产入口与回归验证。
+- 任务目标：将同一 `HXY` 基线上的 `HXY-study`、`HXY-backend`、`HXY-user` 全部合入 `HXY`；按现有架构处理冲突，保护原有日程、纪念日、提醒、响铃能力，并让认证/个人信息前后端正确接入；`.agents/**` 以 `HXY-study` 为准。
+- 任务结果：以 `HXY-study → HXY-backend → HXY-user` 的依赖顺序建立三个独立 merge commit。`docs/log.md` 的并行追加全部保留；`MainActivity`、`NativeMethodChannelHandler`、Dart MethodChannel 常量、`AppRouter`、`main.dart` 与 production composition test 的冲突按功能并集解决，同时注册 Ring runtime/handler 与 Auth Keystore/handler，同时保留响铃宿主/路由和认证启动/页面路由。`.agents/**` 与 `HXY-study` 完全一致。排除了 `HXY-user` 带回的 4 份已归档响铃 active 计划副本及 3 个评审明确要求提交前删除的构建输出。另识别到来源分支间既有语义漂移：当前 Contract/active plan 已声明第 17 个 `auth.registration.email.update`，但合入的后端与前端仍按旧 16 端点实现；未回退机器 Contract，也未在纯合并任务中擅自扩展该独立业务切片，需后续专项补齐。
+- 验证状态：Contract validator 通过（162 schemas、55 fixtures、16 identity vectors）；C++ 按规定重新配置并执行构建后 `excellent_calendar_check`，7/7 通过；Flutter 定向组合测试 26/26、全量 387/387、`flutter analyze` 与 Debug APK 构建通过；Android JVM 174 tests、0 failure、0 error、1 既有 skip，`lintDebug` 为 0 errors / 38 warnings；独立 Flutter Native smoke 的 test/analyze/Debug APK 通过。CloudBackend `mvnw verify` 在临时启动 Docker Desktop 后通过：91 项单元/架构测试与 56 项 PostgreSQL 17.11 Testcontainers 集成测试均 0 失败、0 跳过，Docker 随后恢复停止。RMX3687 真机在线，但隔离 smoke APK 安装被 ColorOS USB 安装确认阻塞后中止；已确认 smoke 包不存在，正式应用包路径前后不变，因此真机 UI/JNI 返回值本轮未验证，正式应用及数据未被操作。
+- 开发时间：2026-08-25 21:10 +08:00（Asia/Shanghai）。
