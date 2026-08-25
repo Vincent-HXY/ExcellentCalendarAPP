@@ -1,0 +1,106 @@
+﻿> Task :gradle:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle:compileKotlin UP-TO-DATE
+> Task :gradle:compileJava NO-SOURCE
+> Task :gradle:compileGroovy NO-SOURCE
+> Task :gradle:pluginDescriptors UP-TO-DATE
+> Task :gradle:processResources UP-TO-DATE
+> Task :gradle:classes UP-TO-DATE
+> Task :gradle:jar UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:compileFlutterBuildDebug
+> Task :app:packJniLibsflutterBuildDebug UP-TO-DATE
+> Task :integration_test:preBuild UP-TO-DATE
+> Task :integration_test:preDebugBuild UP-TO-DATE
+> Task :integration_test:writeDebugAarMetadata UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:cleanMergeDebugAssets
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :integration_test:mergeDebugShaders UP-TO-DATE
+> Task :integration_test:compileDebugShaders NO-SOURCE
+> Task :integration_test:generateDebugAssets UP-TO-DATE
+> Task :integration_test:mergeDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:copyFlutterAssetsDebug
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :integration_test:generateDebugResValues UP-TO-DATE
+> Task :integration_test:generateDebugResources UP-TO-DATE
+> Task :integration_test:packageDebugResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :integration_test:extractDeepLinksDebug UP-TO-DATE
+> Task :integration_test:processDebugManifest UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:outputDebugAppLinkSettings UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :integration_test:compileDebugLibraryResources UP-TO-DATE
+> Task :integration_test:parseDebugLocalResources UP-TO-DATE
+> Task :integration_test:generateDebugRFile UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :integration_test:javaPreCompileDebug UP-TO-DATE
+> Task :integration_test:compileDebugJavaWithJavac UP-TO-DATE
+> Task :integration_test:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :integration_test:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :integration_test:processDebugJavaRes NO-SOURCE
+
+> Task :app:compileDebugKotlin FAILED
+cmd : e: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/android/app/src/main/kotlin/com/excellentcalendar
+/excellent_calendar/bridge/auth/AuthRecordPatterns.kt:12:18 Unsupported escape sequence.
+At line:1 char:129
++ ... ew($false); cmd /c "C:\Users\vincent\.gradle\wrapper\dists\gradle-8.1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: file:///A:/c...scape sequence.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+e: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excel
+lent_calendar/bridge/auth/AuthRecordPatterns.kt:12:26 Unsupported escape sequence.
+e: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excel
+lent_calendar/bridge/auth/AuthRecordPatterns.kt:12:34 Unsupported escape sequence.
+e: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excel
+lent_calendar/bridge/auth/AuthRecordPatterns.kt:12:42 Unsupported escape sequence.
+e: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excel
+lent_calendar/bridge/auth/AuthRecordPatterns.kt:12:50 Unsupported escape sequence.
+e: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excel
+lent_calendar/bridge/auth/AuthRecordPatterns.kt:12:58 Unsupported escape sequence.
+e: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excel
+lent_calendar/bridge/auth/AuthRecordPatterns.kt:12:67 Unsupported escape sequence.
+e: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/android/app/src/main/kotlin/com/excellentcalendar/excel
+lent_calendar/bridge/auth/AuthRecordPatterns.kt:12:69 Unsupported escape sequence.
+
+[Incubating] Problems report is available at: file:///A:/calendar/ExcellentCalendarAPP-user/flutter_client/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing 
+org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 8s
+43 actionable tasks: 5 executed, 38 up-to-date

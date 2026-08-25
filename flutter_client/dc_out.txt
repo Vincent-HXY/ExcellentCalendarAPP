@@ -1,0 +1,46 @@
+00:00 +0: loading A:/calendar/ExcellentCalendarAPP-user/flutter_client/test/dio_backend_api_client_test.dart
+00:00 +0: attaches Authorization and Idempotency-Key headers
+00:00 +1: does not attach Authorization to public login
+00:00 +2: throws BackendApiException for business failures without refresh
+00:00 +3: throws BackendTransportException for connection errors
+00:00 +4: throws BackendContractException for malformed envelope
+00:00 +5: single refresh then retry succeeds
+00:00 +6: retry after refresh that still fails ends the session exactly once
+00:00 +7: public endpoint failures never trigger refresh
+00:00 +8: the refresh endpoint itself never triggers another refresh
+00:00 +9: non-2xx status handling a bare 5xx body is a server transport failure, not a contract error
+00:00 +9 -1: non-2xx status handling a bare 5xx body is a server transport failure, not a contract error [E]
+  Expected: throws (<Instance of 'BackendTransportException'> and satisfies function)
+    Actual: <Instance of 'Future<Object?>'>
+     Which: threw BackendTransportException:<BackendTransportException(network)>
+            stack package:excellent_calendar/boundary_adapters/backend_api/dio_backend_api_client.dart 74:9  DioBackendApiClient.send
+                  ===== asynchronous gap ===========================
+                  package:matcher                                                                            expectLater
+                  package:flutter_test/src/widget_tester.dart 507:8                                          expectLater
+                  test\dio_backend_api_client_test.dart 199:15                                               main.<fn>.<fn>
+  
+  package:matcher                                    expectLater
+  package:flutter_test/src/widget_tester.dart 507:8  expectLater
+  test\dio_backend_api_client_test.dart 199:15       main.<fn>.<fn>
+  
+00:00 +9 -1: non-2xx status handling a bare 404 without an envelope is a contract failure
+00:00 +9 -2: non-2xx status handling a bare 404 without an envelope is a contract failure [E]
+  Expected: throws <Instance of 'BackendContractException'>
+    Actual: <Instance of 'Future<Object?>'>
+     Which: threw BackendTransportException:<BackendTransportException(network)>
+            stack package:excellent_calendar/boundary_adapters/backend_api/dio_backend_api_client.dart 74:9  DioBackendApiClient.send
+                  ===== asynchronous gap ===========================
+                  package:matcher                                                                            expectLater
+                  package:flutter_test/src/widget_tester.dart 507:8                                          expectLater
+                  test\dio_backend_api_client_test.dart 222:13                                               main.<fn>.<fn>
+                  
+            which is not an instance of 'BackendContractException'
+  
+  package:matcher                                    expectLater
+  package:flutter_test/src/widget_tester.dart 507:8  expectLater
+  test\dio_backend_api_client_test.dart 222:13       main.<fn>.<fn>
+  
+00:00 +9 -2: non-2xx status handling a 500 with a valid error envelope stays a business error
+00:00 +10 -2: non-2xx status handling an envelope with wrong contract_version is a contract failure
+00:00 +11 -2: non-2xx status handling an envelope with an unknown error code is a contract failure
+00:00 +12 -2: Some tests failed.

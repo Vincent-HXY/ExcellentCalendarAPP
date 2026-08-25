@@ -1,0 +1,22 @@
+00:00 +0: loading A:/calendar/ExcellentCalendarAPP-user/flutter_client/test/register_controller_test.dart
+00:00 +0: valid registration returns the pending challenge
+00:00 +1: retrying the identical failed form keeps the same Idempotency-Key
+00:00 +2: editing the form invalidates the Idempotency-Key
+00:00 +3: field-level errors map to the matching inputs and keep content
+00:00 +3 -1: field-level errors map to the matching inputs and keep content [E]
+  Expected: 'The username is already in use.'
+    Actual: '该用户名已被使用'
+     Which: is different.
+            Expected: The userna ...
+              Actual: 该用户名已被使用
+                      ^
+             Differ at offset 0
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\register_controller_test.dart 111:7            main.<fn>
+  
+00:00 +3 -1: AUTH_EMAIL_ALREADY_EXISTS marks the email field
+00:00 +4 -1: client validation rejects bad username, short password, mismatch, agreement
+00:00 +5 -1: prepareDefaults fills device locale and timezone
+00:00 +6 -1: Some tests failed.

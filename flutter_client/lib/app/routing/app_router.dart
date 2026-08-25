@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../presentation/event_detail/pages/event_detail_page.dart';
+import 'auth_route_arguments.dart';
 
 typedef EventDetailRouteBuilder =
     Widget Function(BuildContext context, EventDetailRouteData routeData);
@@ -26,6 +27,17 @@ class AppRouter {
     EventDetailRouteBuilder? eventDetailBuilder,
     WidgetBuilder? anniversaryListBuilder,
     AnniversaryDetailRouteBuilder? anniversaryDetailBuilder,
+    WidgetBuilder? authCheckBuilder,
+    WidgetBuilder? loginBuilder,
+    WidgetBuilder? registerBuilder,
+    WidgetBuilder? verificationBuilder,
+    WidgetBuilder? forgotPasswordBuilder,
+    WidgetBuilder? resetPasswordBuilder,
+    WidgetBuilder? profileBuilder,
+    WidgetBuilder? editProfileBuilder,
+    WidgetBuilder? changeEmailBuilder,
+    WidgetBuilder? changePasswordBuilder,
+    WidgetBuilder? accountSecurityBuilder,
   }) {
     final name = settings.name ?? '/today';
     if (name == '/today' || name == '/') {
@@ -39,6 +51,43 @@ class AppRouter {
         settings: const RouteSettings(name: '/anniversaries'),
         builder: anniversaryListBuilder,
       );
+    }
+    final simpleRoute = _simpleAuthRoute(
+      settings,
+      name,
+      authCheckBuilder: authCheckBuilder,
+      loginBuilder: loginBuilder,
+      registerBuilder: registerBuilder,
+      forgotPasswordBuilder: forgotPasswordBuilder,
+      profileBuilder: profileBuilder,
+      editProfileBuilder: editProfileBuilder,
+      changeEmailBuilder: changeEmailBuilder,
+      changePasswordBuilder: changePasswordBuilder,
+      accountSecurityBuilder: accountSecurityBuilder,
+    );
+    if (simpleRoute != null) {
+      return simpleRoute;
+    }
+    if (name == '/verification' && verificationBuilder != null) {
+      final arguments = settings.arguments;
+      if (arguments is VerificationPageArguments) {
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: verificationBuilder,
+        );
+      }
+      // Missing/invalid arguments are a programming error; fail safe to login.
+      return _namedRoute(settings, '/login', loginBuilder ?? todayBuilder);
+    }
+    if (name == '/reset-password' && resetPasswordBuilder != null) {
+      final arguments = settings.arguments;
+      if (arguments is ResetPasswordPageArguments) {
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: resetPasswordBuilder,
+        );
+      }
+      return _namedRoute(settings, '/login', loginBuilder ?? todayBuilder);
     }
 
     final parsedUri = Uri.tryParse(name);
@@ -104,6 +153,46 @@ class AppRouter {
 
     return _todayRoute(todayBuilder);
   }
+
+  static MaterialPageRoute<void>? _simpleAuthRoute(
+    RouteSettings settings,
+    String name, {
+    WidgetBuilder? authCheckBuilder,
+    WidgetBuilder? loginBuilder,
+    WidgetBuilder? registerBuilder,
+    WidgetBuilder? forgotPasswordBuilder,
+    WidgetBuilder? profileBuilder,
+    WidgetBuilder? editProfileBuilder,
+    WidgetBuilder? changeEmailBuilder,
+    WidgetBuilder? changePasswordBuilder,
+    WidgetBuilder? accountSecurityBuilder,
+  }) {
+    final builders = <String, WidgetBuilder?>{
+      '/auth-check': authCheckBuilder,
+      '/login': loginBuilder,
+      '/register': registerBuilder,
+      '/forgot-password': forgotPasswordBuilder,
+      '/profile': profileBuilder,
+      '/profile/edit': editProfileBuilder,
+      '/profile/email': changeEmailBuilder,
+      '/profile/password': changePasswordBuilder,
+      '/account-security': accountSecurityBuilder,
+    };
+    final builder = builders[name];
+    if (builder == null) {
+      return null;
+    }
+    return _namedRoute(settings, name, builder);
+  }
+
+  static MaterialPageRoute<void> _namedRoute(
+    RouteSettings settings,
+    String name,
+    WidgetBuilder builder,
+  ) => MaterialPageRoute<void>(
+    settings: RouteSettings(name: name, arguments: settings.arguments),
+    builder: builder,
+  );
 
   static MaterialPageRoute<void> _todayRoute(WidgetBuilder todayBuilder) =>
       MaterialPageRoute<void>(

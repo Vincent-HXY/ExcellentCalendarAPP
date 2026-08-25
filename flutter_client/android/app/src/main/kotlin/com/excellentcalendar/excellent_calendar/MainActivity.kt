@@ -7,6 +7,7 @@ import com.excellentcalendar.excellent_calendar.android.alarm.ReminderCoordinato
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationChannelManager
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationPermissionManager
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationRuntime
+import com.excellentcalendar.excellent_calendar.bridge.auth.KeystoreRefreshTokenSecureStore
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
@@ -108,12 +109,17 @@ class MainActivity : FlutterActivity() {
                 )
             },
         )
+        // 敏感 Refresh Token 的 Android Keystore 安全存储（auth.refresh_token.*）。
+        val authTokenStore = KeystoreRefreshTokenSecureStore(
+            directory = KeystoreRefreshTokenSecureStore.inAppDirectory(applicationContext),
+        )
         val handler = NativeMethodChannelHandler(
             nativeCalendarCoreBridge = nativeBridge,
             reminderOrchestrator = reminderOrchestrator,
             notificationOrchestrator = notificationOrchestrator,
             pendingReminderScheduleService = pendingScheduleService,
             reminderScheduleCoordinator = reminderScheduleCoordinator,
+            authTokenStore = authTokenStore,
             contractProfile = NativeContractRuntimeProfile.current,
             reconcileRetryEnqueuer = {
                 com.excellentcalendar.excellent_calendar.android.alarm.ReminderWorkScheduler.enqueueContinuation(

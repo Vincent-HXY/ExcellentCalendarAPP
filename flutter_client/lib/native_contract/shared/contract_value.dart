@@ -27,6 +27,27 @@ abstract final class ContractValue {
     throw FormatException('$parent.$key must be string or null.');
   }
 
+  static final RegExp _uuidPattern = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+
+  static String uuid(Map<String, dynamic> json, String key, String parent) {
+    final value = json[key];
+    if (value is String && _uuidPattern.hasMatch(value)) return value;
+    throw FormatException('$parent.$key must be a UUID.');
+  }
+
+  static String? optionalUuid(
+    Map<String, dynamic> json,
+    String key,
+    String parent,
+  ) {
+    final value = json[key];
+    if (value == null) return null;
+    if (value is String && _uuidPattern.hasMatch(value)) return value;
+    throw FormatException('$parent.$key must be a UUID or null.');
+  }
+
   static bool boolean(Map<String, dynamic> json, String key, String parent) {
     final value = json[key];
     if (value is bool) return value;

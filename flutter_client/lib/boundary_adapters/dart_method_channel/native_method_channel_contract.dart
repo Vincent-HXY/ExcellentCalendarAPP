@@ -76,3 +76,12 @@ class NativeNotificationMethods {
   static const openSettings = 'notification.open_settings';
   static const getInitialTapPayload = 'notification.get_initial_tap_payload';
 }
+
+class NativeAuthMethods {
+  const NativeAuthMethods._();
+
+  static const refreshTokenStore = 'auth.refresh_token.store';
+  static const refreshTokenRead = 'auth.refresh_token.read';
+  static const refreshTokenDelete = 'auth.refresh_token.delete';
+  static const refreshTokenExists = 'auth.refresh_token.exists';
+}
