@@ -1,0 +1,12 @@
+package com.excellentcalendar.cloud.identity.api;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+public record ConfirmPasswordResetRequestDto(
+        @NotBlank @Email @Size(max = 254) String email,
+        @NotNull VerificationCredentialDto credential,
+        @NotBlank @Size(min = 8, max = 128) String newPassword) {
+}

@@ -9,3 +9,9 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+excellent-calendar:
+  security:
+    jwt:
+      # Local development only: 48 random bytes (Base64). Never use outside `local`.
+      secret: ${EXCELLENT_CALENDAR_SECURITY_JWT_SECRET:bG9jYWwtZGV2LW9ubHktY2hhbmdlLW1lLWxvY2FsLWRldi1vbmx5LWNoYW5nZS1tZQ==}

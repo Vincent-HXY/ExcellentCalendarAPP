@@ -11,7 +11,9 @@
 - 数据库：PostgreSQL 是业务、同步版本、任务与审计的真相源。
 - 接口：只允许实现根目录 `contracts/` 已声明的 Backend API；本目录不复制 Contract。
 - Local-first：不登录仍可完整使用本地能力；云端不是本地 C++ Core 或 SQLite 的替代品。
-- 外部设施：Redis、MQ、对象存储、邮件、微信和 AI Provider 尚未绑定实现。
+- 外部设施：Redis、MQ、对象存储、微信和 AI Provider 尚未绑定实现；邮件已提供通用 SMTP
+  适配器（`excellent-calendar.mail.*`，见 `docs/decisions/0005`），不配置时保持 dev 控制台
+  收件箱 / 无码警告兜底。
 
 ## 快速启动
 
@@ -33,8 +35,16 @@ docker compose up -d postgres
 docker compose --profile app up --build
 ```
 
+Compose 的 `app` Profile 要求 `.env` 提供 `EXCELLENT_CALENDAR_SECURITY_JWT_SECRET`
+（生成：`openssl rand -base64 48`），缺失时会在启动前给出明确报错；本机
+`spring-boot:run` 使用 `api,local` Profile 自带仅限本机的开发密钥。
+
 健康检查：`GET http://localhost:8080/actuator/health`。除健康检查外，当前所有 HTTP 路径默认
 拒绝访问；这用于防止把尚未实现的计划 API 误认为可用。
+
+可选：设置 `.env` 中 `EXCELLENT_CALENDAR_MAIL_*` 后，注册/改邮箱/重置密码的验证码会经真实
+SMTP 发到手机邮箱（未设置时 `api,local` 把验证码打印到控制台 `[mail.dev]`），见
+[docs/auth-development-guide.md](docs/auth-development-guide.md)。
 
 ## 验证
 

@@ -22,7 +22,7 @@ class PostgreSqlInfrastructureIT {
     @Container
     @ServiceConnection
     static final PostgreSQLContainer POSTGRESQL = new PostgreSQLContainer(
-            DockerImageName.parse("postgres:17-alpine"))
+            DockerImageName.parse("postgres:17.11-alpine"))
             .withDatabaseName("excellent_calendar_test")
             .withUsername("excellent_calendar_test")
             .withPassword("test-only-password")
@@ -49,8 +49,9 @@ class PostgreSqlInfrastructureIT {
     }
 
     @Test
-    void flywayOwnsSchemaEvolutionBeforeBusinessTablesExist() {
+    void flywayOwnsSchemaEvolutionWithBusinessTablesApplied() {
         assertThat(flyway.info().pending()).isEmpty();
-        assertThat(flyway.info().current()).isNull();
+        assertThat(flyway.info().current()).isNotNull();
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
     }
 }
