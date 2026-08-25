@@ -91,3 +91,12 @@ class NativeRingMethods {
   static const snoozeActive = 'ring.snooze_active';
   static const completeItem = 'ring.complete_item';
 }
+
+class NativeAuthMethods {
+  const NativeAuthMethods._();
+
+  static const refreshTokenStore = 'auth.refresh_token.store';
+  static const refreshTokenRead = 'auth.refresh_token.read';
+  static const refreshTokenDelete = 'auth.refresh_token.delete';
+  static const refreshTokenExists = 'auth.refresh_token.exists';
+}

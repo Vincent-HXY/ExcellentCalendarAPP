@@ -35,6 +35,46 @@
 - 任务结果：判定协议主体可支撑开发（16 端点、信封、幂等、session_policy、隐私与头像约束均已声明），但存在三处真实缺陷并已修复：① 前端清单要求验证页提供“修改邮箱入口”，但 16 个端点中无任何能力可更正未激活账号邮箱（重新注册会被 `AUTH_USERNAME_ALREADY_EXISTS` 拦截，登录态 `auth.email_change.request` 又不可用）→ 新增 `auth.registration.email.update` 端点与 `update_registration_email_request.schema.json`；② 后端清单要求“错码/过期/已用/超次→对应错误码”，协议缺少超次专用码 → 新增 `AUTH_VERIFICATION_ATTEMPTS_EXCEEDED` 并挂入三个 verify/confirm 端点，同时为改邮箱端点新增 `AUTH_ACCOUNT_NOT_FOUND`、`AUTH_ACCOUNT_ALREADY_VERIFIED`；③ 登录未验证路径依赖 `api_error_context.verification_challenge` 但缺 `account_id`，导致该路径无法使用改邮箱能力 → 补充必填 `account_id`。另声明 HTTP 200 + `ApiResult` 统一约定与幂等键冲突规则（消除前后端对 401/429 的分歧），并移除 `user.avatar.delete` 中语义不成立的 `AVATAR_UPLOAD_FAILED`。
 - 验证状态：全部 `contracts/*.schema.json` 通过 Python JSON 解析；自研交叉校验脚本通过（17 个端点 request/envelope/data 引用闭合、全部端点错误码同时存在于 `error_codes.yaml` 与 `api_error` 枚举、4 个 `auth.refresh_token.*` MethodChannel schema 引用闭合、新码未泄漏进 `native_error` 枚举）。未执行 Flutter/后端构建与测试（本任务仅改协议层）。两份 plan 中“16 个端点”的表述需人工同步为 17 个。
 - 开发时间：2026-08-15 19:54（Asia/Shanghai）。
+## 2026-08-18 +08:00 认证前端审查修复逐项复核
+
+- 使用 Skill：`review-worktree-architecture`。
+- 负责模块：`flutter_client/` 认证增量修复复核（只读 + 独立实测）；仅追加本日志。
+- 任务目标：对照审查 findings 逐项核验修复者声明的 P1×2/P2×7/P3×9 修复是否真实存在于代码、是否产生预期行为，并独立重跑全部验证命令。
+- 任务结果：**核心问题已修复**。P1-1 世代机制三处校验 + 3 个黑盒竞态回归测试真实存在且逻辑正确（读后/网络返回后/写回后校验，写回后失配补偿删除）；P1-2 先落盘后启用 AT、store 失败统一清态已实现并有测试。P2 全部可修项已修：状态码感知解析+5 用例、presentation 注入收敛（ProfileViewData 投影）、三 controller 捕获补齐、formatUtcDateTime 保留毫秒（Kotlin 端同步接受小数秒）、格式检查 0 changed、原子写去 delete、端到端并发 401 与敏感日志断言补齐。P3 九项中八项属实并修复/裁定合理，一项（分层小瑕疵）修 1 项留 2 项（rawResponse/systemTemp，判定可接受）。独立复测：`flutter test` **352/352**、`flutter analyze` 0 issue、`dart format --output=none --set-exit-if-changed` **0 changed**、Kotlin **136 项 0 失败**（1 skipped 为既有）、`git diff --check` 干净。残留：①修复者自己的验证产物 `flutter_client/dc_out.txt`、`reg_out.txt`、`android/gradle_out3.txt` 未清理，提交前须删除；②协调器补偿删除（token_refresh_coordinator.dart:101）未校验 delete 结果，属极窄双故障窗口的残余风险；③真实 Keystore cipher 仍无 instrumented/真机覆盖（已如实标注未验证）。
+- 验证状态：上述数字均为本次独立实测（非沿用修复者报告）；未修改任何生产代码。
+- 开发时间：2026-08-18（Asia/Shanghai）。
+
+## 2026-08-18 10:49 +08:00 认证模块第三轮评审整改（P3 低危批次研判与修复）
+
+- 使用 Skill：`frontend-flutter-feature`（研判 + 修复 + 回归验证）；Kotlin 三项沿用既定授权一并修复。
+- 负责板块：`flutter_client/lib|test`、`flutter_client/android`、`docs/log.md`。
+- 任务目标：对 P3 批次 8 项逐条研判并修复真实项。结论：①头像 ImageCache 残留【真实】——文件缓存随服务端响应更新，但内存 `NetworkImage` 未 evict；已在 ProfilePage 删除成功后 `unawaited(NetworkImage(old).evict())`（Presentation 负责，保分层）。②验证页 emailChange 模式伪死重发按钮+底部按钮语义不当【真实】——重发按钮改为仅 registration 模式渲染；底部按钮按模式显示"返回登录/返回个人信息"（goToLogin/goToProfile）。③api_field_error.message 原样透传+多数控制器缺字段级映射【真实】——新增共享 `apiFieldErrorText`（本地 23 码文案表优先、契约安全的服务端消息兜底）与 `applyFieldErrors` 路由器，8 个表单控制器全部接入字段级映射（register 原实现一并改为经本地文案表）。④startup exists() 故障与"无 RT"合并【真实】——Keystore 瞬态故障（可重试）改走恢复页；get_current 失败进主页判定为设计决策（ProfilePage 自带错误态+重试，符合清单）。⑤clearLocalSession 忽略 delete 失败【真实】——失败时单次重试，防残留 RT 导致下次自动登录。⑥邮箱正则分隔点未转义【真实】——`user@exampleXcom` 确判合法（我原始意图是转义的 `\.` 被模板串吃掉）；已修复并补 3 例反例测试。⑦报告"新增约 60"测试数不实【真实】——静态计数纠正为 25 个新测试文件（含 6 fakes）、130 test/testWidgets + production_composition 1 例 = 约 131，已更正 2026-08-16 日志条目。⑧Kotlin 杂项【多项真实】——JSONException cause 携带明文已移除；codec/contracts 重复校验与死重载已统一到共享 `AuthRecordPatterns`（含真实日历范围校验，拒绝 2026-13-99T99:99:99Z）；补失败信封形状断言（ok=false→data=null）与 patterns 单测；codec 无内嵌版本字段判定为可接受（文件名 v1 即格式版本）；分层小瑕疵中 MethodChannel 构造移出 data 层（文件移至 `boundary_adapters/dart_method_channel/`），`NativeInvocation.rawResponse` 与 `Directory.systemTemp` 判定为既有项目模式/用户已确认决策，不改。
+- 任务结果：修复完成。`flutter test` 352/352 通过、`flutter analyze` 0 issue、`dart format --output=none --set-exit-if-changed lib test` 0 changed、Android `:app:testDebugUnitTest` BUILD SUCCESSFUL（新增 AuthRecordPatternsTest + 信封形状断言）、`flutter build apk --debug` 成功、`git diff --check` 干净。真机 Keystore 行为仍为未验证项。
+- 开发时间：2026-08-18 10:49（Asia/Shanghai）。
+
+## 2026-08-17 21:23 +08:00 认证模块第二轮评审整改（7 项 P2 研判与修复）
+
+- 使用 Skill：`frontend-flutter-feature`（研判 + 修复 + 回归验证）；Kotlin 两项经沿用上轮授权一并修复。
+- 负责板块：`flutter_client/lib|test`、`flutter_client/android`（Keystore 原子写/单测）、`docs/log.md`。
+- 任务目标：对评审 7 项 P2 逐条研判并修复真实项。研判结论：①非2xx误分类+badResponse死代码【真实】——裸 5xx 无信封体因 dio 以 unknown（不带响应状态）抛出只能归为 transport(network)，不会落入契约错误；真正可修的是"非信封 JSON 对象体的 4xx/5xx"分类，已让 `_parseResponse` 状态码感知（5xx→server、其余→contract），`_mapTransport` 的 badResponse 分支确认为防御性死代码并注释。②Presentation 持有下层类型【真实】——forgot/reset/register 页面改注入 AuthService（application），ProfilePage 改只依赖 ProfileController+新增 ProfileViewData 投影（不再 import data/native_contract），AuthService 暴露 profileCache；route-args 携带 DTO 论证为应用内路由数据、可接受。③三控制器缺 SessionEnded/SecureTokenStore 捕获【真实】——email_verification/edit_profile/change_email 补齐两 catch，并统一 secureStoreUnavailableMessage 常量到 5 处。④expires_at 整秒重编码冲突【真实，机制描述有误】——解析端接受毫秒、重编码端抛错；已改 `formatUtcDateTime` 保留精度（纠正：该路径走 MethodChannel 而非 dio，FormatException 会转 CONTRACT_VALIDATION_FAILED 而非 transport）。⑤dart format 报告失真【真实】——实测 32 个增量文件未通过，已 `dart format lib test` 修复，承认此前报告基于范围化检查。⑥Keystore 先删后 rename 破坏原子性【真实】——去掉前置 delete，直接 rename 覆盖。⑦测试覆盖缺口【部分真实】——补客户端 5 个非2xx/信封用例 + e2e 并发 401 单飞用例 + Kotlin sensitive-payload 不打日志断言；instrumented Keystore cipher 在 JVM 无 Robolectric 无法运行，标记未验证不伪造。
+- 任务结果：修复完成。`flutter test` 347/347 通过、`flutter analyze` 0 issue、`dart format --output=none --set-exit-if-changed lib test` 0 changed、Android `:app:testDebugUnitTest` BUILD SUCCESSFUL、`flutter build apk --debug` 成功、`git diff --check` 干净。真机 Keystore 加解密路径与裸非 JSON 5xx 的真实分类（unobservable，归 transport 网络类）仍为未验证项。
+- 开发时间：2026-08-17 21:23（Asia/Shanghai）。
+
+## 2026-08-17 20:19 +08:00 认证模块评审整改：退出/在途刷新竞态与 RT 写回失败处理
+
+- 使用 Skill：`frontend-flutter-feature`（研判 + 修复 + 回归验证）。
+- 负责板块：`flutter_client/lib/application/auth/`（会话世代、刷新协调器）、`flutter_client/test/`（回归测试）、`docs/log.md`。
+- 任务目标：对评审提出的两个 P1 问题做研判并修复。研判结论：均真实存在——① `TokenRefreshCoordinator._doRefresh` 在刷新网络返回后无条件 `updateAccessToken`（复活内存会话）并无条件把新 RT 写回 Keystore，与 `LogoutService.logout()`（clearLocalSession）零协调，退出可被在途刷新静默撤销；② `_secureStore.store(...)` 返回值被丢弃，轮换后新 RT 未落盘时下次启动用旧 RT 会触发后端 `AUTH_REFRESH_TOKEN_REUSED` 撤销整个 token family（对照 `AuthService._applyTokenPair` 已有校验）。
+- 任务结果：修复完成。`AuthSessionController` 新增单调世代 `generation`（markAuthenticated/markUnauthenticated/clearSilently 递增，同会话的 updateAccessToken/updateCurrentUser 不递增）；`_doRefresh` 在读取后、网络返回后、RT 写回后三处校验世代，失配即丢弃结果并终止（写回后失配额外删除刚写入的 RT，杜绝退出后凭据残留）；写回改为"先落盘新 RT、校验结果、再启用新 AT"，`store.result.ok=false` 时统一 `endSession()` 清态并抛 `SessionEndedException`。新增 5 个回归测试：退出在途刷新不复活会话、存储期间退出删除刚写入 RT、写回失败统一清态（黑盒组合真实 Coordinator+LogoutService+内存 secure store 复现评审场景）、会话世代语义 2 例。验证：`flutter test` 341/341 通过、`flutter analyze` 0 issue、`dart format` 检查通过、`flutter build apk --debug` 成功、`git diff --check` 干净。真机 Keystore 行为仍为未验证项。
+- 开发时间：2026-08-17 20:19（Asia/Shanghai）。
+
+## 2026-08-16 00:55 +08:00 认证与个人信息模块——前端本地全量实现（阶段 0–6）
+
+- 使用 Skill：`frontend-flutter-feature`；经用户授权一并完成 `flutter_client/android` 内 Kotlin Keystore 部分（原属 `android-kotlin-native-feature` 范围）。
+- 负责板块：`flutter_client/`（Dart + Kotlin）+ `docs/log.md`。未修改 `contracts/`、`cloud_backend/`、`cpp_core/`。
+- 任务目标：按 `docs/plan/active/认证与个人信息-02-前端本地.md` 实现 12 项业务能力的本地闭环：dio 统一网络层（ApiResult v1 解析、单飞刷新、单次重试、幂等 Key）、typed DTO（auth/user/common 全量 schema 严格解析）、AuthGateway/UserGateway/RefreshTokenSecureStoreGateway 及实现、认证会话控制器（AT 仅内存）、TokenRefreshCoordinator（并发 401 只刷新一次、失败统一清态）、启动四分支检查、退出服务、cached_current_user v1 文件缓存（损坏视为无缓存，经用户确认替代 SharedPreferences 以守住"仅新增 dio"白名单）、登录/注册/邮箱验证/忘记密码/重置密码/修改密码/资料/编辑资料/修改邮箱/账号安全页面、头像展示与删除（更换入口提示暂不支持）、路由接入认证检查页、Android Keystore AES-256-GCM 的 4 个 `auth.refresh_token.*` MethodChannel handler 及 Kotlin 单测。
+- 任务结果：**完整完成（协议缺口切片除外）**。`flutter test` 336/336 通过（新增 25 个测试文件〔含 6 个 fakes/fixtures〕、静态计数 130 个 test/testWidgets 用例 + production_composition_test 1 例 = 约 131；**更正**：此前"新增约 60 个测试"为未核实的估算，实测定量如上，336−131≈205 与历史基线一致。覆盖 DTO 严格解析、client 刷新重试/防循环、协调器并发单飞、启动四分支、控制器全失败分支、Widget 页面流、Fake API 走通注册→验证→退出与重启恢复集成流）；`flutter analyze` 0 issue；`dart format` 检查通过；Android `:app:testDebugUnitTest` BUILD SUCCESSFUL（新增 4 个测试文件）；`flutter build apk --debug` 成功。**协议缺口**：任务清单与后端清单引用的 `auth.registration.email.update` 端点不存在于 `contracts/backend_api.yaml`（契约仅 16 端点，改邮箱仅声明登录后的 `auth.email_change.request/confirm`），按硬边界#2 停做"注册验证页修改邮箱"切片并上报，未发明协议。头像系统相册选择因"仅新增 dio"白名单与无声明通道而跳过（用户确认），更换头像入口显示"暂不支持"。未验证项：无真机/后端联调，Keystore 真机读写、真实 Token 刷新链路与九条端到端验收流程均未执行；生产 baseUrl 默认 `http://10.0.2.2:8080`，可用 `--dart-define=BACKEND_BASE_URL=...` 覆盖。
+- 开发时间：2026-08-16 00:55（Asia/Shanghai）。
 
 ## 2026-08-14 20:23 +08:00 Anniversary C++ 开发过程归档
 
@@ -700,3 +740,11 @@
 - 任务结果：新增 `spring-boot-starter-mail`（BOM 管版本）与通用 SMTP 适配器，opt-in 于 `excellent-calendar.mail.host`（任何 Profile 可启用，生产 api 亦可用）；`SmtpMailSender` 在 afterCommit 尽力发送，失败仅 WARN（收件人掩码、无验证码、无凭据），正文只含 6 位验证码（ADR-0004），587+STARTTLS（防降级）或 465+SSL、连接/读/写超时 10s，不做自动重试（resend 端点承担重试语义）。`MailConfiguration` 优先级固定为 SMTP > dev/local 控制台收件箱 > 无码兜底；host 已设置而 username/password 缺失时启动快速失败并提示缺失项。新增 ADR-0005，同步 README、联调指南、配置文档与实现状态；`.env.example` 附 QQ/163/Outlook/Gmail 配置示例。
 - 验证状态：`.\mvnw.cmd test` **91/91 通过**（新增 SmtpMailSenderTest 4 用例：消息形状/主题/失败不传播/掩码；MailConfigurationTest 增至 8 用例含 SMTP 优先与 fail-fast）；`.\mvnw.cmd verify` BUILD SUCCESS，但本机 Docker Desktop 无法启动，56 个 Testcontainers 集成测试**全部跳过**，数据库行为未在本轮验证；真实 SMTP 供应商投递未用真实邮箱账号实测（**未验证**）。
 - 开发时间：2026-08-19 20:30–21:10（Asia/Shanghai）。
+## 2026-08-17 +08:00 认证与个人信息——前端本地 Review（按 review 计划执行）
+
+- 使用 Skill：`review-worktree-architecture`。
+- 负责模块：`flutter_client/` 认证与个人信息增量（Dart + Kotlin）只读审查；仅追加本日志。
+- 任务目标：按 `docs/reviews/active/认证与个人信息-02-前端本地-review计划.md` 重建事实基线、裁定两个跳过切片、复现全部验证命令并完成分层/Token/单飞/状态机/缓存/Keystore/导航审查。
+- 任务结果：**CHANGES REQUIRED**。裁定：契约实际仅 16 个端点且不含 `auth.registration.email.update`（git 历史确认），前端报告"协议缺口"结论正确、该切片属合规跳过待排期；review 计划第 1 节"17 端点/envelope_only_errors"两处基线错误（契约中均不存在）。复现：`flutter test` 336/336、`flutter analyze` 0 issue、`flutter build apk --debug` 成功、Kotlin 131 项 0 失败（1 skipped）；**`dart format --set-exit-if-changed` 未通过（32 个增量文件）**，与报告"格式检查通过"矛盾；报告"新增约 60"实测约 131。发现 P1×2（退出/刷新竞态复活会话并以独立黑盒测试复现、刷新成功后新 RT 写回失败被忽略）、P2×7（非 2xx 无信封分类与死代码、presentation 持有下层类型、三 controller 未捕获 SessionEnded/SecureTokenStore、expires_at 整秒重编码过严、格式检查声称不实、Keystore 原子写顺序、测试覆盖缺口含真实 Keystore cipher 零覆盖与敏感日志无断言）、P3×9。分层/Token 主体合规，无 debug 降级假实现。
+- 验证状态：上述命令均实测执行并记录退出码；审查临时测试文件已删除，`git status` 与初始清单一致；未修改任何生产代码。真机 Keystore、真实刷新链路与九条端到端仍未验证（报告中如实保留）。
+- 开发时间：2026-08-17（Asia/Shanghai）。

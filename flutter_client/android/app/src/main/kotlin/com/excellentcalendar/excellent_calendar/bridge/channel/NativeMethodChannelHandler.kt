@@ -3,6 +3,7 @@ package com.excellentcalendar.excellent_calendar.bridge.channel
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.excellentcalendar.excellent_calendar.bridge.auth.RefreshTokenSecureStore
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeAnniversaryBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCategoryBridge
@@ -62,6 +63,7 @@ class NativeMethodChannelHandler(
     private val reminderScheduleCoordinator: ReminderScheduleReconciler? = null,
     private val ringRuntime: RingRuntime? = null,
     private val ringOrchestrator: RingMethodOrchestrator? = null,
+    private val authTokenStore: RefreshTokenSecureStore? = null,
     private val contractProfile: NativeContractProfile = NativeContractProfile.V1,
     private val reconcileRetryEnqueuer: (() -> Unit)? = null,
     private val anniversaryCapabilityProvider: AnniversaryCapabilityProvider = AnniversaryCapabilityProvider {
@@ -125,6 +127,11 @@ class NativeMethodChannelHandler(
             ),
             NotificationMethodHandler(notificationOrchestrator, nativeCallExecutor),
             RingMethodHandler(contractProfile, nativeCallExecutor, ringRuntime, ringOrchestrator),
+            AuthMethodHandler(
+                authTokenStore,
+                contractProfile,
+                nativeCallExecutor,
+            ),
         ),
     )
 
@@ -201,6 +208,10 @@ class NativeMethodChannelHandler(
         const val MethodRingStopActive = "ring.stop_active"
         const val MethodRingSnoozeActive = "ring.snooze_active"
         const val MethodRingCompleteItem = "ring.complete_item"
+        const val MethodAuthRefreshTokenStore = "auth.refresh_token.store"
+        const val MethodAuthRefreshTokenRead = "auth.refresh_token.read"
+        const val MethodAuthRefreshTokenDelete = "auth.refresh_token.delete"
+        const val MethodAuthRefreshTokenExists = "auth.refresh_token.exists"
         const val LogTag = "ExcellentCalendarNative"
     }
 }

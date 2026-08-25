@@ -1,8 +1,14 @@
+import 'package:excellent_calendar/app/routing/auth_navigator.dart';
 import 'package:excellent_calendar/application/anniversary/app_clock.dart';
 import 'package:excellent_calendar/application/category/category_models.dart';
+import 'package:excellent_calendar/data/auth/dio_auth_gateway.dart';
+import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_channel_refresh_token_secure_store.dart';
 import 'package:excellent_calendar/data/category/native_category_repository.dart';
 import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_channel_ring_adapter.dart';
+import 'package:excellent_calendar/data/user/dio_user_gateway.dart';
+import 'package:excellent_calendar/data/user/user_profile_file_cache.dart';
 import 'package:excellent_calendar/main.dart' as production;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,6 +27,23 @@ void main() {
     expect(app.anniversaryClock, isA<SystemAppClock>());
     expect(app.anniversaryClock, isNot(isA<FixedAppClock>()));
     expect(app.ringGateway, isA<MethodChannelRingAdapter>());
+  });
+
+  test('production auth composition wires the real stack', () {
+    final key = GlobalKey<NavigatorState>();
+    final deps = production.buildAuthDependencies(navigatorKey: key);
+
+    expect(deps.session, isNotNull);
+    expect(deps.startupCheck, isNotNull);
+    expect(deps.logoutService, isNotNull);
+    expect(deps.profileCache, isA<UserProfileFileCache>());
+    expect(deps.navigator, isA<NavigatorAuthNavigator>());
+    // The AuthService exposes the gateways through typed interfaces; verify
+    // the real dio/MethodChannel implementations are wired end to end.
+    expect(deps.authService.authGateway, isA<DioAuthGateway>());
+    expect(deps.authService.userGateway, isA<DioUserGateway>());
+    expect(deps.secureStore, isA<MethodChannelRefreshTokenSecureStore>());
+    deps.session.dispose();
   });
 
   test(
