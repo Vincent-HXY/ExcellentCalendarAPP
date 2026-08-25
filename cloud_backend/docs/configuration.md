@@ -25,6 +25,13 @@
 | `DATABASE_POOL_MIN_IDLE` | 可选 | `1` | Hikari 最小空闲连接数 |
 | `SERVER_PORT` | API 可选 | `8080` | HTTP 端口 |
 | `EXCELLENT_CALENDAR_SECURITY_CORS_ALLOWED_ORIGINS` | 浏览器客户端才需要 | 空 | 逗号分隔的精确来源；空表示拒绝跨域 |
+| `EXCELLENT_CALENDAR_MAIL_HOST` | 真实 SMTP 发信才需要 | 空 | SMTP 主机；留空保持 Profile 兜底（dev/local 控制台收件箱，其余无码 WARN） |
+| `EXCELLENT_CALENDAR_MAIL_PORT` | 可选 | `587` | STARTTLS 用 587，implicit SSL 用 465 |
+| `EXCELLENT_CALENDAR_MAIL_USERNAME` | `MAIL_HOST` 已设置时必填 | 空 | SMTP 登录名（通常即邮箱地址） |
+| `EXCELLENT_CALENDAR_MAIL_PASSWORD` | `MAIL_HOST` 已设置时必填 | 空 | SMTP 授权码，必须从 Secret 注入 |
+| `EXCELLENT_CALENDAR_MAIL_FROM` | 可选 | 取 `USERNAME` | 发件人地址 |
+| `EXCELLENT_CALENDAR_MAIL_START_TLS` | 可选 | `true` | STARTTLS（含防降级）；`SSL=true` 时忽略 |
+| `EXCELLENT_CALENDAR_MAIL_SSL` | 可选 | `false` | implicit TLS（SMTPS），通常配 465 端口 |
 | `SPRING_PROFILES_ACTIVE` | 推荐显式设置 | `api` | 进程和环境组合 |
 
 Spring Boot 标准环境变量优先于 `application-*.yml`。生产环境禁止启用 `local`。
@@ -51,11 +58,13 @@ docker compose ps
 | Redis | deferred | 首个限流、短缓存、租约或幂等辅助用例及数据库兜底 |
 | Message Queue | decision required | 投递保证、顺序、重试、死信、部署与成本 |
 | Object Storage | decision required | 区域、加密、签名 URL、病毒扫描、生命周期 |
-| Email Provider | decision required | 发信域名、回调、退信、限流、模板版本 |
 | JWT signing | decision required | 非对称算法、密钥轮换、`kid`、受众、签发者 |
 | WeChat / AI Provider | deferred | Provider 协议、超时、重试、隐私和配额 |
 
 只有首个真实用例进入实现时才增加对应 `@ConfigurationProperties` 和依赖，避免未使用配置长期漂移。
+
+邮件 Provider 已按 ADR-0005 接入通用 SMTP 适配器（见上表 `EXCELLENT_CALENDAR_MAIL_*`）；
+退信/弹回处理、发信域名与发送限额仍属后续阶段。
 
 ## 时间与健康检查
 

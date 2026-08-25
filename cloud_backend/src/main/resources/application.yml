@@ -9,8 +9,8 @@ spring:
     hikari:
       maximum-pool-size: ${DATABASE_POOL_MAX_SIZE:10}
       minimum-idle: ${DATABASE_POOL_MIN_IDLE:1}
-      connection-timeout: 5s
-      validation-timeout: 3s
+      connection-timeout: 5000
+      validation-timeout: 3000
       connection-init-sql: SET TIME ZONE 'UTC'
   jpa:
     open-in-view: false
@@ -26,6 +26,53 @@ spring:
     clean-disabled: true
     baseline-on-migrate: false
     validate-on-migrate: true
+  servlet:
+    multipart:
+      # Parser ceiling deliberately above the contract's 5 MiB (5,242,880 B): Boot's 1 MB default
+      # would reject valid 1-5 MiB avatars before the controller, making the processor's exact
+      # contract check unreachable. 6 MB also covers multipart boundary/part overhead.
+      max-file-size: 6MB
+      max-request-size: 6MB
+
+excellent-calendar:
+  security:
+    jwt:
+      issuer: https://excellent-calendar.local/cloud
+      audience: excellent-calendar-android
+      access-token-ttl-seconds: 900
+    rate-limit:
+      login-max-per-window: 10
+      login-window-seconds: 60
+      register-max-per-window: 5
+      register-window-seconds: 3600
+      challenge-max-per-window: 10
+      challenge-window-seconds: 60
+      password-reset-max-per-window: 5
+      password-reset-window-seconds: 3600
+  identity:
+    challenge:
+      registration-ttl-seconds: 600
+      password-reset-ttl-seconds: 900
+      resend-interval-seconds: 60
+      max-attempts: 5
+      refresh-token-ttl-seconds: 2592000
+  mail:
+    # Optional SMTP outbound mail for identity challenges. The SMTP adapter only activates when
+    # host is non-blank; otherwise the dev/local console inbox or the code-free warning applies.
+    # Secrets come from the environment, never from committed files.
+    host: ${EXCELLENT_CALENDAR_MAIL_HOST:}
+    port: ${EXCELLENT_CALENDAR_MAIL_PORT:587}
+    username: ${EXCELLENT_CALENDAR_MAIL_USERNAME:}
+    password: ${EXCELLENT_CALENDAR_MAIL_PASSWORD:}
+    from: ${EXCELLENT_CALENDAR_MAIL_FROM:}
+    start-tls: ${EXCELLENT_CALENDAR_MAIL_START_TLS:true}
+    ssl: ${EXCELLENT_CALENDAR_MAIL_SSL:false}
+  idempotency:
+    ttl-hours: 24
+  media:
+    avatar:
+      base-url: ${EXCELLENT_CALENDAR_MEDIA_AVATAR_BASE_URL:http://localhost:8080}
+      dir: ${EXCELLENT_CALENDAR_MEDIA_AVATAR_DIR:./data/avatars}
 
 server:
   shutdown: graceful

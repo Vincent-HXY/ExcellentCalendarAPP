@@ -51,6 +51,10 @@
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.modulith</groupId>
             <artifactId>spring-modulith-starter-core</artifactId>
         </dependency>
@@ -67,6 +71,22 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.80</version>
+        </dependency>
+        <dependency>
+            <!-- JNI-based WebP ImageIO plugin; works on Java 21 (the FFM-based NightMonkeys
+                 plugin requires the Foreign Linker preview API and self-disables on Java 21). -->
+            <groupId>org.sejda.imageio</groupId>
+            <artifactId>webp-imageio</artifactId>
+            <version>0.1.6</version>
         </dependency>
 
         <dependency>

@@ -40,15 +40,15 @@ Spring Modulith 把 `com.excellentcalendar.cloud` 下的直接子包识别为模
 | 模块 | 所有权 | 状态 |
 | --- | --- | --- |
 | `boot` | Profile、进程装配 | implemented |
-| `platform` | 安全、UTC Clock、请求 ID、数据库配置 | implemented |
-| `identity` | 账号、密码、挑战、会话、Token 轮换 | planned |
-| `userdevice` | 资料、偏好、设备、设备游标 | planned |
+| `platform` | 安全、UTC Clock、请求 ID、数据库配置、ApiResult 信封/错误映射、幂等键 | implemented |
+| `identity` | 账号、密码、挑战、会话、Token 轮换 | implemented（12 个认证端点） |
+| `userdevice` | 资料、偏好、设备、设备游标 | implemented（get/update current、头像编排） |
+| `media` | 头像资产、本地磁盘存储、静态下载路径 | implemented |
 | `calendar` | 云端日历业务实体与所有权 | planned |
 | `sync` | operation inbox、冲突、change feed | planned；无公开同步 Contract |
 | `reminder` | 服务器渠道提醒规划 | planned |
 | `notification` | 微信/Push 等投递及结果日志 | planned |
 | `ai` | OCR/LLM Candidate 管道 | planned |
-| `media` | 头像、附件、对象存储元数据 | planned |
 | `search` | 可重建读模型和搜索索引 | planned |
 | `holiday` | 节假日和公共日历源 | planned；模型未确认 |
 | `datedmessage` | 日期消息、可见性和共享 | planned；规则未确认 |

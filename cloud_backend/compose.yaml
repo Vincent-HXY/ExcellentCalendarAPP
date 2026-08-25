@@ -2,7 +2,7 @@ name: ${COMPOSE_PROJECT_NAME:-excellent-calendar-cloud}
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.11-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-excellent_calendar}
       POSTGRES_USER: ${POSTGRES_USER:-excellent_calendar}
@@ -29,6 +29,17 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-excellent_calendar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local-dev-only-change-me}
       SERVER_PORT: 8080
+      # The api profile refuses to start without a signing secret; fail fast with a clear
+      # message instead of a cryptic boot error. Generate with: openssl rand -base64 48
+      EXCELLENT_CALENDAR_SECURITY_JWT_SECRET: ${EXCELLENT_CALENDAR_SECURITY_JWT_SECRET:?Set EXCELLENT_CALENDAR_SECURITY_JWT_SECRET in .env (openssl rand -base64 48)}
+      # Optional SMTP outbound mail; empty host keeps the in-app fallback (see application.yml).
+      EXCELLENT_CALENDAR_MAIL_HOST: ${EXCELLENT_CALENDAR_MAIL_HOST:-}
+      EXCELLENT_CALENDAR_MAIL_PORT: ${EXCELLENT_CALENDAR_MAIL_PORT:-587}
+      EXCELLENT_CALENDAR_MAIL_USERNAME: ${EXCELLENT_CALENDAR_MAIL_USERNAME:-}
+      EXCELLENT_CALENDAR_MAIL_PASSWORD: ${EXCELLENT_CALENDAR_MAIL_PASSWORD:-}
+      EXCELLENT_CALENDAR_MAIL_FROM: ${EXCELLENT_CALENDAR_MAIL_FROM:-}
+      EXCELLENT_CALENDAR_MAIL_START_TLS: ${EXCELLENT_CALENDAR_MAIL_START_TLS:-true}
+      EXCELLENT_CALENDAR_MAIL_SSL: ${EXCELLENT_CALENDAR_MAIL_SSL:-false}
     depends_on:
       postgres:
         condition: service_healthy

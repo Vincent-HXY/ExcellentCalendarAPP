@@ -29,8 +29,16 @@ class ConfigurationFilesTest {
         Resource resource = new FileSystemResource(Path.of("compose.yaml"));
         List<PropertySource<?>> sources = loader.load("compose", resource);
 
-        assertThat(read(sources, "services.postgres.image")).isEqualTo("postgres:17-alpine");
+        assertThat(read(sources, "services.postgres.image")).isEqualTo("postgres:17.11-alpine");
         assertThat(read(sources, "services.api.profiles[0]")).isEqualTo("app");
+    }
+
+    @Test
+    void hikariTimeoutsUseTheMillisecondValuesExpectedByHikari() throws IOException {
+        assertThat(property("application.yml", "spring.datasource.hikari.connection-timeout"))
+                .isEqualTo(5000);
+        assertThat(property("application.yml", "spring.datasource.hikari.validation-timeout"))
+                .isEqualTo(3000);
     }
 
     private Object property(String resourceName, String key) throws IOException {

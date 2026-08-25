@@ -224,3 +224,83 @@
 - 任务目标：将 `HXY-study` 上的现有提交及未提交文档变化归拢到 `HXY`，并说明从 `HXY` 建立 `HXY-backend`、`HXY-user` 两个独立工作树的安全流程。
 - 任务结果：提交当前文档变化，并以 fast-forward 方式同步本地 `HXY`；工作树与派生分支仅提供方案，未在本任务中创建。
 - 验证状态：已核对分支祖先关系、工作区状态与工作树列表；纯 Git/文档流程，未执行产品构建或运行测试。
+
+## 2026-08-15 18:34 +08:00 云后端版本基线与真实数据库测试闭环
+
+- 使用 Skill：`backend-api-development`、`debug`。
+- 负责模块：`cloud_backend/` 的 Java/Spring/Maven/PostgreSQL/Testcontainers 基线、Hikari 数据源配置、容器开发环境，以及 `docs/version.md` 版本清单。
+- 任务目标：选择并落地适合后续开发的后端框架、中间件和 Java 版本，补齐本地容器环境，确保现有后端测试能够真实运行，并记录已安装、锁定和 BOM 解析版本。
+- 任务结果：保留 Java 21 LTS、Spring Boot 4.1.0、Spring Modulith 2.1.0、Maven 3.9.16 的兼容组合；安装 Docker Desktop 4.86.0（Engine 29.7.2、Compose 5.3.1）并补齐用户 PATH；将 PostgreSQL 固定为 17.11-alpine；修复 Hikari `connection-timeout`/`validation-timeout` 使用 Duration 字符串导致 Spring Boot 4.1 无法绑定 `long` 的根因，并增加配置回归测试。未提前引入无真实用例的 Redis、MQ 或对象存储。
+- 验证状态：配置定向测试 3/3 通过；`mvnw test` 修复前 15/15 通过；最终 `mvnw verify` 的 16 个单元/架构/Web 测试与 2 个真实 PostgreSQL 17.11 集成测试全部通过，0 失败、0 跳过。Dockerfile 首次镜像构建在 Temurin 基础层下载后因 Docker Desktop 后台 EOF/首次启动异常未完成，需 Windows 重启后重跑；不影响已完成的 Maven 与 Testcontainers 验证。
+- 开发时间：2026-08-15 18:15–18:34（Asia/Shanghai）。
+
+## 2026-08-16 12:00 +08:00 认证与个人信息后端（CloudBackend）阶段 0–5 完成
+
+- 使用 Skill：`backend-api-development`。
+- 负责模块：`cloud_backend/`（identity、userdevice、media、platform），计划文档
+  `docs/plan/active/认证与个人信息-01-后端CloudBackend.md`。
+- 任务目标：实现 `contracts/backend_api.yaml` 已声明的 16 个认证/个人信息端点，完成
+  V1–V3 Flyway Migration、三模块四层架构、HS256 JWT、Argon2id、Refresh Token 原子轮换、
+  邮箱 Challenge、幂等键、内存限流、本地磁盘头像，并通过单元与 Testcontainers 集成测试。
+- 任务结果：16 端点全部落地（`auth.registration.email.update` 经用户确认推迟，Contract 未
+  声明）；技术选型冻结为 ADR-0004，联调说明写入 `cloud_backend/docs/auth-development-guide.md`；
+  新增依赖 oauth2-jose（BOM 管理）、bcprov-jdk18on 1.80、webp-imageio 0.1.6（JNI）。
+- 验证状态：`.\mvnw.cmd test` 54/54 通过；`.\mvnw.cmd verify` **BUILD SUCCESS**，37 个
+  PostgreSQL 17.11 Testcontainers HTTP 端到端测试 0 失败 0 跳过（并发 refresh 单胜者、Token
+  family 重放撤销、会话撤销矩阵、未知邮箱隐私、5 次错误码作废、头像 PNG/WebP/ETag、幂等
+  重放、限流 429 等）。协议缺口（email.update 缺失、attempts-exceeded 错误码缺失、头像下载
+  路径未声明）已按用户决策处理并记录于 ADR-0004 §1。生产 SMTP/对象存储/JWT 密钥轮换未验证。
+- 开发时间：2026-08-15 22:00–2026-08-16 12:00（Asia/Shanghai）。
+
+## 2026-08-17 19:00 +08:00 认证与个人信息后端（CloudBackend）独立评审
+
+- 使用 Skill：`review-worktree-architecture`；另派 4 个并行审查子代理（identity 协议/领域、userdevice+media+头像、platform/安全/幂等/迁移、测试质量审计）并独立复读全部契约与核心服务。
+- 负责模块：`cloud_backend/`（identity、userdevice、media、platform）相对 `HEAD` 的全部未提交增量；只读评审，未修改任何代码。
+- 任务目标：按 `docs/reviews/active/认证与个人信息-01-后端CloudBackend-review计划.md` 逐项核验协议事实、完成度、测试真实性与架构边界，输出 4 项裁决。
+- 任务结果：启动 Docker Desktop 后独立复现 `.\mvnw.cmd verify`：54 个单元/架构/Web 测试 + 37 个 Testcontainers 集成测试，0 失败、0 跳过，BUILD SUCCESS，与完成报告数字一致；契约裁定为 16 端点（`auth.registration.email.update` 从未存在于任何提交，推迟成立），评审计划事实基线的 17 端点/26 错误码/`http_conventions` 等条目与实际契约不符。发现 P1×3（multipart 上限未配置致头像实际限 1 MiB、`ConsoleMailSender` 无 Profile 门控致生产日志含验证码、`auth.logout_all` 多发契约清单外的 `AUTH_ACCOUNT_DISABLED`），P2 若干（幂等 TTL 存而不用、用户名并发竞态返回 500、内存限流无惰性清理、404/405 绕过信封等），另有测试覆盖缺口（`AUTH_ACCOUNT_DISABLED` 零覆盖、幂等重放未做字节级断言等）。
+- 验证状态：`mvnw verify` 已复现；全部代码级证据附 file:line；multipart 1 MiB 阈值与并发竞态 500 路径未做运行时复现（标记未验证）；工作区初始与结束状态一致（59 项），临时产物已清理。
+
+## 2026-08-17 20:30 +08:00 P1 评审问题修复（multipart 上限 / 邮件 Profile 门控 / logout_all 越清单错误码）
+
+- 使用 Skill：`backend-api-development`。
+- 负责模块：`cloud_backend/`（application.yml、identity/infrastructure、identity/infrastructure/security、测试）。
+- 任务目标：对评审报告的 P1×3 逐项证据级研判（存在性确认），真实存在则给出最小修复并用回归测试锁定。
+- 任务结果：三项全部确认存在并修复——P1-1 `spring.servlet.multipart.max-file-size/max-request-size: 6MB`（护栏高于契约 5 MiB，精确上限由处理器执行；6MB 而非 5MB 的原因：5MB=5,000,000B 小于 5 MiB=5,242,880B，恰好 5 MiB 的文件仍会被误拒）；P1-2 `MailConfiguration` 按 Profile 二选一（dev/local 控制台收件箱，其余 Profile `UnconfiguredMailSender` 只输出不含验证码/收件人的 WARN）；P1-3 共享解析器对禁用账号改发 `AUTH_SESSION_EXPIRED`（8 个 bearer 端点全部声明该码，login/refresh 仍自行发 `AUTH_ACCOUNT_DISABLED`）。ADR-0004 §6 与联调说明同步更新。
+- 验证状态：`.\mvnw.cmd test` 57/57 通过（新增 MailConfigurationTest 3 用例）；`.\mvnw.cmd verify` **BUILD SUCCESS**，39 个 Testcontainers 集成测试 0 失败 0 跳过，其中新增 `AvatarIT.imagesBetweenOneAndFiveMiBAreAccepted`（>1 MiB 噪声 PNG 真实上传 200，运行时证明原 1 MiB 误拒已消除）与 `DisabledAccountIT`（禁用后 logout_all/get_current → 401 `AUTH_SESSION_EXPIRED`、refresh → 403 `AUTH_ACCOUNT_DISABLED`，全部落在契约清单内）。
+- 开发时间：2026-08-17 20:00–20:30（Asia/Shanghai）。
+
+## 2026-08-17 21:30 +08:00 P2 评审研判与修复（后端 ×5 修复 / 前端 ×7 证据级裁定）
+
+- 使用 Skill：`backend-api-development`（后端修复）；前端七项为只读研判，未修改 `flutter_client/**`。
+- 负责模块：`cloud_backend/`（platform/idempotency、userdevice/application、identity/infrastructure、platform/security、docs/decisions/0004、implementation-status）；只读核验 `flutter_client/**`、`contracts/auth/**`。
+- 任务目标：对评审报告 P2 逐项做证据级研判：真实存在则最小修复 + 回归测试，不存在则给出事实依据。
+- 任务结果（后端，全部确认存在并修复）：P2-1 幂等 TTL 未被读取路径使用、崩溃 claim 永久卡死 key → claim 改 `ON CONFLICT … WHERE expires_at <= now` 原子接管过期行并清空旧响应，读取只命中未过期行，附限量清理 `deleteExpiredBatch(now, 100)`；P2-2 用户名唯一约束提交时 flush 才暴露、并发竞态 500 → `saveAndFlush` + `DataIntegrityViolationException` 映射 `AUTH_USERNAME_ALREADY_EXISTS`(409)；P2-3 `InMemoryRateLimiter` 从不清理过期窗口（key 无限增长）→ 每 128 次操作或 >4096 条目扫掠；P2-4 404/405 返回框架错误体而非 ApiResult → 判定真实但不可修复（`error_codes.yaml` 无 404/405 码，禁止临时发明），保持最小错误体并新增零泄漏断言；P2-5 非 api Profile 仍要求 JWT 密钥 → `JwtCryptoConfiguration` 加 `@Profile("api")` 且 `@EnableConfigurationProperties(JwtProperties.class)`。ADR-0004 §7/§8 与 `implementation-status.md` 同步更新。
+- 任务结果（前端，逐项事实核验）：评审引用的 `dio_backend_api_client.dart`、`profile_page.dart`、`forgot_password_page.dart`、`reset_password_page.dart`、`register_page.dart`、`auth_route_arguments.dart`、`store_refresh_token_request_dto.dart`、`KeystoreRefreshTokenSecureStore.kt` 及 `SessionEnded`/`SecureTokenStoreException` 等符号在当前工作树**均不存在**（flutter_client 无 dio/http 依赖、无任何后端 HTTP 客户端；`contracts/auth/store_refresh_token_request.schema.json` 处于 planned、无实现）。7 项中 6 项判定不存在（含"dart format 32 文件"经实测 `dart format --output=none --set-exit-if-changed lib test integration_test` 为 225 文件 0 变更）；唯一存在的同类模式是 `flutter_client/android/.../CalendarCoreV2RuntimeDirectories.kt:71-76` 的 TZDB "先删后 rename"，与 Keystore 无关且自愈（下次 extract 重建），仅作为可选改进建议移交前端工程师。
+- 验证状态：`.\mvnw.cmd test` **64/64 通过**（新增 IdempotencyEdgeIT 3、DefaultProfileServiceUsernameRaceTest 2、InMemoryRateLimiterEvictionTest 1、JwtCryptoProfileTest 3、ApiInfrastructureContextTest +1）；`.\mvnw.cmd verify` **BUILD SUCCESS**（42 个 Testcontainers 集成测试 0 失败 0 跳过）；`git diff --check` 干净（修掉 cloud_backend/README.md 结尾多余空行）。
+- 开发时间：2026-08-17 20:50–21:30（Asia/Shanghai）。
+
+## 2026-08-18 11:30 +08:00 P3 评审研判与修复（头像/媒体、identity 细节、profile、配置文档、测试质量）
+
+- 使用 Skill：`backend-api-development`。
+- 负责模块：`cloud_backend/`（media：EXIF/解码上限/ETag/404；identity：resend 禁用分支、deleted→AUTH_ACCOUNT_DISABLED、验证码不烧毁、TimingEqualizer、改当前邮箱、并发申请重试、logout performed；userdevice：PATCH 空体/null、码点长度、IANA 时区、空数组；配置文档：compose secret、package-info、README 导航段、MaxUploadSize 映射收窄；测试）。
+- 任务目标：对 P3 × 25 项逐项证据级研判：真实存在则最小修复 + 回归测试；不存在则给出事实依据。
+- 任务结果：**确认存在并修复 20 项**——M1 手机竖拍 EXIF Orientation 被忽略（新增 `JpegExifOrientation` 归一化 1–8 号方向）；M2 解码无尺寸上限可 OOM（头尺寸 >2.5 亿像素判 413、>4096 边长子采样、OOM/插件异常包装为 500）；M3 非 UUID assetId 因 catch-all 变 500（改 String 解析，无效 → 404）；M4 If-None-Match 用 String.contains（改 RFC 9110 列表/通配/弱标签匹配）；M8 注释 NightMonkeys→sejda；I1 resend 缺禁用分支（补 403 + 不发信）；I2 refresh deleted 账号错误映射（改 AUTH_ACCOUNT_DISABLED，对齐 ADR §3）；I3 验证码先消费后校验（confirmReset 先验密码策略、confirmChange 先验邮箱占用，verifyCode 最后）；I4 reset 未知邮箱无时序均衡（新增 `TimingEqualizer` 与 login 共用）；I5 改回当前邮箱误导性 ALREADY_EXISTS（改 API_VALIDATION_FAILED + field new_email）；I6 并发 email_change.request 可 500（`PendingEmailChangeRequestPersister`：REQUIRES_NEW + saveAndFlush + 命中部分唯一索引重试一次）；I8 logout 对无效 token 返回 performed:true（返回是否真的撤销）；P1 空体 {} / 显式 null 被接受（控制器按 JsonNode 做协议校验：minProperties:1 + 显式 null 拒绝，随后 Bean Validation 手动校验）；P2 display_name UTF-16 计数（新增 @CodePointLength）；P3 ZoneId.of 接受 +08:00 等偏移（新增 `IanaTimezones`，UTC/GMT 归一化为 Etc/*，偏移被拒）；P4 `[]` 被 @Size(min=1) 误拒（去掉 min=1）；C1 compose 未传 JWT secret（`${...:?...}` 明确报错 + .env.example + README）；C2 package-info 仍写 Planned；C3 README "进一步阅读"导航段被误删（恢复）；C4 MaxUploadSizeExceeded 全局映射收窄到头像路径；T2/T3/T4/T6/T7/T8/T9/T10 测试质量问题 7 修。**判定不存在/不修 5 项**——M5 孤儿扫描（ADR 未声称，可选）；M6 非流式（几十 KB 影响极低）；M7 no-cache（ETag 重校验语义正确，风格偏好）；T1 AUTH_ACCOUNT_DISABLED 零覆盖（评审基于旧树，DisabledAccountIT 已覆盖）；T5 部分成立（mock 服务是基础设施测试合理边界，login 断言已改为证明到达控制器）。**判定真实但修复点在只读范围 1 项**——I7 黑名单 27 条弱于 `docs/domains/password_credential.md` "已泄露密码"措辞（ADR 已如实记录，扩充黑名单属决策问题）。
+- 验证状态：`.\mvnw.cmd test` **83/83 通过**（本轮新增 AvatarImageProcessorTest 8、IfNoneMatchTest 6、PendingEmailChangeRequestPersisterTest 2、PasswordServiceTimingEqualizationTest 2、InMemoryRateLimiterTest 重写、Argon2PasswordHasherTest +1、ApiInfrastructureContextTest 收紧，IT 侧新增 AuthFlowIT +3、PasswordFlowIT +1、EmailChangeIT +2、DisabledAccountIT +2、ProfileUpdateIT +4、AvatarIT +2）；`.\mvnw.cmd verify` **BUILD SUCCESS**（56 个 Testcontainers 集成测试 0 失败 0 跳过）。ADR-0004 §3/§5/§6/§9 与 `implementation-status.md` 同步更新。
+- 开发时间：2026-08-17 21:30–2026-08-18 11:30（Asia/Shanghai）。
+
+## 2026-08-19 修复后第二轮独立实证核验（P1/P2/P3 修复验证）
+
+- 使用 Skill：`review-worktree-architecture`。
+- 负责模块：`cloud_backend/` 修复增量（修复者针对上轮评审 P1×3、P2×5、P3×25 的整改）的只读核验。
+- 任务目标：按「修复前行为 → 修复后代码路径 → 预期结果」逐项检验修复是否真实落地、举措是否合理，不推测、不沿用修复者结论。
+- 任务结果：P1 三项全部真实修复且回归测试为真实行为断言（multipart 6MB 护栏使处理器 5MiB 检查重新可达，AvatarIT 用 >1MiB 噪声 PNG 实测 200；MailConfiguration 按 Profile 二选一、ConsoleMailSender 不再作为 @Component 存在，api Profile 验证码不可能进日志；禁用账号解析器改发全端点声明的 AUTH_SESSION_EXPIRED，DisabledAccountIT 覆盖 logout_all/get_current/refresh/resend/deleted 五分支）。P2 五项核验通过（幂等 ON CONFLICT DO UPDATE ... WHERE expires_at<=now 原子接管 + 未过期才重放 + 限量清理，IdempotencyEdgeIT 三用例真实；用户名竞态 saveAndFlush 捕获映射 409；限流器抽样扫掠 + 可动时钟真实驱逐测试；404/405 判定不可修成立并固化零泄漏断言、同时修复旧测试 not(403) 假阳性；JWT 配置 @Profile("api") 门控且三 Profile 上下文断言）。P3 抽查（EXIF/解压炸弹/If-None-Match/时序均衡/Challenge 先验后消费/幂等重试/logout performed/PATCH 空体与 null/IANA 时区/README 恢复/compose secret）均代码级确认。第 3 次 `.\mvnw.cmd verify`：83 单元 + 56 Testcontainers，0 失败 0 跳过，BUILD SUCCESS。
+- 验证状态：全量测试独立复现通过；残留低严重度观察 5 条（IanaTimezones javadoc 与代码行为不一致、PATCH 未知字段未按 additionalProperties:false 强制拒绝、幂等崩溃 claim 在 TTL 内仍 500 的固有保守语义、限流器饱和时 O(n) 扫描、ADR 一处措辞不精确）；工作区结束状态 67 项与修复后初始一致，临时产物已清理。
+
+## 2026-08-19 21:10 +08:00 SMTP 邮件发送接入（通用适配器）
+
+- 使用 Skill：`backend-api-development`。
+- 负责模块：`cloud_backend/`（pom.xml；identity/infrastructure：MailSendingProperties、SmtpMailSender、MailConfiguration；application.yml、compose.yaml、.env.example；docs：ADR-0005、decisions/README、configuration、auth-development-guide、implementation-status、README）。
+- 任务目标：接入真实 SMTP 发信，使注册/改邮箱/重置密码验证码可投递到手机邮箱；未配置时保持 dev 控制台收件箱 / 无码 WARN 兜底行为不变。
+- 任务结果：新增 `spring-boot-starter-mail`（BOM 管版本）与通用 SMTP 适配器，opt-in 于 `excellent-calendar.mail.host`（任何 Profile 可启用，生产 api 亦可用）；`SmtpMailSender` 在 afterCommit 尽力发送，失败仅 WARN（收件人掩码、无验证码、无凭据），正文只含 6 位验证码（ADR-0004），587+STARTTLS（防降级）或 465+SSL、连接/读/写超时 10s，不做自动重试（resend 端点承担重试语义）。`MailConfiguration` 优先级固定为 SMTP > dev/local 控制台收件箱 > 无码兜底；host 已设置而 username/password 缺失时启动快速失败并提示缺失项。新增 ADR-0005，同步 README、联调指南、配置文档与实现状态；`.env.example` 附 QQ/163/Outlook/Gmail 配置示例。
+- 验证状态：`.\mvnw.cmd test` **91/91 通过**（新增 SmtpMailSenderTest 4 用例：消息形状/主题/失败不传播/掩码；MailConfigurationTest 增至 8 用例含 SMTP 优先与 fail-fast）；`.\mvnw.cmd verify` BUILD SUCCESS，但本机 Docker Desktop 无法启动，56 个 Testcontainers 集成测试**全部跳过**，数据库行为未在本轮验证；真实 SMTP 供应商投递未用真实邮箱账号实测（**未验证**）。
+- 开发时间：2026-08-19 20:30–21:10（Asia/Shanghai）。

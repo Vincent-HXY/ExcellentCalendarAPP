@@ -1,0 +1,16 @@
+excellent-calendar:
+  runtime:
+    role: api
+  security:
+    jwt:
+      # Test-only 48-byte key (Base64). Never used outside tests.
+      secret: dGVzdC1vbmx5LWtleS10ZXN0LW9ubHkta2V5LXRlc3Qtb25seS1rZXktdGVzdC1vbmx5LWtleQ==
+    rate-limit:
+      # Flow tests share one context; limits are raised here and asserted in dedicated tests.
+      login-max-per-window: 10000
+      register-max-per-window: 10000
+      challenge-max-per-window: 10000
+      password-reset-max-per-window: 10000
+  media:
+    avatar:
+      dir: ${java.io.tmpdir}/excellent-calendar-test-avatars
