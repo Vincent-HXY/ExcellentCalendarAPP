@@ -1,5 +1,6 @@
 {
   "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "expected_updated_at": "2026-08-24T00:00:00Z",
   "title": "只更新标题并保留提醒计划",
   "date": "2026-09-01",
   "calendar_type": "solar",

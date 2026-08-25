@@ -8,6 +8,25 @@
 
 namespace excellent_calendar::application {
 
+struct AnniversaryReminderTemplateInput {
+  int advance_days = 0;
+  std::string local_time;
+  std::string method = "popup";
+  bool is_enabled = true;
+};
+
+struct AnniversaryReminderPlanInput {
+  bool reminders_enabled = false;
+  std::vector<AnniversaryReminderTemplateInput> templates;
+};
+
+struct AnniversaryReminderSettings {
+  bool reminders_enabled = false;
+  std::vector<domain::AnniversaryReminderTemplate> templates;
+  int active_reminder_count = 0;
+  bool schedule_reconciliation_required = false;
+};
+
 struct AnniversaryWriteInput {
   std::string title;
   domain::LocalDate date;
@@ -17,6 +36,7 @@ struct AnniversaryWriteInput {
   std::optional<std::string> note;
   std::optional<std::string> importance;
   std::string timezone;
+  std::optional<AnniversaryReminderPlanInput> reminder_plan;
 };
 
 struct CreateAnniversaryCommand {
@@ -25,6 +45,7 @@ struct CreateAnniversaryCommand {
 
 struct UpdateAnniversaryCommand {
   std::string id;
+  std::string expected_updated_at;
   AnniversaryWriteInput input;
 };
 
@@ -32,10 +53,24 @@ struct DeleteAnniversaryCommand {
   std::string id;
 };
 
+struct SetAnniversaryRemindersEnabledCommand {
+  std::string id;
+  bool reminders_enabled = false;
+  std::string timezone;
+};
+
 struct AnniversaryDetail {
   domain::Anniversary anniversary;
   std::optional<domain::AnniversaryRecurrence> recurrence;
   domain::AnniversaryCountdown countdown;
+  AnniversaryReminderSettings reminder_settings;
+};
+
+struct AnniversaryDeleteResult {
+  domain::Anniversary anniversary;
+  bool schedule_reconciliation_required = false;
+  // Compatibility projection for existing in-process callers.
+  std::optional<std::string> deleted_at;
 };
 
 struct GetAnniversaryDetailQuery {
@@ -73,6 +108,22 @@ struct PreviewAnniversaryCountdownQuery {
   std::string calendar_type;
   bool repeats_yearly = false;
   std::string timezone;
+};
+
+struct ListAnniversaryOccurrencesQuery {
+  domain::LocalDate range_start_date;
+  domain::LocalDate range_end_date;
+  std::string timezone;
+  std::vector<std::string> category_ids;
+  std::vector<std::string> importance;
+  std::optional<std::string> cursor;
+  int page_size = 100;
+};
+
+struct AnniversaryOccurrencePage {
+  std::vector<domain::AnniversaryOccurrence> items;
+  bool has_more = false;
+  std::optional<std::string> next_cursor;
 };
 
 }  // namespace excellent_calendar::application

@@ -18,6 +18,13 @@ common::Result<common::Unit> decode_recurring_event_store(
     const picojson::value& root,
     repository::RecurringEventState& state);
 
+// Migration-only reader for the frozen v2 envelopes. Production repositories
+// must use decode_recurring_event_store(), which accepts strict v3 roots only.
+common::Result<common::Unit> decode_recurring_event_store_v2_for_migration(
+    std::string_view file_name,
+    const picojson::value& root,
+    repository::RecurringEventState& state);
+
 common::Result<common::Unit> validate_recurring_event_state(
     const repository::RecurringEventState& state);
 

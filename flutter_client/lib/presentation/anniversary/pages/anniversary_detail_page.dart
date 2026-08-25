@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app/bootstrap/notification_permission_controller.dart';
 import '../../../application/anniversary/app_clock.dart';
 import '../../../application/anniversary/anniversary_detail_controller.dart';
 import '../../../application/anniversary/anniversary_models.dart';
 import '../../../gateway_interfaces/anniversary_gateway.dart';
 import '../../../gateway_interfaces/anniversary_share_gateway.dart';
+import '../../../native_contract/notification/notification_contract_enums.dart';
 import '../anniversary_design_tokens.dart';
 import '../widgets/countdown_paper_card.dart';
 import 'create_anniversary_page.dart';
@@ -20,6 +22,7 @@ class AnniversaryDetailPage extends StatefulWidget {
     required this.gateway,
     required this.shareGateway,
     required this.clock,
+    this.permissionController,
     super.key,
   });
 
@@ -27,6 +30,7 @@ class AnniversaryDetailPage extends StatefulWidget {
   final AnniversaryGateway gateway;
   final AnniversaryShareGateway shareGateway;
   final AppClock clock;
+  final NotificationPermissionController? permissionController;
 
   @override
   State<AnniversaryDetailPage> createState() => _AnniversaryDetailPageState();
@@ -79,6 +83,7 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
           gateway: widget.gateway,
           clock: widget.clock,
           initialDetail: current,
+          permissionController: widget.permissionController,
         ),
       ),
     );
@@ -229,6 +234,23 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
     ).showSnackBar(SnackBar(content: Text(error ?? '分享接口已预留')));
   }
 
+  Future<void> _toggleReminders(bool enabled) async {
+    final succeeded = await _controller.setRemindersEnabled(enabled);
+    if (!mounted || succeeded) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_controller.errorMessage ?? '提醒状态更新失败')),
+    );
+  }
+
+  Future<void> _openReminderSettings(AnniversaryDetail detail) async {
+    final permissionController = widget.permissionController;
+    if (permissionController == null) return;
+    final target = detail.scheduleCapability.needsNotificationSettings
+        ? NotificationSettingsTarget.notification
+        : NotificationSettingsTarget.exactAlarm;
+    await permissionController.openSettingsTarget(target);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -290,6 +312,17 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
             ),
           ),
           const SizedBox(height: 30),
+          _ReminderDetailCard(
+            detail: detail,
+            isUpdating:
+                _controller.phase == AnniversaryDetailPhase.updatingReminders,
+            onToggle: (value) => unawaited(_toggleReminders(value)),
+            onOpenSettings: widget.permissionController == null
+                ? null
+                : () => unawaited(_openReminderSettings(detail)),
+            onEdit: () => unawaited(_edit()),
+          ),
+          const SizedBox(height: 26),
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 28,
@@ -318,6 +351,115 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
               color: AnniversaryColors.primaryTeal,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ReminderDetailCard extends StatelessWidget {
+  const _ReminderDetailCard({
+    required this.detail,
+    required this.isUpdating,
+    required this.onToggle,
+    required this.onOpenSettings,
+    required this.onEdit,
+  });
+
+  final AnniversaryDetail detail;
+  final bool isUpdating;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback? onOpenSettings;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final warning = detail.scheduleCapability.warningMessage;
+    return Container(
+      key: const ValueKey('anniversary-reminder-detail-card'),
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.84),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SwitchListTile.adaptive(
+            key: const ValueKey('anniversary-reminder-detail-switch'),
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              '纪念日提醒',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            subtitle: Text(
+              detail.remindersEnabled
+                  ? '当前 ${detail.activeReminderCount} 条活动提醒'
+                  : '已暂停，${detail.reminders.length} 条配置已保留',
+            ),
+            secondary: const Icon(
+              Icons.notifications_active_outlined,
+              color: AnniversaryColors.primaryTeal,
+            ),
+            value: detail.remindersEnabled,
+            onChanged: isUpdating ? null : onToggle,
+          ),
+          if (isUpdating) const LinearProgressIndicator(minHeight: 2),
+          for (final reminder in detail.reminders)
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                reminder.isEnabled
+                    ? Icons.notifications_active_rounded
+                    : Icons.notifications_off_outlined,
+                color: reminder.isEnabled
+                    ? AnniversaryColors.primaryTeal
+                    : AnniversaryColors.secondaryText,
+              ),
+              title: Text(
+                '${reminder.advanceDays == 0 ? '当天' : '提前 ${reminder.advanceDays} 天'} · ${reminder.localTime.wireValue}',
+              ),
+              subtitle: const Text('弹窗提醒 · 跟随设备时区'),
+            ),
+          if (detail.reminders.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Text('尚未添加提醒时间'),
+            ),
+          if (warning != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFB45309),
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Text(warning)),
+              ],
+            ),
+          ],
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            children: [
+              if (warning != null && onOpenSettings != null)
+                TextButton(
+                  key: const ValueKey('anniversary-reminder-settings'),
+                  onPressed: onOpenSettings,
+                  child: const Text('系统设置'),
+                ),
+              TextButton.icon(
+                key: const ValueKey('anniversary-reminder-edit'),
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('编辑提醒'),
+              ),
+            ],
+          ),
         ],
       ),
     );

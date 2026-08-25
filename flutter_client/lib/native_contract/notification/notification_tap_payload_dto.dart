@@ -69,6 +69,31 @@ class NotificationTapPayloadDto {
       'occurrence_key',
       'NotificationTapPayload',
     );
+    final route = ContractValue.optionalString(
+      json,
+      'route',
+      'NotificationTapPayload',
+    );
+    final notificationId = ContractValue.nonEmptyString(
+      json,
+      'notification_id',
+      'NotificationTapPayload',
+    );
+    final deliveryId = ContractValue.nonEmptyString(
+      json,
+      'delivery_id',
+      'NotificationTapPayload',
+    );
+    final deliveryAttemptId = ContractValue.nonEmptyString(
+      json,
+      'delivery_attempt_id',
+      'NotificationTapPayload',
+    );
+    final targetId = ContractValue.nonEmptyString(
+      json,
+      'target_id',
+      'NotificationTapPayload',
+    );
     if (kind == NotificationKind.reminder) {
       if (reminderId == null ||
           targetType == NotificationTargetType.reminderRecoveryBatch) {
@@ -76,50 +101,61 @@ class NotificationTapPayloadDto {
           'Reminder tap payload identity is invalid.',
         );
       }
-      if (targetType != NotificationTargetType.event && occurrenceKey != null) {
+      if (targetType == NotificationTargetType.anniversary &&
+          (occurrenceKey == null || route != 'anniversary.detail')) {
         throw const FormatException(
-          'Only Event reminder taps can contain occurrence_key.',
+          'Anniversary reminder taps require occurrence_key and anniversary.detail route.',
         );
       }
-    } else if (reminderId != null ||
-        recoveryBatchId == null ||
-        targetType != NotificationTargetType.reminderRecoveryBatch ||
-        occurrenceKey != null) {
+      if (targetType == NotificationTargetType.habit && occurrenceKey != null) {
+        throw const FormatException(
+          'Habit reminder taps cannot contain occurrence_key.',
+        );
+      }
+    } else if (kind == NotificationKind.recoverySummary &&
+        (reminderId != null ||
+            recoveryBatchId == null ||
+            targetType != NotificationTargetType.reminderRecoveryBatch ||
+            occurrenceKey != null)) {
       throw const FormatException(
         'Recovery summary tap payload identity is invalid.',
       );
+    } else if (kind == NotificationKind.anniversaryCatchUp &&
+        (reminderId != null ||
+            recoveryBatchId == null ||
+            targetType != NotificationTargetType.anniversary ||
+            occurrenceKey == null ||
+            route != 'anniversary.detail')) {
+      throw const FormatException(
+        'Anniversary catch-up tap payload identity is invalid.',
+      );
+    }
+    for (final identity in <String?>[
+      notificationId,
+      deliveryId,
+      deliveryAttemptId,
+      reminderId,
+      recoveryBatchId,
+      targetId,
+      occurrenceKey,
+    ]) {
+      if (identity != null && !_uuidPattern.hasMatch(identity)) {
+        throw const FormatException(
+          'Notification tap identity must be a UUID.',
+        );
+      }
     }
     return NotificationTapPayloadDto(
-      notificationId: ContractValue.nonEmptyString(
-        json,
-        'notification_id',
-        'NotificationTapPayload',
-      ),
-      deliveryId: ContractValue.nonEmptyString(
-        json,
-        'delivery_id',
-        'NotificationTapPayload',
-      ),
-      deliveryAttemptId: ContractValue.nonEmptyString(
-        json,
-        'delivery_attempt_id',
-        'NotificationTapPayload',
-      ),
+      notificationId: notificationId,
+      deliveryId: deliveryId,
+      deliveryAttemptId: deliveryAttemptId,
       kind: kind,
       reminderId: reminderId,
       recoveryBatchId: recoveryBatchId,
       targetType: targetType,
-      targetId: ContractValue.nonEmptyString(
-        json,
-        'target_id',
-        'NotificationTapPayload',
-      ),
+      targetId: targetId,
       occurrenceKey: occurrenceKey,
-      route: ContractValue.optionalString(
-        json,
-        'route',
-        'NotificationTapPayload',
-      ),
+      route: route,
       openedAt: ContractValue.utcDateTime(
         json,
         'opened_at',
@@ -127,6 +163,10 @@ class NotificationTapPayloadDto {
       ),
     );
   }
+
+  static final RegExp _uuidPattern = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+  );
 
   Map<String, dynamic> toJson() => {
     'notification_id': notificationId,

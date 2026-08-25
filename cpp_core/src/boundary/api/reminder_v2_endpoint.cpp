@@ -109,21 +109,24 @@ common::Result<application::PrepareDeliveryCommand> parse_prepare(
   if (!parsed.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(parsed.error());
   const auto& object = parsed.value();
   auto known = reject_unknown(
-      object, {"kind", "reminder_id", "recovery_batch_id", "method", "expected_remind_at"},
+      object, {"kind", "reminder_id", "recovery_batch_id", "delivery_id", "method", "expected_remind_at"},
       "PrepareDeliveryRequest");
   if (!known.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(known.error());
   auto kind = require_string(object, "kind", "PrepareDeliveryRequest");
   auto reminder_id = nullable_string(object, "reminder_id", "PrepareDeliveryRequest", true);
   auto batch_id = nullable_string(object, "recovery_batch_id", "PrepareDeliveryRequest", true);
+  auto delivery_id = nullable_string(object, "delivery_id", "PrepareDeliveryRequest", true);
   auto method = require_string(object, "method", "PrepareDeliveryRequest");
   auto remind_at = nullable_string(object, "expected_remind_at", "PrepareDeliveryRequest", true);
   if (!kind.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(kind.error());
   if (!reminder_id.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(reminder_id.error());
   if (!batch_id.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(batch_id.error());
+  if (!delivery_id.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(delivery_id.error());
   if (!method.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(method.error());
   if (!remind_at.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(remind_at.error());
   return common::Result<application::PrepareDeliveryCommand>::success(
-      {kind.value(), reminder_id.value(), batch_id.value(), method.value(), remind_at.value()});
+      {kind.value(), reminder_id.value(), batch_id.value(), method.value(),
+       remind_at.value(), delivery_id.value()});
 }
 
 common::Result<application::FinalizeDeliveryCommand> parse_finalize(
@@ -132,19 +135,28 @@ common::Result<application::FinalizeDeliveryCommand> parse_finalize(
   if (!parsed.ok()) return common::Result<application::FinalizeDeliveryCommand>::failure(parsed.error());
   const auto& object = parsed.value();
   auto known = reject_unknown(
-      object, {"delivery_attempt_id", "outcome", "failure_class", "error_code"},
+      object, {"delivery_attempt_id", "outcome", "failure_class", "error_code", "timezone"},
       "FinalizeDeliveryRequest");
   if (!known.ok()) return common::Result<application::FinalizeDeliveryCommand>::failure(known.error());
   auto id = require_string(object, "delivery_attempt_id", "FinalizeDeliveryRequest");
   auto outcome = require_string(object, "outcome", "FinalizeDeliveryRequest");
   auto failure = nullable_string(object, "failure_class", "FinalizeDeliveryRequest", true);
   auto error = nullable_string(object, "error_code", "FinalizeDeliveryRequest", true);
+  std::optional<std::string> timezone;
+  if (const auto* value = field(object, "timezone"); value != nullptr) {
+    if (!value->is<std::string>() || value->get<std::string>().empty()) {
+      return common::Result<application::FinalizeDeliveryCommand>::failure(
+          contract_error("FinalizeDeliveryRequest.timezone",
+                         "timezone must be a non-empty string when present"));
+    }
+    timezone = value->get<std::string>();
+  }
   if (!id.ok()) return common::Result<application::FinalizeDeliveryCommand>::failure(id.error());
   if (!outcome.ok()) return common::Result<application::FinalizeDeliveryCommand>::failure(outcome.error());
   if (!failure.ok()) return common::Result<application::FinalizeDeliveryCommand>::failure(failure.error());
   if (!error.ok()) return common::Result<application::FinalizeDeliveryCommand>::failure(error.error());
   return common::Result<application::FinalizeDeliveryCommand>::success(
-      {id.value(), outcome.value(), failure.value(), error.value()});
+      {id.value(), outcome.value(), failure.value(), error.value(), timezone});
 }
 
 common::Result<application::CreateReminderV2Command> parse_create_reminder(
@@ -676,18 +688,26 @@ std::string plan_recurring_reminder_recovery_v2(std::string_view request_json) {
     auto parsed = parse_object(request_json);
     if (!parsed.ok()) return common::Result<picojson::value>::failure(parsed.error());
     auto known = reject_unknown(
-        parsed.value(), {"recovery_request_id", "trigger_source"}, "PlanRecoveryRequest");
+        parsed.value(), {"recovery_request_id", "trigger_source", "timezone"},
+        "PlanRecoveryRequest");
     if (!known.ok()) return common::Result<picojson::value>::failure(known.error());
     auto request_id = require_string(parsed.value(), "recovery_request_id", "PlanRecoveryRequest");
     auto source = require_string(parsed.value(), "trigger_source", "PlanRecoveryRequest");
+    auto timezone = require_string(parsed.value(), "timezone", "PlanRecoveryRequest");
     if (!request_id.ok()) return common::Result<picojson::value>::failure(request_id.error());
     if (!source.ok()) return common::Result<picojson::value>::failure(source.error());
+    if (!timezone.ok()) return common::Result<picojson::value>::failure(timezone.error());
+    if (timezone.value().empty()) {
+      return common::Result<picojson::value>::failure(contract_error(
+          "PlanRecoveryRequest.timezone", "timezone must be non-empty"));
+    }
     const auto service = current_reminder_recovery_workflow_service();
     if (!service) {
       return common::Result<picojson::value>::failure(
           storage_not_initialized_error("reminder.plan_recovery"));
     }
-    auto planned = service->plan_recovery({request_id.value(), source.value()});
+    auto planned = service->plan_recovery(
+        {request_id.value(), source.value(), timezone.value()});
     return planned.ok()
                ? common::Result<picojson::value>::success(
                      contract::plan_recovery_response_v2_to_json(planned.value()))

@@ -44,6 +44,7 @@ class NotificationTapRouter {
       NotificationTargetType.anniversary => _detailRoute(
         targetType: 'anniversary',
         targetId: payload.targetId,
+        occurrenceKey: payload.occurrenceKey,
       ),
       NotificationTargetType.reminderRecoveryBatch => '/today',
     };

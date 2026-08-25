@@ -34,7 +34,9 @@ class ReminderNativeOrchestrator(
 
         val reminder = ReminderContract.fromData(created.data)
         return when (val scheduleResult = scheduler.schedule(reminder)) {
-            ScheduleResult.Success -> parseReminderResult(
+            ScheduleResult.Success,
+            ScheduleResult.ApproximateSuccess,
+            -> parseReminderResult(
                 nativeBridge.markReminderScheduled(
                     NativeContractJsonCodec.encodeObject(
                         linkedMapOf(
@@ -161,7 +163,9 @@ class ReminderNativeOrchestrator(
             return
         }
         when (val result = scheduler.schedule(reminder)) {
-            ScheduleResult.Success -> logger.log(
+            ScheduleResult.Success,
+            ScheduleResult.ApproximateSuccess,
+            -> logger.log(
                 operation = "reminder.cancel",
                 reminderId = reminder.id,
                 message = "compensation reschedule succeeded",

@@ -345,8 +345,8 @@ calls:
     visibility: internal
     caller: kotlin
     implementation: cpp
-    implementation_status: implemented_unintegrated
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
     request: anniversary/create_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -357,8 +357,8 @@ calls:
     visibility: internal
     caller: kotlin
     implementation: cpp
-    implementation_status: implemented_unintegrated
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
     request: anniversary/update_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -369,8 +369,8 @@ calls:
     visibility: internal
     caller: kotlin
     implementation: cpp
-    implementation_status: implemented_unintegrated
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
     request: anniversary/delete_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -381,8 +381,8 @@ calls:
     visibility: internal
     caller: kotlin
     implementation: cpp
-    implementation_status: implemented_unintegrated
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
     request: anniversary/get_anniversary_detail_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -394,6 +394,7 @@ calls:
     caller: kotlin
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/list_anniversaries_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -405,6 +406,7 @@ calls:
     caller: kotlin
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/preview_anniversary_countdown_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -415,8 +417,8 @@ calls:
     visibility: internal
     caller: kotlin
     implementation: cpp
-    implementation_status: planned
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
     request: anniversary/set_anniversary_reminders_enabled_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -427,8 +429,8 @@ calls:
     visibility: internal
     caller: kotlin
     implementation: cpp
-    implementation_status: planned
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
     request: anniversary/list_anniversary_occurrences_request.schema.json
     result:
       envelope: common/native_result.schema.json

@@ -36,9 +36,21 @@ inline constexpr std::string_view kReminderCancellationReasonSeriesCompleted = "
 inline constexpr std::string_view kReminderCancellationReasonSeriesCancelled = "series_cancelled";
 inline constexpr std::string_view kReminderCancellationReasonSeriesDeleted = "series_deleted";
 inline constexpr std::string_view kReminderCancellationReasonSeriesUpdated = "series_updated";
+inline constexpr std::string_view kReminderCancellationReasonAnniversaryPaused =
+    "anniversary_paused";
+inline constexpr std::string_view kReminderCancellationReasonAnniversaryTemplateDisabled =
+    "anniversary_template_disabled";
+inline constexpr std::string_view kReminderCancellationReasonAnniversaryUpdated =
+    "anniversary_updated";
+inline constexpr std::string_view kReminderCancellationReasonAnniversaryTemplateReplaced =
+    "anniversary_template_replaced";
+inline constexpr std::string_view kReminderCancellationReasonAnniversaryDeleted =
+    "anniversary_deleted";
 
 inline constexpr std::string_view kReminderExpirationReasonRecoveryWindowElapsed =
     "recovery_window_elapsed";
+inline constexpr std::string_view kReminderExpirationReasonAnniversaryOccurrenceElapsed =
+    "anniversary_occurrence_elapsed";
 
 struct RecurringReminderDraft {
   int advance_minutes = 0;
@@ -75,6 +87,12 @@ struct Reminder {
   std::optional<std::string> deleted_at;
   std::optional<std::string> expiration_reason;
   std::optional<std::string> expired_at;
+  std::optional<std::string> template_key;
+  std::optional<std::string> occurrence_date;
+  std::optional<int> advance_days;
+  std::optional<std::string> local_time;
+  std::optional<std::string> timezone_mode;
+  std::optional<std::string> fulfillment_delivery_id;
 };
 
 bool is_valid_reminder_target_type(std::string_view value);

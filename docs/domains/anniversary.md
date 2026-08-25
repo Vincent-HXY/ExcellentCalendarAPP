@@ -21,7 +21,7 @@
 
 `AnniversaryRecurrence` 是 Anniversary 独占的轻量年度规则，持久化集合命名为 `anniversary_recurrences`。它不属于 Event v2 的不可变 Recurrence revision，也不保存 `anniversaryId`、月、日、时区、UTC occurrence 或 RRULE；关系真相只保存在 `Anniversary.recurrenceId`。
 
-当前 JSON Storage v2 已激活 `anniversaries.json` 与 `anniversary_recurrences.json`，create/update/delete 通过独立 `anniversary_workflow_transactions.json` 两 Store journal 原子提交。该 journal 不参与也不改变 Event/Reminder 既有六 Store 事务。
+当前 JSON Storage v3 已激活 `anniversaries.json`、`anniversary_recurrences.json` 与 `anniversary_reminder_templates.json`。Anniversary create/update/delete/toggle/recovery/finalize 与其他会共享 Reminder 等 Store 的 Workflow，统一通过 `calendar_workflow_transactions.json`、冻结 after-image、Store generation 和 CAS 原子提交；旧 Anniversary 专用 journal 只在 v2→v3 迁移前恢复，不再承担 v3 写入。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |

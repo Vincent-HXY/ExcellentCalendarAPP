@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app/bootstrap/notification_permission_controller.dart';
 import '../../../application/anniversary/app_clock.dart';
 import '../../../application/anniversary/anniversary_list_controller.dart';
 import '../../../application/anniversary/anniversary_models.dart';
@@ -20,12 +21,14 @@ class AnniversaryListPage extends StatefulWidget {
     required this.gateway,
     required this.shareGateway,
     required this.clock,
+    this.permissionController,
     super.key,
   });
 
   final AnniversaryGateway gateway;
   final AnniversaryShareGateway shareGateway;
   final AppClock clock;
+  final NotificationPermissionController? permissionController;
 
   @override
   State<AnniversaryListPage> createState() => _AnniversaryListPageState();
@@ -50,8 +53,11 @@ class _AnniversaryListPageState extends State<AnniversaryListPage> {
   Future<void> _openCreatePage() async {
     final created = await Navigator.of(context).push<AnniversaryDetail>(
       MaterialPageRoute<AnniversaryDetail>(
-        builder: (_) =>
-            CreateAnniversaryPage(gateway: widget.gateway, clock: widget.clock),
+        builder: (_) => CreateAnniversaryPage(
+          gateway: widget.gateway,
+          clock: widget.clock,
+          permissionController: widget.permissionController,
+        ),
       ),
     );
     if (!mounted || created == null) {
@@ -71,6 +77,7 @@ class _AnniversaryListPageState extends State<AnniversaryListPage> {
           gateway: widget.gateway,
           shareGateway: widget.shareGateway,
           clock: widget.clock,
+          permissionController: widget.permissionController,
         ),
       ),
     );

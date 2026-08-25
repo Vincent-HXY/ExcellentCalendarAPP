@@ -46,6 +46,20 @@ object NativeErrorCodes {
     const val AnniversaryDateInvalid = "ANNIVERSARY_DATE_INVALID"
     const val AnniversaryCalendarUnsupported = "ANNIVERSARY_CALENDAR_UNSUPPORTED"
     const val AnniversaryNotFound = "ANNIVERSARY_NOT_FOUND"
+    const val AnniversaryUpdateConflict = "ANNIVERSARY_UPDATE_CONFLICT"
+    const val AnniversaryTargetDeleted = "ANNIVERSARY_TARGET_DELETED"
+    const val AnniversaryReminderConfigInvalid = "ANNIVERSARY_REMINDER_CONFIG_INVALID"
+    const val AnniversaryReminderTemplateDuplicate = "ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE"
+    const val AnniversaryReminderTemplateLimitExceeded = "ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED"
+    const val AnniversaryOccurrenceRangeInvalid = "ANNIVERSARY_OCCURRENCE_RANGE_INVALID"
+    const val AnniversaryOccurrenceRangeTooLarge = "ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE"
+    const val AnniversaryOccurrenceFilterInvalid = "ANNIVERSARY_OCCURRENCE_FILTER_INVALID"
+    const val AnniversaryOccurrenceCursorInvalid = "ANNIVERSARY_OCCURRENCE_CURSOR_INVALID"
+    const val AnniversaryOccurrenceCursorExpired = "ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED"
+    const val AnniversaryOccurrenceStale = "ANNIVERSARY_OCCURRENCE_STALE"
+    const val AnniversaryReminderOccurrenceExpired = "ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED"
+    const val AnniversaryAggregateMembershipConflict = "ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT"
+    const val SchedulerReconciliationPending = "SCHEDULER_RECONCILIATION_PENDING"
     const val SearchQueryInvalid = "SEARCH_QUERY_INVALID"
     const val AiExtractionFailed = "AI_EXTRACTION_FAILED"
     const val SyncConflict = "SYNC_CONFLICT"
@@ -116,6 +130,20 @@ object NativeErrorCodes {
         AnniversaryDateInvalid,
         AnniversaryCalendarUnsupported,
         AnniversaryNotFound,
+        AnniversaryUpdateConflict,
+        AnniversaryTargetDeleted,
+        AnniversaryReminderConfigInvalid,
+        AnniversaryReminderTemplateDuplicate,
+        AnniversaryReminderTemplateLimitExceeded,
+        AnniversaryOccurrenceRangeInvalid,
+        AnniversaryOccurrenceRangeTooLarge,
+        AnniversaryOccurrenceFilterInvalid,
+        AnniversaryOccurrenceCursorInvalid,
+        AnniversaryOccurrenceCursorExpired,
+        AnniversaryOccurrenceStale,
+        AnniversaryReminderOccurrenceExpired,
+        AnniversaryAggregateMembershipConflict,
+        SchedulerReconciliationPending,
         SearchQueryInvalid,
         AiExtractionFailed,
         SyncConflict,

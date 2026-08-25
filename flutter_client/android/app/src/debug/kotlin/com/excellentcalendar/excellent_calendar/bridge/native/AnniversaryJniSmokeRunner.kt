@@ -2,19 +2,24 @@ package com.excellentcalendar.excellent_calendar.bridge.native
 
 import android.content.Context
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
+import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
 import java.io.File
+import java.util.UUID
 
 internal object AnniversaryJniSmokeRunner {
+    private const val SmokeTitlePrefix = "JNI smoke anniversary"
+
     fun run(context: Context): String {
         val storageDirectory = CalendarCoreV2StorageDirectoryResolver.resolve(
             context.filesDir,
         )
         val bridge = AndroidNativeBridgeFactory.create(context)
+        cleanupOrphanedSmokeAnniversaries(bridge, storageDirectory)
         val create = NativeContractJsonCodec.decodeObject(
             bridge.createAnniversary(
                 NativeContractJsonCodec.encodeObject(
                     linkedMapOf(
-                        "title" to "JNI smoke anniversary",
+                        "title" to SmokeTitlePrefix,
                         "date" to "2020-02-29",
                         "calendar_type" to "solar",
                         "category_id" to null,
@@ -25,6 +30,17 @@ internal object AnniversaryJniSmokeRunner {
                         "note" to null,
                         "importance" to "important_noturgent",
                         "timezone" to "Asia/Shanghai",
+                        "reminder_plan" to linkedMapOf(
+                            "reminders_enabled" to true,
+                            "templates" to listOf(
+                                linkedMapOf(
+                                    "advance_days" to 1,
+                                    "local_time" to "09:30",
+                                    "method" to "popup",
+                                    "is_enabled" to true,
+                                ),
+                            ),
+                        ),
                     ),
                 ),
             ),
@@ -40,6 +56,44 @@ internal object AnniversaryJniSmokeRunner {
             ?: error("anniversary.create returned no Anniversary")
         val anniversaryId = createdAnniversary["id"] as? String
             ?: error("anniversary.create returned no id")
+        val expectedUpdatedAt = createdAnniversary["updated_at"] as? String
+            ?: error("anniversary.create returned no updated_at")
+
+        val updated = decode(
+            bridge.updateAnniversary(
+                encode(
+                    linkedMapOf(
+                        "id" to anniversaryId,
+                        "expected_updated_at" to expectedUpdatedAt,
+                        "title" to "JNI smoke anniversary updated",
+                        "date" to "2020-02-29",
+                        "calendar_type" to "solar",
+                        "category_id" to null,
+                        "recurrence" to linkedMapOf(
+                            "frequency" to "yearly",
+                            "interval" to 1,
+                        ),
+                        "note" to null,
+                        "importance" to "important_noturgent",
+                        "timezone" to "Asia/Shanghai",
+                        "reminder_plan" to linkedMapOf(
+                            "reminders_enabled" to true,
+                            "templates" to listOf(
+                                linkedMapOf(
+                                    "advance_days" to 0,
+                                    "local_time" to "10:00",
+                                    "method" to "popup",
+                                    "is_enabled" to true,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        check(updated["ok"] == true && updated["error"] == null) {
+            "anniversary.update failed: $updated"
+        }
 
         val detail = NativeContractJsonCodec.decodeObject(
             bridge.getAnniversaryDetail(
@@ -63,12 +117,126 @@ internal object AnniversaryJniSmokeRunner {
         check(reloadedAnniversary["id"] == anniversaryId) {
             "anniversary.detail did not reload the created id"
         }
+
+        val toggled = decode(
+            bridge.setAnniversaryRemindersEnabled(
+                encode(
+                    linkedMapOf(
+                        "id" to anniversaryId,
+                        "reminders_enabled" to false,
+                        "timezone" to "Asia/Shanghai",
+                    ),
+                ),
+            ),
+        )
+        check(toggled["ok"] == true && toggled["error"] == null) {
+            "anniversary.set_reminders_enabled failed: $toggled"
+        }
+
+        val occurrenceRequest = linkedMapOf<String, Any?>(
+            "range_start_date" to "2024-01-01",
+            "range_end_date" to "2025-01-01",
+            "timezone" to "Asia/Shanghai",
+            "category_ids" to emptyList<String>(),
+            "importance" to emptyList<String>(),
+            "cursor" to null,
+            "page_size" to 50,
+        )
+        val occurrences = decode(bridge.listAnniversaryOccurrences(encode(occurrenceRequest)))
+        check(occurrences["ok"] == true && occurrences["error"] == null) {
+            "anniversary.list_occurrences failed: $occurrences"
+        }
+
+        val invalidOccurrences = decode(
+            bridge.listAnniversaryOccurrences(
+                encode(
+                    LinkedHashMap(occurrenceRequest).apply {
+                        this["range_end_date"] = "2025-02-05"
+                    },
+                ),
+            ),
+        )
+        @Suppress("UNCHECKED_CAST")
+        val invalidError = invalidOccurrences["error"] as? Map<String, Any?>
         check(
-            File(storageDirectory, "anniversaries.json").isFile &&
-                File(storageDirectory, "anniversary_recurrences.json").isFile &&
-                File(storageDirectory, "anniversary_workflow_transactions.json").isFile,
+            invalidOccurrences["ok"] == false &&
+                invalidError?.get("code") == "ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE",
         ) {
-            "Anniversary v2 storage files were not materialized"
+            "anniversary.list_occurrences invalid fixture was not rejected: $invalidOccurrences"
+        }
+
+        val recovery = decode(
+            bridge.planReminderRecovery(
+                encode(
+                    linkedMapOf(
+                        "recovery_request_id" to UUID.randomUUID().toString(),
+                        "trigger_source" to "app_start",
+                        "timezone" to AndroidDeviceTimezoneProvider.currentTimezone(),
+                    ),
+                ),
+            ),
+        )
+        check(recovery["ok"] == true && recovery["error"] == null) {
+            "reminder.plan_recovery timezone round-trip failed: $recovery"
+        }
+
+        val invalidTimezoneRecovery = decode(
+            bridge.planReminderRecovery(
+                encode(
+                    linkedMapOf(
+                        "recovery_request_id" to UUID.randomUUID().toString(),
+                        "trigger_source" to "app_start",
+                        "timezone" to "Mars/Olympus",
+                    ),
+                ),
+            ),
+        )
+        @Suppress("UNCHECKED_CAST")
+        val invalidTimezoneError = invalidTimezoneRecovery["error"] as? Map<String, Any?>
+        check(
+            invalidTimezoneRecovery["ok"] == false &&
+                invalidTimezoneError?.get("code") == "TIMEZONE_ID_INVALID",
+        ) {
+            "reminder.plan_recovery invalid timezone was not rejected: $invalidTimezoneRecovery"
+        }
+
+        val finalizeProbe = decode(
+            bridge.finalizeReminderDelivery(
+                encode(
+                    linkedMapOf(
+                        "delivery_attempt_id" to UUID.randomUUID().toString(),
+                        "outcome" to "sent",
+                        "failure_class" to null,
+                        "error_code" to null,
+                        "timezone" to AndroidDeviceTimezoneProvider.currentTimezone(),
+                    ),
+                ),
+            ),
+        )
+        @Suppress("UNCHECKED_CAST")
+        val finalizeProbeError = finalizeProbe["error"] as? Map<String, Any?>
+        check(
+            finalizeProbe["ok"] == false &&
+                finalizeProbeError?.get("code") == "DELIVERY_ATTEMPT_INVALID",
+        ) {
+            "reminder.finalize_delivery timezone round-trip did not reach attempt lookup: $finalizeProbe"
+        }
+        check(
+            listOf(
+                "anniversaries.json",
+                "anniversary_recurrences.json",
+                "anniversary_reminder_templates.json",
+                "calendar_workflow_transactions.json",
+                "storage_migrations.json",
+            ).all { fileName ->
+                File(storageDirectory, fileName).takeIf(File::isFile)?.let { file ->
+                    decode(file.readText())["storage_version"] == 3
+                } == true
+            } &&
+                !File(storageDirectory, "workflow_transactions.json").exists() &&
+                !File(storageDirectory, "anniversary_workflow_transactions.json").exists(),
+        ) {
+            "Calendar Core Storage v3 files or legacy-journal cleanup are invalid"
         }
 
         val deleted = NativeContractJsonCodec.decodeObject(
@@ -81,6 +249,31 @@ internal object AnniversaryJniSmokeRunner {
         check(deleted["ok"] == true && deleted["error"] == null) {
             "anniversary.delete cleanup failed: $deleted"
         }
-        return "PASS create->detail persisted id=$anniversaryId; soft-delete cleanup passed"
+        return "PASS create->update->detail->toggle->occurrences(valid/invalid), " +
+            "recovery/finalize timezone JNI round-trip id=$anniversaryId; soft-delete cleanup passed"
+    }
+
+    private fun encode(value: Map<String, Any?>): String = NativeContractJsonCodec.encodeObject(value)
+
+    private fun decode(value: String): Map<String, Any?> = NativeContractJsonCodec.decodeObject(value)
+
+    private fun cleanupOrphanedSmokeAnniversaries(
+        bridge: NativeAnniversaryBridge,
+        storageDirectory: File,
+    ) {
+        val store = File(storageDirectory, "anniversaries.json")
+        if (!store.isFile) return
+        val records = decode(store.readText())["anniversaries"] as? List<*> ?: return
+        records.mapNotNull { item ->
+            val record = item as? Map<*, *> ?: return@mapNotNull null
+            val title = record["title"] as? String ?: return@mapNotNull null
+            val id = record["id"] as? String ?: return@mapNotNull null
+            id.takeIf { title.startsWith(SmokeTitlePrefix) && record["deleted_at"] == null }
+        }.forEach { id ->
+            val deleted = decode(bridge.deleteAnniversary(encode(linkedMapOf("id" to id))))
+            check(deleted["ok"] == true && deleted["error"] == null) {
+                "orphaned Anniversary smoke cleanup failed: $deleted"
+            }
+        }
     }
 }

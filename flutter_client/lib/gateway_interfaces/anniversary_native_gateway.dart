@@ -3,21 +3,19 @@ import '../native_contract/anniversary/anniversary_response_dtos.dart';
 import '../native_contract/shared/native_invocation.dart';
 
 abstract interface class AnniversaryNativeGateway {
-  Future<NativeInvocation<AnniversaryDetailResponseDto>> createAnniversary(
+  Future<NativeInvocation<AnniversaryMutationResponseDto>> createAnniversary(
     CreateAnniversaryRequestDto request,
   );
 
-  Future<NativeInvocation<AnniversaryDetailResponseDto>> updateAnniversary(
+  Future<NativeInvocation<AnniversaryMutationResponseDto>> updateAnniversary(
     UpdateAnniversaryRequestDto request,
   );
 
-  Future<NativeInvocation<AnniversaryResponseDto>> deleteAnniversary(
-    DeleteAnniversaryRequestDto request,
-  );
+  Future<NativeInvocation<AnniversaryDeleteOperationResponseDto>>
+  deleteAnniversary(DeleteAnniversaryRequestDto request);
 
-  Future<NativeInvocation<AnniversaryDetailResponseDto>> getAnniversaryDetail(
-    GetAnniversaryDetailRequestDto request,
-  );
+  Future<NativeInvocation<AnniversaryDetailViewResponseDto>>
+  getAnniversaryDetail(GetAnniversaryDetailRequestDto request);
 
   Future<NativeInvocation<AnniversaryListResponseDto>> listAnniversaries(
     ListAnniversariesRequestDto request,
@@ -25,4 +23,12 @@ abstract interface class AnniversaryNativeGateway {
 
   Future<NativeInvocation<AnniversaryCountdownResponseDto>>
   previewAnniversaryCountdown(PreviewAnniversaryCountdownRequestDto request);
+
+  Future<NativeInvocation<AnniversaryMutationResponseDto>>
+  setAnniversaryRemindersEnabled(
+    SetAnniversaryRemindersEnabledRequestDto request,
+  );
+
+  Future<NativeInvocation<AnniversaryOccurrenceListResponseDto>>
+  listAnniversaryOccurrences(ListAnniversaryOccurrencesRequestDto request);
 }

@@ -18,7 +18,7 @@
 | `problems.md` 原条目 | 当前归属 |
 |---|---|
 | Contract 缺口 | RES-CTR-001 |
-| Anniversary 年度规则已设计但尚未落地 | RES-ANN-001；Reminder 残余为 OPEN-ANN-001 |
+| Anniversary 年度规则已设计但尚未落地 | RES-ANN-001；Reminder R1 发布门禁已归档为 RES-ANN-005 |
 | Native Contract v2 已定稿但运行时仍是 v1 | RES-CTR-002；兼容/验证残余为 OPEN-DATA-001、OPEN-VAL-002/003/004、OPEN-DOM-001 |
 | 重复 Reminder v2 的五个冻结语义缺口 | RES-REM-001；异常恢复验证为 OPEN-VAL-003 |
 | adopted attempt finalize 被 Kotlin 误判 | RES-REM-002 |
@@ -61,9 +61,9 @@
 | Category 用户归属、默认项、唯一性、生命周期 | OPEN-CAT-001 |
 | Category 已关闭整改项 | RES-UI-002、RES-CAT-004 |
 | Category CTest 瞬时崩溃信号 | OPEN-CAT-003 |
-| Flutter 集成测试会卸载包并清数据 | OPEN-TEST-001 |
+| Flutter 集成测试会卸载包并清数据 | RES-ANN-006 |
 | 完整 Schema 校验环境缺失 | OPEN-TOOL-001 |
-| Android lint 既有阻断 | OPEN-ANDROID-001 |
+| Android lint 既有阻断 | RES-AND-001；API 24–25 设备兼容仍为未验证风险 |
 | 真机 Store 遗留验收记录 | OPEN-CAT-004 |
 
 ## 归档规则

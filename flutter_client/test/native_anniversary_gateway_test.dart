@@ -25,7 +25,7 @@ void main() {
               'runtime.device_timezone' => _success({
                 'timezone': 'Asia/Shanghai',
               }),
-              'anniversary.create' => _success(_detail()),
+              'anniversary.create' => _success(_mutation()),
               _ => throw MissingPluginException(call.method),
             };
           });
@@ -43,7 +43,8 @@ void main() {
           ),
           kind: AnniversaryKind.anniversary,
           recurrence: const RecurrenceDraft.yearly(),
-          reminders: const [],
+          reminders: const [ReminderDraft(advanceDays: 7)],
+          remindersEnabled: true,
         ),
       );
 
@@ -60,10 +61,21 @@ void main() {
         'note': null,
         'importance': 'important_noturgent',
         'timezone': 'Asia/Shanghai',
+        'reminder_plan': {
+          'reminders_enabled': true,
+          'templates': [
+            {
+              'advance_days': 7,
+              'local_time': '09:00',
+              'method': 'popup',
+              'is_enabled': true,
+            },
+          ],
+        },
       });
       expect(detail.anniversary.id, _anniversaryId);
       expect(detail.kind, AnniversaryKind.anniversary);
-      expect(detail.reminders, isEmpty);
+      expect(detail.reminders.single.advanceDays, 7);
     },
   );
 
@@ -111,7 +123,7 @@ void main() {
             'runtime.device_timezone' => _success({
               'timezone': 'Asia/Shanghai',
             }),
-            'anniversary.update' => _success(_detail()),
+            'anniversary.update' => _success(_mutation()),
             _ => throw MissingPluginException(call.method),
           };
         });
@@ -119,6 +131,7 @@ void main() {
     await _gateway(channel).update(
       UpdateAnniversaryPlan(
         id: _anniversaryId,
+        expectedUpdatedAt: DateTime.utc(2026, 8, 8, 2, 3, 4),
         anniversary: AnniversaryDraft(
           title: 'Updated anniversary',
           date: DateTime(2020, 2, 29),
@@ -141,52 +154,88 @@ void main() {
       (captured.last.arguments as Map<Object?, Object?>)['timezone'],
       'Asia/Shanghai',
     );
+    expect(
+      (captured.last.arguments as Map<Object?, Object?>)['expected_updated_at'],
+      '2026-08-08T02:03:04Z',
+    );
   });
 
-  test(
-    'unsupported prototype kind and Reminder plans fail before transport',
-    () async {
-      var calls = 0;
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(channel, (_) async {
-            calls += 1;
-            return _success(_detail());
-          });
-      final gateway = _gateway(channel);
-      final draft = AnniversaryDraft(
-        title: 'Birthday',
-        date: DateTime(2026, 8, 8),
-        calendarType: AnniversaryCalendarType.solar,
-        categoryId: null,
-        note: null,
-        importance: AnniversaryImportance.unimportantNotUrgent,
-      );
+  test('stale update maps to a refresh-required conflict', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          return switch (call.method) {
+            'runtime.device_timezone' => _success({
+              'timezone': 'Asia/Shanghai',
+            }),
+            'anniversary.update' => _failure('ANNIVERSARY_UPDATE_CONFLICT'),
+            _ => throw MissingPluginException(call.method),
+          };
+        });
 
-      await expectLater(
-        gateway.create(
-          CreateAnniversaryPlan(
-            anniversary: draft,
-            kind: AnniversaryKind.birthday,
-            recurrence: null,
-            reminders: const [],
+    await expectLater(
+      _gateway(channel).update(
+        UpdateAnniversaryPlan(
+          id: _anniversaryId,
+          expectedUpdatedAt: DateTime.utc(2026, 8, 8, 2, 3, 4),
+          anniversary: AnniversaryDraft(
+            title: 'Stale edit',
+            date: DateTime(2020, 2, 29),
+            calendarType: AnniversaryCalendarType.solar,
+            categoryId: null,
+            note: null,
+            importance: AnniversaryImportance.importantNotUrgent,
           ),
+          kind: AnniversaryKind.anniversary,
+          recurrence: const RecurrenceDraft.yearly(),
+          reminders: const [],
         ),
-        throwsA(isA<AnniversaryGatewayException>()),
-      );
-      await expectLater(
-        gateway.create(
-          CreateAnniversaryPlan(
-            anniversary: draft,
-            kind: AnniversaryKind.anniversary,
-            recurrence: null,
-            reminders: const [ReminderDraft(advanceDays: 0)],
-          ),
+      ),
+      throwsA(
+        isA<AnniversaryGatewayException>()
+            .having(
+              (error) => error.code,
+              'code',
+              AnniversaryFailureCode.updateConflict,
+            )
+            .having(
+              anniversaryFailureMessage,
+              'message',
+              '纪念日已在其他页面被修改，请返回详情刷新后重试',
+            ),
+      ),
+    );
+  });
+
+  test('unsupported prototype kind fails before transport', () async {
+    var calls = 0;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (_) async {
+          calls += 1;
+          return _success(_mutation());
+        });
+    final gateway = _gateway(channel);
+    final draft = AnniversaryDraft(
+      title: 'Birthday',
+      date: DateTime(2026, 8, 8),
+      calendarType: AnniversaryCalendarType.solar,
+      categoryId: null,
+      note: null,
+      importance: AnniversaryImportance.unimportantNotUrgent,
+    );
+
+    await expectLater(
+      gateway.create(
+        CreateAnniversaryPlan(
+          anniversary: draft,
+          kind: AnniversaryKind.birthday,
+          recurrence: null,
+          reminders: const [],
         ),
-        throwsA(isA<AnniversaryGatewayException>()),
-      );
-      expect(calls, 0);
-    },
-  );
+      ),
+      throwsA(isA<AnniversaryGatewayException>()),
+    );
+    expect(calls, 0);
+  });
 
   test(
     'preview sends recurrence through the production gateway port',
@@ -333,6 +382,33 @@ Map<String, Object?> _detail() => {
     'interval': 1,
   },
   'countdown': _countdown(),
+  'reminder_settings': {
+    'reminders_enabled': true,
+    'templates': [
+      {
+        'template_key': '44444444-4444-5444-8444-444444444444',
+        'advance_days': 7,
+        'local_time': '09:00',
+        'timezone_mode': 'follow_device',
+        'method': 'popup',
+        'is_enabled': true,
+      },
+    ],
+    'active_reminder_count': 1,
+    'schedule_reconciliation_required': false,
+  },
+};
+
+Map<String, Object?> _mutation() => {
+  'data_saved': true,
+  'detail': _detail(),
+  'capability': {
+    'schedule_status': 'scheduled_exact',
+    'schedule_reconciliation_required': false,
+    'notification_permission_status': 'granted',
+    'exact_alarm_permission_status': 'granted',
+    'degradation_reasons': <Object?>[],
+  },
 };
 
 Map<String, Object?> _list({

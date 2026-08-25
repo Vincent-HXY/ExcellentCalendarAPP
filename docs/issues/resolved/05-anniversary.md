@@ -31,3 +31,19 @@
 - 解决方式：Anniversary pagination 只保留 page/page_size/cursor；排序只允许 top-level，默认 `target_occurrence_date/asc`，各层统一拒绝 nested sort，并增加正反回归。
 - 可吸取的教训：同一语义只能有一个协议位置和一个默认值；公共 DTO 不应强行复用到语义更窄的领域接口。
 - 来源：`[P2] top-level 与 nested pagination 排序位置和默认值不一致`。
+
+## RES-ANN-005 Anniversary Reminder R1 发布门禁关闭
+
+- 严重程度：P1（发布门禁）
+- 产生原因：四层生产链已集成，但首次真机正常到点时 Alarm Receiver 丢失冻结的 `planned_at`，V2 Coordinator 先执行 Recovery，把准时 Reminder 错误消费为 `anniversary_catch_up`；完整设备矩阵也尚未逐项完成。
+- 解决方式：Receiver 继续传递 `planned_at`，Coordinator 先普通投递匹配时刻的 C++ 权威 Reminder，再恢复更早逾期项；可重试普通失败不会在同次 Alarm 中改类。realme RMX3687 / Android 13 已验证进程退出后的正常到点、系统正文、持久化 `kind=reminder`、sent、年度 successor、delivery identity、点击与去重；Contract/C++/Flutter/Android/Lint/Release APK 回归通过。产品负责人于 2026-08-25 明确接受其余设备矩阵风险并批准 `integrated + active`。
+- 可吸取的教训：Dispatcher Alarm 必须携带并使用冻结计划身份；发布风险接受只能改变门禁结论，不能把未执行设备矩阵写成已通过。
+- 来源：原 `OPEN-ANN-001`、纪念日总计划与 2026-08-25 发布复审。
+
+## RES-ANN-006 Anniversary 设备集成测试与正式应用隔离
+
+- 严重程度：P1（测试数据安全）
+- 产生原因：历史 Flutter 集成测试曾复用正式 application ID，测试工具卸载应用时连同正式私有数据一起清除。
+- 解决方式：Debug/device integration 固定使用 `.device_test` application ID、独立 `calendar_core_device_test_storage_json`，Application 在首个业务副作用前同时校验包名与 Store；Release 保持正式 ID。realme Android 13 已运行完整 Native 集成测试与 Alarm 验收，测试数据和通知可清理，正式应用及其数据未被操作。
+- 可吸取的教训：设备测试隔离必须由构建 ID、存储根和运行时 fail-fast 三重保证，不能依赖操作人员记忆。
+- 来源：原 `OPEN-TEST-001` 与 2026-08-25 真机复验。

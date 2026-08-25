@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "excellent_calendar/common/result.hpp"
+#include "excellent_calendar/domain/anniversary.hpp"
 #include "excellent_calendar/domain/event.hpp"
 #include "excellent_calendar/domain/event_occurrence_state.hpp"
 #include "excellent_calendar/domain/notification.hpp"
@@ -22,6 +23,12 @@ struct RecurringEventState {
   std::vector<domain::Reminder> reminders;
   std::vector<domain::Notification> notifications;
   std::vector<domain::ReminderRecoveryBatch> recovery_batches;
+  // Delivery and recovery need current Anniversary facts in the same logical
+  // commit as Reminder/Notification/RecoveryBatch. These are the only
+  // Anniversary stores exposed through this workflow transaction.
+  std::vector<domain::Anniversary> anniversaries;
+  std::vector<domain::AnniversaryRecurrence> anniversary_recurrences;
+  std::vector<domain::AnniversaryReminderTemplate> anniversary_reminder_templates;
 };
 
 class RecurringEventTransaction {

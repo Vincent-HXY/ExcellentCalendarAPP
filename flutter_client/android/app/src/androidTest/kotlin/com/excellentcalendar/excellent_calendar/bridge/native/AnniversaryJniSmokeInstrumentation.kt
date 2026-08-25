@@ -24,6 +24,8 @@ class AnniversaryJniSmokeInstrumentation : Instrumentation() {
                 RingFiveMinuteTarget -> RingDeviceAcceptanceSmokeRunner.runFiveMinute(targetContext)
                 RingRestartPrepareTarget -> RingDeviceAcceptanceSmokeRunner.prepareRestart(targetContext)
                 RingRestartVerifyTarget -> RingDeviceAcceptanceSmokeRunner.verifyRestart(targetContext)
+                AnniversaryAlarmPrepareTarget -> AnniversaryDeviceAcceptanceSmokeRunner.prepareAlarm(targetContext)
+                AnniversaryAlarmVerifyTarget -> AnniversaryDeviceAcceptanceSmokeRunner.verifyAlarm(targetContext)
                 else -> error("Unknown native smoke target")
             }
         }
@@ -53,5 +55,7 @@ class AnniversaryJniSmokeInstrumentation : Instrumentation() {
         const val RingFiveMinuteTarget = "ring_five_minute"
         const val RingRestartPrepareTarget = "ring_restart_prepare"
         const val RingRestartVerifyTarget = "ring_restart_verify"
+        const val AnniversaryAlarmPrepareTarget = "anniversary_alarm_prepare"
+        const val AnniversaryAlarmVerifyTarget = "anniversary_alarm_verify"
     }
 }

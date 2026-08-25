@@ -26,6 +26,7 @@ description: 在 ExcellentCalendarAPP 的 cpp_core 内实现、修改或修复 C
 
 ```text
 cpp_core/**
+docs/log.md
 ```
 
 路径按 Windows 大小写不敏感语义判断。构建工具可生成 `cpp_core/build-*`，但不得手工修改、提交或用旧产物证明新代码已通过。

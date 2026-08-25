@@ -7,6 +7,7 @@
 - 已打通 Flutter → Kotlin → JNI → C++ → JSON Storage → Android Alarm/Notification 主链路。
 - Event 已支持定时/全天、创建、查询、详情、完成及重复 occurrence；Reminder、时区和通知调度已接入。
 - Anniversary 公历 V1 已支持 CRUD、年度重复与倒计时；Category list/create、Event 关联和真机全链验收已完成。
+- Calendar Core JSON Storage v3、Anniversary Reminder R1 与 date-only occurrence 查询均已完成生产接线并标记为 `integrated + active`。完整设备矩阵尚未通过；产品负责人已接受其作为本次发布残余风险。
 - 当前仍属于本地开发版
 
 ## R1｜可发布的本地 V1 与账号基础（当前阶段）
@@ -15,7 +16,7 @@
 - 补齐普通日程编辑/删除/重开、全天提醒、响铃、通知历史、权限失败恢复及 API 24–25 兼容，完成多 ROM 真机回归。
 - 实现 Spring Boot + PostgreSQL 的注册、邮箱验证、登录、Token 刷新、登出和密码管理。
 - 完成 Flutter 登录、注册、个人资料、头像与账号安全页面；Refresh Token 使用 Android 安全存储。
-- Anniversary 接入提醒通知，并提供日历聚合所需的 occurrence 查询。
+- 在已实现的独立 `.device_test` application ID/Store 上继续完成 Anniversary Reminder R1 的聚合补发、时区切换、exact/inexact 降级、权限恢复、陈旧 Alarm 和重启/离线真机矩阵，逐步偿还已接受的发布验证债。
 
 ## R2｜核心效率产品与云同步
 
@@ -29,7 +30,7 @@
 
 - 扩展日程地点能力：地图选点、地理信息保存、地点搜索及隐私控制。
 - 完善自定义重复规则、年度规则、例外日期、系列拆分和跨时区行为。
-- 扩展 Anniversary：农历换算、节日模板、系统预设、日历聚合与提醒策略。
+- 扩展 Anniversary：农历换算、节日模板、系统预设、完整日历 UI 聚合与高级提醒策略。
 - 建立微信提醒的服务端投送、账号绑定和失败补偿。
 
 ## R4｜智能导入与生态能力

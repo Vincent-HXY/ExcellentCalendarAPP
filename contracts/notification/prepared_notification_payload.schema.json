@@ -21,7 +21,7 @@
     "route": {"type": ["string", "null"]}
   },
   "oneOf": [
-    {"properties": {"kind": {"const": "reminder"}, "reminder_id": {"type": "string", "format": "uuid"}, "target_type": {"enum": ["event", "habit", "anniversary"]}}, "allOf": [{"if": {"properties": {"target_type": {"const": "anniversary"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "string", "format": "uuid"}}}}]},
+    {"properties": {"kind": {"const": "reminder"}, "reminder_id": {"type": "string", "format": "uuid"}, "target_type": {"enum": ["event", "habit", "anniversary"]}}, "allOf": [{"if": {"properties": {"target_type": {"const": "anniversary"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "string", "format": "uuid"}, "route": {"const": "anniversary.detail"}}}}]},
     {"properties": {"kind": {"const": "recovery_summary"}, "reminder_id": {"type": "null"}, "recovery_batch_id": {"type": "string", "format": "uuid"}, "target_type": {"const": "reminder_recovery_batch"}, "occurrence_key": {"type": "null"}}},
     {"properties": {"kind": {"const": "anniversary_catch_up"}, "reminder_id": {"type": "null"}, "recovery_batch_id": {"type": "string", "format": "uuid"}, "target_type": {"const": "anniversary"}, "occurrence_key": {"type": "string", "format": "uuid"}, "route": {"const": "anniversary.detail"}}}
   ]

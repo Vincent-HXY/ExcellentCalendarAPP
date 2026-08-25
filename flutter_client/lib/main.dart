@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app/bootstrap/app_notification_bootstrap.dart';
 import 'app/bootstrap/category_repository_composition.dart';
+import 'app/bootstrap/notification_permission_controller.dart';
 import 'app/routing/app_route_navigator.dart';
 import 'app/routing/app_router.dart';
 import 'app/routing/notification_tap_router.dart';
@@ -71,6 +72,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   late final UpdateEventUseCase _updateEventUseCase;
   late final TimezoneApplicationService _timezoneService;
   late final AppNotificationBootstrap _notificationBootstrap;
+  late final NotificationPermissionController _notificationPermissionController;
   late final AppClock _anniversaryClock;
   late final AnniversaryGateway _anniversaryGateway;
   late final FakeAnniversaryShareGateway _anniversaryShareGateway;
@@ -112,8 +114,12 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
       _eventGateway,
       reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
     );
+    final notificationGateway = MethodChannelNotificationAdapter();
+    _notificationPermissionController = NotificationPermissionController(
+      notificationGateway,
+    );
     _notificationBootstrap = AppNotificationBootstrap(
-      notificationGateway: MethodChannelNotificationAdapter(),
+      notificationGateway: notificationGateway,
       reconcileReminderScheduleUseCase: _reconcileReminderScheduleUseCase,
       notificationTapRouter: NotificationTapRouter(
         navigator: NavigatorAppRouteNavigator(_navigatorKey),
@@ -144,6 +150,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
       gateway: _anniversaryGateway,
       shareGateway: _anniversaryShareGateway,
       clock: _anniversaryClock,
+      permissionController: _notificationPermissionController,
     );
   }
 
@@ -153,6 +160,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
       gateway: _anniversaryGateway,
       shareGateway: _anniversaryShareGateway,
       clock: _anniversaryClock,
+      permissionController: _notificationPermissionController,
     );
   }
 

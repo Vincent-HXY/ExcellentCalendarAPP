@@ -8,6 +8,7 @@
 #include "excellent_calendar/repository/recurring_event_transaction.hpp"
 #include "excellent_calendar/storage/runtime_storage_lease.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/json/calendar_workflow_coordinator.hpp"
 
 namespace excellent_calendar::storage::json {
 
@@ -33,13 +34,15 @@ class JsonRecurringEventTransaction final : public repository::RecurringEventTra
 
  private:
   common::Result<repository::RecurringEventState> load_locked();
-  common::Result<common::Unit> recover_locked();
-  common::Result<common::Unit> ensure_empty_stores_locked();
-  common::Result<common::Unit> apply_after_stores_locked(const picojson::object& after_stores);
-  common::Result<common::Unit> call_hook(std::string_view phase) const;
+  common::Result<common::Unit> commit_changed_stores_locked(
+      std::string operation,
+      std::string transaction_id,
+      std::string prepared_at,
+      const repository::RecurringEventState& before,
+      const repository::RecurringEventState& after);
 
   AtomicJsonFileStore store_;
-  FailureHook failure_hook_;
+  CalendarWorkflowCoordinator coordinator_;
   std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
 };
 

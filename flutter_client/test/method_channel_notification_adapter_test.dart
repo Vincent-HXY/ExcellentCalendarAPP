@@ -57,14 +57,14 @@ void main() {
       final streamDone = subscription.asFuture<void>();
 
       controller.add({
-        'notification_id': 'notification-1',
-        'delivery_id': 'delivery-1',
-        'delivery_attempt_id': 'attempt-1',
+        'notification_id': '11111111-1111-4111-8111-111111111111',
+        'delivery_id': '22222222-2222-4222-8222-222222222222',
+        'delivery_attempt_id': '33333333-3333-4333-8333-333333333333',
         'kind': 'reminder',
-        'reminder_id': 'reminder-1',
+        'reminder_id': '44444444-4444-4444-8444-444444444444',
         'recovery_batch_id': null,
         'target_type': 'event',
-        'target_id': 'event-1',
+        'target_id': '55555555-5555-4555-8555-555555555555',
         'occurrence_key': null,
         'route': null,
         'opened_at': '2026-07-05T10:00:00Z',

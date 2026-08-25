@@ -59,6 +59,8 @@ class NativeAnniversaryMethods {
   static const detail = 'anniversary.detail';
   static const list = 'anniversary.list';
   static const previewCountdown = 'anniversary.preview_countdown';
+  static const setRemindersEnabled = 'anniversary.set_reminders_enabled';
+  static const listOccurrences = 'anniversary.list_occurrences';
 }
 
 class NativeCategoryMethods {

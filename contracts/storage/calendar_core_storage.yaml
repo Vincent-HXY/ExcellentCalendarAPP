@@ -1,18 +1,18 @@
-version: 2
+version: 3
 release_status: active
 implementation_status: integrated
 format_name: excellent_calendar_core_json
-storage_format_version: 2
-planned_storage_format_version: 3
-planned_release_status: blocked
-planned_implementation_status: planned
+storage_format_version: 3
+active_format_contract: calendar_core_v3
+legacy_v2_sections_role: migration_source_and_downgrade_guard_only
 
 directories:
   active_android: files/local_storage/calendar_core_storage_json
   legacy_ignored: files/local_storage/test_storage_json
   note: >-
-    V1 Calendar Core data is not preserved. The legacy directory is ignored and
-    is no longer a migration source; the active v2 directory is the only writer.
+    V1 Calendar Core data is not preserved. The legacy test directory is ignored.
+    The active directory is a strict v3 writer; a complete v2 directory at this
+    path is accepted only as the source of the one-way v2-to-v3 migration.
 
 compatibility:
   reads_v1: false
@@ -25,8 +25,9 @@ compatibility:
     existing store envelopes and codecs remain unchanged, and the new runtime
     validates rather than rewrites every pre-existing file.
   rollback: >-
-    V1 data is not archived or restored. A rollback to a v1 runtime loses local
-    data by decision; the old app must never open the v2 directory.
+    V1 data is not archived or restored. A rollback to any pre-v3 runtime cannot
+    safely interpret the active v3 directory; the old app must refuse it without
+    deleting, downgrading, or partially reading v3 data.
 
 v1_no_preservation:
   - validate that the source is the confirmed v1 Calendar Core directory
@@ -343,13 +344,13 @@ anniversary_workflow_journal:
 calendar_core_v3:
   format_name: excellent_calendar_core_json
   storage_format_version: 3
-  implementation_status: planned
-  release_status: blocked
-  activation_gate: >-
-    v3 remains blocked until the v2-to-v3 migration, shared coordinator,
-    Anniversary Reminder/Occurrence readers and writers, Kotlin/JNI/Dart
-    mappings, build-after-test, cross-layer smoke, and physical-device
-    scheduling verification pass in one APK.
+  implementation_status: integrated
+  release_status: active
+  activation_evidence: >-
+    The v2-to-v3 migration, shared coordinator, Anniversary Reminder/Occurrence
+    readers and writers, Kotlin/JNI/Dart mappings, build-after-test, Flutter
+    cross-layer smoke, and physical-device process-death Alarm, Notification,
+    tap, and annual-successor verification passed together on 2026-08-24.
   directory: files/local_storage/calendar_core_storage_json
   downgrade_policy: >-
     A v2 runtime must reject and preserve a v3 directory. Downgrade is unsafe;

@@ -4,10 +4,12 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "excellent_calendar/application/rolling_reminder_service.hpp"
 #include "excellent_calendar/common/result.hpp"
 #include "excellent_calendar/domain/notification.hpp"
+#include "excellent_calendar/domain/local_time_resolver.hpp"
 #include "excellent_calendar/domain/reminder.hpp"
 #include "excellent_calendar/domain/reminder_recovery_batch.hpp"
 #include "excellent_calendar/repository/recurring_event_transaction.hpp"
@@ -20,6 +22,7 @@ struct PrepareDeliveryCommand {
   std::optional<std::string> recovery_batch_id;
   std::string method;
   std::optional<std::string> expected_remind_at;
+  std::optional<std::string> delivery_id;
 };
 
 struct PrepareDeliveryResult {
@@ -32,6 +35,7 @@ struct FinalizeDeliveryCommand {
   std::string outcome;
   std::optional<std::string> failure_class;
   std::optional<std::string> error_code;
+  std::optional<std::string> timezone;
 };
 
 struct FinalizeDeliveryResult {
@@ -40,6 +44,8 @@ struct FinalizeDeliveryResult {
   std::optional<domain::Reminder> successor;
   std::optional<domain::ReminderRecoveryBatch> recovery_batch;
   bool idempotent_replay = false;
+  std::vector<domain::Reminder> covered_reminders;
+  std::vector<domain::Reminder> successors;
 };
 
 class RecurringReminderDeliveryWorkflowService {
@@ -51,7 +57,8 @@ class RecurringReminderDeliveryWorkflowService {
       std::shared_ptr<repository::RecurringEventTransaction> transaction,
       std::shared_ptr<RollingReminderService> rolling_reminder_service,
       ClockFn clock,
-      IdGeneratorFn id_generator);
+      IdGeneratorFn id_generator,
+      std::shared_ptr<domain::LocalTimeResolver> local_time_resolver);
 
   common::Result<PrepareDeliveryResult> prepare_delivery(
       const PrepareDeliveryCommand& command);
@@ -63,6 +70,7 @@ class RecurringReminderDeliveryWorkflowService {
   std::shared_ptr<RollingReminderService> rolling_reminder_service_;
   ClockFn clock_;
   IdGeneratorFn id_generator_;
+  std::shared_ptr<domain::LocalTimeResolver> local_time_resolver_;
 };
 
 }  // namespace excellent_calendar::application

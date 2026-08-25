@@ -45,6 +45,34 @@ class NativeErrorCodes {
   static const anniversaryCalendarUnsupported =
       'ANNIVERSARY_CALENDAR_UNSUPPORTED';
   static const anniversaryNotFound = 'ANNIVERSARY_NOT_FOUND';
+  static const anniversaryUpdateConflict = 'ANNIVERSARY_UPDATE_CONFLICT';
+  static const anniversaryTargetDeleted = 'ANNIVERSARY_TARGET_DELETED';
+  static const anniversaryReminderConfigInvalid =
+      'ANNIVERSARY_REMINDER_CONFIG_INVALID';
+  static const anniversaryReminderTemplateDuplicate =
+      'ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE';
+  static const anniversaryReminderTemplateLimitExceeded =
+      'ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED';
+  static const anniversaryOccurrenceRangeInvalid =
+      'ANNIVERSARY_OCCURRENCE_RANGE_INVALID';
+  static const anniversaryOccurrenceRangeTooLarge =
+      'ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE';
+  static const anniversaryOccurrenceFilterInvalid =
+      'ANNIVERSARY_OCCURRENCE_FILTER_INVALID';
+  static const anniversaryOccurrenceCursorInvalid =
+      'ANNIVERSARY_OCCURRENCE_CURSOR_INVALID';
+  static const anniversaryOccurrenceCursorExpired =
+      'ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED';
+  static const anniversaryOccurrenceStale = 'ANNIVERSARY_OCCURRENCE_STALE';
+  static const anniversaryReminderOccurrenceExpired =
+      'ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED';
+  static const anniversaryAggregateMembershipConflict =
+      'ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT';
+  static const calendarWorkflowCommitFailed = 'CALENDAR_WORKFLOW_COMMIT_FAILED';
+  static const calendarWorkflowRecoveryFailed =
+      'CALENDAR_WORKFLOW_RECOVERY_FAILED';
+  static const schedulerReconciliationPending =
+      'SCHEDULER_RECONCILIATION_PENDING';
   static const searchQueryInvalid = 'SEARCH_QUERY_INVALID';
   static const aiExtractionFailed = 'AI_EXTRACTION_FAILED';
   static const syncConflict = 'SYNC_CONFLICT';
@@ -115,6 +143,22 @@ class NativeErrorCodes {
     anniversaryDateInvalid,
     anniversaryCalendarUnsupported,
     anniversaryNotFound,
+    anniversaryUpdateConflict,
+    anniversaryTargetDeleted,
+    anniversaryReminderConfigInvalid,
+    anniversaryReminderTemplateDuplicate,
+    anniversaryReminderTemplateLimitExceeded,
+    anniversaryOccurrenceRangeInvalid,
+    anniversaryOccurrenceRangeTooLarge,
+    anniversaryOccurrenceFilterInvalid,
+    anniversaryOccurrenceCursorInvalid,
+    anniversaryOccurrenceCursorExpired,
+    anniversaryOccurrenceStale,
+    anniversaryReminderOccurrenceExpired,
+    anniversaryAggregateMembershipConflict,
+    calendarWorkflowCommitFailed,
+    calendarWorkflowRecoveryFailed,
+    schedulerReconciliationPending,
     searchQueryInvalid,
     aiExtractionFailed,
     syncConflict,

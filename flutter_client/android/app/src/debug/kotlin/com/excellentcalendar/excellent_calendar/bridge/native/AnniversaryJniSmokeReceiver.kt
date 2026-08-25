@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.excellentcalendar.excellent_calendar.BuildConfig
 import java.io.File
 
 /** ADB-invoked real JNI smoke entry that is packaged only in debug builds. */
@@ -30,8 +31,7 @@ class AnniversaryJniSmokeReceiver : BroadcastReceiver() {
     }
 
     private companion object {
-        const val Action =
-            "com.excellentcalendar.excellent_calendar.ANNIVERSARY_JNI_SMOKE"
+        val Action: String = "${BuildConfig.APPLICATION_ID}.ANNIVERSARY_JNI_SMOKE"
         const val ResultFile = "anniversary-jni-smoke-result.txt"
         const val Tag = "AnniversaryJniSmoke"
     }

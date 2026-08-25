@@ -14,6 +14,7 @@
 #include "excellent_calendar/application/anniversary_workflow_service.hpp"
 #include "excellent_calendar/boundary/api/native_runtime.hpp"
 #include "excellent_calendar/boundary/contract/anniversary_json.hpp"
+#include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/uuid.hpp"
 #include "excellent_calendar/domain/importance.hpp"
 #include "excellent_calendar/domain/local_time_resolver.hpp"
@@ -28,6 +29,7 @@ using detail::nullable_string;
 using detail::parse_object;
 using detail::reject_unknown;
 using detail::require_int;
+using detail::require_bool;
 using detail::require_string;
 using detail::respond_v2;
 using detail::string_array;
@@ -79,8 +81,11 @@ common::Result<application::AnniversaryWriteInput> write_input(
     bool with_id) {
   std::set<std::string> allowed = {
       "title", "date", "calendar_type", "category_id", "recurrence",
-      "note", "importance", "timezone"};
-  if (with_id) allowed.insert("id");
+      "note", "importance", "timezone", "reminder_plan"};
+  if (with_id) {
+    allowed.insert("id");
+    allowed.insert("expected_updated_at");
+  }
   auto known = reject_unknown(object, allowed, parent);
   if (!known.ok()) {
     return common::Result<application::AnniversaryWriteInput>::failure(known.error());
@@ -118,10 +123,68 @@ common::Result<application::AnniversaryWriteInput> write_input(
     return common::Result<application::AnniversaryWriteInput>::failure(
         contract_error(parent + ".timezone", "timezone is too long"));
   }
+  std::optional<application::AnniversaryReminderPlanInput> reminder_plan;
+  if (const auto* plan_value = field(object, "reminder_plan"); plan_value != nullptr) {
+    if (!plan_value->is<picojson::object>()) {
+      return common::Result<application::AnniversaryWriteInput>::failure(
+          contract_error(parent + ".reminder_plan", "reminder_plan must be object"));
+    }
+    const auto& plan_object = plan_value->get<picojson::object>();
+    auto plan_known = reject_unknown(
+        plan_object, {"reminders_enabled", "templates"}, parent + ".reminder_plan");
+    if (!plan_known.ok()) {
+      return common::Result<application::AnniversaryWriteInput>::failure(plan_known.error());
+    }
+    auto enabled = require_bool(
+        plan_object, "reminders_enabled", parent + ".reminder_plan");
+    const auto* templates_value = field(plan_object, "templates");
+    if (!enabled.ok()) {
+      return common::Result<application::AnniversaryWriteInput>::failure(enabled.error());
+    }
+    if (templates_value == nullptr || !templates_value->is<picojson::array>()) {
+      return common::Result<application::AnniversaryWriteInput>::failure(
+          contract_error(parent + ".reminder_plan.templates", "templates must be array"));
+    }
+    application::AnniversaryReminderPlanInput parsed_plan;
+    parsed_plan.reminders_enabled = enabled.value();
+    const auto& templates = templates_value->get<picojson::array>();
+    if (templates.size() > 5U) {
+      return common::Result<application::AnniversaryWriteInput>::failure(common::make_error(
+          "ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED",
+          "Anniversary reminder plan contains more than five templates"));
+    }
+    for (std::size_t index = 0; index < templates.size(); ++index) {
+      const auto template_parent = parent + ".reminder_plan.templates[" +
+                                   std::to_string(index) + "]";
+      if (!templates[index].is<picojson::object>()) {
+        return common::Result<application::AnniversaryWriteInput>::failure(
+            contract_error(template_parent, "template must be object"));
+      }
+      const auto& item = templates[index].get<picojson::object>();
+      auto item_known = reject_unknown(
+          item, {"advance_days", "local_time", "method", "is_enabled"},
+          template_parent);
+      if (!item_known.ok()) {
+        return common::Result<application::AnniversaryWriteInput>::failure(item_known.error());
+      }
+      auto advance_days = require_int(item, "advance_days", template_parent);
+      auto local_time = require_string(item, "local_time", template_parent);
+      auto method = require_string(item, "method", template_parent);
+      auto item_enabled = require_bool(item, "is_enabled", template_parent);
+      if (!advance_days.ok()) return common::Result<application::AnniversaryWriteInput>::failure(advance_days.error());
+      if (!local_time.ok()) return common::Result<application::AnniversaryWriteInput>::failure(local_time.error());
+      if (!method.ok()) return common::Result<application::AnniversaryWriteInput>::failure(method.error());
+      if (!item_enabled.ok()) return common::Result<application::AnniversaryWriteInput>::failure(item_enabled.error());
+      parsed_plan.templates.push_back({advance_days.value(), local_time.value(),
+                                       method.value(), item_enabled.value()});
+    }
+    reminder_plan = std::move(parsed_plan);
+  }
   return common::Result<application::AnniversaryWriteInput>::success(
       application::AnniversaryWriteInput{
           title.value(), date.value(), calendar.value(), category.value(),
-          recurrence.value(), note.value(), importance.value(), timezone.value()});
+          recurrence.value(), note.value(), importance.value(), timezone.value(),
+          reminder_plan});
 }
 
 common::Result<std::optional<std::string>> optional_nonnull_string(
@@ -254,9 +317,19 @@ std::string update_anniversary_v2(std::string_view request_json) {
     if (!input.ok()) return common::Result<picojson::value>::failure(input.error());
     auto id = require_string(parsed.value(), "id", "UpdateAnniversaryRequest");
     if (!id.ok()) return common::Result<picojson::value>::failure(id.error());
+    auto expected_updated_at = require_string(
+        parsed.value(), "expected_updated_at", "UpdateAnniversaryRequest");
+    if (!expected_updated_at.ok()) {
+      return common::Result<picojson::value>::failure(expected_updated_at.error());
+    }
     if (!common::is_uuid(id.value())) {
       return common::Result<picojson::value>::failure(
           contract_error("UpdateAnniversaryRequest.id", "id must be a UUID"));
+    }
+    if (!common::is_iso8601_utc_datetime(expected_updated_at.value())) {
+      return common::Result<picojson::value>::failure(contract_error(
+          "UpdateAnniversaryRequest.expected_updated_at",
+          "expected_updated_at must be a UTC date-time"));
     }
     const auto service = current_anniversary_workflow_service();
     if (!service) {
@@ -264,7 +337,8 @@ std::string update_anniversary_v2(std::string_view request_json) {
           storage_not_initialized_error("anniversary.update"));
     }
     auto result = service->update(
-        application::UpdateAnniversaryCommand{id.value(), input.value()});
+        application::UpdateAnniversaryCommand{
+            id.value(), expected_updated_at.value(), input.value()});
     return result.ok()
                ? common::Result<picojson::value>::success(
                      contract::anniversary_detail_response_json(result.value()))
@@ -292,7 +366,7 @@ std::string delete_anniversary_v2(std::string_view request_json) {
     auto result = service->remove(application::DeleteAnniversaryCommand{id.value()});
     return result.ok()
                ? common::Result<picojson::value>::success(
-                     contract::anniversary_response_json(result.value()))
+                     contract::anniversary_delete_commit_response_json(result.value()))
                : common::Result<picojson::value>::failure(result.error());
   });
 }
@@ -382,6 +456,77 @@ std::string preview_anniversary_countdown_v2(std::string_view request_json) {
     return result.ok()
                ? common::Result<picojson::value>::success(
                      contract::anniversary_countdown_response_json(result.value()))
+               : common::Result<picojson::value>::failure(result.error());
+  });
+}
+
+std::string set_anniversary_reminders_enabled_v2(std::string_view request_json) {
+  return respond_v2([&]() -> common::Result<picojson::value> {
+    auto parsed = parse_object(request_json);
+    if (!parsed.ok()) return common::Result<picojson::value>::failure(parsed.error());
+    auto known = reject_unknown(parsed.value(), {"id", "reminders_enabled", "timezone"},
+                                "SetAnniversaryRemindersEnabledRequest");
+    if (!known.ok()) return common::Result<picojson::value>::failure(known.error());
+    auto id = require_string(parsed.value(), "id", "SetAnniversaryRemindersEnabledRequest");
+    auto enabled = require_bool(parsed.value(), "reminders_enabled",
+                                "SetAnniversaryRemindersEnabledRequest");
+    auto timezone = require_string(parsed.value(), "timezone",
+                                   "SetAnniversaryRemindersEnabledRequest");
+    if (!id.ok()) return common::Result<picojson::value>::failure(id.error());
+    if (!enabled.ok()) return common::Result<picojson::value>::failure(enabled.error());
+    if (!timezone.ok()) return common::Result<picojson::value>::failure(timezone.error());
+    if (!common::is_uuid(id.value()) || timezone.value().size() > 255U) {
+      return common::Result<picojson::value>::failure(contract_error(
+          "SetAnniversaryRemindersEnabledRequest", "id or timezone is invalid"));
+    }
+    const auto service = current_anniversary_workflow_service();
+    if (!service) {
+      return common::Result<picojson::value>::failure(
+          storage_not_initialized_error("anniversary.set_reminders_enabled"));
+    }
+    auto result = service->set_reminders_enabled(
+        {id.value(), enabled.value(), timezone.value()});
+    return result.ok()
+               ? common::Result<picojson::value>::success(
+                     contract::anniversary_detail_response_json(result.value()))
+               : common::Result<picojson::value>::failure(result.error());
+  });
+}
+
+std::string list_anniversary_occurrences_v2(std::string_view request_json) {
+  return respond_v2([&]() -> common::Result<picojson::value> {
+    constexpr const char* parent = "ListAnniversaryOccurrencesRequest";
+    auto parsed = parse_object(request_json);
+    if (!parsed.ok()) return common::Result<picojson::value>::failure(parsed.error());
+    auto known = reject_unknown(
+        parsed.value(), {"range_start_date", "range_end_date", "timezone", "category_ids",
+                         "importance", "cursor", "page_size"}, parent);
+    if (!known.ok()) return common::Result<picojson::value>::failure(known.error());
+    auto start = required_date(parsed.value(), "range_start_date", parent);
+    auto end = required_date(parsed.value(), "range_end_date", parent);
+    auto timezone = require_string(parsed.value(), "timezone", parent);
+    auto categories = string_array(parsed.value(), "category_ids", parent, true, true);
+    auto importance = string_array(parsed.value(), "importance", parent, true, true);
+    auto cursor = nullable_string(parsed.value(), "cursor", parent, true);
+    auto page_size = require_int(parsed.value(), "page_size", parent);
+    if (!start.ok()) return common::Result<picojson::value>::failure(start.error());
+    if (!end.ok()) return common::Result<picojson::value>::failure(end.error());
+    if (!timezone.ok()) return common::Result<picojson::value>::failure(timezone.error());
+    if (!categories.ok()) return common::Result<picojson::value>::failure(categories.error());
+    if (!importance.ok()) return common::Result<picojson::value>::failure(importance.error());
+    if (!cursor.ok()) return common::Result<picojson::value>::failure(cursor.error());
+    if (!page_size.ok()) return common::Result<picojson::value>::failure(page_size.error());
+    const auto service = current_anniversary_query_service();
+    if (!service) {
+      return common::Result<picojson::value>::failure(
+          storage_not_initialized_error("anniversary.list_occurrences"));
+    }
+    auto result = service->list_occurrences({start.value(), end.value(), timezone.value(),
+                                             categories.value(), importance.value(),
+                                             cursor.value(), page_size.value()});
+    return result.ok()
+               ? common::Result<picojson::value>::success(
+                     contract::anniversary_occurrence_list_response_json(result.value()))
                : common::Result<picojson::value>::failure(result.error());
   });
 }

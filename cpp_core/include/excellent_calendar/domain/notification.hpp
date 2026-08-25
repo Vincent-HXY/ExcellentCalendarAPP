@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace excellent_calendar::domain {
 
@@ -38,6 +39,7 @@ struct Notification {
   std::string updated_at;
   std::optional<std::string> resolved_by_recovery_batch_id;
   std::optional<std::string> abandon_reason;
+  std::vector<std::string> covered_reminder_ids;
 };
 
 bool is_valid_notification_status(std::string_view value);

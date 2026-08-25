@@ -6,6 +6,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <picojson/picojson.h>
@@ -27,12 +28,14 @@
 #include "excellent_calendar/common/id_generator.hpp"
 #include "excellent_calendar/common/uuid.hpp"
 #include "excellent_calendar/domain/event_status.hpp"
+#include "excellent_calendar/domain/anniversary.hpp"
 #include "excellent_calendar/domain/local_time_resolver.hpp"
 #include "excellent_calendar/infrastructure/time/tzdb_local_time_resolver.hpp"
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
 #include "excellent_calendar/storage/json/json_category_repository.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/json/calendar_core_v3_storage_bootstrap.hpp"
 #include "excellent_calendar/storage/json/json_recurring_event_transaction.hpp"
 
 namespace {
@@ -43,6 +46,12 @@ using excellent_calendar::infrastructure::time::TzdbLocalTimeResolver;
 
 void require(bool condition, const std::string& message) {
   if (!condition) throw std::runtime_error(message);
+}
+
+void prepare_v3_storage(const std::filesystem::path& path) {
+  auto prepared =
+      excellent_calendar::storage::json::prepare_calendar_core_v3_storage(path);
+  require(prepared.ok(), prepared.ok() ? "" : prepared.error().message);
 }
 
 std::shared_ptr<TzdbLocalTimeResolver> create_resolver() {
@@ -402,8 +411,10 @@ class WorkflowFixture {
         store(std::make_shared<excellent_calendar::storage::json::JsonRecurringEventTransaction>(
             directory.path())),
         category_repository(std::make_shared<
-                            excellent_calendar::storage::json::JsonCategoryRepository>(
-            directory.path())),
+                             excellent_calendar::storage::json::JsonCategoryRepository>(
+            directory.path(), nullptr,
+            excellent_calendar::storage::json::JsonCategoryRepository::FailureHook{},
+            3)),
         workflow(std::make_shared<excellent_calendar::application::RecurringEventWorkflowService>(
             store,
             recurrence,
@@ -415,13 +426,15 @@ class WorkflowFixture {
             store,
             rolling,
             [this]() { return now; },
-            excellent_calendar::common::generate_uuid_v4)),
+            excellent_calendar::common::generate_uuid_v4,
+            resolver)),
         recovery(std::make_shared<excellent_calendar::application::ReminderRecoveryWorkflowService>(
             store,
             recurrence,
             rolling,
             [this]() { return now; },
-            excellent_calendar::common::generate_uuid_v4)),
+            excellent_calendar::common::generate_uuid_v4,
+            resolver)),
         event_query(std::make_shared<excellent_calendar::application::RecurringEventQueryService>(
             store,
             recurrence,
@@ -430,6 +443,7 @@ class WorkflowFixture {
                        excellent_calendar::application::RecurringReminderQueryService>(
             store,
             [this]() { return now; })) {
+    prepare_v3_storage(directory.path());
     require(store->initialize().ok(), "workflow store should initialize");
     require(category_repository->initialize().ok(),
             "Category store should initialize for Event aggregate queries");
@@ -467,6 +481,86 @@ class WorkflowFixture {
   std::shared_ptr<excellent_calendar::application::RecurringReminderQueryService> reminder_query;
 };
 
+struct AnniversarySeed {
+  std::string anniversary_id;
+  std::vector<excellent_calendar::domain::Reminder> reminders;
+};
+
+AnniversarySeed seed_anniversary_reminders(
+    WorkflowFixture& fixture,
+    const std::string& anniversary_id,
+    const excellent_calendar::domain::LocalDate& source_date,
+    const excellent_calendar::domain::LocalDate& occurrence_date,
+    const std::vector<std::pair<int, std::string>>& template_specs,
+    const std::vector<std::string>& remind_at_values,
+    bool repeats_yearly = true) {
+  require(template_specs.size() == remind_at_values.size(),
+          "Anniversary seed template/remind_at sizes must match");
+  AnniversarySeed seeded{anniversary_id, {}};
+  auto written = fixture.store->execute(
+      "recovery_batch_reminders_and_summary",
+      excellent_calendar::common::generate_uuid_v4(), fixture.now,
+      [&](excellent_calendar::repository::RecurringEventState& state) {
+        excellent_calendar::domain::Anniversary anniversary;
+        anniversary.id = anniversary_id;
+        anniversary.title = "Project anniversary";
+        anniversary.date = source_date;
+        anniversary.calendar_type = "solar";
+        anniversary.created_at = "2025-01-01T00:00:00Z";
+        anniversary.updated_at = fixture.now;
+        anniversary.reminders_enabled = true;
+        if (repeats_yearly) {
+          const auto recurrence_id = excellent_calendar::common::generate_uuid_v4();
+          anniversary.recurrence_id = recurrence_id;
+          state.anniversary_recurrences.push_back(
+              {recurrence_id, "yearly", 1, "2025-01-01T00:00:00Z", std::nullopt});
+        }
+        state.anniversaries.push_back(anniversary);
+        auto occurrence_key = excellent_calendar::domain::anniversary_occurrence_key(
+            anniversary_id, occurrence_date);
+        require(occurrence_key.ok(), "Anniversary occurrence identity must be derivable");
+        for (std::size_t index = 0; index < template_specs.size(); ++index) {
+          const auto& [advance_days, local_time] = template_specs[index];
+          auto template_key =
+              excellent_calendar::domain::anniversary_reminder_template_key(
+                  anniversary_id, advance_days, local_time);
+          require(template_key.ok(), "Anniversary template identity must be derivable");
+          state.anniversary_reminder_templates.push_back(
+              {template_key.value(), anniversary_id, advance_days, local_time,
+               "follow_device", "popup", true, "2025-01-01T00:00:00Z",
+               fixture.now, std::nullopt});
+          auto reminder_id = excellent_calendar::domain::anniversary_reminder_id(
+              anniversary_id, occurrence_key.value(), template_key.value());
+          require(reminder_id.ok(), "Anniversary Reminder identity must be derivable");
+          excellent_calendar::domain::Reminder reminder;
+          reminder.id = reminder_id.value();
+          reminder.target_type = "anniversary";
+          reminder.target_id = anniversary_id;
+          reminder.occurrence_key = occurrence_key.value();
+          reminder.remind_at = remind_at_values[index];
+          reminder.methods = {"popup"};
+          reminder.message = "Anniversary reminder";
+          reminder.is_enabled = true;
+          reminder.status = "pending";
+          reminder.source = "manual";
+          reminder.created_at = "2025-01-01T00:00:00Z";
+          reminder.updated_at = fixture.now;
+          reminder.template_key = template_key.value();
+          reminder.occurrence_date =
+              excellent_calendar::domain::format_local_date(occurrence_date);
+          reminder.advance_days = advance_days;
+          reminder.local_time = local_time;
+          reminder.timezone_mode = "follow_device";
+          state.reminders.push_back(reminder);
+          seeded.reminders.push_back(reminder);
+        }
+        return excellent_calendar::common::Result<excellent_calendar::common::Unit>::success(
+            excellent_calendar::common::Unit{});
+      });
+  require(written.ok(), "Anniversary delivery fixture must persist atomically");
+  return seeded;
+}
+
 excellent_calendar::domain::Event stored_recurring_event() {
   excellent_calendar::domain::Event event;
   event.id = "11111111-1111-4111-8111-111111111111";
@@ -499,9 +593,10 @@ excellent_calendar::domain::Recurrence stored_daily_recurrence() {
 
 void test_storage_v2_reload_and_prepared_journal_replay() {
   TemporaryDirectory directory;
+  prepare_v3_storage(directory.path());
   excellent_calendar::storage::json::JsonRecurringEventTransaction store(directory.path());
   auto initialized = store.initialize();
-  require(initialized.ok(), "v2 recurring store should initialize empty roots");
+  require(initialized.ok(), "v3 recurring store should initialize empty roots");
   auto committed = store.execute(
       "event_recurrence_and_first_reminder_create_or_update",
       "44444444-4444-4444-8444-444444444444",
@@ -547,7 +642,8 @@ void test_storage_v2_reload_and_prepared_journal_replay() {
   require(!interrupted_result.ok(), "simulated interruption should fail the active call");
 
   excellent_calendar::storage::json::AtomicJsonFileStore journal_store(directory.path());
-  auto journal = journal_store.read_json_file("workflow_transactions.json");
+  auto journal =
+      journal_store.read_json_file("calendar_workflow_transactions.json");
   require(journal.ok() && journal.value().has_value(),
           "interrupted workflow must retain one prepared journal record");
   const auto& transaction = journal.value()
@@ -560,17 +656,17 @@ void test_storage_v2_reload_and_prepared_journal_replay() {
   for (const auto& item : transaction.at("affected_stores").get<picojson::array>()) {
     affected.insert(item.get<std::string>());
   }
-  const std::set<std::string> logical_stores = {
-      "events", "recurrence_versions", "event_occurrence_states",
-      "reminders", "notifications", "reminder_recovery_batches"};
-  const auto& after_stores = transaction.at("intent")
-                                 .get<picojson::object>()
-                                 .at("after_stores")
-                                 .get<picojson::object>();
+  const std::set<std::string> logical_stores = {"events"};
+  const auto& after_stores =
+      transaction.at("after_stores").get<picojson::object>();
   std::set<std::string> after_store_keys;
   for (const auto& [name, _] : after_stores) after_store_keys.insert(name);
-  require(affected == logical_stores && after_store_keys == logical_stores,
-          "journal must use logical store names rather than storage file names");
+  require(affected == logical_stores && after_store_keys == logical_stores &&
+              transaction.at("before_generation")
+                      .get<picojson::object>()
+                      .at("events")
+                      .get<double>() == 1.0,
+          "v3 journal must freeze only changed Stores and their generations");
 
   excellent_calendar::storage::json::JsonRecurringEventTransaction recovered(directory.path());
   require(recovered.initialize().ok(), "prepared journal should replay on restart");
@@ -588,8 +684,9 @@ void test_v2_transaction_rejects_unprepared_v1_directory_without_partial_writes(
           "legacy v1 Event root should be materialized for safety test");
   excellent_calendar::storage::json::JsonRecurringEventTransaction v2(directory.path());
   auto initialized = v2.initialize();
-  require(!initialized.ok() && initialized.error().code == "STORAGE_DATA_CORRUPTED",
-          "the v2 transaction must reject v1 when runtime bootstrap was bypassed");
+  require(!initialized.ok() &&
+              initialized.error().code == "CALENDAR_WORKFLOW_RECOVERY_FAILED",
+          "a v3 transaction must reject v1 when Runtime bootstrap was bypassed");
   require(!std::filesystem::exists(directory.path() / "recurrence_versions.json") &&
               !std::filesystem::exists(directory.path() / "workflow_transactions.json"),
           "failed v1 preflight must not create any partial v2 stores");
@@ -606,12 +703,22 @@ void test_v2_runtime_discards_confirmed_v1_before_initialization() {
 
   auto initialized = excellent_calendar::boundary::api::initialize_recurring_runtime(
       active.string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
-  require(initialized.ok() && initialized.value().storage_format_version == 2,
-          "runtime should discard confirmed v1 and initialize an empty v2 store");
+  require(initialized.ok(), initialized.ok()
+                                ? ""
+                                : "v1-to-v3 runtime initialize failed: " +
+                                      initialized.error().code + " " +
+                                      initialized.error().message + " " +
+                                      (initialized.error().details.count("reason")
+                                           ? initialized.error().details.at("reason")
+                                           : std::string{}));
+  require(initialized.value().storage_format_version == 3,
+          "runtime should report Storage v3 after discarding confirmed v1");
   require(std::filesystem::is_directory(active) &&
               std::filesystem::exists(active / "recurrence_versions.json") &&
-              std::filesystem::exists(active / "workflow_transactions.json"),
-          "runtime should publish a complete v2 directory at the active path");
+              std::filesystem::exists(
+                  active / "calendar_workflow_transactions.json") &&
+              std::filesystem::exists(active / "storage_migrations.json"),
+          "runtime should publish a complete v3 directory at the active path");
 
   const auto prefix = active.filename().generic_string() + ".v1.archived.";
   for (const auto& entry : std::filesystem::directory_iterator(parent.path())) {
@@ -702,9 +809,9 @@ void test_recurring_runtime_initializes_pinned_tzdb_and_v2_services() {
   auto initialized = excellent_calendar::boundary::api::initialize_recurring_runtime(
       directory.path().string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
   require(initialized.ok() && initialized.value().initialized &&
-              initialized.value().storage_format_version == 2 &&
+              initialized.value().storage_format_version == 3 &&
               initialized.value().tzdb_version == "2026c",
-          "recurring runtime must initialize storage v2 after validating pinned TZDB");
+          "recurring runtime must initialize storage v3 after validating pinned TZDB");
   require(excellent_calendar::boundary::api::current_recurring_event_workflow_service() !=
                   nullptr &&
               excellent_calendar::boundary::api::
@@ -1434,14 +1541,16 @@ void test_delivery_finalize_recovers_prepared_workflow_after_restart() {
       interrupted_store,
       fixture.rolling,
       [&fixture]() { return fixture.now; },
-      excellent_calendar::common::generate_uuid_v4);
+      excellent_calendar::common::generate_uuid_v4,
+      fixture.resolver);
   auto interrupted = interrupted_delivery.finalize_delivery(
       excellent_calendar::application::FinalizeDeliveryCommand{
           *prepared.value().notification.delivery_attempt_id,
           "sent",
           std::nullopt,
           std::nullopt});
-  require(!interrupted.ok() && interrupted.error().code == "STORAGE_IO_ERROR",
+  require(!interrupted.ok() &&
+              interrupted.error().code == "CALENDAR_WORKFLOW_COMMIT_FAILED",
           "simulated process interruption should stop the active finalize call");
 
   excellent_calendar::storage::json::JsonRecurringEventTransaction recovered(
@@ -1505,7 +1614,7 @@ void test_recovery_window_is_inclusive_and_selects_global_newest_twenty() {
   const std::string request_id = excellent_calendar::common::generate_uuid_v4();
   auto planned = fixture.recovery->plan_recovery(
       excellent_calendar::application::PlanReminderRecoveryCommand{
-          request_id, "device_boot"});
+          request_id, "device_boot", "UTC"});
   require(planned.ok() && planned.value().detail_reminders.size() == 20U &&
               planned.value().batch.window_overflow_count == 2 &&
               planned.value().batch.summary_reminder_ids.size() == 2U,
@@ -1533,7 +1642,7 @@ void test_recovery_window_is_inclusive_and_selects_global_newest_twenty() {
 
   auto replay = fixture.recovery->plan_recovery(
       excellent_calendar::application::PlanReminderRecoveryCommand{
-          request_id, "device_boot"});
+          request_id, "device_boot", "UTC"});
   require(replay.ok() && replay.value().idempotent_replay &&
               replay.value().batch.id == planned.value().batch.id &&
               replay.value().prepared_attempt_resolutions.size() == 1U &&
@@ -1542,7 +1651,7 @@ void test_recovery_window_is_inclusive_and_selects_global_newest_twenty() {
           "same recovery request ID must replay the persisted batch");
   auto conflict = fixture.recovery->plan_recovery(
       excellent_calendar::application::PlanReminderRecoveryCommand{
-          excellent_calendar::common::generate_uuid_v4(), "app_start"});
+          excellent_calendar::common::generate_uuid_v4(), "app_start", "UTC"});
   require(!conflict.ok() && conflict.error().code == "RECOVERY_BATCH_CONFLICT",
           "a second request must not overlap an incomplete recovery batch");
 
@@ -1614,7 +1723,7 @@ void test_recovery_counts_old_unexpanded_occurrences_without_bulk_creation() {
   fixture.now = "2026-08-08T10:00:00Z";
   auto planned = fixture.recovery->plan_recovery(
       excellent_calendar::application::PlanReminderRecoveryCommand{
-          excellent_calendar::common::generate_uuid_v4(), "alarm_reconcile"});
+          excellent_calendar::common::generate_uuid_v4(), "alarm_reconcile", "UTC"});
   require(planned.ok() && planned.value().batch.older_skipped_occurrence_count == 2 &&
               planned.value().batch.older_skipped_reminder_count == 3 &&
               planned.value().detail_reminders.size() == 3U,
@@ -1676,7 +1785,7 @@ void test_recovery_expires_old_ordinary_reminder_and_abandons_its_attempt() {
   require(prepared.ok(), "ordinary Reminder should be prepared before it leaves the window");
   fixture.now = "2026-08-05T01:00:00Z";
   auto planned = fixture.recovery->plan_recovery(
-      {excellent_calendar::common::generate_uuid_v4(), "app_start"});
+      {excellent_calendar::common::generate_uuid_v4(), "app_start", "UTC"});
   require(planned.ok() && planned.value().detail_reminders.empty() &&
               planned.value().batch.older_skipped_occurrence_count == 0 &&
               planned.value().batch.older_skipped_reminder_count == 1 &&
@@ -1782,7 +1891,7 @@ void test_recovery_adopts_prepared_attempt_and_blocks_conflicting_mutations() {
           "a prepared attempt must prevent Reminder payload or schedule drift");
 
   auto planned = fixture.recovery->plan_recovery(
-      {excellent_calendar::common::generate_uuid_v4(), "app_start"});
+      {excellent_calendar::common::generate_uuid_v4(), "app_start", "UTC"});
   require(planned.ok() && planned.value().detail_reminders.size() == 1U &&
               planned.value().detail_reminders.front().id == reminder_id &&
               planned.value().prepared_attempt_resolutions.size() == 1U &&
@@ -2112,7 +2221,7 @@ void test_ring_recovery_grace_boundaries_and_prepared_attempt_arbitration() {
           "ring attempts should prepare before recovery arbitration");
 
   auto planned = fixture.recovery->plan_recovery(
-      {"55555555-5555-4555-8555-555555555555", "app_start"});
+      {"55555555-5555-4555-8555-555555555555", "app_start", "UTC"});
   require(planned.ok() && planned.value().batch.detail_reminder_ids.size() == 3U &&
               planned.value().batch.summary_reminder_ids ==
                   std::vector<std::string>{reminders[2].first} &&
@@ -2968,6 +3077,360 @@ void test_contract_v2_boundary_supports_kotlin_recurrence_flow() {
 
 }  // namespace
 
+void test_anniversary_finalize_uses_current_timezone_and_freezes_replay() {
+  WorkflowFixture fixture;
+  fixture.now = "2026-08-24T08:00:00Z";
+  auto seeded = seed_anniversary_reminders(
+      fixture, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", {2020, 8, 24},
+      {2026, 8, 24}, {{0, "09:00"}}, {"2026-08-24T00:00:00Z"});
+  const auto source = seeded.reminders.front();
+  auto prepared = fixture.delivery->prepare_delivery(
+      {"reminder", source.id, std::nullopt, "popup", source.remind_at});
+  require(prepared.ok(), "Anniversary Reminder should prepare without a timezone snapshot");
+  require(prepared.value().notification.kind == "reminder" &&
+              prepared.value().notification.body ==
+                  std::optional<std::string>("今天是“Project anniversary”"),
+          "on-time same-day Anniversary must prepare an ordinary reminder notification");
+  const auto prepared_json =
+      excellent_calendar::boundary::contract::prepare_delivery_response_v2_to_json(
+          prepared.value())
+          .get<picojson::object>();
+  const auto tap_payload =
+      prepared_json.at("tap_payload").get<picojson::object>();
+  require(tap_payload.at("route").get<std::string>() == "anniversary.detail" &&
+              tap_payload.at("target_type").get<std::string>() == "anniversary" &&
+              tap_payload.at("occurrence_key").get<std::string>() ==
+                  *source.occurrence_key,
+          "ordinary Anniversary prepared payload must route to its occurrence detail");
+  const auto attempt = *prepared.value().notification.delivery_attempt_id;
+
+  auto missing = fixture.delivery->finalize_delivery(
+      {attempt, "sent", std::nullopt, std::nullopt, std::nullopt});
+  require(!missing.ok() && missing.error().code == "CONTRACT_VALIDATION_FAILED" &&
+              missing.error().details.at("field") == "timezone",
+          "first Anniversary finalize must reject a missing current timezone");
+  auto invalid = fixture.delivery->finalize_delivery(
+      {attempt, "sent", std::nullopt, std::nullopt, "Europe/Not-A-Zone"});
+  require(!invalid.ok() && invalid.error().code == "TIMEZONE_ID_INVALID",
+          "first Anniversary finalize must reject an unknown IANA timezone");
+
+  fixture.now = "2026-08-24T08:05:00Z";
+  auto finalized = fixture.delivery->finalize_delivery(
+      {attempt, "sent", std::nullopt, std::nullopt, "Europe/London"});
+  require(finalized.ok() && finalized.value().successor.has_value() &&
+              finalized.value().successor->remind_at == "2027-08-24T08:00:00Z" &&
+              finalized.value().reminder->fulfillment_delivery_id ==
+                  finalized.value().notification.delivery_id,
+          "finalize must use the then-current timezone and persist fulfillment/successor");
+  const auto successor_id = finalized.value().successor->id;
+
+  auto replay = fixture.delivery->finalize_delivery(
+      {attempt, "sent", std::nullopt, std::nullopt, "Asia/Shanghai"});
+  require(replay.ok() && replay.value().idempotent_replay &&
+              replay.value().successor.has_value() &&
+              replay.value().successor->id == successor_id &&
+              replay.value().successor->remind_at == "2027-08-24T08:00:00Z",
+          "finalized replay must return the frozen successor without timezone reprojection");
+}
+
+void test_anniversary_advance_notification_uses_distance_copy() {
+  WorkflowFixture fixture;
+  fixture.now = "2026-08-24T08:00:02Z";
+  auto seeded = seed_anniversary_reminders(
+      fixture, "abababab-abab-4bab-8bab-abababababab", {2020, 8, 31},
+      {2026, 8, 31}, {{7, "16:00"}}, {"2026-08-24T08:00:00Z"});
+  const auto source = seeded.reminders.front();
+
+  auto prepared = fixture.delivery->prepare_delivery(
+      {"reminder", source.id, std::nullopt, "popup", source.remind_at});
+
+  require(prepared.ok() && prepared.value().notification.kind == "reminder" &&
+              prepared.value().notification.body ==
+                  std::optional<std::string>(
+                      "距离“Project anniversary”还有 7 天"),
+          "on-time advance Anniversary must prepare the frozen distance copy");
+}
+
+void test_anniversary_successor_resolves_dst_gap_and_fold() {
+  const auto run = [](const std::string& anniversary_id,
+                      const excellent_calendar::domain::LocalDate& source_date,
+                      const excellent_calendar::domain::LocalDate& occurrence_date,
+                      const std::string& remind_at,
+                      const std::string& expected_successor) {
+    WorkflowFixture fixture;
+    fixture.now = remind_at;
+    auto seeded = seed_anniversary_reminders(
+        fixture, anniversary_id, source_date, occurrence_date,
+        {{0, "01:30"}}, {remind_at});
+    auto prepared = fixture.delivery->prepare_delivery(
+        {"reminder", seeded.reminders.front().id, std::nullopt, "popup", remind_at});
+    require(prepared.ok(), "DST Anniversary Reminder should prepare");
+    auto finalized = fixture.delivery->finalize_delivery(
+        {*prepared.value().notification.delivery_attempt_id, "sent", std::nullopt,
+         std::nullopt, "Europe/London"});
+    require(finalized.ok() && finalized.value().successor.has_value() &&
+                finalized.value().successor->remind_at == expected_successor,
+            "Anniversary successor must apply the resolver's DST gap/fold policy");
+  };
+  run("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", {2020, 3, 29}, {2025, 3, 29},
+      "2025-03-29T00:00:00Z", "2026-03-29T01:00:00Z");
+  run("cccccccc-cccc-4ccc-8ccc-cccccccccccc", {2020, 10, 25}, {2025, 10, 25},
+      "2025-10-25T00:00:00Z", "2026-10-25T00:30:00Z");
+}
+
+void test_anniversary_finalize_journal_replay_keeps_frozen_timezone_result() {
+  WorkflowFixture fixture;
+  fixture.now = "2026-08-24T08:00:00Z";
+  auto seeded = seed_anniversary_reminders(
+      fixture, "90909090-9090-4090-8090-909090909090", {2020, 8, 24},
+      {2026, 8, 24}, {{0, "09:00"}}, {"2026-08-24T00:00:00Z"});
+  auto prepared = fixture.delivery->prepare_delivery(
+      {"reminder", seeded.reminders.front().id, std::nullopt, "popup",
+       seeded.reminders.front().remind_at});
+  require(prepared.ok(), "journal replay fixture must prepare an Anniversary attempt");
+
+  bool fail_once = true;
+  auto interrupted_store = std::make_shared<
+      excellent_calendar::storage::json::JsonRecurringEventTransaction>(
+      fixture.directory.path(),
+      [&fail_once](std::string_view phase) {
+        if (fail_once && phase == "after_prepare") {
+          fail_once = false;
+          return excellent_calendar::common::Result<excellent_calendar::common::Unit>::failure(
+              excellent_calendar::common::make_error(
+                  "STORAGE_IO_ERROR", "simulated Anniversary finalize interruption", {}, true));
+        }
+        return excellent_calendar::common::Result<excellent_calendar::common::Unit>::success(
+            excellent_calendar::common::Unit{});
+      });
+  excellent_calendar::application::RecurringReminderDeliveryWorkflowService interrupted(
+      interrupted_store, fixture.rolling, [&fixture]() { return fixture.now; },
+      excellent_calendar::common::generate_uuid_v4, fixture.resolver);
+  auto first = interrupted.finalize_delivery(
+      {*prepared.value().notification.delivery_attempt_id, "sent", std::nullopt,
+       std::nullopt, "Europe/London"});
+  require(!first.ok() &&
+              first.error().code == "CALENDAR_WORKFLOW_COMMIT_FAILED",
+          "failure after journal prepare must interrupt the active finalize call");
+
+  auto recovered_store = std::make_shared<
+      excellent_calendar::storage::json::JsonRecurringEventTransaction>(
+      fixture.directory.path());
+  excellent_calendar::application::RecurringReminderDeliveryWorkflowService recovered(
+      recovered_store, fixture.rolling, [&fixture]() { return fixture.now; },
+      excellent_calendar::common::generate_uuid_v4, fixture.resolver);
+  auto replay = recovered.finalize_delivery(
+      {*prepared.value().notification.delivery_attempt_id, "sent", std::nullopt,
+       std::nullopt, "Asia/Shanghai"});
+  require(replay.ok() && replay.value().idempotent_replay &&
+              replay.value().successor.has_value() &&
+              replay.value().successor->remind_at == "2027-08-24T08:00:00Z",
+          "journal recovery must replay the frozen London after-image without reprojecting");
+}
+
+void test_anniversary_finalize_failure_successor_rules() {
+  {
+    WorkflowFixture fixture;
+    fixture.now = "2026-08-24T08:00:00Z";
+    auto seeded = seed_anniversary_reminders(
+        fixture, "dddddddd-dddd-4ddd-8ddd-dddddddddddd", {2020, 8, 24},
+        {2026, 8, 24}, {{0, "09:00"}}, {"2026-08-24T00:00:00Z"});
+    auto prepared = fixture.delivery->prepare_delivery(
+        {"reminder", seeded.reminders.front().id, std::nullopt, "popup",
+         seeded.reminders.front().remind_at});
+    auto failed = fixture.delivery->finalize_delivery(
+        {*prepared.value().notification.delivery_attempt_id, "failed", "retryable",
+         "NOTIFICATION_DELIVERY_FAILED", "Asia/Shanghai"});
+    require(failed.ok() && failed.value().reminder->status == "pending" &&
+                !failed.value().successor.has_value(),
+            "retryable Anniversary failure must retain the obligation without successor");
+  }
+  {
+    WorkflowFixture fixture;
+    fixture.now = "2026-08-24T08:00:00Z";
+    auto seeded = seed_anniversary_reminders(
+        fixture, "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", {2020, 8, 24},
+        {2026, 8, 24}, {{0, "09:00"}}, {"2026-08-24T00:00:00Z"});
+    auto prepared = fixture.delivery->prepare_delivery(
+        {"reminder", seeded.reminders.front().id, std::nullopt, "popup",
+         seeded.reminders.front().remind_at});
+    auto failed = fixture.delivery->finalize_delivery(
+        {*prepared.value().notification.delivery_attempt_id, "failed", "permanent",
+         "EVENT_NOT_FOUND", "Asia/Shanghai"});
+    require(failed.ok() && failed.value().reminder->status == "failed" &&
+                failed.value().successor.has_value(),
+            "permanent Anniversary failure must terminate the occurrence and roll successor");
+  }
+}
+
+void test_anniversary_recovery_groups_and_finalizes_each_successor() {
+  WorkflowFixture fixture;
+  fixture.now = "2026-08-24T04:00:00Z";
+  auto seeded = seed_anniversary_reminders(
+      fixture, "ffffffff-ffff-4fff-8fff-ffffffffffff", {2020, 8, 24},
+      {2026, 8, 24}, {{1, "09:00"}, {2, "10:00"}},
+      {"2026-08-23T01:00:00Z", "2026-08-22T02:00:00Z"});
+  auto planned = fixture.recovery->plan_recovery(
+      {"12121212-1212-4212-8212-121212121212", "app_start", "Asia/Shanghai"});
+  require(planned.ok() && planned.value().detail_reminders.empty() &&
+              planned.value().batch.summary_reminder_ids.empty() &&
+              planned.value().anniversary_catch_up_groups.size() == 1U &&
+              planned.value().anniversary_catch_up_groups.front().covered_reminder_ids.size() == 2U,
+          "Recovery must freeze same-occurrence Anniversary members outside ordinary counts");
+  const auto group = planned.value().anniversary_catch_up_groups.front();
+  auto prepared = fixture.delivery->prepare_delivery(
+      {"anniversary_catch_up", std::nullopt, planned.value().batch.id, "popup",
+       std::nullopt, group.delivery_id});
+  require(prepared.ok() &&
+              prepared.value().notification.covered_reminder_ids == group.covered_reminder_ids,
+          "aggregate prepare must reload the frozen Recovery membership");
+  auto finalized = fixture.delivery->finalize_delivery(
+      {*prepared.value().notification.delivery_attempt_id, "sent", std::nullopt,
+       std::nullopt, "Asia/Shanghai"});
+  require(finalized.ok() && finalized.value().covered_reminders.size() == 2U &&
+              finalized.value().successors.size() == 2U &&
+              finalized.value().recovery_batch->status == "completed" &&
+              std::all_of(finalized.value().covered_reminders.begin(),
+                          finalized.value().covered_reminders.end(),
+                          [&](const auto& reminder) {
+                            return reminder.status == "sent" &&
+                                   reminder.fulfillment_delivery_id ==
+                                       finalized.value().notification.delivery_id;
+                          }),
+          "one aggregate delivery must fulfill every member and roll each template");
+  auto replay = fixture.delivery->finalize_delivery(
+      {*prepared.value().notification.delivery_attempt_id, "sent", std::nullopt,
+       std::nullopt, "Europe/London"});
+  require(replay.ok() && replay.value().idempotent_replay &&
+              replay.value().successors.size() == 2U &&
+              replay.value().successors[0].remind_at ==
+                  finalized.value().successors[0].remind_at &&
+              replay.value().successors[1].remind_at ==
+                  finalized.value().successors[1].remind_at,
+          "aggregate replay after timezone change must return frozen after-images");
+}
+
+void test_anniversary_recovery_expires_after_local_day_and_rolls() {
+  WorkflowFixture fixture;
+  fixture.now = "2026-08-24T00:00:00Z";
+  auto seeded = seed_anniversary_reminders(
+      fixture, "abababab-abab-4bab-8bab-abababababab", {2020, 8, 23},
+      {2026, 8, 23}, {{1, "09:00"}}, {"2026-08-22T01:00:00Z"});
+  auto planned = fixture.recovery->plan_recovery(
+      {"34343434-3434-4434-8434-343434343434", "device_boot", "Asia/Shanghai"});
+  require(planned.ok() && planned.value().anniversary_catch_up_groups.empty(),
+          "Anniversary occurrence past local next-day midnight must not catch up");
+  auto state = fixture.store->load();
+  const auto expired = std::find_if(
+      state.value().reminders.begin(), state.value().reminders.end(),
+      [&](const auto& reminder) { return reminder.id == seeded.reminders.front().id; });
+  const auto successor = std::find_if(
+      state.value().reminders.begin(), state.value().reminders.end(),
+      [&](const auto& reminder) {
+        return reminder.id != seeded.reminders.front().id &&
+               reminder.target_id == seeded.anniversary_id;
+      });
+  require(expired != state.value().reminders.end() && expired->status == "expired" &&
+              expired->expiration_reason ==
+                  std::optional<std::string>("anniversary_occurrence_elapsed") &&
+              successor != state.value().reminders.end() &&
+              successor->occurrence_date == std::optional<std::string>("2027-08-23") &&
+              successor->remind_at == "2027-08-22T01:00:00Z",
+           "Recovery expiry must use the request timezone and create the annual successor");
+}
+
+void test_anniversary_recovery_reprojects_open_reminders_for_current_timezone() {
+  WorkflowFixture fixture;
+  fixture.now = "2026-01-01T00:00:00Z";
+  auto seeded = seed_anniversary_reminders(
+      fixture, "cacacaca-caca-4aca-8aca-cacacacacaca", {2020, 8, 24},
+      {2026, 8, 24}, {{0, "09:00"}}, {"2026-08-24T01:00:00Z"});
+  const auto reminder_id = seeded.reminders.front().id;
+  const auto occurrence_key = seeded.reminders.front().occurrence_key;
+  const auto template_key = seeded.reminders.front().template_key;
+  auto scheduled = fixture.reminder_query->mark_scheduled(
+      {reminder_id, "2026-08-24T01:00:00Z", fixture.now});
+  require(scheduled.ok(), "timezone fixture must start from a scheduled Reminder");
+
+  auto planned = fixture.recovery->plan_recovery(
+      {"56565656-5656-4565-8565-565656565656", "alarm_reconcile",
+       "Europe/London"});
+  require(planned.ok(), "timezone recovery must reproject future Anniversary Reminders");
+  auto state = fixture.store->load();
+  const auto reminder = std::find_if(
+      state.value().reminders.begin(), state.value().reminders.end(),
+      [&](const auto& value) { return value.id == reminder_id; });
+  require(reminder != state.value().reminders.end() &&
+              reminder->remind_at == "2026-08-24T08:00:00Z" &&
+              reminder->status == "pending" && !reminder->scheduled_at.has_value() &&
+              reminder->occurrence_key == occurrence_key &&
+              reminder->template_key == template_key,
+          "timezone reprojection must preserve identity and invalidate the old schedule");
+
+  auto stale = fixture.delivery->prepare_delivery(
+      {"reminder", reminder_id, std::nullopt, "popup", "2026-08-24T01:00:00Z"});
+  require(!stale.ok() && stale.error().code == "REMINDER_NOT_DUE" &&
+              stale.error().details.at("expected_remind_at") ==
+                  "2026-08-24T08:00:00Z",
+          "an Alarm carrying the pre-change expected remind_at must be rejected");
+}
+
+void test_anniversary_timezone_reprojection_uses_dst_gap_and_fold_policy() {
+  const auto run = [](const std::string& anniversary_id,
+                      const excellent_calendar::domain::LocalDate& occurrence_date,
+                      const std::string& expected_remind_at) {
+    WorkflowFixture fixture;
+    fixture.now = "2026-01-01T00:00:00Z";
+    auto seeded = seed_anniversary_reminders(
+        fixture, anniversary_id, {2020, occurrence_date.month, occurrence_date.day},
+        occurrence_date, {{0, "01:30"}}, {"2026-01-02T00:00:00Z"});
+    auto planned = fixture.recovery->plan_recovery(
+        {excellent_calendar::common::generate_uuid_v4(), "alarm_reconcile",
+         "Europe/London"});
+    require(planned.ok(), "DST timezone recovery must succeed");
+    auto state = fixture.store->load();
+    const auto reminder = std::find_if(
+        state.value().reminders.begin(), state.value().reminders.end(),
+        [&](const auto& value) { return value.id == seeded.reminders.front().id; });
+    require(reminder != state.value().reminders.end() &&
+                reminder->remind_at == expected_remind_at,
+            "timezone reprojection must use the frozen DST gap/fold policy");
+  };
+  run("dbdbdbdb-dbdb-4bdb-8bdb-dbdbdbdbdbdb", {2026, 3, 29},
+      "2026-03-29T01:00:00Z");
+  run("ecececec-ecec-4ece-8ece-ecececececec", {2026, 10, 25},
+      "2026-10-25T00:30:00Z");
+}
+
+void test_timezone_boundary_shapes_are_strict() {
+  picojson::object finalize;
+  finalize["delivery_attempt_id"] =
+      picojson::value("56565656-5656-4565-8565-565656565656");
+  finalize["outcome"] = picojson::value("sent");
+  finalize["failure_class"] = picojson::value();
+  finalize["error_code"] = picojson::value();
+  finalize["timezone"] = picojson::value();
+  auto rejected_finalize = parse_native_v2(
+      excellent_calendar::boundary::api::finalize_recurring_reminder_delivery_v2(
+          picojson::value(finalize).serialize()));
+  require(!rejected_finalize.at("ok").get<bool>() &&
+              rejected_finalize.at("error").get<picojson::object>().at("code").get<std::string>() ==
+                  "CONTRACT_VALIDATION_FAILED",
+          "Finalize Boundary must reject explicit null timezone");
+
+  picojson::object recovery;
+  recovery["recovery_request_id"] =
+      picojson::value("78787878-7878-4787-8787-787878787878");
+  recovery["trigger_source"] = picojson::value("app_start");
+  auto rejected_recovery = parse_native_v2(
+      excellent_calendar::boundary::api::plan_recurring_reminder_recovery_v2(
+          picojson::value(recovery).serialize()));
+  require(!rejected_recovery.at("ok").get<bool>() &&
+              rejected_recovery.at("error").get<picojson::object>().at("code").get<std::string>() ==
+                  "CONTRACT_VALIDATION_FAILED",
+          "Recovery Boundary must require timezone");
+}
+
 int main() {
   try {
     test_contract_uuid_v5_vectors();
@@ -3010,6 +3473,16 @@ int main() {
     test_ordinary_ring_crud_reload_and_method_validation();
     test_ring_scheduler_delivery_snooze_replay_and_transaction_recovery();
     test_ring_recovery_grace_boundaries_and_prepared_attempt_arbitration();
+    test_anniversary_finalize_uses_current_timezone_and_freezes_replay();
+    test_anniversary_advance_notification_uses_distance_copy();
+    test_anniversary_successor_resolves_dst_gap_and_fold();
+    test_anniversary_finalize_journal_replay_keeps_frozen_timezone_result();
+    test_anniversary_finalize_failure_successor_rules();
+    test_anniversary_recovery_groups_and_finalizes_each_successor();
+    test_anniversary_recovery_expires_after_local_day_and_rolls();
+    test_anniversary_recovery_reprojects_open_reminders_for_current_timezone();
+    test_anniversary_timezone_reprojection_uses_dst_gap_and_fold_policy();
+    test_timezone_boundary_shapes_are_strict();
     test_reminderless_series_reopen_is_idempotent();
     test_occurrence_query_pages_and_attaches_sparse_state();
     test_event_detail_aggregate_uses_one_storage_snapshot();

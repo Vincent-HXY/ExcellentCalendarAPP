@@ -8,6 +8,7 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeContractVi
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2ReminderItem
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2SchedulableBatch
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2SchedulableCursor
@@ -30,14 +31,100 @@ class V2ReminderScheduleCoordinator(
     private val elapsedRealtime: () -> Long = { android.os.SystemClock.elapsedRealtime() },
 ) : ReminderScheduleReconciler {
     override fun reconcile(request: ReconcileReminderScheduleContract, executionBudgetMillis: Long): NativeResultContract =
+        reconcileInternal(request, executionBudgetMillis) { }
+
+    override fun reconcileWithOutcome(
+        request: ReconcileReminderScheduleContract,
+        executionBudgetMillis: Long,
+    ): ReminderScheduleReconciliation {
+        var actualMode: ReminderScheduleMode? = null
+        val result = reconcileInternal(request, executionBudgetMillis) { mode -> actualMode = mode }
+        return ReminderScheduleReconciliation(result, actualMode)
+    }
+
+    override fun reconcileDispatcherAlarm(
+        plannedAt: String,
+        executionBudgetMillis: Long,
+    ): NativeResultContract = reconcileInternal(
+        ReconcileReminderScheduleContract(ReminderScheduleTrigger.AlarmFired, force = true),
+        executionBudgetMillis,
+        dispatcherPlannedAt = plannedAt,
+    ) { }
+
+    private fun reconcileInternal(
+        request: ReconcileReminderScheduleContract,
+        executionBudgetMillis: Long,
+        dispatcherPlannedAt: String? = null,
+        onScheduled: (ReminderScheduleMode) -> Unit,
+    ): NativeResultContract =
         ProcessLock.withLock {
             val startedAt = elapsedRealtime()
             val deadline = if (executionBudgetMillis == Long.MAX_VALUE) Long.MAX_VALUE else startedAt + executionBudgetMillis
             if (elapsedRealtime() >= deadline) return@withLock continuationResponse()
 
+            var processed = 0
+            val failedReminderIds = linkedSetOf<String>()
+            var continuationEnqueued = false
+
+            if (dispatcherPlannedAt != null) {
+                var plannedCursor: V2SchedulableCursor? = null
+                var plannedDeliveryNeedsRetry = false
+                do {
+                    val listed = listSchedulable(
+                        fromAt = dispatcherPlannedAt,
+                        toAt = dispatcherPlannedAt,
+                        cursor = plannedCursor,
+                        includeScheduled = true,
+                        limit = DeliveryBatchSize,
+                    )
+                    if (!listed.ok) return@withLock listed
+                    val batch = V2SchedulableBatch.fromData(listed.data)
+                    for (reminder in batch.reminders) {
+                        if (elapsedRealtime() >= deadline) {
+                            return@withLock continuationResponse(
+                                processed,
+                                failedReminderIds,
+                                continuationEnqueued,
+                            )
+                        }
+                        val delivered = deliveryService.deliverReminder(
+                            reminder.reminderId,
+                            reminder.remindAt,
+                            null,
+                            reminder.method,
+                        )
+                        if (!delivered.ok) {
+                            failedReminderIds += reminder.reminderId
+                            if (delivered.error?.retryable == true) {
+                                plannedDeliveryNeedsRetry = true
+                                if (!continuationEnqueued) continuationEnqueued = enqueueContinuation()
+                            }
+                            logger.log(
+                                "reminder.deliver_alarm_plan",
+                                reminder.reminderId,
+                                "failed code=${delivered.error?.code ?: "UNKNOWN"} " +
+                                    "retryable=${delivered.error?.retryable == true} planned_at=$dispatcherPlannedAt",
+                            )
+                            continue
+                        }
+                        processed += 1
+                    }
+                    plannedCursor = batch.nextCursor
+                } while (plannedCursor != null)
+
+                // Keep a failed on-time Reminder out of Recovery; otherwise it could be
+                // reclassified as a catch-up delivery in the same Alarm execution.
+                if (plannedDeliveryNeedsRetry) {
+                    return@withLock continuationResponse(
+                        processed,
+                        failedReminderIds,
+                        continuationEnqueued,
+                    )
+                }
+            }
+
             val recovered = recoveryCoordinator.recover(request.trigger) { elapsedRealtime() < deadline }
             val recoveryFailure: NativeResultContract?
-            var continuationEnqueued = false
             if (!recovered.ok) {
                 if (recovered.error?.retryable == true) continuationEnqueued = enqueueContinuation()
                 logger.log(
@@ -56,8 +143,6 @@ class V2ReminderScheduleCoordinator(
             }
 
             val currentNow = nowUtc()
-            var processed = 0
-            val failedReminderIds = linkedSetOf<String>()
             var cursor: V2SchedulableCursor? = null
             do {
                 val listed = listSchedulable(toAt = currentNow, cursor = cursor, includeScheduled = true, limit = DeliveryBatchSize)
@@ -104,7 +189,7 @@ class V2ReminderScheduleCoordinator(
                         is CancelResult.Failure -> NativeResultContract.failure(cancelled.code, cancelled.message, retryable = cancelled.retryable, contractVersion = 2)
                     }
                 }
-                when (val scheduled = alarmScheduler.schedule(head.remindAt)) {
+                val scheduleMode = when (val scheduled = alarmScheduler.schedule(head.remindAt, allowApproximate = head.method == "popup")) {
                     is ScheduleResult.Failure -> return@withLock NativeResultContract.failure(
                         scheduled.code,
                         scheduled.message,
@@ -112,24 +197,25 @@ class V2ReminderScheduleCoordinator(
                         retryable = scheduled.retryable,
                         contractVersion = 2,
                     )
-                    ScheduleResult.Success -> {
-                        val marked = markScheduled(head)
-                        if (marked.ok) {
-                            logger.log("reminder.reconcile_schedule", head.reminderId, "trigger_source=${request.trigger.wireValue} next_remind_at=${head.remindAt}")
-                            return@withLock recoveryFailure ?: success(
-                                "scheduled",
-                                head.remindAt,
-                                processed,
-                                failedReminderIds,
-                                continuationEnqueued,
-                            )
-                        }
-                        if (marked.error?.code != NativeErrorCodes.ReminderScheduleConflict || conflictRetries++ >= MaxScheduleConflictRetries) {
-                            return@withLock marked
-                        }
-                        logger.log("reminder.reconcile_schedule", head.reminderId, "schedule CAS conflict; reconciling authoritative head")
-                    }
+                    ScheduleResult.Success -> ReminderScheduleMode.Exact
+                    ScheduleResult.ApproximateSuccess -> ReminderScheduleMode.Approximate
                 }
+                val marked = markScheduled(head)
+                if (marked.ok) {
+                    onScheduled(scheduleMode)
+                    logger.log("reminder.reconcile_schedule", head.reminderId, "trigger_source=${request.trigger.wireValue} next_remind_at=${head.remindAt}")
+                    return@withLock recoveryFailure ?: success(
+                        "scheduled",
+                        head.remindAt,
+                        processed,
+                        failedReminderIds,
+                        continuationEnqueued,
+                    )
+                }
+                if (marked.error?.code != NativeErrorCodes.ReminderScheduleConflict || conflictRetries++ >= MaxScheduleConflictRetries) {
+                    return@withLock marked
+                }
+                logger.log("reminder.reconcile_schedule", head.reminderId, "schedule CAS conflict; reconciling authoritative head")
             }
             @Suppress("UNREACHABLE_CODE")
             error("Reminder schedule loop terminated unexpectedly.")

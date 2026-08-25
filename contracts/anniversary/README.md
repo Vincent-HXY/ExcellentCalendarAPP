@@ -1,12 +1,12 @@
 # Anniversary Reminder / Occurrence Contract R1
 
-Status: Frozen design / implementation blocked
+Status: Integrated / active
 
 Native envelope: v2
 
-Calendar Core JSON target: v3 (`planned`, `blocked`)
+Calendar Core JSON: v3 (`integrated`, `active`)
 
-本包冻结 Anniversary Reminder、date-only occurrence 查询、catch-up 聚合 delivery 与 Storage migration 的跨层真相源。Schema 冻结不表示生产能力已经接线；`method_channels.yaml` 与 `native_calls.yaml` 的受影响方法在三层实现和真实验收前保持 blocked。
+本包是 Anniversary Reminder、date-only occurrence 查询、catch-up 聚合 delivery 与 Storage migration 的跨层真相源。Flutter、Kotlin/JNI、C++ 与 Storage v3 已完成正式接线，正常到点通知、持久化普通投递类型、年度 successor、点击去重和完整 Native 更新链已通过 realme Android 13 验证。经产品负责人 2026-08-25 明确批准，`method_channels.yaml` 与 `native_calls.yaml` 的八项 Anniversary 能力统一为 `integrated` / `active`；其余设备矩阵作为已接受但未验证的残余风险继续跟踪。
 
 ## Stable schema IDs
 
@@ -33,6 +33,7 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 | Payload | Missing | Explicit `null` | Empty array / false |
 | --- | --- | --- | --- |
 | Create `reminder_plan` | 仅为旧 v2 writer 兼容：关闭且空模板 | 非法 | `templates=[]` 合法；`reminders_enabled=false` 不物化任务 |
+| Update `expected_updated_at` | 非法；不允许无版本覆盖 | 非法 | 必须原样复制详情响应的 `updated_at` |
 | Update `reminder_plan` | 保留总开关与全部模板 | 非法 | `templates=[]` 删除全部模板；false + 非空模板表示暂停并保留 |
 | Template `is_enabled` | 非法 | 非法 | false 保留模板但不物化任务 |
 | Occurrence filters | 字段必须出现 | 非法 | 空数组表示不筛选 |
@@ -45,12 +46,12 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 
 | Public MethodChannel | Kotlin 行为 | Native call | Request | Public / native response | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| `anniversary.create` | 调 Native commit，成功后 reconcile 并包装 capability | 同名 | `create_anniversary_request` | mutation / detail | implemented_unintegrated, blocked |
-| `anniversary.update` | 同上；省略 plan 保留，传 plan 整体替换 | 同名 | `update_anniversary_request` | mutation / detail | implemented_unintegrated, blocked |
-| `anniversary.delete` | commit 软删除与未来任务取消，之后 reconcile | 同名 | `delete_anniversary_request` | delete operation / delete commit | implemented_unintegrated, blocked |
-| `anniversary.detail` | 组合 C++ detail 与当前 Android capability | 同名 | `get_anniversary_detail_request` | detail view / detail | implemented_unintegrated, blocked |
-| `anniversary.set_reminders_enabled` | commit pause/resume，之后 reconcile | 同名 | `set_anniversary_reminders_enabled_request` | mutation / detail | planned, blocked |
-| `anniversary.list_occurrences` | 严格透传一页 | 同名 | `list_anniversary_occurrences_request` | occurrence page | planned, blocked |
+| `anniversary.create` | 调 Native commit，成功后 reconcile 并包装 capability | 同名 | `create_anniversary_request` | mutation / detail | integrated, blocked |
+| `anniversary.update` | 同上；必须携带详情快照的 `expected_updated_at`，省略 plan 保留，传 plan 整体替换 | 同名 | `update_anniversary_request` | mutation / detail | integrated, blocked |
+| `anniversary.delete` | commit 软删除与未来任务取消，之后 reconcile | 同名 | `delete_anniversary_request` | delete operation / delete commit | integrated, blocked |
+| `anniversary.detail` | 组合 C++ detail 与当前 Android capability | 同名 | `get_anniversary_detail_request` | detail view / detail | integrated, blocked |
+| `anniversary.set_reminders_enabled` | commit pause/resume，之后 reconcile | 同名 | `set_anniversary_reminders_enabled_request` | mutation / detail | integrated, blocked |
+| `anniversary.list_occurrences` | 严格透传一页 | 同名 | `list_anniversary_occurrences_request` | occurrence page | integrated, blocked |
 
 `reminder.prepare_delivery/finalize_delivery/plan_recovery` 继续是 Kotlin 内部调用，不暴露给 Flutter。Kotlin 不生成 occurrence/template/reminder/delivery UUID，不重算 membership、72 小时窗口、Ring 五分钟边界或 Anniversary 日末边界。
 
@@ -75,6 +76,7 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 | 场景 | Stable code / response |
 | --- | --- |
 | 模板 shape 非法 | `ANNIVERSARY_REMINDER_CONFIG_INVALID` |
+| Update 所见 `updated_at` 已过期 | `ANNIVERSARY_UPDATE_CONFLICT`；`data=null`、`retryable=false`、本次零写入，用户刷新详情后才能重新提交 |
 | 重复 / 超过五条 | `ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE` / `ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED` |
 | occurrence range/filter | `ANNIVERSARY_OCCURRENCE_RANGE_INVALID` / `...TOO_LARGE` / `...FILTER_INVALID` |
 | cursor | `ANNIVERSARY_OCCURRENCE_CURSOR_INVALID` / `...CURSOR_EXPIRED` |
@@ -89,6 +91,7 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 
 | 定义 | Writer owner | Reader owner |
 | --- | --- | --- |
+| Update 并发版本令牌 | C++ Anniversary response 返回 `updated_at`；Flutter 只原样回传 | Kotlin validator、C++ boundary/workflow 在同一逻辑事务比较 |
 | Reminder plan / template | Flutter request mapper | Kotlin validator、C++ boundary/domain/storage |
 | occurrence page/cursor | C++ query service | Kotlin passthrough、Dart gateway/application |
 | Reminder target branch | C++ workflow/storage | C++ scheduler query、Kotlin contract/scheduler；Flutter 仅必要投影 |
@@ -112,10 +115,10 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 | §5 身份与时间 | 四个 namespace、canonical names、golden vectors、DST policy | 三层共同消费 |
 | §6 Reminder/Notification | target-specific `oneOf`、catch-up attempt、fulfillment 审计 | Kotlin、C++ |
 | §7 Workflow/Repository | ADR、v3 shared coordinator、commit-before-reconcile response | Kotlin、C++ |
-| §8.3 errors | 15 个稳定错误/部分成功元数据 | 三层映射 |
+| §8.3 errors | 16 个稳定错误/部分成功元数据 | 三层映射 |
 | §8.4 compatibility | `contracts/README.md` 两张矩阵、Storage v2→v3 连续迁移 | 三层同 APK、C++ Storage |
 | §12.1 | Anniversary + Ring 回归 manifests、semantic/storage vectors、validator | 三层测试直接复用 |
-| §14～17 门禁 | 能力维持 blocked；激活条件写入 Storage 与能力图 | 最终集成 owner |
+| §14～17 门禁 | 代码与 Storage v3 已激活；Anniversary R1 经负责人风险接受后发布，未覆盖设备矩阵继续明确标记为未验证 | 最终集成 owner |
 
 ## Fixtures and validation
 
@@ -125,4 +128,4 @@ Calendar Core JSON target: v3 (`planned`, `blocked`)
 - v2→v3 字段保留 golden：`storage_v2_to_v3.golden.json`。
 - 自举验证入口：`python contracts/run_anniversary_r1_validation.py`。它按 `requirements-validation.txt` 把 `jsonschema`、`PyYAML` 与 IANA `tzdata` 安装到系统临时缓存后执行门禁；这些包不是产品依赖。依赖已准备的环境也可直接运行 `python contracts/validate_anniversary_r1.py`。
 
-激活前，各语言必须把同一 fixtures 作为独立 round-trip/negative tests；Schema parse 不能替代真实 C++ migration、JNI、APK、Alarm/Notification 或真机验证。
+各语言继续把同一 fixtures 作为独立 round-trip/negative tests；Schema parse 不能替代真实 C++ migration、JNI、APK、Alarm/Notification 或真机验证。

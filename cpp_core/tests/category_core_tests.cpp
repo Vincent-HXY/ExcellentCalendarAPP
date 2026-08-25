@@ -917,12 +917,20 @@ void test_rollback_phase_failures_recover_across_read_and_runtime() {
               excellent_calendar::boundary::api::list_categories_v2("{}"),
               phase + " runtime list"),
           phase + " runtime list"));
+      picojson::value migrated_category_root;
+      require(picojson::parse(
+                  migrated_category_root,
+                  read_file(directory.path() / "categories.json"))
+                  .empty(),
+              phase + " runtime migration must leave valid Category JSON");
       require(listed.at("items").get<picojson::array>().size() == 1U &&
-                  read_file(directory.path() / "categories.json") == previous &&
+                  migrated_category_root.get<picojson::object>()
+                          .at("storage_version")
+                          .get<double>() == 3.0 &&
                   !recovery_artifact_exists(directory.path() /
                                             "categories.json"),
               phase +
-                  " runtime rebuild must recover the exact previous snapshot");
+                  " runtime rebuild must recover v2 first and then migrate it to v3");
     }
   }
 }
@@ -1142,16 +1150,21 @@ void test_additive_runtime_initialization_preserves_existing_v2_data() {
 
   require(std::filesystem::remove(directory.path() / "categories.json"),
           "additive runtime fixture must remove only categories.json");
+  const auto missing_v3 = parse_native_result(
+      initialize_runtime_v2_json(picojson::value(initialize).serialize()),
+      "missing v3 Category runtime reinitialize");
+  require_failure(missing_v3, "STORAGE_DATA_CORRUPTED",
+                  "missing v3 Category runtime reinitialize");
+  require(!std::filesystem::exists(directory.path() / "categories.json") &&
+              read_file(directory.path() / "events.json") == events_before,
+          "a missing Store in a committed v3 directory must fail without rewriting data");
+  write_file(directory.path() / "categories.json",
+             R"({"categories":[],"storage_version":3})");
   require_success(
       parse_native_result(
           initialize_runtime_v2_json(picojson::value(initialize).serialize()),
-          "additive runtime reinitialize"),
-      "additive runtime reinitialize");
-  require(read_file(directory.path() / "categories.json") ==
-                  R"({"categories":[],"storage_version":2})" &&
-              read_file(directory.path() / "events.json") == events_before,
-          "missing Category store must be added empty without rewriting Event "
-          "storage");
+          "restored v3 Category runtime reinitialize"),
+      "restored v3 Category runtime reinitialize");
   picojson::object detail_request;
   detail_request["id"] = picojson::value(event_id);
   const auto &detail = require_success(
@@ -1168,7 +1181,7 @@ void test_additive_runtime_initialization_preserves_existing_v2_data() {
 
   const auto category_path = directory.path() / "categories.json";
   const std::string corrupted =
-      R"({"categories":[],"storage_version":2,"unknown":true})";
+      R"({"categories":[],"storage_version":3,"unknown":true})";
   write_file(category_path, corrupted);
   const auto failed = parse_native_result(
       initialize_runtime_v2_json(picojson::value(initialize).serialize()),

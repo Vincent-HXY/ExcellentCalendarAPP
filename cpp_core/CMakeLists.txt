@@ -32,6 +32,7 @@ endif()
 add_library(
     excellent_calendar_core
     STATIC
+    src/application/anniversary_reminder_projection.cpp
     src/application/anniversary_query_service.cpp
     src/application/anniversary_workflow_service.cpp
     src/application/category_service.cpp
@@ -95,6 +96,8 @@ add_library(
     src/storage/json/anniversary_json_codec.cpp
     src/storage/json/category_json_codec.cpp
     src/storage/json/calendar_core_v2_storage_bootstrap.cpp
+    src/storage/json/calendar_core_v3_storage_bootstrap.cpp
+    src/storage/json/calendar_workflow_coordinator.cpp
     src/storage/json/json_event_repository.cpp
     src/storage/json/json_anniversary_transaction.cpp
     src/storage/json/json_category_repository.cpp
@@ -229,6 +232,28 @@ if(EXCELLENT_CALENDAR_BUILD_TESTS)
         COMMAND excellent_calendar_category_tests
     )
 
+    add_executable(
+        excellent_calendar_storage_v3_tests
+        tests/storage_v3_tests.cpp
+    )
+
+    target_link_libraries(
+        excellent_calendar_storage_v3_tests
+        PRIVATE
+        excellent_calendar_core
+    )
+
+    target_compile_definitions(
+        excellent_calendar_storage_v3_tests
+        PRIVATE
+        EXCELLENT_CALENDAR_STORAGE_V3_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/../contracts/fixtures/anniversary/storage_v2_to_v3.golden.json"
+    )
+
+    add_test(
+        NAME excellent_calendar_storage_v3_tests
+        COMMAND excellent_calendar_storage_v3_tests
+    )
+
     add_custom_target(
         excellent_calendar_check
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
@@ -239,6 +264,7 @@ if(EXCELLENT_CALENDAR_BUILD_TESTS)
         excellent_calendar_boundary_v2_tests
         excellent_calendar_anniversary_tests
         excellent_calendar_category_tests
+        excellent_calendar_storage_v3_tests
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         USES_TERMINAL
     )

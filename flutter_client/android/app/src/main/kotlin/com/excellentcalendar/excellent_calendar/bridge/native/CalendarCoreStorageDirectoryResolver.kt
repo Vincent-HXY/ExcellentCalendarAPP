@@ -1,18 +1,29 @@
 package com.excellentcalendar.excellent_calendar.bridge.native
 
+import com.excellentcalendar.excellent_calendar.BuildConfig
 import java.io.File
 
 /**
  * Resolves the Android private directory used by Calendar Core JSON storage.
  *
- * V1 data is not preserved: the historical "test_storage_json" directory is no
- * longer migrated and is not a data source. V2 is the only active writer and
- * uses "calendar_core_storage_json".
+ * The historical "test_storage_json" directory is no longer a data source.
+ * Storage v3 migrates the formal v2 directory in place and remains the only
+ * writer of "calendar_core_storage_json".
  */
 internal object CalendarCoreStorageDirectoryResolver {
-    private const val LocalStorageDirectoryName = "local_storage"
-    private const val CurrentStorageDirectoryName = "calendar_core_storage_json"
+    fun resolve(
+        filesDir: File,
+        deviceTest: Boolean = BuildConfig.CALENDAR_CORE_DEVICE_TEST,
+    ): File = CalendarCoreStorageLayout.resolve(filesDir, deviceTest)
+}
 
-    fun resolve(filesDir: File): File =
-        File(File(filesDir, LocalStorageDirectoryName), CurrentStorageDirectoryName)
+internal object CalendarCoreStorageLayout {
+    private const val LocalStorageDirectoryName = "local_storage"
+    private const val ProductionStorageDirectoryName = "calendar_core_storage_json"
+    private const val DeviceTestStorageDirectoryName = "calendar_core_device_test_storage_json"
+
+    fun resolve(filesDir: File, deviceTest: Boolean): File = File(
+        File(filesDir, LocalStorageDirectoryName),
+        if (deviceTest) DeviceTestStorageDirectoryName else ProductionStorageDirectoryName,
+    )
 }

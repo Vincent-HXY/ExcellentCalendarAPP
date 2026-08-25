@@ -8,6 +8,8 @@ import com.excellentcalendar.excellent_calendar.android.notification.AndroidNoti
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationPermissionManager
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationRuntime
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
+import com.excellentcalendar.excellent_calendar.bridge.channel.AnniversaryCapabilityProvider
+import com.excellentcalendar.excellent_calendar.bridge.channel.AnniversaryCapabilitySnapshot
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
 import com.excellentcalendar.excellent_calendar.bridge.native.AndroidNativeBridgeFactory
@@ -100,6 +102,12 @@ class MainActivity : FlutterActivity() {
             permissions = permissionManager,
             tapStore = AndroidNotificationRuntime.tapPayloadStore,
             captureLaunchPayload = { AndroidNotificationRuntime.handleIntent(intent) },
+            onPermissionResult = {
+                com.excellentcalendar.excellent_calendar.android.alarm.ReminderWorkScheduler.enqueue(
+                    applicationContext,
+                    ReminderScheduleTrigger.ManualRetry,
+                )
+            },
         )
         val pendingScheduleService = PendingReminderScheduleService(
             nativeBridge = nativeBridge,
@@ -127,6 +135,16 @@ class MainActivity : FlutterActivity() {
                 com.excellentcalendar.excellent_calendar.android.alarm.ReminderWorkScheduler.enqueueContinuation(
                     applicationContext,
                 )
+            },
+            anniversaryCapabilityProvider = AnniversaryCapabilityProvider {
+                permissionManager.status().let { snapshot ->
+                    AnniversaryCapabilitySnapshot(
+                        notificationPermissionStatus = snapshot.notificationPermission,
+                        exactAlarmPermissionStatus = snapshot.exactAlarmPermission,
+                        canPostNotifications = snapshot.canPostNotifications,
+                        canScheduleExactAlarms = snapshot.canScheduleExactAlarms,
+                    )
+                }
             },
         )
         nativeMethodChannelHandler = handler

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../application/anniversary/anniversary_form_controller.dart';
@@ -11,6 +13,8 @@ class AnniversaryFormFields extends StatelessWidget {
     required this.titleController,
     required this.noteController,
     required this.onPickDate,
+    required this.onAddCustomReminder,
+    required this.onEditReminder,
     super.key,
   });
 
@@ -18,6 +22,8 @@ class AnniversaryFormFields extends StatelessWidget {
   final TextEditingController titleController;
   final TextEditingController noteController;
   final VoidCallback onPickDate;
+  final VoidCallback onAddCustomReminder;
+  final ValueChanged<int> onEditReminder;
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +38,203 @@ class AnniversaryFormFields extends StatelessWidget {
         const SizedBox(height: AnniversarySpacing.sectionGap),
         _ScheduleSection(controller: controller),
         const SizedBox(height: AnniversarySpacing.sectionGap),
+        _ReminderSection(
+          controller: controller,
+          onAddCustomReminder: onAddCustomReminder,
+          onEditReminder: onEditReminder,
+        ),
+        const SizedBox(height: AnniversarySpacing.sectionGap),
         _DetailsSection(controller: controller, noteController: noteController),
       ],
+    );
+  }
+}
+
+class _ReminderSection extends StatelessWidget {
+  const _ReminderSection({
+    required this.controller,
+    required this.onAddCustomReminder,
+    required this.onEditReminder,
+  });
+
+  final AnniversaryFormController controller;
+  final VoidCallback onAddCustomReminder;
+  final ValueChanged<int> onEditReminder;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnniversaryFormSection(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SwitchListTile.adaptive(
+            key: const ValueKey('anniversary-reminders-switch'),
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(
+              Icons.notifications_active_outlined,
+              color: AnniversaryColors.primaryTeal,
+            ),
+            title: const Text(
+              '纪念日提醒',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text('关闭会暂停提醒，但保留下面的配置'),
+            value: controller.remindersEnabled,
+            activeTrackColor: AnniversaryColors.primaryTeal,
+            onChanged: controller.isSubmitting
+                ? null
+                : (value) => unawaited(controller.setRemindersEnabled(value)),
+          ),
+          if (controller.remindersEnabled ||
+              controller.reminders.isNotEmpty) ...[
+            const _SectionDivider(),
+            const Text(
+              '快捷添加（默认 09:00）',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final offset in AnniversaryReminderOffset.values)
+                  ActionChip(
+                    key: ValueKey(
+                      'anniversary-reminder-quick-${offset.advanceDays}',
+                    ),
+                    avatar: const Icon(Icons.add_alarm_rounded, size: 18),
+                    label: Text(_quickLabel(offset.advanceDays)),
+                    onPressed: controller.reminders.length >= 5
+                        ? null
+                        : () => controller.addReminder(
+                            ReminderDraft(advanceDays: offset.advanceDays),
+                          ),
+                  ),
+                ActionChip(
+                  key: const ValueKey('anniversary-reminder-custom'),
+                  avatar: const Icon(Icons.tune_rounded, size: 18),
+                  label: const Text('自定义'),
+                  onPressed: controller.reminders.length >= 5
+                      ? null
+                      : onAddCustomReminder,
+                ),
+              ],
+            ),
+            if (controller.reminders.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              for (final entry in controller.reminders.indexed)
+                _ReminderTemplateTile(
+                  key: ValueKey(
+                    entry.$2.templateKey ?? 'draft-${entry.$2.identityTuple}',
+                  ),
+                  reminder: entry.$2,
+                  index: entry.$1,
+                  onEdit: onEditReminder,
+                  onEnabledChanged: controller.setReminderItemEnabled,
+                  onDelete: controller.removeReminder,
+                ),
+            ],
+          ],
+          if (controller.reminderCapabilityPhase ==
+              AnniversaryReminderCapabilityPhase.checking) ...[
+            const SizedBox(height: 12),
+            const LinearProgressIndicator(
+              minHeight: 2,
+              color: AnniversaryColors.primaryTeal,
+            ),
+          ],
+          if (controller.reminderCapabilityMessage != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 20,
+                  color: AnniversaryColors.secondaryText,
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Text(controller.reminderCapabilityMessage!)),
+                if (controller.permissionStatus != null)
+                  TextButton(
+                    onPressed: () =>
+                        unawaited(controller.openReminderSettings()),
+                    child: const Text('去设置'),
+                  ),
+              ],
+            ),
+          ],
+          if (controller.reminderError != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              controller.reminderError!,
+              key: const ValueKey('anniversary-reminder-error'),
+              style: const TextStyle(
+                color: AnniversaryColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _quickLabel(int days) => switch (days) {
+    0 => '当天',
+    1 => '提前 1 天',
+    _ => '提前 $days 天',
+  };
+}
+
+class _ReminderTemplateTile extends StatelessWidget {
+  const _ReminderTemplateTile({
+    required this.reminder,
+    required this.index,
+    required this.onEdit,
+    required this.onEnabledChanged,
+    required this.onDelete,
+    super.key,
+  });
+
+  final ReminderDraft reminder;
+  final int index;
+  final ValueChanged<int> onEdit;
+  final void Function(int index, bool value) onEnabledChanged;
+  final ValueChanged<int> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final days = reminder.advanceDays == 0
+        ? '当天'
+        : '提前 ${reminder.advanceDays} 天';
+    return Semantics(
+      label: '$days ${reminder.localTime.wireValue} 弹窗提醒',
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Switch.adaptive(
+          value: reminder.isEnabled,
+          activeTrackColor: AnniversaryColors.primaryTeal,
+          onChanged: (value) => onEnabledChanged(index, value),
+        ),
+        title: Text('$days · ${reminder.localTime.wireValue}'),
+        subtitle: const Text('弹窗提醒 · 跟随设备时区'),
+        trailing: Wrap(
+          spacing: 0,
+          children: [
+            IconButton(
+              tooltip: '修改提醒',
+              onPressed: () => onEdit(index),
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              tooltip: '删除提醒',
+              onPressed: () => onDelete(index),
+              icon: const Icon(Icons.delete_outline_rounded),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

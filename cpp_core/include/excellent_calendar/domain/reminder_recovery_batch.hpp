@@ -11,6 +11,16 @@ inline constexpr std::string_view kRecoveryInProgress = "in_progress";
 inline constexpr std::string_view kRecoveryCompleted = "completed";
 
 struct ReminderRecoveryBatch {
+  struct AnniversaryCatchUpGroup {
+    std::string anniversary_id;
+    std::string occurrence_key;
+    std::string occurrence_date;
+    std::vector<std::string> covered_reminder_ids;
+    std::string delivery_id;
+    std::string status = "pending";
+    std::optional<std::string> completed_at;
+  };
+
   std::string id;
   std::string recovery_request_id;
   std::string trigger_source;
@@ -24,6 +34,7 @@ struct ReminderRecoveryBatch {
   std::optional<std::string> summary_delivery_id;
   std::string status;
   std::optional<std::string> completed_at;
+  std::vector<AnniversaryCatchUpGroup> anniversary_catch_up_groups;
 };
 
 bool is_valid_recovery_trigger_source(std::string_view value);

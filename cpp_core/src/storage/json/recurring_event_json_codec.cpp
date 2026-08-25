@@ -20,6 +20,7 @@
 #include "excellent_calendar/domain/reminder.hpp"
 #include "excellent_calendar/domain/reminder_recovery_batch.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/json/anniversary_json_codec.hpp"
 
 namespace excellent_calendar::storage::json {
 namespace {
@@ -314,6 +315,12 @@ picojson::value encode_reminder(const domain::Reminder& reminder) {
   value["recurrence_revision"] = optional_value(reminder.recurrence_revision);
   value["occurrence_key"] = optional_value(reminder.occurrence_key);
   value["occurrence_start_at"] = optional_value(reminder.occurrence_start_at);
+  value["template_key"] = optional_value(reminder.template_key);
+  value["occurrence_date"] = optional_value(reminder.occurrence_date);
+  value["advance_days"] = optional_value(reminder.advance_days);
+  value["local_time"] = optional_value(reminder.local_time);
+  value["timezone_mode"] = optional_value(reminder.timezone_mode);
+  value["fulfillment_delivery_id"] = optional_value(reminder.fulfillment_delivery_id);
   value["remind_at"] = picojson::value(reminder.remind_at);
   value["advance_minutes"] = optional_value(reminder.advance_minutes);
   value["methods"] = strings_value(reminder.methods);
@@ -337,16 +344,33 @@ picojson::value encode_reminder(const domain::Reminder& reminder) {
   return picojson::value(std::move(value));
 }
 
-domain::Reminder decode_reminder(const picojson::value& source) {
+domain::Reminder decode_reminder(const picojson::value& source,
+                                 bool allow_legacy_v2) {
   const auto& value = require_object(source, "Reminder");
-  require_exact_keys(value,
-                     {"reminder_id", "target_type", "target_id", "recurrence_revision", "occurrence_key",
-                      "occurrence_start_at", "remind_at", "advance_minutes", "methods", "message",
-                      "is_enabled", "status", "scheduled_at", "last_triggered_at", "failure_reason",
-                      "last_cancellation_reason", "last_cancelled_at", "expiration_reason", "expired_at",
-                      "reactivated_at", "reactivation_count",
-                      "recovery_batch_id", "source", "created_at", "updated_at", "deleted_at"},
-                     "Reminder");
+  const bool extended = value.find("template_key") != value.end();
+  if (!allow_legacy_v2 && !extended) {
+    throw DecodeFailure("Reminder v3 fields are missing");
+  }
+  if (extended) {
+    require_exact_keys(value,
+                       {"reminder_id", "target_type", "target_id", "recurrence_revision", "occurrence_key",
+                        "occurrence_start_at", "template_key", "occurrence_date", "advance_days",
+                        "local_time", "timezone_mode", "fulfillment_delivery_id", "remind_at",
+                        "advance_minutes", "methods", "message", "is_enabled", "status", "scheduled_at",
+                        "last_triggered_at", "failure_reason", "last_cancellation_reason", "last_cancelled_at",
+                        "expiration_reason", "expired_at", "reactivated_at", "reactivation_count",
+                        "recovery_batch_id", "source", "created_at", "updated_at", "deleted_at"},
+                       "Reminder");
+  } else {
+    require_exact_keys(value,
+                       {"reminder_id", "target_type", "target_id", "recurrence_revision", "occurrence_key",
+                        "occurrence_start_at", "remind_at", "advance_minutes", "methods", "message",
+                        "is_enabled", "status", "scheduled_at", "last_triggered_at", "failure_reason",
+                        "last_cancellation_reason", "last_cancelled_at", "expiration_reason", "expired_at",
+                        "reactivated_at", "reactivation_count", "recovery_batch_id", "source", "created_at",
+                        "updated_at", "deleted_at"},
+                       "Reminder");
+  }
   domain::Reminder reminder;
   reminder.id = string_value(value, "reminder_id", "Reminder");
   reminder.target_type = string_value(value, "target_type", "Reminder");
@@ -374,6 +398,15 @@ domain::Reminder decode_reminder(const picojson::value& source) {
   reminder.created_at = string_value(value, "created_at", "Reminder");
   reminder.updated_at = string_value(value, "updated_at", "Reminder");
   reminder.deleted_at = nullable_string(value, "deleted_at", "Reminder");
+  if (extended) {
+    reminder.template_key = nullable_string(value, "template_key", "Reminder");
+    reminder.occurrence_date = nullable_string(value, "occurrence_date", "Reminder");
+    reminder.advance_days = nullable_integer(value, "advance_days", "Reminder");
+    reminder.local_time = nullable_string(value, "local_time", "Reminder");
+    reminder.timezone_mode = nullable_string(value, "timezone_mode", "Reminder");
+    reminder.fulfillment_delivery_id =
+        nullable_string(value, "fulfillment_delivery_id", "Reminder");
+  }
   return reminder;
 }
 
@@ -390,6 +423,7 @@ picojson::value encode_notification(const domain::Notification& notification) {
   value["target_type"] = picojson::value(notification.target_type);
   value["target_id"] = picojson::value(notification.target_id);
   value["occurrence_key"] = optional_value(notification.occurrence_key);
+  value["covered_reminder_ids"] = strings_value(notification.covered_reminder_ids);
   value["method"] = picojson::value(notification.method);
   value["title"] = picojson::value(notification.title);
   value["body"] = optional_value(notification.body);
@@ -406,14 +440,29 @@ picojson::value encode_notification(const domain::Notification& notification) {
   return picojson::value(std::move(value));
 }
 
-domain::Notification decode_notification(const picojson::value& source) {
+domain::Notification decode_notification(const picojson::value& source,
+                                         bool allow_legacy_v2) {
   const auto& value = require_object(source, "Notification");
+  const bool extended = value.find("covered_reminder_ids") != value.end();
+  if (!allow_legacy_v2 && !extended) {
+    throw DecodeFailure("Notification.covered_reminder_ids is missing");
+  }
   require_exact_keys(value,
-                     {"notification_id", "delivery_id", "delivery_attempt_id", "kind", "reminder_id",
-                      "recovery_batch_id", "resolved_by_recovery_batch_id", "target_type", "target_id",
-                      "occurrence_key", "method", "title",
-                      "body", "planned_at", "prepared_at", "finalized_at", "sent_at", "status",
-                      "failure_class", "error_code", "abandon_reason", "created_at", "updated_at"},
+                     extended
+                         ? std::set<std::string>{"notification_id", "delivery_id", "delivery_attempt_id",
+                                                 "kind", "reminder_id", "recovery_batch_id",
+                                                 "resolved_by_recovery_batch_id", "target_type", "target_id",
+                                                 "occurrence_key", "covered_reminder_ids", "method", "title",
+                                                 "body", "planned_at", "prepared_at", "finalized_at", "sent_at",
+                                                 "status", "failure_class", "error_code", "abandon_reason",
+                                                 "created_at", "updated_at"}
+                         : std::set<std::string>{"notification_id", "delivery_id", "delivery_attempt_id",
+                                                 "kind", "reminder_id", "recovery_batch_id",
+                                                 "resolved_by_recovery_batch_id", "target_type", "target_id",
+                                                 "occurrence_key", "method", "title", "body", "planned_at",
+                                                 "prepared_at", "finalized_at", "sent_at", "status",
+                                                 "failure_class", "error_code", "abandon_reason", "created_at",
+                                                 "updated_at"},
                      "Notification");
   domain::Notification notification;
   notification.id = string_value(value, "notification_id", "Notification");
@@ -427,6 +476,10 @@ domain::Notification decode_notification(const picojson::value& source) {
   notification.target_type = string_value(value, "target_type", "Notification");
   notification.target_id = string_value(value, "target_id", "Notification");
   notification.occurrence_key = nullable_string(value, "occurrence_key", "Notification");
+  if (extended) {
+    notification.covered_reminder_ids =
+        string_array(value, "covered_reminder_ids", "Notification");
+  }
   notification.method = string_value(value, "method", "Notification");
   notification.title = string_value(value, "title", "Notification");
   notification.body = nullable_string(value, "body", "Notification");
@@ -458,18 +511,45 @@ picojson::value encode_recovery_batch(const domain::ReminderRecoveryBatch& batch
       picojson::value(static_cast<double>(batch.older_skipped_reminder_count));
   value["window_overflow_count"] = picojson::value(static_cast<double>(batch.window_overflow_count));
   value["summary_delivery_id"] = optional_value(batch.summary_delivery_id);
+  picojson::array groups;
+  for (const auto& group : batch.anniversary_catch_up_groups) {
+    picojson::object item;
+    item["anniversary_id"] = picojson::value(group.anniversary_id);
+    item["occurrence_key"] = picojson::value(group.occurrence_key);
+    item["occurrence_date"] = picojson::value(group.occurrence_date);
+    item["covered_reminder_ids"] = strings_value(group.covered_reminder_ids);
+    item["delivery_id"] = picojson::value(group.delivery_id);
+    item["status"] = picojson::value(group.status);
+    item["completed_at"] = optional_value(group.completed_at);
+    groups.emplace_back(std::move(item));
+  }
+  value["anniversary_catch_up_groups"] = picojson::value(std::move(groups));
   value["status"] = picojson::value(batch.status);
   value["completed_at"] = optional_value(batch.completed_at);
   return picojson::value(std::move(value));
 }
 
-domain::ReminderRecoveryBatch decode_recovery_batch(const picojson::value& source) {
+domain::ReminderRecoveryBatch decode_recovery_batch(const picojson::value& source,
+                                                     bool allow_legacy_v2) {
   const auto& value = require_object(source, "ReminderRecoveryBatch");
+  const bool extended = value.find("anniversary_catch_up_groups") != value.end();
+  if (!allow_legacy_v2 && !extended) {
+    throw DecodeFailure(
+        "ReminderRecoveryBatch.anniversary_catch_up_groups is missing");
+  }
   require_exact_keys(value,
-                     {"recovery_batch_id", "recovery_request_id", "trigger_source", "started_at",
-                      "window_start_at", "detail_reminder_ids", "summary_reminder_ids",
-                      "older_skipped_occurrence_count", "older_skipped_reminder_count",
-                      "window_overflow_count", "summary_delivery_id", "status", "completed_at"},
+                     extended
+                         ? std::set<std::string>{"recovery_batch_id", "recovery_request_id", "trigger_source",
+                                                 "started_at", "window_start_at", "detail_reminder_ids",
+                                                 "summary_reminder_ids", "older_skipped_occurrence_count",
+                                                 "older_skipped_reminder_count", "window_overflow_count",
+                                                 "summary_delivery_id", "anniversary_catch_up_groups", "status",
+                                                 "completed_at"}
+                         : std::set<std::string>{"recovery_batch_id", "recovery_request_id", "trigger_source",
+                                                 "started_at", "window_start_at", "detail_reminder_ids",
+                                                 "summary_reminder_ids", "older_skipped_occurrence_count",
+                                                 "older_skipped_reminder_count", "window_overflow_count",
+                                                 "summary_delivery_id", "status", "completed_at"},
                      "ReminderRecoveryBatch");
   domain::ReminderRecoveryBatch batch;
   batch.id = string_value(value, "recovery_batch_id", "ReminderRecoveryBatch");
@@ -488,6 +568,28 @@ domain::ReminderRecoveryBatch decode_recovery_batch(const picojson::value& sourc
   batch.summary_delivery_id = nullable_string(value, "summary_delivery_id", "ReminderRecoveryBatch");
   batch.status = string_value(value, "status", "ReminderRecoveryBatch");
   batch.completed_at = nullable_string(value, "completed_at", "ReminderRecoveryBatch");
+  if (extended) {
+    const auto& groups = value.at("anniversary_catch_up_groups");
+    if (!groups.is<picojson::array>()) {
+      throw DecodeFailure("ReminderRecoveryBatch.anniversary_catch_up_groups must be array");
+    }
+    for (const auto& source_group : groups.get<picojson::array>()) {
+      const auto& group = require_object(source_group, "AnniversaryCatchUpGroup");
+      require_exact_keys(group, {"anniversary_id", "occurrence_key", "occurrence_date",
+                                 "covered_reminder_ids", "delivery_id", "status", "completed_at"},
+                         "AnniversaryCatchUpGroup");
+      domain::ReminderRecoveryBatch::AnniversaryCatchUpGroup parsed;
+      parsed.anniversary_id = string_value(group, "anniversary_id", "AnniversaryCatchUpGroup");
+      parsed.occurrence_key = string_value(group, "occurrence_key", "AnniversaryCatchUpGroup");
+      parsed.occurrence_date = string_value(group, "occurrence_date", "AnniversaryCatchUpGroup");
+      parsed.covered_reminder_ids =
+          string_array(group, "covered_reminder_ids", "AnniversaryCatchUpGroup");
+      parsed.delivery_id = string_value(group, "delivery_id", "AnniversaryCatchUpGroup");
+      parsed.status = string_value(group, "status", "AnniversaryCatchUpGroup");
+      parsed.completed_at = nullable_string(group, "completed_at", "AnniversaryCatchUpGroup");
+      batch.anniversary_catch_up_groups.push_back(std::move(parsed));
+    }
+  }
   return batch;
 }
 
@@ -498,18 +600,21 @@ picojson::value encode_collection(const std::vector<T>& values,
   picojson::array items;
   for (const auto& value : values) items.push_back(encoder(value));
   picojson::object root;
-  root["storage_version"] = picojson::value(2.0);
+  root["storage_version"] = picojson::value(3.0);
   root[collection] = picojson::value(std::move(items));
   return picojson::value(std::move(root));
 }
 
 const picojson::array& collection(const picojson::value& root,
-                                  const StoreDefinition& store) {
+                                  const StoreDefinition& store,
+                                  int expected_version) {
   const auto& object = require_object(root, store.file);
   require_exact_keys(object, {"storage_version", store.collection}, store.file);
   const auto& version = object.find("storage_version")->second;
-  if (!version.is<double>() || version.get<double>() != 2.0) {
-    throw DecodeFailure(std::string(store.file) + " storage_version must equal 2");
+  if (!version.is<double>() ||
+      version.get<double>() != static_cast<double>(expected_version)) {
+    throw DecodeFailure(std::string(store.file) + " storage_version must equal " +
+                        std::to_string(expected_version));
   }
   const auto& values = object.find(store.collection)->second;
   if (!values.is<picojson::array>()) {
@@ -528,6 +633,16 @@ common::Result<picojson::value> encode_recurring_event_store(
     std::string_view file_name,
     const repository::RecurringEventState& state) {
   try {
+    if (file_name == "anniversaries.json" ||
+        file_name == "anniversary_recurrences.json" ||
+        file_name == "anniversary_reminder_templates.json") {
+      repository::AnniversaryState anniversary_state;
+      anniversary_state.anniversaries = state.anniversaries;
+      anniversary_state.recurrences = state.anniversary_recurrences;
+      anniversary_state.reminder_templates = state.anniversary_reminder_templates;
+      anniversary_state.reminders = state.reminders;
+      return encode_anniversary_store(file_name, anniversary_state);
+    }
     const auto& store = definition(file_name);
     if (file_name == "events.json") {
       return common::Result<picojson::value>::success(
@@ -556,13 +671,35 @@ common::Result<picojson::value> encode_recurring_event_store(
   }
 }
 
-common::Result<common::Unit> decode_recurring_event_store(
+common::Result<common::Unit> decode_recurring_event_store_impl(
     std::string_view file_name,
     const picojson::value& root,
-    repository::RecurringEventState& state) {
+    repository::RecurringEventState& state,
+    int expected_version,
+    bool allow_legacy_v2) {
   try {
+    if (file_name == "anniversaries.json" ||
+        file_name == "anniversary_recurrences.json" ||
+        file_name == "anniversary_reminder_templates.json") {
+      repository::AnniversaryState anniversary_state;
+      anniversary_state.anniversaries = state.anniversaries;
+      anniversary_state.recurrences = state.anniversary_recurrences;
+      anniversary_state.reminder_templates = state.anniversary_reminder_templates;
+      anniversary_state.reminders = state.reminders;
+      auto decoded = allow_legacy_v2
+                         ? decode_anniversary_store_v2_for_migration(
+                               file_name, root, anniversary_state)
+                         : decode_anniversary_store(file_name, root,
+                                                    anniversary_state);
+      if (!decoded.ok()) return decoded;
+      state.anniversaries = std::move(anniversary_state.anniversaries);
+      state.anniversary_recurrences = std::move(anniversary_state.recurrences);
+      state.anniversary_reminder_templates =
+          std::move(anniversary_state.reminder_templates);
+      return common::Result<common::Unit>::success(common::Unit{});
+    }
     const auto& store = definition(file_name);
-    const auto& values = collection(root, store);
+    const auto& values = collection(root, store, expected_version);
     if (file_name == "events.json") {
       for (const auto& value : values) state.events.push_back(decode_event(value));
     } else if (file_name == "recurrence_versions.json") {
@@ -570,15 +707,37 @@ common::Result<common::Unit> decode_recurring_event_store(
     } else if (file_name == "event_occurrence_states.json") {
       for (const auto& value : values) state.occurrence_states.push_back(decode_occurrence_state(value));
     } else if (file_name == "reminders.json") {
-      for (const auto& value : values) state.reminders.push_back(decode_reminder(value));
+      for (const auto& value : values) {
+        state.reminders.push_back(decode_reminder(value, allow_legacy_v2));
+      }
     } else if (file_name == "notifications.json") {
-      for (const auto& value : values) state.notifications.push_back(decode_notification(value));
+      for (const auto& value : values) {
+        state.notifications.push_back(
+            decode_notification(value, allow_legacy_v2));
+      }
     } else {
-      for (const auto& value : values) state.recovery_batches.push_back(decode_recovery_batch(value));
+      for (const auto& value : values) {
+        state.recovery_batches.push_back(
+            decode_recovery_batch(value, allow_legacy_v2));
+      }
     }
     return common::Result<common::Unit>::success(common::Unit{});
   } catch (const std::exception& error) {
     return corrupted(error);
   }
+}
+
+common::Result<common::Unit> decode_recurring_event_store(
+    std::string_view file_name,
+    const picojson::value& root,
+    repository::RecurringEventState& state) {
+  return decode_recurring_event_store_impl(file_name, root, state, 3, false);
+}
+
+common::Result<common::Unit> decode_recurring_event_store_v2_for_migration(
+    std::string_view file_name,
+    const picojson::value& root,
+    repository::RecurringEventState& state) {
+  return decode_recurring_event_store_impl(file_name, root, state, 2, true);
 }
 }  // namespace excellent_calendar::storage::json

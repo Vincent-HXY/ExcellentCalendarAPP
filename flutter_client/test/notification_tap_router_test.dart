@@ -87,6 +87,31 @@ void main() {
     );
     expect(navigator.routes, ['/today']);
   });
+
+  test('Anniversary catch-up routes typed occurrence to real detail', () {
+    final navigator = FakeAppRouteNavigator();
+    final router = NotificationTapRouter(navigator: navigator);
+
+    router.open(
+      NotificationTapPayloadDto(
+        notificationId: 'notification-anniversary',
+        deliveryId: 'delivery-anniversary',
+        deliveryAttemptId: 'attempt-anniversary',
+        kind: NotificationKind.anniversaryCatchUp,
+        reminderId: null,
+        recoveryBatchId: 'batch-anniversary',
+        targetType: NotificationTargetType.anniversary,
+        targetId: 'anniversary-1',
+        occurrenceKey: 'occurrence-1',
+        route: 'anniversary.detail',
+        openedAt: DateTime.utc(2026, 8, 31, 2, 5),
+      ),
+    );
+
+    expect(navigator.routes, [
+      '/anniversary/detail/anniversary-1?occurrence_key=occurrence-1',
+    ]);
+  });
 }
 
 NotificationTapPayloadDto _tapPayload({

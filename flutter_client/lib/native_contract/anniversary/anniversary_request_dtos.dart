@@ -1,3 +1,4 @@
+import '../shared/contract_value.dart';
 import 'anniversary_contract_enums.dart';
 
 class AnniversaryRecurrenceRuleInputDto {
@@ -18,6 +19,67 @@ class AnniversaryRecurrenceRuleInputDto {
   }
 }
 
+class AnniversaryReminderTemplateInputDto {
+  const AnniversaryReminderTemplateInputDto({
+    required this.advanceDays,
+    required this.localTime,
+    required this.isEnabled,
+  });
+
+  final int advanceDays;
+  final String localTime;
+  final bool isEnabled;
+
+  Map<String, dynamic> toJson() {
+    if (advanceDays < 0 || advanceDays > 365) {
+      throw const FormatException(
+        'Anniversary reminder advance_days must be between 0 and 365.',
+      );
+    }
+    AnniversaryRequestValue.localTime(
+      localTime,
+      'AnniversaryReminderTemplateInput.local_time',
+    );
+    return {
+      'advance_days': advanceDays,
+      'local_time': localTime,
+      'method': 'popup',
+      'is_enabled': isEnabled,
+    };
+  }
+}
+
+class AnniversaryReminderPlanInputDto {
+  AnniversaryReminderPlanInputDto({
+    required this.remindersEnabled,
+    required List<AnniversaryReminderTemplateInputDto> templates,
+  }) : templates = List.unmodifiable(templates);
+
+  final bool remindersEnabled;
+  final List<AnniversaryReminderTemplateInputDto> templates;
+
+  Map<String, dynamic> toJson() {
+    if (templates.length > 5) {
+      throw const FormatException(
+        'Anniversary reminder plan cannot contain more than five templates.',
+      );
+    }
+    final serialized = templates.map((item) => item.toJson()).toList();
+    final identities = serialized
+        .map(
+          (item) =>
+              '${item['advance_days']}|${item['local_time']}|${item['method']}',
+        )
+        .toSet();
+    if (identities.length != serialized.length) {
+      throw const FormatException(
+        'Anniversary reminder plan contains duplicate templates.',
+      );
+    }
+    return {'reminders_enabled': remindersEnabled, 'templates': serialized};
+  }
+}
+
 class CreateAnniversaryRequestDto {
   const CreateAnniversaryRequestDto({
     required this.title,
@@ -28,6 +90,7 @@ class CreateAnniversaryRequestDto {
     required this.note,
     required this.importance,
     required this.timezone,
+    required this.reminderPlan,
   });
 
   final String title;
@@ -38,6 +101,7 @@ class CreateAnniversaryRequestDto {
   final String? note;
   final AnniversaryImportanceContract importance;
   final String timezone;
+  final AnniversaryReminderPlanInputDto reminderPlan;
 
   Map<String, dynamic> toJson() {
     AnniversaryRequestValue.nonEmpty(title, 'CreateAnniversaryRequest.title');
@@ -58,6 +122,7 @@ class CreateAnniversaryRequestDto {
       'note': note,
       'importance': importance.wireValue,
       'timezone': timezone,
+      'reminder_plan': reminderPlan.toJson(),
     };
   }
 }
@@ -65,6 +130,7 @@ class CreateAnniversaryRequestDto {
 class UpdateAnniversaryRequestDto {
   const UpdateAnniversaryRequestDto({
     required this.id,
+    required this.expectedUpdatedAt,
     required this.title,
     required this.date,
     required this.calendarType,
@@ -73,9 +139,11 @@ class UpdateAnniversaryRequestDto {
     required this.note,
     required this.importance,
     required this.timezone,
+    required this.reminderPlan,
   });
 
   final String id;
+  final DateTime expectedUpdatedAt;
   final String title;
   final DateTime date;
   final AnniversaryCalendarTypeContract calendarType;
@@ -84,6 +152,7 @@ class UpdateAnniversaryRequestDto {
   final String? note;
   final AnniversaryImportanceContract importance;
   final String timezone;
+  final AnniversaryReminderPlanInputDto? reminderPlan;
 
   Map<String, dynamic> toJson() {
     AnniversaryRequestValue.uuid(id, 'UpdateAnniversaryRequest.id');
@@ -98,6 +167,10 @@ class UpdateAnniversaryRequestDto {
     );
     return {
       'id': id,
+      'expected_updated_at': ContractValue.formatUtcSecond(
+        expectedUpdatedAt,
+        field: 'UpdateAnniversaryRequest.expected_updated_at',
+      ),
       'title': title,
       'date': AnniversaryRequestValue.localDate(date),
       'calendar_type': calendarType.wireValue,
@@ -106,6 +179,116 @@ class UpdateAnniversaryRequestDto {
       'note': note,
       'importance': importance.wireValue,
       'timezone': timezone,
+      if (reminderPlan != null) 'reminder_plan': reminderPlan!.toJson(),
+    };
+  }
+}
+
+class SetAnniversaryRemindersEnabledRequestDto {
+  const SetAnniversaryRemindersEnabledRequestDto({
+    required this.id,
+    required this.remindersEnabled,
+    required this.timezone,
+  });
+
+  final String id;
+  final bool remindersEnabled;
+  final String timezone;
+
+  Map<String, dynamic> toJson() {
+    AnniversaryRequestValue.uuid(
+      id,
+      'SetAnniversaryRemindersEnabledRequest.id',
+    );
+    AnniversaryRequestValue.nonEmpty(
+      timezone,
+      'SetAnniversaryRemindersEnabledRequest.timezone',
+    );
+    return {
+      'id': id,
+      'reminders_enabled': remindersEnabled,
+      'timezone': timezone,
+    };
+  }
+}
+
+class ListAnniversaryOccurrencesRequestDto {
+  ListAnniversaryOccurrencesRequestDto({
+    required this.rangeStartDate,
+    required this.rangeEndDate,
+    required this.timezone,
+    required List<String> categoryIds,
+    required List<AnniversaryImportanceContract> importance,
+    required this.cursor,
+    required this.pageSize,
+  }) : categoryIds = List.unmodifiable(categoryIds),
+       importance = List.unmodifiable(importance);
+
+  final DateTime rangeStartDate;
+  final DateTime rangeEndDate;
+  final String timezone;
+  final List<String> categoryIds;
+  final List<AnniversaryImportanceContract> importance;
+  final String? cursor;
+  final int pageSize;
+
+  Map<String, dynamic> toJson() {
+    final start = DateTime.utc(
+      rangeStartDate.year,
+      rangeStartDate.month,
+      rangeStartDate.day,
+    );
+    final end = DateTime.utc(
+      rangeEndDate.year,
+      rangeEndDate.month,
+      rangeEndDate.day,
+    );
+    final days = end.difference(start).inDays;
+    if (days < 1 || days > 400) {
+      throw const FormatException(
+        'Anniversary occurrence range must contain 1 to 400 natural days.',
+      );
+    }
+    AnniversaryRequestValue.nonEmpty(
+      timezone,
+      'ListAnniversaryOccurrencesRequest.timezone',
+    );
+    if (categoryIds.length > 100 ||
+        categoryIds.toSet().length != categoryIds.length) {
+      throw const FormatException(
+        'Anniversary occurrence categories must be unique and at most 100.',
+      );
+    }
+    for (final id in categoryIds) {
+      AnniversaryRequestValue.uuid(
+        id,
+        'ListAnniversaryOccurrencesRequest.category_ids',
+      );
+    }
+    if (importance.toSet().length != importance.length) {
+      throw const FormatException(
+        'Anniversary occurrence importance filters must be unique.',
+      );
+    }
+    if (cursor != null &&
+        !RegExp(r'^annocc1\.[A-Za-z0-9_-]{20,2048}$').hasMatch(cursor!)) {
+      throw const FormatException('Anniversary occurrence cursor is invalid.');
+    }
+    if (pageSize < 1 || pageSize > 500) {
+      throw const FormatException(
+        'Anniversary occurrence page_size must be between 1 and 500.',
+      );
+    }
+    return {
+      'range_start_date': AnniversaryRequestValue.localDate(rangeStartDate),
+      'range_end_date': AnniversaryRequestValue.localDate(rangeEndDate),
+      'timezone': timezone,
+      'category_ids': categoryIds,
+      'importance': importance
+          .map((item) => item.wireValue)
+          .toList(growable: false),
+      'cursor': cursor,
+      'page_size': pageSize,
     };
   }
 }
@@ -275,5 +458,11 @@ abstract final class AnniversaryRequestValue {
     return '${value.year.toString().padLeft(4, '0')}-'
         '${value.month.toString().padLeft(2, '0')}-'
         '${value.day.toString().padLeft(2, '0')}';
+  }
+
+  static void localTime(String value, String field) {
+    if (!RegExp(r'^(?:[01][0-9]|2[0-3]):[0-5][0-9]$').hasMatch(value)) {
+      throw FormatException('$field must be HH:mm.');
+    }
   }
 }

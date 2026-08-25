@@ -74,7 +74,8 @@ enum NotificationTargetType {
 
 enum NotificationKind {
   reminder('reminder'),
-  recoverySummary('recovery_summary');
+  recoverySummary('recovery_summary'),
+  anniversaryCatchUp('anniversary_catch_up');
 
   const NotificationKind(this.wireValue);
   final String wireValue;

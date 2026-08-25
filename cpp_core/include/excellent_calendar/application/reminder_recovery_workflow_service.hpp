@@ -10,6 +10,7 @@
 #include "excellent_calendar/application/rolling_reminder_service.hpp"
 #include "excellent_calendar/common/result.hpp"
 #include "excellent_calendar/domain/reminder.hpp"
+#include "excellent_calendar/domain/local_time_resolver.hpp"
 #include "excellent_calendar/domain/reminder_recovery_batch.hpp"
 #include "excellent_calendar/repository/recurring_event_transaction.hpp"
 
@@ -18,6 +19,7 @@ namespace excellent_calendar::application {
 struct PlanReminderRecoveryCommand {
   std::string recovery_request_id;
   std::string trigger_source;
+  std::string timezone;
 };
 
 struct PreparedAttemptRecoveryResolution {
@@ -33,6 +35,8 @@ struct PlanReminderRecoveryResult {
   std::vector<domain::Reminder> detail_reminders;
   std::vector<PreparedAttemptRecoveryResolution> prepared_attempt_resolutions;
   bool idempotent_replay = false;
+  std::vector<domain::ReminderRecoveryBatch::AnniversaryCatchUpGroup>
+      anniversary_catch_up_groups;
 };
 
 class ReminderRecoveryWorkflowService {
@@ -45,7 +49,8 @@ class ReminderRecoveryWorkflowService {
       std::shared_ptr<RecurrenceService> recurrence_service,
       std::shared_ptr<RollingReminderService> rolling_reminder_service,
       ClockFn clock,
-      IdGeneratorFn id_generator);
+      IdGeneratorFn id_generator,
+      std::shared_ptr<domain::LocalTimeResolver> local_time_resolver);
 
   common::Result<PlanReminderRecoveryResult> plan_recovery(
       const PlanReminderRecoveryCommand& command);
@@ -56,6 +61,7 @@ class ReminderRecoveryWorkflowService {
   std::shared_ptr<RollingReminderService> rolling_reminder_service_;
   ClockFn clock_;
   IdGeneratorFn id_generator_;
+  std::shared_ptr<domain::LocalTimeResolver> local_time_resolver_;
 };
 
 }  // namespace excellent_calendar::application

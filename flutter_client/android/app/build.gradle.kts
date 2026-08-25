@@ -5,6 +5,20 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val flutterTarget = providers.gradleProperty("target").orNull?.replace('\\', '/')
+val buildsFlutterIntegrationTest = flutterTarget?.let { "/${it.trimStart('/')}".contains("/integration_test/") } == true
+val requestedGradleTasks = gradle.startParameter.taskNames
+val requestsDebugVariant = requestedGradleTasks.any { it.contains("Debug", ignoreCase = true) }
+val requestsUnsafeOrImplicitVariant = requestedGradleTasks.any {
+    it.contains("Release", ignoreCase = true) || it.contains("Profile", ignoreCase = true)
+} || !requestsDebugVariant
+if (buildsFlutterIntegrationTest && requestsUnsafeOrImplicitVariant) {
+    throw GradleException(
+        "Flutter integration tests are restricted to the isolated Debug application id; " +
+            "release/profile/implicit variants are forbidden.",
+    )
+}
+
 android {
     namespace = "com.excellentcalendar.excellent_calendar"
     compileSdk = flutter.compileSdkVersion
@@ -30,6 +44,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         buildConfigField("boolean", "CALENDAR_CORE_V2_ENABLED", "true")
+        buildConfigField("boolean", "CALENDAR_CORE_DEVICE_TEST", "false")
     }
 
     buildFeatures {
@@ -47,6 +62,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Flutter integration runners uninstall their target package during cleanup.
+            // Keep every debug/device run outside the release application sandbox.
+            applicationIdSuffix = ".device_test"
+            buildConfigField("boolean", "CALENDAR_CORE_DEVICE_TEST", "true")
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.

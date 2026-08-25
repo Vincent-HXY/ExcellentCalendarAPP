@@ -291,19 +291,30 @@ def validate_yaml_and_capabilities() -> dict[str, Any]:
         yaml_documents[path.relative_to(CONTRACTS).as_posix()] = yaml.safe_load(path.read_text(encoding="utf-8"))
     identity = yaml_documents["identity.yaml"]
     validate_identity_vectors(identity)
+    anniversary_identity_status = identity.get("capability_status", {}).get(
+        "anniversary_reminder_r1", {}
+    )
+    if anniversary_identity_status != {
+        "implementation_status": "integrated",
+        "release_status": "active",
+    }:
+        fail("Anniversary identity capability must be integrated and active")
 
     methods = yaml_documents["method_channels.yaml"]["methods"]
     calls = yaml_documents["native_calls.yaml"]["calls"]
     for capability in [
         "anniversary.create", "anniversary.update", "anniversary.delete", "anniversary.detail",
+        "anniversary.list", "anniversary.preview_countdown",
         "anniversary.set_reminders_enabled", "anniversary.list_occurrences",
     ]:
         if capability not in methods or capability not in calls:
             fail(f"Public/native capability path is incomplete: {capability}")
-        if methods[capability].get("release_status") != "blocked":
-            fail(f"Capability must remain blocked before integration: {capability}")
-        if calls[capability].get("release_status") != "blocked":
-            fail(f"Native capability must remain blocked before integration: {capability}")
+        if methods[capability].get("implementation_status") != "integrated" or \
+                methods[capability].get("release_status") != "active":
+            fail(f"Public capability must be integrated and active: {capability}")
+        if calls[capability].get("implementation_status") != "integrated" or \
+                calls[capability].get("release_status") != "active":
+            fail(f"Native capability must be integrated and active: {capability}")
         for side in (methods[capability], calls[capability]):
             for key in ("request",):
                 if not (CONTRACTS / side[key]).is_file():
@@ -321,7 +332,8 @@ def validate_yaml_and_capabilities() -> dict[str, Any]:
         "ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED", "ANNIVERSARY_OCCURRENCE_RANGE_INVALID",
         "ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE", "ANNIVERSARY_OCCURRENCE_FILTER_INVALID",
         "ANNIVERSARY_OCCURRENCE_CURSOR_INVALID", "ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED",
-        "ANNIVERSARY_TARGET_DELETED", "ANNIVERSARY_OCCURRENCE_STALE",
+        "ANNIVERSARY_TARGET_DELETED", "ANNIVERSARY_UPDATE_CONFLICT",
+        "ANNIVERSARY_OCCURRENCE_STALE",
         "ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED", "ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT",
         "CALENDAR_WORKFLOW_COMMIT_FAILED", "CALENDAR_WORKFLOW_RECOVERY_FAILED",
         "SCHEDULER_RECONCILIATION_PENDING",
@@ -360,6 +372,17 @@ def validate_finalize_timezone_shape(schemas: dict[str, Any]) -> None:
         fail("prepare_delivery must not accept timezone")
 
 
+def validate_update_concurrency_shape(schemas: dict[str, Any]) -> None:
+    update = schemas[
+        "https://excellent-calendar.local/contracts/anniversary/update_anniversary_request.schema.json"
+    ]
+    if "expected_updated_at" not in update.get("required", []):
+        fail("anniversary.update must require expected_updated_at")
+    token = update.get("properties", {}).get("expected_updated_at", {})
+    if token.get("type") != "string" or token.get("format") != "date-time":
+        fail("anniversary.update expected_updated_at shape drift")
+
+
 def validate_manifests(schemas: dict[str, Any], identity: dict[str, Any]) -> int:
     semantic_handlers = {
         "unique_templates": lambda value, case: semantic_unique_templates(value),
@@ -374,7 +397,11 @@ def validate_manifests(schemas: dict[str, Any], identity: dict[str, Any]) -> int
         "semantic_vectors": lambda value, case: semantic_vectors(value),
     }
     count = 0
-    for manifest_path in [FIXTURE_ROOT / "ring" / "manifest.json", ANNIVERSARY_FIXTURES / "manifest.json"]:
+    for manifest_path in [
+        FIXTURE_ROOT / "ring" / "manifest.json",
+        ANNIVERSARY_FIXTURES / "manifest.json",
+        FIXTURE_ROOT / "runtime" / "manifest.json",
+    ]:
         manifest = load_json(manifest_path)
         for case in manifest["cases"]:
             count += 1
@@ -397,6 +424,7 @@ def main() -> int:
     schemas, paths = collect_schemas()
     validate_ref_closure(schemas, paths)
     validate_finalize_timezone_shape(schemas)
+    validate_update_concurrency_shape(schemas)
     identity = validate_yaml_and_capabilities()
     fixture_count = validate_manifests(schemas, identity)
     print(f"validated schemas={len(schemas)} fixtures={fixture_count} identity_vectors={len(identity['test_vectors'])}")

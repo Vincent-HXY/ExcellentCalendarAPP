@@ -206,6 +206,13 @@ errors:
     message: "Anniversary not found"
     retryable: false
 
+  ANNIVERSARY_UPDATE_CONFLICT:
+    module: anniversary
+    message: "Anniversary changed after the caller loaded it"
+    retryable: false
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
   ANNIVERSARY_TARGET_DELETED:
     module: anniversary
     message: "Anniversary target is deleted"

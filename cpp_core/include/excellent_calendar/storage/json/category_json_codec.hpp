@@ -31,11 +31,12 @@ common::Result<repository::CategoryState> category_state_from_storage_records(
     const std::vector<CategoryStorageRecord> &records);
 
 common::Result<picojson::value>
-encode_category_store(const std::vector<CategoryStorageRecord> &records);
+encode_category_store(const std::vector<CategoryStorageRecord> &records,
+                      int storage_version = 3);
 
 common::Result<std::vector<CategoryStorageRecord>>
-decode_category_store(const picojson::value &root);
+decode_category_store(const picojson::value &root, int storage_version = 3);
 
-picojson::value empty_category_store();
+picojson::value empty_category_store(int storage_version = 3);
 
 } // namespace excellent_calendar::storage::json

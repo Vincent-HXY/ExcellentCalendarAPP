@@ -25,4 +25,10 @@ interface NativeAnniversaryBridge {
 
     fun previewAnniversaryCountdown(requestJson: String): String =
         throw UnsupportedOperationException("anniversary.preview_countdown is unavailable")
+
+    fun setAnniversaryRemindersEnabled(requestJson: String): String =
+        throw UnsupportedOperationException("anniversary.set_reminders_enabled is unavailable")
+
+    fun listAnniversaryOccurrences(requestJson: String): String =
+        throw UnsupportedOperationException("anniversary.list_occurrences is unavailable")
 }

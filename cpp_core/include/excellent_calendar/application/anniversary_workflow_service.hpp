@@ -24,7 +24,9 @@ class AnniversaryWorkflowService {
 
   common::Result<AnniversaryDetail> create(const CreateAnniversaryCommand& command);
   common::Result<AnniversaryDetail> update(const UpdateAnniversaryCommand& command);
-  common::Result<domain::Anniversary> remove(const DeleteAnniversaryCommand& command);
+  common::Result<AnniversaryDeleteResult> remove(const DeleteAnniversaryCommand& command);
+  common::Result<AnniversaryDetail> set_reminders_enabled(
+      const SetAnniversaryRemindersEnabledCommand& command);
 
  private:
   std::shared_ptr<repository::AnniversaryTransaction> transaction_;

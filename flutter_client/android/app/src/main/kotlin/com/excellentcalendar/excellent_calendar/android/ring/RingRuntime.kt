@@ -24,6 +24,7 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.V2PreparedDelive
 import com.excellentcalendar.excellent_calendar.bridge.native.AndroidNativeBridgeFactory
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderDeliveryAttemptClient
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderOrchestrationLogger
+import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
 import com.excellentcalendar.excellent_calendar.bridge.ring.PreparedRingItem
 import com.excellentcalendar.excellent_calendar.bridge.ring.RingNativeWorkflowClient
 import com.excellentcalendar.excellent_calendar.bridge.ring.RingSessionManager
@@ -386,7 +387,7 @@ object RingRuntimeProvider {
             context,
             manager,
             AndroidRingOutputController(context),
-            ReminderDeliveryAttemptClient(bridge, logger),
+            ReminderDeliveryAttemptClient(bridge, logger, AndroidDeviceTimezoneProvider),
             RingNativeWorkflowClient(bridge),
             afterSnoozeCommitted = { reconcileAfterSnooze(context) },
         ).also { it.recoverIfNeeded() }

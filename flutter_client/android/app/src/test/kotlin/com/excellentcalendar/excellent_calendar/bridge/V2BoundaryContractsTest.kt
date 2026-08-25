@@ -6,6 +6,7 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.NotificationTapPayloadContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2FinalizeDelivery
+import com.excellentcalendar.excellent_calendar.bridge.contract.V2PreparedDelivery
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2RecoveryPlan
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2RequestContracts
 import org.junit.Assert.assertEquals
@@ -170,6 +171,8 @@ class V2BoundaryContractsTest {
             "notification" to validNotification() + mapOf("resolved_by_recovery_batch_id" to "batch"),
             "reminder" to validReminder(),
             "successor" to null,
+            "covered_reminders" to emptyList<Any?>(),
+            "successors" to emptyList<Any?>(),
             "recovery_batch" to validRecoveryBatch(),
             "idempotent_replay" to false,
         )
@@ -188,6 +191,7 @@ class V2BoundaryContractsTest {
         val malformed = linkedMapOf<String, Any?>(
             "batch" to validRecoveryBatch(),
             "detail_reminders" to emptyList<Any?>(),
+            "anniversary_catch_up_groups" to emptyList<Any?>(),
             "prepared_attempt_resolutions" to listOf(
                 mapOf("delivery_id" to "delivery", "resolution" to "adopted_detail"),
             ),
@@ -248,6 +252,46 @@ class V2BoundaryContractsTest {
         assertEquals("delivery", opened["delivery_id"])
     }
 
+    @Test
+    fun ordinaryAnniversaryPreparedAndOpenedPayloadsRequireDetailRoute() {
+        val tapPayload = linkedMapOf<String, Any?>(
+            "notification_id" to "notification",
+            "delivery_id" to "delivery",
+            "delivery_attempt_id" to "attempt",
+            "kind" to "reminder",
+            "reminder_id" to "reminder",
+            "recovery_batch_id" to null,
+            "target_type" to "anniversary",
+            "target_id" to "anniversary",
+            "occurrence_key" to "occurrence",
+            "route" to "anniversary.detail",
+        )
+        val notification = validNotification() + mapOf(
+            "target_type" to "anniversary",
+            "target_id" to "anniversary",
+            "occurrence_key" to "occurrence",
+            "status" to "prepared",
+            "finalized_at" to null,
+            "sent_at" to null,
+        )
+        val prepared = linkedMapOf<String, Any?>(
+            "notification" to notification,
+            "tap_payload" to tapPayload,
+            "idempotent_replay" to false,
+        )
+
+        V2PreparedDelivery.fromData(prepared)
+        NotificationTapPayloadContract.normalize(tapPayload, "2026-08-04T00:00:00Z")
+
+        val missingRoute = tapPayload + ("route" to null)
+        assertThrows(NativeContractViolation::class.java) {
+            V2PreparedDelivery.fromData(prepared + ("tap_payload" to missingRoute))
+        }
+        assertThrows(NativeContractViolation::class.java) {
+            NotificationTapPayloadContract.normalize(missingRoute, "2026-08-04T00:00:00Z")
+        }
+    }
+
     private fun validTimedCreate(): Map<String, Any?> = linkedMapOf(
         "title" to "Meeting",
         "start_at" to "2026-03-29T01:00:00Z",
@@ -271,6 +315,7 @@ class V2BoundaryContractsTest {
         "older_skipped_reminder_count" to 0,
         "window_overflow_count" to 0,
         "summary_delivery_id" to null,
+        "anniversary_catch_up_groups" to emptyList<Any?>(),
         "status" to "in_progress",
         "completed_at" to null,
     )
@@ -286,6 +331,7 @@ class V2BoundaryContractsTest {
         "target_type" to "event",
         "target_id" to "event",
         "occurrence_key" to null,
+        "covered_reminder_ids" to emptyList<String>(),
         "method" to "popup",
         "title" to "Title",
         "body" to "Body",
@@ -308,6 +354,12 @@ class V2BoundaryContractsTest {
         "recurrence_revision" to null,
         "occurrence_key" to null,
         "occurrence_start_at" to null,
+        "template_key" to null,
+        "occurrence_date" to null,
+        "advance_days" to null,
+        "local_time" to null,
+        "timezone_mode" to null,
+        "fulfillment_delivery_id" to null,
         "remind_at" to "2026-08-04T01:00:00Z",
         "advance_minutes" to null,
         "methods" to listOf("popup"),

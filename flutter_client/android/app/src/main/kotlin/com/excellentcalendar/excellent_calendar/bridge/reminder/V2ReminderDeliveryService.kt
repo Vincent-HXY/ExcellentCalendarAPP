@@ -9,6 +9,8 @@ import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultCont
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2FinalizeDelivery
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2PreparedDelivery
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeReminderBridge
+import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
+import com.excellentcalendar.excellent_calendar.bridge.runtime.DeviceTimezoneProvider
 import com.excellentcalendar.excellent_calendar.android.ring.RingRuntime
 
 interface V2ReminderDeliverer {
@@ -16,6 +18,12 @@ interface V2ReminderDeliverer {
     fun deliverReminder(reminderId: String, expectedRemindAt: String, recoveryBatchId: String?, method: String): NativeResultContract =
         deliverReminder(reminderId, expectedRemindAt, recoveryBatchId)
     fun deliverSummary(recoveryBatchId: String): NativeResultContract
+    fun deliverAnniversaryCatchUp(recoveryBatchId: String, deliveryId: String): NativeResultContract =
+        NativeResultContract.failure(
+            NativeErrorCodes.FeatureNotImplemented,
+            "Anniversary catch-up delivery is unavailable.",
+            contractVersion = 2,
+        )
 }
 
 class V2ReminderDeliveryService(
@@ -24,7 +32,9 @@ class V2ReminderDeliveryService(
     private val eventHub: NotificationEventHub,
     private val logger: ReminderOrchestrationLogger,
     private val ringRuntime: RingRuntime? = null,
-    private val attemptClient: ReminderDeliveryAttemptClient = ReminderDeliveryAttemptClient(nativeBridge, logger),
+    timezoneProvider: DeviceTimezoneProvider = AndroidDeviceTimezoneProvider,
+    private val attemptClient: ReminderDeliveryAttemptClient =
+        ReminderDeliveryAttemptClient(nativeBridge, logger, timezoneProvider),
 ) : V2ReminderDeliverer {
     override fun deliverReminder(reminderId: String, expectedRemindAt: String, recoveryBatchId: String?): NativeResultContract =
         deliverReminder(reminderId, expectedRemindAt, recoveryBatchId, "popup")
@@ -40,6 +50,7 @@ class V2ReminderDeliveryService(
                 "kind" to "reminder",
                 "reminder_id" to reminderId,
                 "recovery_batch_id" to recoveryBatchId,
+                "delivery_id" to null,
                 "method" to method,
                 "expected_remind_at" to expectedRemindAt,
             ),
@@ -51,6 +62,22 @@ class V2ReminderDeliveryService(
             "kind" to "recovery_summary",
             "reminder_id" to null,
             "recovery_batch_id" to recoveryBatchId,
+            "delivery_id" to null,
+            "method" to "popup",
+            "expected_remind_at" to null,
+        ),
+        null,
+    )
+
+    override fun deliverAnniversaryCatchUp(
+        recoveryBatchId: String,
+        deliveryId: String,
+    ): NativeResultContract = deliver(
+        linkedMapOf(
+            "kind" to "anniversary_catch_up",
+            "reminder_id" to null,
+            "recovery_batch_id" to recoveryBatchId,
+            "delivery_id" to deliveryId,
             "method" to "popup",
             "expected_remind_at" to null,
         ),

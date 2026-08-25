@@ -448,6 +448,8 @@ CALENDAR_V2_JNI(nativeDeleteAnniversaryV2, delete_anniversary_v2)
 CALENDAR_V2_JNI(nativeGetAnniversaryDetailV2, get_anniversary_detail_v2)
 CALENDAR_V2_JNI(nativeListAnniversariesV2, list_anniversaries_v2)
 CALENDAR_V2_JNI(nativePreviewAnniversaryCountdownV2, preview_anniversary_countdown_v2)
+CALENDAR_V2_JNI(nativeSetAnniversaryRemindersEnabledV2, set_anniversary_reminders_enabled_v2)
+CALENDAR_V2_JNI(nativeListAnniversaryOccurrencesV2, list_anniversary_occurrences_v2)
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_excellentcalendar_excellent_1calendar_bridge_native_JniNativeCalendarCoreBridge_nativeListCategoriesV2(
     JNIEnv* env,

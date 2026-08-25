@@ -19,13 +19,19 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         Executor.execute {
             try {
                 ReminderWorkScheduler.ensurePeriodic(context)
-                val result = ReminderCoordinatorFactory.create(context).reconcile(
-                    ReconcileReminderScheduleContract(ReminderScheduleTrigger.AlarmFired, force = true),
-                )
+                val coordinator = ReminderCoordinatorFactory.create(context)
+                val plannedAt = intent.getStringExtra(ReminderDispatchAlarmScheduler.ExtraPlannedAt)
+                val result = if (isDispatcher && plannedAt != null) {
+                    coordinator.reconcileDispatcherAlarm(plannedAt)
+                } else {
+                    coordinator.reconcile(
+                        ReconcileReminderScheduleContract(ReminderScheduleTrigger.AlarmFired, force = true),
+                    )
+                }
                 Log.d(
                     LogTag,
                     "dispatcher handled legacy=$isLegacy planned_at=" +
-                        "${intent.getStringExtra(ReminderDispatchAlarmScheduler.ExtraPlannedAt)} ok=${result.ok}",
+                        "$plannedAt ok=${result.ok}",
                 )
                 if (!result.ok && result.error?.retryable == true) {
                     ReminderWorkScheduler.enqueueContinuation(context)

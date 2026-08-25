@@ -14,7 +14,7 @@ void main() {
   });
 
   test(
-    'all six Anniversary methods use exact names and Contract payloads',
+    'all eight Anniversary methods use exact names and Contract payloads',
     () async {
       final captured = <MethodCall>[];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -23,9 +23,11 @@ void main() {
             return _success(switch (call.method) {
               'anniversary.create' ||
               'anniversary.update' ||
-              'anniversary.detail' => _detail(),
-              'anniversary.delete' => _anniversary(deleted: true),
+              'anniversary.set_reminders_enabled' => _mutation(),
+              'anniversary.detail' => _detailView(),
+              'anniversary.delete' => _deleteOperation(),
               'anniversary.list' => _list(),
+              'anniversary.list_occurrences' => _occurrencePage(),
               'anniversary.preview_countdown' => _countdown(),
               _ => throw MissingPluginException(call.method),
             });
@@ -42,11 +44,22 @@ void main() {
           note: null,
           importance: AnniversaryImportanceContract.importantNotUrgent,
           timezone: 'Asia/Shanghai',
+          reminderPlan: AnniversaryReminderPlanInputDto(
+            remindersEnabled: true,
+            templates: const [
+              AnniversaryReminderTemplateInputDto(
+                advanceDays: 7,
+                localTime: '09:00',
+                isEnabled: true,
+              ),
+            ],
+          ),
         ),
       );
       final update = await adapter.updateAnniversary(
         UpdateAnniversaryRequestDto(
           id: _anniversaryId,
+          expectedUpdatedAt: DateTime.utc(2026, 8, 8, 2, 3, 4),
           title: 'Updated',
           date: DateTime(2021, 3, 1),
           calendarType: AnniversaryCalendarTypeContract.lunar,
@@ -55,6 +68,10 @@ void main() {
           note: 'note',
           importance: AnniversaryImportanceContract.unimportantUrgent,
           timezone: 'Asia/Shanghai',
+          reminderPlan: AnniversaryReminderPlanInputDto(
+            remindersEnabled: false,
+            templates: const [],
+          ),
         ),
       );
       final deleted = await adapter.deleteAnniversary(
@@ -88,6 +105,24 @@ void main() {
           timezone: 'Asia/Shanghai',
         ),
       );
+      final toggle = await adapter.setAnniversaryRemindersEnabled(
+        const SetAnniversaryRemindersEnabledRequestDto(
+          id: _anniversaryId,
+          remindersEnabled: false,
+          timezone: 'Asia/Shanghai',
+        ),
+      );
+      final occurrences = await adapter.listAnniversaryOccurrences(
+        ListAnniversaryOccurrencesRequestDto(
+          rangeStartDate: DateTime(2026, 1, 1),
+          rangeEndDate: DateTime(2027, 1, 1),
+          timezone: 'Asia/Shanghai',
+          categoryIds: const [],
+          importance: const [],
+          cursor: null,
+          pageSize: 200,
+        ),
+      );
 
       expect(captured.map((call) => call.method), [
         'anniversary.create',
@@ -96,6 +131,8 @@ void main() {
         'anniversary.detail',
         'anniversary.list',
         'anniversary.preview_countdown',
+        'anniversary.set_reminders_enabled',
+        'anniversary.list_occurrences',
       ]);
       expect(captured[0].arguments, {
         'title': 'Project anniversary',
@@ -106,9 +143,21 @@ void main() {
         'note': null,
         'importance': 'important_noturgent',
         'timezone': 'Asia/Shanghai',
+        'reminder_plan': {
+          'reminders_enabled': true,
+          'templates': [
+            {
+              'advance_days': 7,
+              'local_time': '09:00',
+              'method': 'popup',
+              'is_enabled': true,
+            },
+          ],
+        },
       });
       expect(captured[1].arguments, {
         'id': _anniversaryId,
+        'expected_updated_at': '2026-08-08T02:03:04Z',
         'title': 'Updated',
         'date': '2021-03-01',
         'calendar_type': 'lunar',
@@ -117,6 +166,7 @@ void main() {
         'note': 'note',
         'importance': 'unimportant_urgent',
         'timezone': 'Asia/Shanghai',
+        'reminder_plan': {'reminders_enabled': false, 'templates': <Object?>[]},
       });
       expect(captured[2].arguments, {'id': _anniversaryId});
       expect(captured[3].arguments, {
@@ -137,12 +187,31 @@ void main() {
         'recurrence': {'frequency': 'yearly', 'interval': 1},
         'timezone': 'Asia/Shanghai',
       });
-      expect(create.result.data!.recurrence!.frequency, 'yearly');
+      expect(captured[6].arguments, {
+        'id': _anniversaryId,
+        'reminders_enabled': false,
+        'timezone': 'Asia/Shanghai',
+      });
+      expect(captured[7].arguments, {
+        'range_start_date': '2026-01-01',
+        'range_end_date': '2027-01-01',
+        'timezone': 'Asia/Shanghai',
+        'category_ids': <Object?>[],
+        'importance': <Object?>[],
+        'cursor': null,
+        'page_size': 200,
+      });
+      expect(create.result.data!.detail.recurrence!.frequency, 'yearly');
       expect(update.result.ok, isTrue);
-      expect(deleted.result.data!.deletedAt, isNotNull);
-      expect(detail.result.data!.countdown.days, 203);
+      expect(deleted.result.data!.anniversary.deletedAt, isNotNull);
+      expect(detail.result.data!.detail.countdown.days, 203);
       expect(list.result.data!.pagination.hasMore, isFalse);
       expect(preview.result.data!.isoWeekday, 7);
+      expect(
+        toggle.result.data!.capability.scheduleReconciliationRequired,
+        isFalse,
+      );
+      expect(occurrences.result.data!.items.single.reminderCount, 1);
     },
   );
 
@@ -258,6 +327,70 @@ Map<String, Object?> _detail() => {
     'interval': 1,
   },
   'countdown': _countdown(),
+  'reminder_settings': {
+    'reminders_enabled': true,
+    'templates': [
+      {
+        'template_key': '44444444-4444-5444-8444-444444444444',
+        'advance_days': 7,
+        'local_time': '09:00',
+        'timezone_mode': 'follow_device',
+        'method': 'popup',
+        'is_enabled': true,
+      },
+    ],
+    'active_reminder_count': 1,
+    'schedule_reconciliation_required': false,
+  },
+};
+
+Map<String, Object?> _capability() => {
+  'schedule_status': 'scheduled_exact',
+  'schedule_reconciliation_required': false,
+  'notification_permission_status': 'granted',
+  'exact_alarm_permission_status': 'granted',
+  'degradation_reasons': <Object?>[],
+};
+
+Map<String, Object?> _mutation() => {
+  'data_saved': true,
+  'detail': _detail(),
+  'capability': _capability(),
+};
+
+Map<String, Object?> _detailView() => {
+  'detail': _detail(),
+  'capability': _capability(),
+};
+
+Map<String, Object?> _deleteOperation() => {
+  'data_saved': true,
+  'commit': {
+    'anniversary': _anniversary(deleted: true),
+    'schedule_reconciliation_required': false,
+  },
+  'capability': _capability(),
+};
+
+Map<String, Object?> _occurrencePage() => {
+  'items': [
+    {
+      'anniversary_id': _anniversaryId,
+      'occurrence_key': '55555555-5555-5555-8555-555555555555',
+      'occurrence_date': '2026-02-28',
+      'source_date': '2020-02-29',
+      'title': 'Project anniversary',
+      'calendar_type': 'solar',
+      'is_repeating': true,
+      'years_elapsed': 6,
+      'category_id': _categoryId,
+      'importance': 'important_noturgent',
+      'has_active_reminders': true,
+      'reminder_count': 1,
+    },
+  ],
+  'has_more': false,
+  'next_cursor': null,
 };
 
 Map<String, Object?> _list() => {

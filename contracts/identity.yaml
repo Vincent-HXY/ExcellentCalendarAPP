@@ -100,8 +100,8 @@ identities:
 
 capability_status:
   anniversary_reminder_r1:
-    implementation_status: planned
-    release_status: blocked
+    implementation_status: integrated
+    release_status: active
 
 test_vectors:
   timed_occurrence:

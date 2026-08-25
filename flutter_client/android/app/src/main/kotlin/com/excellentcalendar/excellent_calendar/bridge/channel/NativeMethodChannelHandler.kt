@@ -64,6 +64,14 @@ class NativeMethodChannelHandler(
     private val ringOrchestrator: RingMethodOrchestrator? = null,
     private val contractProfile: NativeContractProfile = NativeContractProfile.V1,
     private val reconcileRetryEnqueuer: (() -> Unit)? = null,
+    private val anniversaryCapabilityProvider: AnniversaryCapabilityProvider = AnniversaryCapabilityProvider {
+        AnniversaryCapabilitySnapshot(
+            notificationPermissionStatus = "unknown",
+            exactAlarmPermissionStatus = "unknown",
+            canPostNotifications = false,
+            canScheduleExactAlarms = false,
+        )
+    },
     private val executor: Executor = Executors.newSingleThreadExecutor(),
     private val resultDispatcher: ResultDispatcher = MainThreadResultDispatcher(),
     private val logger: NativeBridgeLogger = AndroidNativeBridgeLogger(),
@@ -72,6 +80,12 @@ class NativeMethodChannelHandler(
     private val nativeCallExecutor = NativeCallExecutor(executor, contractProfile, logger)
     private val mutationScheduleHook = MutationScheduleHook(
         reminderScheduleCoordinator,
+        reconcileRetryEnqueuer,
+        logger,
+    )
+    private val anniversaryOrchestrator = AnniversaryMethodOrchestrator(
+        reminderScheduleCoordinator,
+        anniversaryCapabilityProvider,
         reconcileRetryEnqueuer,
         logger,
     )
@@ -98,6 +112,7 @@ class NativeMethodChannelHandler(
                 nativeAnniversaryBridge,
                 contractProfile,
                 nativeCallExecutor,
+                anniversaryOrchestrator,
             ),
             ReminderMethodHandler(
                 nativeCalendarCoreBridge,
@@ -164,6 +179,8 @@ class NativeMethodChannelHandler(
         const val MethodAnniversaryDetail = "anniversary.detail"
         const val MethodAnniversaryList = "anniversary.list"
         const val MethodAnniversaryPreviewCountdown = "anniversary.preview_countdown"
+        const val MethodAnniversarySetRemindersEnabled = "anniversary.set_reminders_enabled"
+        const val MethodAnniversaryListOccurrences = "anniversary.list_occurrences"
         const val MethodCategoryList = "category.list"
         const val MethodCategoryCreate = "category.create"
         const val MethodReminderCreate = "reminder.create"
