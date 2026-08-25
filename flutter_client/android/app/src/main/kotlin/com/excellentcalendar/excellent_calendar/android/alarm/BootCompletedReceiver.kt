@@ -39,15 +39,7 @@ class BootReminderRescheduler(
 
 class BootCompletedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val trigger = when (intent.action) {
-            Intent.ACTION_BOOT_COMPLETED -> ReminderScheduleTrigger.BootCompleted
-            Intent.ACTION_MY_PACKAGE_REPLACED -> ReminderScheduleTrigger.PackageReplaced
-            Intent.ACTION_TIME_CHANGED -> ReminderScheduleTrigger.TimeChanged
-            Intent.ACTION_TIMEZONE_CHANGED -> ReminderScheduleTrigger.TimezoneChanged
-            AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED ->
-                ReminderScheduleTrigger.ManualRetry
-            else -> return
-        }
+        val trigger = reminderScheduleTriggerForAction(intent.action) ?: return
         val pendingResult = goAsync()
         Executor.execute {
             try {
@@ -72,4 +64,16 @@ class BootCompletedReceiver : BroadcastReceiver() {
         private const val LogTag = "ExcellentCalendarBoot"
         private val Executor = Executors.newSingleThreadExecutor()
     }
+}
+
+internal fun reminderScheduleTriggerForAction(action: String?): ReminderScheduleTrigger? = when (action) {
+    Intent.ACTION_BOOT_COMPLETED -> ReminderScheduleTrigger.BootCompleted
+    Intent.ACTION_MY_PACKAGE_REPLACED -> ReminderScheduleTrigger.PackageReplaced
+    Intent.ACTION_TIME_CHANGED,
+    Intent.ACTION_DATE_CHANGED,
+    -> ReminderScheduleTrigger.TimeChanged
+    Intent.ACTION_TIMEZONE_CHANGED -> ReminderScheduleTrigger.TimezoneChanged
+    AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED ->
+        ReminderScheduleTrigger.ManualRetry
+    else -> null
 }

@@ -53,7 +53,9 @@ picojson::value prepared_tap_payload(const domain::Notification& notification) {
   object["target_type"] = picojson::value(notification.target_type);
   object["target_id"] = picojson::value(notification.target_id);
   object["occurrence_key"] = optional_string(notification.occurrence_key);
-  object["route"] = picojson::value();
+  object["route"] = notification.target_type == "anniversary"
+                        ? picojson::value("anniversary.detail")
+                        : picojson::value();
   return picojson::value(std::move(object));
 }
 
@@ -185,6 +187,12 @@ picojson::value reminder_response_v2_to_json(const domain::Reminder& reminder) {
   object["recurrence_revision"] = optional_int(reminder.recurrence_revision);
   object["occurrence_key"] = optional_string(reminder.occurrence_key);
   object["occurrence_start_at"] = optional_string(reminder.occurrence_start_at);
+  object["template_key"] = optional_string(reminder.template_key);
+  object["occurrence_date"] = optional_string(reminder.occurrence_date);
+  object["advance_days"] = optional_int(reminder.advance_days);
+  object["local_time"] = optional_string(reminder.local_time);
+  object["timezone_mode"] = optional_string(reminder.timezone_mode);
+  object["fulfillment_delivery_id"] = optional_string(reminder.fulfillment_delivery_id);
   object["remind_at"] = picojson::value(reminder.remind_at);
   object["advance_minutes"] = optional_int(reminder.advance_minutes);
   object["methods"] = strings(reminder.methods);
@@ -242,6 +250,7 @@ picojson::value notification_response_v2_to_json(
   object["target_type"] = picojson::value(notification.target_type);
   object["target_id"] = picojson::value(notification.target_id);
   object["occurrence_key"] = optional_string(notification.occurrence_key);
+  object["covered_reminder_ids"] = strings(notification.covered_reminder_ids);
   object["method"] = picojson::value(notification.method);
   object["title"] = picojson::value(notification.title);
   object["body"] = optional_string(notification.body);
@@ -275,6 +284,19 @@ picojson::value recovery_batch_response_v2_to_json(
   object["window_overflow_count"] = picojson::value(
       static_cast<double>(batch.window_overflow_count));
   object["summary_delivery_id"] = optional_string(batch.summary_delivery_id);
+  picojson::array anniversary_groups;
+  for (const auto& group : batch.anniversary_catch_up_groups) {
+    picojson::object value;
+    value["anniversary_id"] = picojson::value(group.anniversary_id);
+    value["occurrence_key"] = picojson::value(group.occurrence_key);
+    value["occurrence_date"] = picojson::value(group.occurrence_date);
+    value["covered_reminder_ids"] = strings(group.covered_reminder_ids);
+    value["delivery_id"] = picojson::value(group.delivery_id);
+    value["status"] = picojson::value(group.status);
+    value["completed_at"] = optional_string(group.completed_at);
+    anniversary_groups.emplace_back(std::move(value));
+  }
+  object["anniversary_catch_up_groups"] = picojson::value(std::move(anniversary_groups));
   object["status"] = picojson::value(batch.status);
   object["completed_at"] = optional_string(batch.completed_at);
   return picojson::value(std::move(object));
@@ -299,6 +321,18 @@ picojson::value finalize_delivery_response_v2_to_json(
   object["successor"] = result.successor.has_value()
                               ? reminder_response_v2_to_json(*result.successor)
                               : picojson::value();
+  picojson::array covered;
+  covered.reserve(result.covered_reminders.size());
+  for (const auto& reminder : result.covered_reminders) {
+    covered.push_back(reminder_response_v2_to_json(reminder));
+  }
+  object["covered_reminders"] = picojson::value(std::move(covered));
+  picojson::array successors;
+  successors.reserve(result.successors.size());
+  for (const auto& reminder : result.successors) {
+    successors.push_back(reminder_response_v2_to_json(reminder));
+  }
+  object["successors"] = picojson::value(std::move(successors));
   object["recovery_batch"] = result.recovery_batch.has_value()
                                    ? recovery_batch_response_v2_to_json(*result.recovery_batch)
                                    : picojson::value();
@@ -328,7 +362,32 @@ picojson::value plan_recovery_response_v2_to_json(
   picojson::object object;
   object["batch"] = recovery_batch_response_v2_to_json(result.batch);
   object["detail_reminders"] = picojson::value(std::move(reminders));
+  picojson::array anniversary_groups;
+  anniversary_groups.reserve(result.anniversary_catch_up_groups.size());
+  for (const auto& group : result.anniversary_catch_up_groups) {
+    picojson::object item;
+    item["anniversary_id"] = picojson::value(group.anniversary_id);
+    item["occurrence_key"] = picojson::value(group.occurrence_key);
+    item["occurrence_date"] = picojson::value(group.occurrence_date);
+    item["covered_reminder_ids"] = strings(group.covered_reminder_ids);
+    item["delivery_id"] = picojson::value(group.delivery_id);
+    item["status"] = picojson::value(group.status);
+    item["completed_at"] = optional_string(group.completed_at);
+    anniversary_groups.emplace_back(std::move(item));
+  }
+  object["anniversary_catch_up_groups"] =
+      picojson::value(std::move(anniversary_groups));
   object["prepared_attempt_resolutions"] = picojson::value(std::move(resolutions));
+  object["idempotent_replay"] = picojson::value(result.idempotent_replay);
+  return picojson::value(std::move(object));
+}
+
+picojson::value snooze_reminder_response_v2_to_json(
+    const application::SnoozeReminderResult& result) {
+  picojson::object object;
+  object["source_delivery_id"] = picojson::value(result.source_delivery_id);
+  object["snooze_minutes"] = picojson::value(static_cast<double>(result.snooze_minutes));
+  object["snoozed_reminder"] = reminder_response_v2_to_json(result.snoozed_reminder);
   object["idempotent_replay"] = picojson::value(result.idempotent_replay);
   return picojson::value(std::move(object));
 }

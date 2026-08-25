@@ -130,6 +130,16 @@ class JniNativeCalendarCoreBridge(
             nativePreviewAnniversaryCountdownV2(requestJson)
         }
 
+    override fun setAnniversaryRemindersEnabled(requestJson: String) =
+        v2Only("nativeSetAnniversaryRemindersEnabledV2") {
+            nativeSetAnniversaryRemindersEnabledV2(requestJson)
+        }
+
+    override fun listAnniversaryOccurrences(requestJson: String) =
+        v2Only("nativeListAnniversaryOccurrencesV2") {
+            nativeListAnniversaryOccurrencesV2(requestJson)
+        }
+
     override fun listCategories(requestJson: String) = v2Only("nativeListCategoriesV2") {
         nativeListCategoriesV2(requestJson)
     }
@@ -194,6 +204,10 @@ class JniNativeCalendarCoreBridge(
 
     override fun planReminderRecovery(requestJson: String) = v2Only("nativePlanReminderRecoveryV2") {
         nativePlanReminderRecoveryV2(requestJson)
+    }
+
+    override fun snoozeReminder(requestJson: String) = v2Only("nativeSnoozeReminderV2") {
+        nativeSnoozeReminderV2(requestJson)
     }
 
     override fun createNotification(requestJson: String): String = if (profile == NativeContractProfile.V1) {
@@ -288,7 +302,12 @@ class JniNativeCalendarCoreBridge(
     )
 
     private fun validateV2RuntimeResponse(data: Any?) {
-        if (data !is Map<*, *> || data["initialized"] != true || data["storage_format_version"] != 2 || data["tzdb_version"] != BundledTzdbExtractor.Version) {
+        if (
+            data !is Map<*, *> ||
+            data["initialized"] != true ||
+            data["storage_format_version"] != ExpectedStorageFormatVersion ||
+            data["tzdb_version"] != BundledTzdbExtractor.Version
+        ) {
             throw NativeContractViolation("Runtime v2 initialization response is malformed.", "data")
         }
     }
@@ -341,6 +360,8 @@ class JniNativeCalendarCoreBridge(
     external fun nativeGetAnniversaryDetailV2(requestJson: String): String
     external fun nativeListAnniversariesV2(requestJson: String): String
     external fun nativePreviewAnniversaryCountdownV2(requestJson: String): String
+    external fun nativeSetAnniversaryRemindersEnabledV2(requestJson: String): String
+    external fun nativeListAnniversaryOccurrencesV2(requestJson: String): String
     external fun nativeListCategoriesV2(requestJson: String): String
     external fun nativeCreateCategoryV2(requestJson: String): String
     external fun nativeCreateReminder(requestJson: String): String
@@ -366,10 +387,12 @@ class JniNativeCalendarCoreBridge(
     external fun nativePrepareReminderDeliveryV2(requestJson: String): String
     external fun nativeFinalizeReminderDeliveryV2(requestJson: String): String
     external fun nativePlanReminderRecoveryV2(requestJson: String): String
+    external fun nativeSnoozeReminderV2(requestJson: String): String
     external fun nativeCreateNotification(requestJson: String): String
     external fun nativeConsumeReminderAfterDelivery(requestJson: String): String
 
     companion object {
         const val NativeLibraryName = "excellent_calendar_native"
+        private const val ExpectedStorageFormatVersion = 3
     }
 }

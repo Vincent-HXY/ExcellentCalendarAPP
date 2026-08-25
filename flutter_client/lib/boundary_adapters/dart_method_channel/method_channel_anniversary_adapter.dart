@@ -18,40 +18,39 @@ class MethodChannelAnniversaryAdapter implements AnniversaryNativeGateway {
   final NativeMethodChannelInvoker _invoker;
 
   @override
-  Future<NativeInvocation<AnniversaryDetailResponseDto>> createAnniversary(
+  Future<NativeInvocation<AnniversaryMutationResponseDto>> createAnniversary(
     CreateAnniversaryRequestDto request,
   ) => _invoker.invoke(
     method: NativeAnniversaryMethods.create,
     arguments: request.toJson(),
-    parseData: AnniversaryMapper.detail,
+    parseData: AnniversaryMapper.mutation,
   );
 
   @override
-  Future<NativeInvocation<AnniversaryDetailResponseDto>> updateAnniversary(
+  Future<NativeInvocation<AnniversaryMutationResponseDto>> updateAnniversary(
     UpdateAnniversaryRequestDto request,
   ) => _invoker.invoke(
     method: NativeAnniversaryMethods.update,
     arguments: request.toJson(),
-    parseData: AnniversaryMapper.detail,
+    parseData: AnniversaryMapper.mutation,
   );
 
   @override
-  Future<NativeInvocation<AnniversaryResponseDto>> deleteAnniversary(
-    DeleteAnniversaryRequestDto request,
-  ) => _invoker.invoke(
+  Future<NativeInvocation<AnniversaryDeleteOperationResponseDto>>
+  deleteAnniversary(DeleteAnniversaryRequestDto request) => _invoker.invoke(
     method: NativeAnniversaryMethods.delete,
     arguments: request.toJson(),
-    parseData: AnniversaryMapper.deleted,
+    parseData: AnniversaryMapper.deleteOperation,
   );
 
   @override
-  Future<NativeInvocation<AnniversaryDetailResponseDto>> getAnniversaryDetail(
-    GetAnniversaryDetailRequestDto request,
-  ) => _invoker.invoke(
-    method: NativeAnniversaryMethods.detail,
-    arguments: request.toJson(),
-    parseData: AnniversaryMapper.detail,
-  );
+  Future<NativeInvocation<AnniversaryDetailViewResponseDto>>
+  getAnniversaryDetail(GetAnniversaryDetailRequestDto request) =>
+      _invoker.invoke(
+        method: NativeAnniversaryMethods.detail,
+        arguments: request.toJson(),
+        parseData: AnniversaryMapper.detailView,
+      );
 
   @override
   Future<NativeInvocation<AnniversaryListResponseDto>> listAnniversaries(
@@ -69,5 +68,24 @@ class MethodChannelAnniversaryAdapter implements AnniversaryNativeGateway {
         method: NativeAnniversaryMethods.previewCountdown,
         arguments: request.toJson(),
         parseData: AnniversaryMapper.countdown,
+      );
+
+  @override
+  Future<NativeInvocation<AnniversaryMutationResponseDto>>
+  setAnniversaryRemindersEnabled(
+    SetAnniversaryRemindersEnabledRequestDto request,
+  ) => _invoker.invoke(
+    method: NativeAnniversaryMethods.setRemindersEnabled,
+    arguments: request.toJson(),
+    parseData: AnniversaryMapper.mutation,
+  );
+
+  @override
+  Future<NativeInvocation<AnniversaryOccurrenceListResponseDto>>
+  listAnniversaryOccurrences(ListAnniversaryOccurrencesRequestDto request) =>
+      _invoker.invoke(
+        method: NativeAnniversaryMethods.listOccurrences,
+        arguments: request.toJson(),
+        parseData: AnniversaryMapper.occurrences,
       );
 }

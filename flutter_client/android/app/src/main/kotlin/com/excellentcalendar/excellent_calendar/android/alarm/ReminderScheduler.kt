@@ -13,6 +13,9 @@ interface ReminderScheduler {
 sealed class ScheduleResult {
     data object Success : ScheduleResult()
 
+    /** Popup dispatcher was registered with an Android-permitted inexact API. */
+    data object ApproximateSuccess : ScheduleResult()
+
     data class Failure(
         val code: String,
         val message: String,

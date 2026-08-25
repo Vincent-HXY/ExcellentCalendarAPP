@@ -304,6 +304,18 @@ calls:
       envelope: common/native_result.schema.json
       data: reminder/plan_recovery_response.schema.json
 
+  reminder.snooze:
+    module: reminder
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: reminder/snooze_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: reminder/snooze_reminder_response.schema.json
+
   category.list:
     module: category
     visibility: internal
@@ -334,6 +346,7 @@ calls:
     caller: kotlin
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/create_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -345,6 +358,7 @@ calls:
     caller: kotlin
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/update_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -356,10 +370,11 @@ calls:
     caller: kotlin
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/delete_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: anniversary/deleted_anniversary_response.schema.json
+      data: anniversary/anniversary_delete_commit_response.schema.json
 
   anniversary.detail:
     module: anniversary
@@ -367,6 +382,7 @@ calls:
     caller: kotlin
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/get_anniversary_detail_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -378,6 +394,7 @@ calls:
     caller: kotlin
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/list_anniversaries_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -389,7 +406,32 @@ calls:
     caller: kotlin
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/preview_anniversary_countdown_request.schema.json
     result:
       envelope: common/native_result.schema.json
       data: anniversary/anniversary_countdown_response.schema.json
+
+  anniversary.set_reminders_enabled:
+    module: anniversary
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: anniversary/set_anniversary_reminders_enabled_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_detail_response.schema.json
+
+  anniversary.list_occurrences:
+    module: anniversary
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: anniversary/list_anniversary_occurrences_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_occurrence_list_response.schema.json

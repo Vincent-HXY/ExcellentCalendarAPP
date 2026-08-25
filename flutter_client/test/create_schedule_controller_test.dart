@@ -6,10 +6,13 @@ import 'package:excellent_calendar/native_contract/event/create_event_request_dt
 import 'package:excellent_calendar/native_contract/event/event_response_dto.dart';
 import 'package:excellent_calendar/native_contract/runtime/local_wall_date_time.dart';
 import 'package:excellent_calendar/native_contract/shared/native_invocation.dart';
+import 'package:excellent_calendar/native_contract/ring/ring_contract_enums.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes/fake_timezone_gateway.dart';
+import 'fakes/fake_ring_gateway.dart';
 import 'fixtures/notification_fixtures.dart';
+import 'fixtures/ring_fixtures.dart';
 
 void main() {
   test('submit owns timezone, recurrence, reminder, and DTO mapping', () async {
@@ -115,7 +118,133 @@ void main() {
     expect(eventGateway.createRequests, isEmpty);
     expect(timezoneGateway.resolveRequests, isEmpty);
   });
+
+  test(
+    'ring save rechecks capability and submits ring without popup',
+    () async {
+      final eventGateway = _RecordingEventGateway();
+      final ringCalls = <String>[];
+      final ringGateway = FakeRingGateway(
+        callLog: ringCalls,
+        onGetState: () async => successInvocation(ringSnapshot()),
+      );
+      final controller = CreateScheduleController(
+        createEventUseCase: CreateEventUseCase(eventGateway),
+        timezoneService: TimezoneApplicationService(FakeTimezoneGateway()),
+        ringGateway: ringGateway,
+      );
+
+      final toggleCheck = await controller.checkRingCapability();
+      final result = await controller.submit(_ringDraft());
+
+      expect(toggleCheck.canEnable, isTrue);
+      expect(result.succeeded, isTrue);
+      expect(ringCalls, ['get_state', 'get_state']);
+      expect(
+        eventGateway.createRequests.single.reminders.single.toEventJson(
+          recurring: false,
+        ),
+        containsPair('methods', ['ring']),
+      );
+      await ringGateway.eventController.close();
+    },
+  );
+
+  test(
+    'permission failure preserves draft by stopping before create',
+    () async {
+      final eventGateway = _RecordingEventGateway();
+      final ringGateway = FakeRingGateway(
+        onGetState: () async => successInvocation(
+          ringSnapshot(
+            canEnableRing: false,
+            blockingReasons: const [
+              RingCapabilityBlockingReason.notificationPermissionUnavailable,
+            ],
+          ),
+        ),
+      );
+      final timezoneGateway = FakeTimezoneGateway();
+      final controller = CreateScheduleController(
+        createEventUseCase: CreateEventUseCase(eventGateway),
+        timezoneService: TimezoneApplicationService(timezoneGateway),
+        ringGateway: ringGateway,
+      );
+
+      final result = await controller.submit(_ringDraft());
+
+      expect(result.outcome, CreateScheduleSubmitOutcome.ringCapabilityFailure);
+      expect(result.message, contains('通知权限不可用'));
+      expect(eventGateway.createRequests, isEmpty);
+      expect(timezoneGateway.resolveRequests, isEmpty);
+      await ringGateway.eventController.close();
+    },
+  );
+
+  test(
+    'ring requires at least one reminder time before capability work',
+    () async {
+      final eventGateway = _RecordingEventGateway();
+      final ringCalls = <String>[];
+      final ringGateway = FakeRingGateway(
+        callLog: ringCalls,
+        onGetState: () async => successInvocation(ringSnapshot()),
+      );
+      final controller = CreateScheduleController(
+        createEventUseCase: CreateEventUseCase(eventGateway),
+        timezoneService: TimezoneApplicationService(FakeTimezoneGateway()),
+        ringGateway: ringGateway,
+      );
+      final base = _ringDraft();
+
+      final result = await controller.submit(
+        CreateScheduleDraft(
+          title: base.title,
+          note: base.note,
+          location: base.location,
+          start: base.start,
+          end: base.end,
+          isAllDay: base.isAllDay,
+          recurrence: base.recurrence,
+          reminderAdvanceMinutes: const [],
+          isRingingReminderEnabled: true,
+        ),
+      );
+
+      expect(result.outcome, CreateScheduleSubmitOutcome.validationFailure);
+      expect(result.message, '请先设置提醒时间再开启响铃');
+      expect(ringCalls, isEmpty);
+      expect(eventGateway.createRequests, isEmpty);
+      await ringGateway.eventController.close();
+    },
+  );
 }
+
+CreateScheduleDraft _ringDraft() => const CreateScheduleDraft(
+  title: '服药',
+  note: '草稿内容应在权限失败后保留',
+  location: '',
+  start: LocalWallDateTime(
+    year: 2026,
+    month: 8,
+    day: 22,
+    hour: 9,
+    minute: 0,
+    second: 0,
+  ),
+  end: LocalWallDateTime(
+    year: 2026,
+    month: 8,
+    day: 22,
+    hour: 10,
+    minute: 0,
+    second: 0,
+  ),
+  isAllDay: false,
+  recurrence: CreateScheduleRecurrence.once,
+  reminderAdvanceMinutes: [15],
+  isRingingReminderEnabled: true,
+);
 
 class _RecordingEventGateway implements EventNativeGateway {
   final List<CreateEventRequestDto> createRequests = [];

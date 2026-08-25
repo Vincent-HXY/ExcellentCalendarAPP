@@ -10,6 +10,8 @@
 #include "excellent_calendar/common/error_code_metadata.hpp"
 #include "excellent_calendar/common/string_utils.hpp"
 #include "excellent_calendar/common/uuid.hpp"
+#include "excellent_calendar/application/anniversary_reminder_projection.hpp"
+#include "excellent_calendar/domain/anniversary.hpp"
 #include "excellent_calendar/domain/event_status.hpp"
 
 namespace excellent_calendar::application {
@@ -98,6 +100,15 @@ const domain::Event* find_event(const repository::RecurringEventState& state,
   return found == state.events.end() ? nullptr : &*found;
 }
 
+const domain::Anniversary* find_anniversary(
+    const repository::RecurringEventState& state,
+    const std::string& id) {
+  const auto found = std::find_if(
+      state.anniversaries.begin(), state.anniversaries.end(),
+      [&](const auto& value) { return value.id == id; });
+  return found == state.anniversaries.end() ? nullptr : &*found;
+}
+
 const domain::Recurrence* find_recurrence(const repository::RecurringEventState& state,
                                           const std::string& id,
                                           int revision) {
@@ -137,7 +148,8 @@ bool same_prepared_payload(const domain::Notification& previous,
          previous.target_id == expected.target_id &&
          previous.occurrence_key == expected.occurrence_key &&
          previous.method == expected.method && previous.title == expected.title &&
-         previous.body == expected.body && previous.planned_at == expected.planned_at;
+         previous.body == expected.body && previous.planned_at == expected.planned_at &&
+         previous.covered_reminder_ids == expected.covered_reminder_ids;
 }
 
 bool same_adopted_prepared_payload(const domain::Notification& previous,
@@ -148,7 +160,8 @@ bool same_adopted_prepared_payload(const domain::Notification& previous,
          previous.target_id == expected.target_id &&
          previous.occurrence_key == expected.occurrence_key &&
          previous.method == expected.method && previous.title == expected.title &&
-         previous.body == expected.body && previous.planned_at == expected.planned_at;
+         previous.body == expected.body && previous.planned_at == expected.planned_at &&
+         previous.covered_reminder_ids == expected.covered_reminder_ids;
 }
 
 std::optional<std::string> effective_recovery_batch_id(
@@ -160,8 +173,29 @@ std::optional<std::string> effective_recovery_batch_id(
 
 std::string event_title(const repository::RecurringEventState& state,
                         const domain::Reminder& reminder) {
+  if (reminder.target_type == domain::kReminderTargetAnniversary) {
+    const auto* anniversary = find_anniversary(state, reminder.target_id);
+    return anniversary != nullptr && !common::trim_ascii(anniversary->title).empty()
+               ? anniversary->title
+               : "纪念日提醒";
+  }
   const auto* event = find_event(state, reminder.target_id);
   return event != nullptr && !common::trim_ascii(event->title).empty() ? event->title : "日程提醒";
+}
+
+std::optional<std::string> reminder_body(
+    const repository::RecurringEventState& state,
+    const domain::Reminder& reminder) {
+  if (reminder.target_type != domain::kReminderTargetAnniversary ||
+      !reminder.advance_days.has_value()) {
+    return reminder.message;
+  }
+  const auto title = event_title(state, reminder);
+  if (*reminder.advance_days == 0) {
+    return "今天是“" + title + "”";
+  }
+  return "距离“" + title + "”还有 " +
+         std::to_string(*reminder.advance_days) + " 天";
 }
 
 std::string summary_body(const domain::ReminderRecoveryBatch& batch) {
@@ -191,6 +225,8 @@ bool same_finalization(const domain::Notification& notification,
 
 bool valid_finalize_command(const FinalizeDeliveryCommand& command) {
   if (!common::is_uuid(command.delivery_attempt_id)) return false;
+  if (command.timezone.has_value() &&
+      common::trim_ascii(*command.timezone).empty()) return false;
   if (command.outcome == "sent") {
     return !command.failure_class.has_value() && !command.error_code.has_value();
   }
@@ -278,12 +314,20 @@ bool batch_is_complete(const repository::RecurringEventState& state,
     const auto* reminder = find_reminder(state, id);
     if (reminder == nullptr || !is_consumed(*reminder)) return false;
   }
-  if (!batch.summary_delivery_id.has_value()) return true;
-  const auto notification = latest_for_delivery(state.notifications, *batch.summary_delivery_id);
-  return notification.has_value() &&
-         (notification->status == domain::kNotificationStatusSent ||
-          (notification->status == domain::kNotificationStatusFailed &&
-           notification->failure_class == "permanent"));
+  bool ordinary_complete = true;
+  if (batch.summary_delivery_id.has_value()) {
+    const auto notification = latest_for_delivery(
+        state.notifications, *batch.summary_delivery_id);
+    ordinary_complete = notification.has_value() &&
+        (notification->status == domain::kNotificationStatusSent ||
+         (notification->status == domain::kNotificationStatusFailed &&
+          notification->failure_class == "permanent"));
+  }
+  if (!ordinary_complete) return false;
+  return std::all_of(
+      batch.anniversary_catch_up_groups.begin(),
+      batch.anniversary_catch_up_groups.end(),
+      [](const auto& group) { return group.status == "completed"; });
 }
 
 void complete_batch_if_ready(repository::RecurringEventState& state,
@@ -296,17 +340,55 @@ void complete_batch_if_ready(repository::RecurringEventState& state,
   }
 }
 
+domain::ReminderRecoveryBatch::AnniversaryCatchUpGroup* find_anniversary_group(
+    domain::ReminderRecoveryBatch& batch,
+    const std::string& delivery_id) {
+  const auto found = std::find_if(
+      batch.anniversary_catch_up_groups.begin(),
+      batch.anniversary_catch_up_groups.end(),
+      [&](const auto& group) { return group.delivery_id == delivery_id; });
+  return found == batch.anniversary_catch_up_groups.end() ? nullptr : &*found;
+}
+
+const domain::ReminderRecoveryBatch::AnniversaryCatchUpGroup* find_anniversary_group(
+    const domain::ReminderRecoveryBatch& batch,
+    const std::string& delivery_id) {
+  const auto found = std::find_if(
+      batch.anniversary_catch_up_groups.begin(),
+      batch.anniversary_catch_up_groups.end(),
+      [&](const auto& group) { return group.delivery_id == delivery_id; });
+  return found == batch.anniversary_catch_up_groups.end() ? nullptr : &*found;
+}
+
+common::Result<common::Unit> validate_anniversary_timezone(
+    const FinalizeDeliveryCommand& command,
+    const std::shared_ptr<domain::LocalTimeResolver>& resolver) {
+  if (!command.timezone.has_value() ||
+      common::trim_ascii(*command.timezone).empty()) {
+    return common::Result<common::Unit>::failure(
+        contract_error("timezone", "timezone is required for Anniversary delivery"));
+  }
+  if (!resolver) {
+    return common::Result<common::Unit>::failure(common::make_error(
+        "NATIVE_INTERNAL_ERROR", "Native internal error",
+        {{"reason", "Anniversary timezone resolver is unavailable"}}));
+  }
+  return resolver->validate_timezone(*command.timezone);
+}
+
 }  // namespace
 
 RecurringReminderDeliveryWorkflowService::RecurringReminderDeliveryWorkflowService(
     std::shared_ptr<repository::RecurringEventTransaction> transaction,
     std::shared_ptr<RollingReminderService> rolling_reminder_service,
     ClockFn clock,
-    IdGeneratorFn id_generator)
+    IdGeneratorFn id_generator,
+    std::shared_ptr<domain::LocalTimeResolver> local_time_resolver)
     : transaction_(std::move(transaction)),
       rolling_reminder_service_(std::move(rolling_reminder_service)),
       clock_(std::move(clock)),
-      id_generator_(std::move(id_generator)) {}
+      id_generator_(std::move(id_generator)),
+      local_time_resolver_(std::move(local_time_resolver)) {}
 
 common::Result<PrepareDeliveryResult>
 RecurringReminderDeliveryWorkflowService::prepare_delivery(
@@ -325,6 +407,7 @@ RecurringReminderDeliveryWorkflowService::prepare_delivery(
         domain::Notification notification;
         if (command.kind == "reminder") {
           if (!command.reminder_id.has_value() || !command.expected_remind_at.has_value() ||
+              command.delivery_id.has_value() ||
               !common::is_uuid(*command.reminder_id) ||
               !common::is_iso8601_utc_datetime(*command.expected_remind_at)) {
             return common::Result<common::Unit>::failure(
@@ -343,11 +426,25 @@ RecurringReminderDeliveryWorkflowService::prepare_delivery(
           if (!is_open(*reminder)) {
             return common::Result<common::Unit>::failure(reminder_not_deliverable(*reminder));
           }
-          if (command.method != domain::kReminderMethodPopup ||
-              !contains(reminder->methods, command.method)) {
+          const bool supported_method = command.method == domain::kReminderMethodPopup ||
+                                        command.method == domain::kReminderMethodRing;
+          if (!supported_method || !contains(reminder->methods, command.method)) {
             return common::Result<common::Unit>::failure(common::make_error(
                 "UNSUPPORTED_REMINDER_METHOD",
                 "Reminder method is not supported in current version", {{"method", command.method}}));
+          }
+          if (command.method == domain::kReminderMethodRing) {
+            const auto* event = find_event(state, reminder->target_id);
+            if (reminder->target_type != domain::kReminderTargetEvent ||
+                reminder->recurrence_revision.has_value() ||
+                reminder->occurrence_key.has_value() ||
+                reminder->occurrence_start_at.has_value() || event == nullptr ||
+                event->deleted_at.has_value() || event->status != domain::kEventStatusActive ||
+                event->is_all_day || event->has_recurrence ||
+                event->recurrence_id.has_value() || event->recurrence_revision.has_value()) {
+              return common::Result<common::Unit>::failure(
+                  reminder_not_deliverable(*reminder));
+            }
           }
           if (reminder->remind_at != *command.expected_remind_at) {
             return common::Result<common::Unit>::failure(common::make_error(
@@ -386,11 +483,12 @@ RecurringReminderDeliveryWorkflowService::prepare_delivery(
           notification.occurrence_key = reminder->occurrence_key;
           notification.method = command.method;
           notification.title = event_title(state, *reminder);
-          notification.body = reminder->message;
+          notification.body = reminder_body(state, *reminder);
           notification.planned_at = reminder->remind_at;
         } else if (command.kind == "recovery_summary") {
           if (command.reminder_id.has_value() || !command.recovery_batch_id.has_value() ||
-              command.expected_remind_at.has_value() || command.method != domain::kReminderMethodPopup ||
+              command.delivery_id.has_value() || command.expected_remind_at.has_value() ||
+              command.method != domain::kReminderMethodPopup ||
               !common::is_uuid(*command.recovery_batch_id)) {
             return common::Result<common::Unit>::failure(
                 contract_error("kind", "recovery summary identity is invalid"));
@@ -409,6 +507,62 @@ RecurringReminderDeliveryWorkflowService::prepare_delivery(
           notification.method = std::string(domain::kReminderMethodPopup);
           notification.title = "提醒恢复摘要";
           notification.body = summary_body(*batch);
+          notification.planned_at = batch->started_at;
+        } else if (command.kind == "anniversary_catch_up") {
+          if (command.reminder_id.has_value() ||
+              !command.recovery_batch_id.has_value() ||
+              !command.delivery_id.has_value() ||
+              command.expected_remind_at.has_value() ||
+              command.method != domain::kReminderMethodPopup ||
+              !common::is_uuid(*command.recovery_batch_id) ||
+              !common::is_uuid(*command.delivery_id)) {
+            return common::Result<common::Unit>::failure(
+                contract_error("kind", "Anniversary catch-up identity is invalid"));
+          }
+          const auto* batch = find_batch(state, *command.recovery_batch_id);
+          if (batch == nullptr || batch->status != domain::kRecoveryInProgress) {
+            return common::Result<common::Unit>::failure(recovery_conflict(
+                *command.recovery_batch_id,
+                "Anniversary catch-up batch is not deliverable"));
+          }
+          const auto* group = find_anniversary_group(*batch, *command.delivery_id);
+          if (group == nullptr || group->status != "pending") {
+            return common::Result<common::Unit>::failure(recovery_conflict(
+                *command.recovery_batch_id,
+                "Anniversary catch-up membership is missing or completed"));
+          }
+          for (const auto& id : group->covered_reminder_ids) {
+            const auto* reminder = find_reminder(state, id);
+            if (reminder == nullptr || !is_open(*reminder) ||
+                reminder->target_type != domain::kReminderTargetAnniversary ||
+                reminder->target_id != group->anniversary_id ||
+                reminder->occurrence_key != group->occurrence_key ||
+                reminder->occurrence_date != group->occurrence_date ||
+                reminder->recovery_batch_id != batch->id) {
+              return common::Result<common::Unit>::failure(
+                  attempt_invalid(*command.delivery_id,
+                                  "Anniversary catch-up membership is stale"));
+            }
+          }
+          const auto* anniversary = find_anniversary(state, group->anniversary_id);
+          if (anniversary == nullptr || anniversary->deleted_at.has_value() ||
+              !anniversary->reminders_enabled) {
+            return common::Result<common::Unit>::failure(
+                attempt_invalid(*command.delivery_id,
+                                "Anniversary catch-up target is stale"));
+          }
+          delivery_id = group->delivery_id;
+          notification.kind = "anniversary_catch_up";
+          notification.recovery_batch_id = batch->id;
+          notification.target_type = std::string(domain::kReminderTargetAnniversary);
+          notification.target_id = group->anniversary_id;
+          notification.occurrence_key = group->occurrence_key;
+          notification.covered_reminder_ids = group->covered_reminder_ids;
+          notification.method = std::string(domain::kReminderMethodPopup);
+          notification.title = anniversary->title;
+          notification.body = "你有 " +
+                              std::to_string(group->covered_reminder_ids.size()) +
+                              " 条纪念日提醒待查看";
           notification.planned_at = batch->started_at;
         } else {
           return common::Result<common::Unit>::failure(
@@ -514,7 +668,10 @@ RecurringReminderDeliveryWorkflowService::finalize_delivery(
             const auto* reminder = find_reminder(state, *notification.reminder_id);
             if (reminder != nullptr) {
               output->reminder = *reminder;
-              output->successor = find_open_successor(state, *reminder);
+              output->successor =
+                  reminder->target_type == domain::kReminderTargetAnniversary
+                      ? find_persisted_anniversary_successor(state, *reminder)
+                      : find_open_successor(state, *reminder);
             }
           }
           if (const auto batch_id = effective_recovery_batch_id(notification);
@@ -522,7 +679,41 @@ RecurringReminderDeliveryWorkflowService::finalize_delivery(
             const auto* batch = find_batch(state, *batch_id);
             if (batch != nullptr) output->recovery_batch = *batch;
           }
+          if (notification.kind == "anniversary_catch_up") {
+            for (const auto& id : notification.covered_reminder_ids) {
+              const auto* reminder = find_reminder(state, id);
+              if (reminder == nullptr) {
+                return common::Result<common::Unit>::failure(reminder_not_found(id));
+              }
+              output->covered_reminders.push_back(*reminder);
+              const auto successor =
+                  find_persisted_anniversary_successor(state, *reminder);
+              if (successor.has_value() &&
+                  std::none_of(output->successors.begin(), output->successors.end(),
+                               [&](const auto& item) { return item.id == successor->id; })) {
+                output->successors.push_back(*successor);
+              }
+            }
+          }
           return common::Result<common::Unit>::success(common::Unit{});
+        }
+
+        domain::Reminder* single_reminder = nullptr;
+        if (notification.kind == "reminder" && notification.reminder_id.has_value()) {
+          single_reminder = find_reminder(state, *notification.reminder_id);
+          if (single_reminder == nullptr) {
+            return common::Result<common::Unit>::failure(
+                reminder_not_found(*notification.reminder_id));
+          }
+        }
+        const bool anniversary_attempt =
+            notification.kind == "anniversary_catch_up" ||
+            (single_reminder != nullptr &&
+             single_reminder->target_type == domain::kReminderTargetAnniversary);
+        if (anniversary_attempt) {
+          auto timezone_valid =
+              validate_anniversary_timezone(command, local_time_resolver_);
+          if (!timezone_valid.ok()) return timezone_valid;
         }
 
         notification.status = command.outcome == "sent"
@@ -553,15 +744,24 @@ RecurringReminderDeliveryWorkflowService::finalize_delivery(
             return common::Result<common::Unit>::failure(
                 attempt_invalid(command.delivery_attempt_id, "Reminder identity is missing"));
           }
-          auto* reminder = find_reminder(state, *notification.reminder_id);
+          auto* reminder = single_reminder;
           if (reminder == nullptr) {
             return common::Result<common::Unit>::failure(reminder_not_found(*notification.reminder_id));
           }
           if (!is_consumed(*reminder)) {
             consume_reminder(*reminder, command, now);
             if (command.outcome == "sent" || command.failure_class == "permanent") {
-              auto successor = ensure_successor(
-                  state, *reminder, now, *rolling_reminder_service_);
+              if (command.outcome == "sent" &&
+                  reminder->target_type == domain::kReminderTargetAnniversary) {
+                reminder->fulfillment_delivery_id = notification.delivery_id;
+              }
+              auto successor =
+                  reminder->target_type == domain::kReminderTargetAnniversary
+                      ? ensure_anniversary_successor(
+                            state, *reminder, *command.timezone, now,
+                            local_time_resolver_)
+                      : ensure_successor(
+                            state, *reminder, now, *rolling_reminder_service_);
               if (!successor.ok()) return common::Result<common::Unit>::failure(successor.error());
               output->successor = successor.value();
             }
@@ -589,6 +789,62 @@ RecurringReminderDeliveryWorkflowService::finalize_delivery(
                   state, *reminder, now, *rolling_reminder_service_);
               if (!successor.ok()) return common::Result<common::Unit>::failure(successor.error());
             }
+          }
+        } else if (notification.kind == "anniversary_catch_up") {
+          if (batch == nullptr || !notification.delivery_id.has_value()) {
+            return common::Result<common::Unit>::failure(attempt_invalid(
+                command.delivery_attempt_id,
+                "Anniversary catch-up batch identity is missing"));
+          }
+          auto* group = find_anniversary_group(*batch, *notification.delivery_id);
+          if (group == nullptr ||
+              group->covered_reminder_ids != notification.covered_reminder_ids) {
+            return common::Result<common::Unit>::failure(attempt_invalid(
+                command.delivery_attempt_id,
+                "Anniversary catch-up membership conflicts with batch"));
+          }
+          for (const auto& id : group->covered_reminder_ids) {
+            auto* reminder = find_reminder(state, id);
+            if (reminder == nullptr ||
+                reminder->target_type != domain::kReminderTargetAnniversary ||
+                reminder->target_id != group->anniversary_id ||
+                reminder->occurrence_key != group->occurrence_key ||
+                reminder->recovery_batch_id != batch->id) {
+              return common::Result<common::Unit>::failure(attempt_invalid(
+                  command.delivery_attempt_id,
+                  "Anniversary catch-up covered Reminder is stale"));
+            }
+            if (!is_consumed(*reminder)) {
+              consume_reminder(*reminder, command, now);
+              if (command.outcome == "sent") {
+                reminder->fulfillment_delivery_id = notification.delivery_id;
+              }
+              if (command.outcome == "sent" ||
+                  command.failure_class == "permanent") {
+                auto successor = ensure_anniversary_successor(
+                    state, *reminder, *command.timezone, now,
+                    local_time_resolver_);
+                if (!successor.ok()) {
+                  return common::Result<common::Unit>::failure(successor.error());
+                }
+                if (successor.value().has_value() &&
+                    std::none_of(output->successors.begin(), output->successors.end(),
+                                 [&](const auto& item) {
+                                   return item.id == successor.value()->id;
+                                 })) {
+                  output->successors.push_back(*successor.value());
+                }
+              }
+            }
+            const auto* finalized_reminder = find_reminder(state, id);
+            if (finalized_reminder == nullptr) {
+              return common::Result<common::Unit>::failure(reminder_not_found(id));
+            }
+            output->covered_reminders.push_back(*finalized_reminder);
+          }
+          if (command.outcome == "sent" || command.failure_class == "permanent") {
+            group->status = "completed";
+            group->completed_at = now;
           }
         } else {
           return common::Result<common::Unit>::failure(

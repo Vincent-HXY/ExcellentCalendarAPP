@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/update_registration_email_request.schema.json",
+  "title": "UpdateRegistrationEmailRequest",
+  "description": "Corrects the login email of a pending-verification account before activation. Ownership is proven with the password set at registration; the account_id alone is never an authorization credential. All previous registration challenges are invalidated and a fresh challenge is issued to the new email.",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["account_id", "new_email", "current_password"],
+  "properties": {
+    "account_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "new_email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "current_password": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "writeOnly": true
+    }
+  },
+  "examples": [
+    {
+      "account_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+      "new_email": "corrected@example.com",
+      "current_password": "password-set-at-registration"
+    }
+  ]
+}

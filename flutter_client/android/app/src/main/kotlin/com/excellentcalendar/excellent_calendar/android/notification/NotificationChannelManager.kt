@@ -40,7 +40,17 @@ class AndroidNotificationChannelManager(context: Context) : NotificationChannelM
                     .build()
                 setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM), attributes)
             }
-            notificationManager.createNotificationChannels(listOf(popup, ring))
+            val ringControl = NotificationChannel(
+                RingControlChannelId,
+                "Active ring controls",
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                description = "Silent controls shown while a calendar reminder is ringing"
+                enableVibration(false)
+                setSound(null, null)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PRIVATE
+            }
+            notificationManager.createNotificationChannels(listOf(popup, ring, ringControl))
         }
         return NotificationChannelInitialization(ready = true, defaultChannelId = PopupChannelId)
     }
@@ -48,5 +58,6 @@ class AndroidNotificationChannelManager(context: Context) : NotificationChannelM
     companion object {
         const val PopupChannelId = "excellent_calendar_reminder_popup"
         const val RingChannelId = "excellent_calendar_reminder_ring"
+        const val RingControlChannelId = "excellent_calendar_ring_control_v1"
     }
 }

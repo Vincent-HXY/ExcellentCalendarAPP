@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/prepared_attempt_recovery_resolution.schema.json",
   "title": "PreparedAttemptRecoveryResolution",
-  "description": "Immutable recovery arbitration for an attempt that was already prepared before plan_recovery. Kotlin must serialize recovery against normal delivery, reuse adopted_detail attempts, and cancel the Android notification tag for abandoned resolutions without calling finalize_delivery.",
+  "description": "Immutable recovery arbitration for an attempt that was already prepared before plan_recovery. Kotlin must serialize recovery against normal delivery, reuse adopted_detail attempts, and cancel the Android notification tag for abandoned resolutions without calling finalize_delivery. A ring attempt older than the inclusive 5-minute grace window resolves as abandoned_to_summary.",
   "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,

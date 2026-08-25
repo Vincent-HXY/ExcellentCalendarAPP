@@ -7,6 +7,7 @@ import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonC
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderResponseContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.SchedulableReminderBatch
 import com.excellentcalendar.excellent_calendar.bridge.contract.SchedulableReminderCursor
@@ -21,7 +22,35 @@ interface ReminderScheduleReconciler {
         request: ReconcileReminderScheduleContract,
         executionBudgetMillis: Long = ReminderScheduleCoordinator.DefaultExecutionBudgetMillis,
     ): NativeResultContract
+
+    /** Kotlin-internal platform result; it never changes the public reconcile response shape. */
+    fun reconcileWithOutcome(
+        request: ReconcileReminderScheduleContract,
+        executionBudgetMillis: Long = ReminderScheduleCoordinator.DefaultExecutionBudgetMillis,
+    ): ReminderScheduleReconciliation = ReminderScheduleReconciliation(
+        result = reconcile(request, executionBudgetMillis),
+        scheduleMode = null,
+    )
+
+    /** Kotlin-internal dispatcher callback; V2 overrides it to preserve the frozen queue time. */
+    fun reconcileDispatcherAlarm(
+        plannedAt: String,
+        executionBudgetMillis: Long = ReminderScheduleCoordinator.DefaultExecutionBudgetMillis,
+    ): NativeResultContract = reconcile(
+        ReconcileReminderScheduleContract(ReminderScheduleTrigger.AlarmFired, force = true),
+        executionBudgetMillis,
+    )
 }
+
+enum class ReminderScheduleMode {
+    Exact,
+    Approximate,
+}
+
+data class ReminderScheduleReconciliation(
+    val result: NativeResultContract,
+    val scheduleMode: ReminderScheduleMode?,
+)
 
 class ReminderScheduleCoordinator(
     private val nativeBridge: NativeReminderBridge,
@@ -101,7 +130,9 @@ class ReminderScheduleCoordinator(
         }
 
         when (val scheduled = alarmScheduler.schedule(head.remindAt)) {
-            ScheduleResult.Success -> markTimestampScheduled(head.remindAt, failedIds)
+            ScheduleResult.Success,
+            ScheduleResult.ApproximateSuccess,
+            -> markTimestampScheduled(head.remindAt, failedIds)
             is ScheduleResult.Failure -> {
                 markFailed(head.id, scheduled.message)
                 return@withLock NativeResultContract.failure(

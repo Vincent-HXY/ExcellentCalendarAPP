@@ -1,6 +1,6 @@
 # ExcellentCalendarAPP 实时代码进度研判
 
-> 研判时间：2026-08-14（Asia/Shanghai）  
+> 研判时间：2026-08-25（Asia/Shanghai）
 > 研判口径：结论来自当前代码、生产组合入口、跨层调用链、持久化实现、自动化测试和本次实际构建结果；项目进度类文档未作为“已完成/未完成”的判断依据。  
 > 状态定义：**已实现**表示生产代码存在真实调用链且有自动化验证；**部分实现**表示仅部分层级、部分场景或仅测试环境可用；**未实现**表示只有协议/目录说明/占位包，或没有生产代码。
 
@@ -79,7 +79,8 @@ Flutter 今日/收件箱与日程页面
 - 支持创建、修改、软删除、详情、列表和倒计时预览。
 - 支持一次性与每年重复纪念日，倒计时按用户时区的本地自然日计算。
 - Flutter 已有列表、新建、详情、编辑和删除页面。
-- 使用独立 C++ Domain、Application Service、JNI 接口和 JSON 事务存储。
+- Reminder R1 已完成 Flutter → MethodChannel → Kotlin/JNI → C++ → Storage v3 → Alarm/Notification 生产接线，支持强类型模板、总开关、date-only occurrence 查询和通知点击详情。
+- Calendar Core JSON Storage v3 与 Anniversary Reminder R1 均为 `integrated + active`。普通到点 Alarm、正常通知正文、持久化 `kind=reminder`、年度 successor、点击去重及完整 Native 更新链已通过 realme Android 13 验证；未覆盖设备矩阵由产品负责人接受为发布残余风险。
 
 主要代码证据：`flutter_client/lib/application/anniversary/`、`flutter_client/lib/presentation/anniversary/`、`cpp_core/src/application/anniversary_*`、`cpp_core/src/storage/json/json_anniversary_transaction.cpp`。
 
@@ -138,11 +139,12 @@ Flutter 今日/收件箱与日程页面
 
 - 农历明确未实现。
 - “分享”按钮存在，但生产代码注入的是 `FakeAnniversaryShareGateway`，并没有真正调用 Android 分享能力。
-- 纪念日尚未接入 Reminder/Notification、日历视图 occurrence 聚合、系统节日预设或云同步。
+- 纪念日 Reminder/Notification 和供 Calendar Application 消费的 typed occurrence 查询已接入；完整月/周/日历 UI 聚合、系统节日预设和云同步仍未实现。
+- 尚未完成的非阻断设备验证包括：同 occurrence 多 Reminder 真实聚合补发、真机时区切换与旧 Alarm 拒绝、exact-alarm 拒绝降级、权限恢复自动调度、陈旧 Alarm，以及重启/长时离线日末边界。这些项目不得描述为已验证通过，由产品负责人在 2026-08-25 明确接受为本次发布残余风险。
 
 ### 7. 本地存储
 
-- 当前真实持久化方案是版本化 JSON 文件及事务日志，不是目标中的 SQLite 主存储。
+- 当前真实持久化方案是 Calendar Core JSON Storage v3 及统一可恢复事务日志，不是目标中的 SQLite 主存储。v2 仅作为受支持的迁移来源。
 - `local_storage/sqlite`、`sqlite_fts`、`attachment_store`、`operation_log` 目录只有说明文件，没有实现代码。
 - 适合作为当前本地核心验证方案，但还不是完整的结构化存储、全文索引、附件和同步日志体系。
 
@@ -159,7 +161,7 @@ Flutter 今日/收件箱与日程页面
 ### 本地产品功能
 
 - Habit 与 HabitCheckIn：只有 Contract Schema，没有 Dart/Kotlin/C++/Storage/UI 实现。
-- 完整日历视图：月/周/日视图、日期区间聚合、纪念日 occurrence 合并均未实现。
+- 完整日历视图：月/周/日视图与 Event/Anniversary/Habit 统一展示仍未实现；Anniversary 日期区间 occurrence 查询底层能力已集成。
 - 四象限页面和业务聚合未实现。
 - 独立搜索页、搜索历史、SQLite FTS 未实现。
 - Location 页面或地图/地点管理未实现。
@@ -185,22 +187,27 @@ Flutter 今日/收件箱与日程页面
 
 ## 五、当前发布阻断与风险
 
-### P0：Android 最低版本兼容性未通过
+### Anniversary Reminder R1 已发布，设备矩阵残余风险已接受
 
-本次实际运行 `lintDebug` 得到 **29 errors / 20 warnings**：
+Contract、Flutter、Kotlin/JNI、C++ 与 Storage v3 的生产链路已接通。Debug/device integration 使用独立 `.device_test` application ID、独立 Store 根和启动 fail-fast guard，Release 继续使用正式 ID；隔离集成测试与正常到点进程唤醒均已在 realme RMX3687 / Android 13 通过，正式应用及其数据未被操作。经产品负责人 2026-08-25 明确批准，Anniversary R1 与 Storage v3 统一为 `implementation_status: integrated`、`release_status: active`。完整设备矩阵未被虚报为通过，而是作为已接受风险继续跟踪。
 
-- 27 个 `NewApi`：项目最低支持 API 24，但多处直接使用 API 26 的 `java.time`，另有 API 31 的精确闹钟检查；
-- 2 个 `PropertyEscape`：Windows `local.properties` 路径转义问题。
+### P1：Android Lint 阻断已清零，低版本真机兼容仍待验证
 
-这意味着 Debug APK 虽能构建，但 API 24–25 设备存在运行时风险，当前不能按可发布版本判断。
+本轮重新执行 `lintDebug` 成功，lint report 为 **0 errors / 37 warnings**。旧的 lint error 分类已不反映当前工作树：
+
+- `UseKtx` 19、`InlinedApi` 6、`ObsoleteSdkInt` 5；
+- `SetTextI18n` 2、`UnusedAttribute` 2；
+- `ApplySharedPref`、`GradleDependency`、`NewerVersionAvailable` 各1。
+
+当前没有 lint error 级发布阻断；上述 warning 可后续分批收敛。API 24–25 兼容性仍需依靠实际低版设备或等价测试矩阵验证，不得再从已清零的 lint error 推断为已失败。
 
 ### P0：Category 发布状态与生产接线不一致
 
 生产 App 已调用 Native Category，但协议仍明确 blocked。必须先收口存储事务、错误码和端到端验证，再统一切换发布状态。
 
-### P0：缺少本轮真实设备验证
+### P1：全产品设备矩阵仍不完整（不阻断 Anniversary R1 本次例外发布）
 
-本次 `adb devices -l` 没有发现连接设备。因此本轮只验证了编译、单元测试和宿主机测试，没有验证真实 Android 的通知到点、进程终止恢复、设备重启、精确闹钟权限和数据持久化交互。
+本轮已在 realme RMX3687 / Android 13 重跑 Flutter → Kotlin → JNI → C++ → Storage v3 集成测试；正常到点 Alarm 的进程唤醒、系统通知、持久化普通投递类型、successor 与点击去重使用同一设备的已保存复验证据。API 24–25、更多 ROM、权限拒绝/恢复、时区/DST、旧 Alarm、重启与长离线边界仍未完成，不计入已验证范围。
 
 ### P1：协议能力与真实入口存在缺口
 
@@ -215,11 +222,12 @@ Flutter 今日/收件箱与日程页面
 
 ### 阶段 1：先把现有本地核心变成可发布闭环
 
-1. 修复 Android API 24–25 兼容性和全部阻断级 Lint；重新执行 Debug 构建与低版本设备验证。
+1. 在 API 24–25 真机或等价测试矩阵上完成低版本兼容验证；继续收敛 37 个非阻断 lint warning。
 2. 完成 Category 的事务可靠性、错误码透传和正式 APK 全链路 smoke，解除 blocked。
-3. 在真实设备完成 Event → Reminder → Alarm → Notification → 点击回详情，以及重启/时区变化/权限拒绝恢复验证。
-4. 补齐普通日程编辑、删除、重新打开 UI；完善提醒管理和失败反馈。
-5. 清理协议存在但运行时未注册的能力，尤其是 `notification.list`。
+3. 在已隔离的 `.device_test` application ID/Store 上继续补齐 Anniversary Reminder R1 剩余真机矩阵；这些项目是发布后验证债，不再阻断当前 `integrated/active` 状态。
+4. 在真实设备完成 Event → Reminder → Alarm → Notification → 点击回详情，以及重启/时区变化/权限拒绝恢复验证。
+5. 补齐普通日程编辑、删除、重新打开 UI；完善提醒管理和失败反馈。
+6. 清理协议存在但运行时未注册的能力，尤其是 `notification.list`。
 
 ### 阶段 2：补齐本地 V1 的主要产品页面
 
@@ -244,6 +252,6 @@ Flutter 今日/收件箱与日程页面
 
 ## 七、最终判断
 
-当前仓库已经具备可靠的跨语言架构和较强的 Event/Recurrence/Reminder/Anniversary 本地核心，自动化测试基础也明显超过普通原型；但产品界面、Habit、日历视图、搜索页、账号云端、SQLite/FTS、AI 和平台扩展仍有大面积空白，并且存在 Android 低版本兼容与 Category 发布门禁两个明确阻断。
+当前仓库已经具备可靠的跨语言架构和较强的 Event/Recurrence/Reminder/Anniversary 本地核心，自动化测试基础也明显超过普通原型；但产品界面、Habit、日历视图、搜索页、账号云端、SQLite/FTS、AI 和平台扩展仍有大面积空白。Anniversary Reminder R1 与 Storage v3 当前均为 `integrated + active`；未完成设备矩阵是已接受但未验证的发布风险，不能写成已全部通过。
 
 最合理的下一里程碑不是立刻扩展云端或 AI，而是先把“日程 + 重复 + 提醒通知 + 分类 + 纪念日”收敛成一套在真实 Android 设备上稳定、可恢复、可发布的本地 V1。

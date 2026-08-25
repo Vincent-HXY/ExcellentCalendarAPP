@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
-#include <set>
 #include <string>
 #include <utility>
 
@@ -79,20 +78,27 @@ const domain::Event* event_target(const repository::RecurringEventState& state,
 }
 
 common::Result<common::Unit> validate_methods(const std::vector<std::string>& methods) {
-  std::set<std::string> unique;
-  for (const auto& method : methods) {
-    if (!domain::is_valid_reminder_method(method) || !unique.insert(method).second) {
-      return common::Result<common::Unit>::failure(reminder_method_invalid());
-    }
-  }
-  if (methods.empty()) {
+  if (methods.size() != 1U || !domain::is_valid_reminder_method(methods.front())) {
     return common::Result<common::Unit>::failure(reminder_method_invalid());
   }
-  // Contract v2 still exposes the broader enum, but the current native scheduler and
-  // delivery workflow implement popup only. Persisting ring/wechat or a multi-method
-  // Reminder would create a task that can never reach its specified terminal state.
-  if (methods != std::vector<std::string>{"popup"}) {
+  if (methods.front() == domain::kReminderMethodWechat) {
     return common::Result<common::Unit>::failure(unsupported_method(methods));
+  }
+  return common::Result<common::Unit>::success(common::Unit{});
+}
+
+common::Result<common::Unit> validate_ring_target(
+    const domain::Event& event,
+    const std::vector<std::string>& methods) {
+  if (methods.front() != domain::kReminderMethodRing) {
+    return common::Result<common::Unit>::success(common::Unit{});
+  }
+  if (event.is_all_day || event.has_recurrence || event.recurrence_id.has_value() ||
+      event.recurrence_revision.has_value()) {
+    return common::Result<common::Unit>::failure(common::make_error(
+        "REMINDER_METHOD_INVALID", "Reminder method is invalid",
+        {{"field", "methods"},
+         {"reason", "ring requires an ordinary non-all-day Event"}}));
   }
   return common::Result<common::Unit>::success(common::Unit{});
 }
@@ -226,6 +232,8 @@ common::Result<domain::Reminder> ReminderServiceV2::create(
               "RECURRENCE_TARGET_INVALID", "Recurrence target is invalid",
               {{"reason", "recurring Event reminders must be changed through event.update"}}));
         }
+        auto ring_target = validate_ring_target(*event, command.methods);
+        if (!ring_target.ok()) return ring_target;
         auto remind_at = resolve_remind_at(
             *event, command.remind_at, command.advance_minutes, now);
         if (!remind_at.ok()) return common::Result<common::Unit>::failure(remind_at.error());
@@ -306,6 +314,8 @@ common::Result<domain::Reminder> ReminderServiceV2::update(
         auto methods_value = command.methods.supplied ? command.methods.value : reminder->methods;
         auto methods_valid = validate_methods(methods_value);
         if (!methods_valid.ok()) return methods_valid;
+        auto ring_target = validate_ring_target(*event, methods_value);
+        if (!ring_target.ok()) return ring_target;
         auto source = command.source.supplied ? command.source.value : reminder->source;
         if (!domain::is_valid_reminder_source(source)) {
           return common::Result<common::Unit>::failure(

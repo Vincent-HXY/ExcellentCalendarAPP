@@ -246,7 +246,8 @@ common::Result<repository::CategoryState> category_state_from_storage_records(
 }
 
 common::Result<picojson::value>
-encode_category_store(const std::vector<CategoryStorageRecord> &records) {
+encode_category_store(const std::vector<CategoryStorageRecord> &records,
+                      int storage_version) {
   try {
     validate_records(records);
     picojson::array categories;
@@ -254,7 +255,11 @@ encode_category_store(const std::vector<CategoryStorageRecord> &records) {
     for (const auto &record : records)
       categories.push_back(record_json(record));
     picojson::object root;
-    root["storage_version"] = picojson::value(2.0);
+    if (storage_version != 2 && storage_version != 3) {
+      throw DecodeFailure("Category storage version is invalid");
+    }
+    root["storage_version"] =
+        picojson::value(static_cast<double>(storage_version));
     root["categories"] = picojson::value(std::move(categories));
     return common::Result<picojson::value>::success(
         picojson::value(std::move(root)));
@@ -264,7 +269,7 @@ encode_category_store(const std::vector<CategoryStorageRecord> &records) {
 }
 
 common::Result<std::vector<CategoryStorageRecord>>
-decode_category_store(const picojson::value &root) {
+decode_category_store(const picojson::value &root, int storage_version) {
   try {
     if (!root.is<picojson::object>())
       throw DecodeFailure("categories.json root must be object");
@@ -273,8 +278,10 @@ decode_category_store(const picojson::value &root) {
     const auto &version =
         required(object, "storage_version", "categories.json");
     const auto &categories = required(object, "categories", "categories.json");
-    if (!version.is<double>() || version.get<double>() != 2.0) {
-      throw DecodeFailure("categories.json.storage_version must equal 2");
+    if ((storage_version != 2 && storage_version != 3) ||
+        !version.is<double>() ||
+        version.get<double>() != static_cast<double>(storage_version)) {
+      throw DecodeFailure("categories.json.storage_version is invalid");
     }
     if (!categories.is<picojson::array>()) {
       throw DecodeFailure("categories.json.categories must be array");
@@ -295,9 +302,9 @@ decode_category_store(const picojson::value &root) {
   }
 }
 
-picojson::value empty_category_store() {
+picojson::value empty_category_store(int storage_version) {
   picojson::object root;
-  root["storage_version"] = picojson::value(2.0);
+  root["storage_version"] = picojson::value(static_cast<double>(storage_version));
   root["categories"] = picojson::value(picojson::array{});
   return picojson::value(std::move(root));
 }

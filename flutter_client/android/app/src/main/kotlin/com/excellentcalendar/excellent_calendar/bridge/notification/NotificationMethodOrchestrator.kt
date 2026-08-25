@@ -14,6 +14,7 @@ class NotificationMethodOrchestrator(
     private val permissions: NotificationPermissionManager,
     private val tapStore: NotificationTapPayloadStore,
     private val captureLaunchPayload: () -> Unit,
+    private val onPermissionResult: (() -> Unit)? = null,
     private val sdkInt: () -> Int = { Build.VERSION.SDK_INT },
 ) {
     fun initialize(): NativeResultContract {
@@ -52,7 +53,7 @@ class NotificationMethodOrchestrator(
                 when (result) {
                     is PermissionRequestResult.Success -> NativeResultContract.success(
                         result.snapshot.requestMap(result.shouldOpenSettings, result.message),
-                    )
+                    ).also { runCatching { onPermissionResult?.invoke() } }
                     is PermissionRequestResult.Failure -> NativeResultContract.failure(
                         code = result.code,
                         message = result.message,

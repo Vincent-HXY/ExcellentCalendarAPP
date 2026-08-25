@@ -43,6 +43,7 @@ std::string cancel_reminder_v2(std::string_view request_json);
 std::string list_reminders_v2(std::string_view request_json);
 std::string enable_reminder_v2(std::string_view request_json);
 std::string disable_reminder_v2(std::string_view request_json);
+std::string snooze_reminder_v2(std::string_view request_json);
 
 std::string get_reminder_v2(std::string_view request_json);
 std::string list_schedulable_reminders_v2(std::string_view request_json);

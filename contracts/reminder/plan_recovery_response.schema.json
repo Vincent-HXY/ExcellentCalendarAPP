@@ -2,17 +2,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/plan_recovery_response.schema.json",
   "title": "PlanRecoveryResponse",
-  "description": "Persisted recovery batch, selected detail Reminders, and immutable arbitration for attempts prepared before recovery. detail_reminders must contain exactly batch.detail_reminder_ids in the same order.",
+  "description": "Persisted recovery batch, selected ordinary detail Reminders, frozen Anniversary catch-up groups, and immutable arbitration for attempts prepared before recovery. detail_reminders exactly matches batch.detail_reminder_ids. Anniversary membership is read only from batch.anniversary_catch_up_groups.",
+  "x-recovery-selection-order": [
+    "Force ring candidates with remind_at < batch.started_at minus 5 minutes into summary.",
+    "Sort all remaining detail-eligible candidates by remind_at descending then reminder_id descending and select at most 20.",
+    "Sort selected details and all summary members by remind_at ascending then reminder_id ascending for delivery.",
+    "detail_reminders exactly matches batch.detail_reminder_ids in order."
+  ],
   "x-contract-version": 2,
   "type": "object",
   "additionalProperties": false,
-  "required": ["batch", "detail_reminders", "prepared_attempt_resolutions", "idempotent_replay"],
+  "required": ["batch", "detail_reminders", "anniversary_catch_up_groups", "prepared_attempt_resolutions", "idempotent_replay"],
   "properties": {
     "batch": {"$ref": "./reminder_recovery_batch_response.schema.json"},
     "detail_reminders": {
       "type": "array",
       "maxItems": 20,
       "items": {"$ref": "./reminder_response.schema.json"}
+    },
+    "anniversary_catch_up_groups": {
+      "type": "array",
+      "items": {"$ref": "./anniversary_catch_up_group_response.schema.json"},
+      "description": "Exact copy of batch.anniversary_catch_up_groups in the same order; Kotlin must not regroup or add members."
     },
     "prepared_attempt_resolutions": {
       "type": "array",

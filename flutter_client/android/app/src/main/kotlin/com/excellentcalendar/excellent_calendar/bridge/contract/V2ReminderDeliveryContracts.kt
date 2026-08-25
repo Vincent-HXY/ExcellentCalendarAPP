@@ -4,6 +4,7 @@ data class V2ReminderItem(
     val reminderId: String,
     val remindAt: String,
     val status: String,
+    val method: String,
 ) {
     val isTerminal: Boolean get() = status in TerminalStatuses
 
@@ -58,6 +59,12 @@ data class V2PreparedDelivery(
 ) {
     val deliveryId: String get() = requiredString(notification, "delivery_id", "NotificationResponse")
     val attemptId: String get() = requiredString(notification, "delivery_attempt_id", "NotificationResponse")
+    val notificationId: String get() = requiredString(notification, "notification_id", "NotificationResponse")
+    val reminderId: String get() = requiredString(notification, "reminder_id", "NotificationResponse")
+    val eventId: String get() = requiredString(notification, "target_id", "NotificationResponse")
+    val recoveryBatchId: String? get() = notification["recovery_batch_id"] as String?
+    val plannedAt: String get() = requiredString(notification, "planned_at", "NotificationResponse")
+    val method: String get() = requiredString(notification, "method", "NotificationResponse")
     val title: String get() = requiredString(notification, "title", "NotificationResponse")
     val body: String? get() = notification["body"] as String?
 
@@ -87,18 +94,36 @@ data class V2FinalizeDelivery(
     companion object {
         fun fromData(data: Any?): V2FinalizeDelivery {
             val map = objectMap(data, "FinalizeDeliveryResponse")
-            requireExactFields(map, setOf("notification", "reminder", "successor", "recovery_batch", "idempotent_replay"), "FinalizeDeliveryResponse")
+            requireExactFields(
+                map,
+                setOf(
+                    "notification", "reminder", "successor", "covered_reminders", "successors",
+                    "recovery_batch", "idempotent_replay",
+                ),
+                "FinalizeDeliveryResponse",
+            )
             val notification = notificationMap(map["notification"])
             map["reminder"]?.let(V2ResponseContracts::reminder)
             map["successor"]?.let(V2ResponseContracts::reminder)
+            val covered = reminderList(map["covered_reminders"], "FinalizeDeliveryResponse.covered_reminders", 5)
+            val successors = reminderList(map["successors"], "FinalizeDeliveryResponse.successors", 5)
             val batch = map["recovery_batch"]?.let(::recoveryBatchMap)
             val replay = map["idempotent_replay"] as? Boolean
                 ?: throw NativeContractViolation("idempotent_replay must be boolean.", "data.idempotent_replay")
             if (notification["kind"] == "recovery_summary") {
-                if (map["reminder"] != null || map["successor"] != null || batch == null) {
+                if (map["reminder"] != null || map["successor"] != null || covered.isNotEmpty() ||
+                    successors.isNotEmpty() || batch == null
+                ) {
                     throw NativeContractViolation("Recovery summary finalize shape is invalid.", "data.notification.kind")
                 }
-            } else if (map["reminder"] == null) {
+            } else if (notification["kind"] == "anniversary_catch_up") {
+                val coveredIds = covered.map { requiredString(it, "reminder_id", "ReminderResponse") }
+                if (map["reminder"] != null || map["successor"] != null || batch == null || coveredIds.isEmpty() ||
+                    coveredIds != notification["covered_reminder_ids"]
+                ) {
+                    throw NativeContractViolation("Anniversary catch-up finalize shape is invalid.", "data.notification.kind")
+                }
+            } else if (map["reminder"] == null || covered.isNotEmpty() || successors.isNotEmpty()) {
                 throw NativeContractViolation("Reminder delivery must return its Reminder.", "data.reminder")
             }
             val belongsToRecovery = notification["recovery_batch_id"] is String ||
@@ -119,9 +144,20 @@ data class V2RecoveryResolution(
     val replacementDeliveryId: String?,
 )
 
+data class V2AnniversaryCatchUpGroup(
+    val anniversaryId: String,
+    val occurrenceKey: String,
+    val occurrenceDate: String,
+    val coveredReminderIds: List<String>,
+    val deliveryId: String,
+    val status: String,
+    val completedAt: String?,
+)
+
 data class V2RecoveryPlan(
     val batch: Map<String, Any?>,
     val detailReminders: List<V2ReminderItem>,
+    val anniversaryCatchUpGroups: List<V2AnniversaryCatchUpGroup>,
     val resolutions: List<V2RecoveryResolution>,
 ) {
     val batchId: String get() = requiredString(batch, "recovery_batch_id", "ReminderRecoveryBatchResponse")
@@ -131,13 +167,32 @@ data class V2RecoveryPlan(
     companion object {
         fun fromData(data: Any?): V2RecoveryPlan {
             val map = objectMap(data, "PlanRecoveryResponse")
-            requireExactFields(map, setOf("batch", "detail_reminders", "prepared_attempt_resolutions", "idempotent_replay"), "PlanRecoveryResponse")
+            requireExactFields(
+                map,
+                setOf(
+                    "batch", "detail_reminders", "anniversary_catch_up_groups",
+                    "prepared_attempt_resolutions", "idempotent_replay",
+                ),
+                "PlanRecoveryResponse",
+            )
             val batch = recoveryBatchMap(map["batch"])
             val details = (map["detail_reminders"] as? List<*>)?.mapIndexed { index, item -> reminderItem(item, "data.detail_reminders[$index]") }
                 ?: throw NativeContractViolation("detail_reminders must be an array.", "data.detail_reminders")
             if (details.size > 20) throw NativeContractViolation("detail_reminders exceeds 20.", "data.detail_reminders")
             if (batch["detail_reminder_ids"] != details.map(V2ReminderItem::reminderId)) {
                 throw NativeContractViolation("detail_reminders must match batch detail_reminder_ids in order.", "data.detail_reminders")
+            }
+            val groups = (map["anniversary_catch_up_groups"] as? List<*>)?.mapIndexed { index, item ->
+                anniversaryCatchUpGroup(item, "data.anniversary_catch_up_groups[$index]")
+            } ?: throw NativeContractViolation(
+                "anniversary_catch_up_groups must be an array.",
+                "data.anniversary_catch_up_groups",
+            )
+            if (groups.map(::anniversaryCatchUpGroupMap) != batch["anniversary_catch_up_groups"]) {
+                throw NativeContractViolation(
+                    "anniversary_catch_up_groups must exactly match the recovery batch.",
+                    "data.anniversary_catch_up_groups",
+                )
             }
             val resolutions = (map["prepared_attempt_resolutions"] as? List<*>)?.mapIndexed { index, item ->
                 val value = objectMap(item, "PreparedAttemptRecoveryResolution")
@@ -165,7 +220,7 @@ data class V2RecoveryPlan(
             if (map["idempotent_replay"] !is Boolean) {
                 throw NativeContractViolation("idempotent_replay must be boolean.", "data.idempotent_replay")
             }
-            return V2RecoveryPlan(batch, details, resolutions)
+            return V2RecoveryPlan(batch, details, groups, resolutions)
         }
     }
 }
@@ -174,7 +229,7 @@ private val NotificationFields = setOf(
     "notification_id", "delivery_id", "delivery_attempt_id", "kind", "reminder_id", "recovery_batch_id",
     "resolved_by_recovery_batch_id", "target_type", "target_id", "occurrence_key", "method", "title", "body",
     "planned_at", "status", "failure_class", "error_code", "abandon_reason", "prepared_at", "finalized_at",
-    "sent_at", "created_at", "updated_at",
+    "sent_at", "created_at", "updated_at", "covered_reminder_ids",
 )
 
 private fun notificationMap(value: Any?): Map<String, Any?> {
@@ -186,13 +241,23 @@ private fun notificationMap(value: Any?): Map<String, Any?> {
         .forEach { nullableString(map, it, "NotificationResponse") }
     val kind = map["kind"] as String
     val status = map["status"] as String
-    if (kind !in setOf("reminder", "recovery_summary") || map["method"] !in setOf("ring", "popup", "wechat") || status !in setOf("prepared", "sent", "failed", "abandoned")) {
+    if (kind !in setOf("reminder", "recovery_summary", "anniversary_catch_up") ||
+        map["method"] !in setOf("ring", "popup") || status !in setOf("prepared", "sent", "failed", "abandoned")
+    ) {
         throw NativeContractViolation("Notification enum value is invalid.", "NotificationResponse")
     }
+    val coveredReminderIds = stringList(map, "covered_reminder_ids", "NotificationResponse", maximum = 5)
     val identityIsValid = when (kind) {
-        "reminder" -> map["reminder_id"] is String
-        "recovery_summary" -> map["reminder_id"] == null && map["recovery_batch_id"] is String
+        "reminder" -> map["reminder_id"] is String && coveredReminderIds.isEmpty()
+        "recovery_summary" -> map["reminder_id"] == null && map["recovery_batch_id"] is String &&
+            map["target_type"] == "reminder_recovery_batch" && map["occurrence_key"] == null && coveredReminderIds.isEmpty()
+        "anniversary_catch_up" -> map["reminder_id"] == null && map["recovery_batch_id"] is String &&
+            map["target_type"] == "anniversary" && map["occurrence_key"] is String && coveredReminderIds.isNotEmpty() &&
+            coveredReminderIds == coveredReminderIds.sorted()
         else -> false
+    }
+    if (kind == "reminder" && map["target_type"] == "anniversary" && map["occurrence_key"] !is String) {
+        throw NativeContractViolation("Anniversary reminder occurrence_key is required.", "NotificationResponse.occurrence_key")
     }
     if (!identityIsValid) {
         throw NativeContractViolation("Notification kind identity is invalid.", "NotificationResponse.kind")
@@ -211,13 +276,16 @@ private fun reminderItem(value: Any?, parent: String): V2ReminderItem {
         reminderId = requiredString(map, "reminder_id", parent),
         remindAt = requiredString(map, "remind_at", parent),
         status = requiredString(map, "status", parent),
+        method = (map["methods"] as? List<*>)?.singleOrNull() as? String
+            ?: throw NativeContractViolation("$parent.methods must contain exactly one method.", "$parent.methods"),
     )
 }
 
 private val RecoveryBatchFields = setOf(
     "recovery_batch_id", "recovery_request_id", "trigger_source", "started_at", "window_start_at",
     "detail_reminder_ids", "summary_reminder_ids", "older_skipped_occurrence_count",
-    "older_skipped_reminder_count", "window_overflow_count", "summary_delivery_id", "status", "completed_at",
+    "older_skipped_reminder_count", "window_overflow_count", "summary_delivery_id",
+    "anniversary_catch_up_groups", "status", "completed_at",
 )
 
 private fun recoveryBatchMap(value: Any?): Map<String, Any?> {
@@ -250,6 +318,16 @@ private fun recoveryBatchMap(value: Any?): Map<String, Any?> {
     if (details.toSet().intersect(summaries.toSet()).isNotEmpty()) {
         throw NativeContractViolation("Recovery detail and summary IDs must be disjoint.", "ReminderRecoveryBatchResponse")
     }
+    val groups = (map["anniversary_catch_up_groups"] as? List<*>)?.mapIndexed { index, item ->
+        anniversaryCatchUpGroup(item, "ReminderRecoveryBatchResponse.anniversary_catch_up_groups[$index]")
+    } ?: throw NativeContractViolation(
+        "anniversary_catch_up_groups must be an array.",
+        "ReminderRecoveryBatchResponse.anniversary_catch_up_groups",
+    )
+    val allIds = details + summaries + groups.flatMap(V2AnniversaryCatchUpGroup::coveredReminderIds)
+    if (allIds.distinct().size != allIds.size) {
+        throw NativeContractViolation("Recovery memberships must be pairwise disjoint.", "ReminderRecoveryBatchResponse")
+    }
     return map
 }
 
@@ -262,12 +340,18 @@ private fun preparedPayloadMap(value: Any?): Map<String, Any?> {
     listOf("reminder_id", "recovery_batch_id", "occurrence_key", "route")
         .forEach { nullableString(map, it, "PreparedNotificationPayload") }
     val kind = map["kind"]
-    if (kind !in setOf("reminder", "recovery_summary") || map["target_type"] !in setOf("event", "habit", "anniversary", "reminder_recovery_batch")) {
+    if (kind !in setOf("reminder", "recovery_summary", "anniversary_catch_up") ||
+        map["target_type"] !in setOf("event", "habit", "anniversary", "reminder_recovery_batch")
+    ) {
         throw NativeContractViolation("Prepared payload enum value is invalid.", "PreparedNotificationPayload")
     }
     val identityIsValid = when (kind) {
-        "reminder" -> map["reminder_id"] is String
+        "reminder" -> map["reminder_id"] is String &&
+            (map["target_type"] != "anniversary" ||
+                (map["occurrence_key"] is String && map["route"] == "anniversary.detail"))
         "recovery_summary" -> map["reminder_id"] == null && map["recovery_batch_id"] is String
+        "anniversary_catch_up" -> map["reminder_id"] == null && map["recovery_batch_id"] is String &&
+            map["target_type"] == "anniversary" && map["occurrence_key"] is String && map["route"] == "anniversary.detail"
         else -> false
     }
     if (!identityIsValid) {
@@ -308,6 +392,79 @@ private fun stringList(map: Map<String, Any?>, key: String, parent: String, maxi
     return raw as List<String>
 }
 
+private fun reminderList(value: Any?, parent: String, maximum: Int): List<Map<String, Any?>> {
+    val raw = value as? List<*> ?: throw NativeContractViolation("$parent must be an array.", parent)
+    if (raw.size > maximum) throw NativeContractViolation("$parent exceeds $maximum items.", parent)
+    return raw.mapIndexed { index, item ->
+        val map = objectMap(item, "$parent[$index]")
+        V2ResponseContracts.reminder(map)
+        map
+    }
+}
+
+private fun anniversaryCatchUpGroup(value: Any?, parent: String): V2AnniversaryCatchUpGroup {
+    val map = objectMap(value, parent)
+    requireExactFields(
+        map,
+        setOf(
+            "anniversary_id", "occurrence_key", "occurrence_date", "covered_reminder_ids",
+            "delivery_id", "status", "completed_at",
+        ),
+        parent,
+    )
+    val anniversaryId = requiredUuid(map, "anniversary_id", parent)
+    val occurrenceKey = requiredUuid(map, "occurrence_key", parent)
+    val occurrenceDate = requiredString(map, "occurrence_date", parent)
+    try {
+        java.time.LocalDate.parse(occurrenceDate)
+    } catch (_: java.time.DateTimeException) {
+        throw NativeContractViolation("$parent.occurrence_date must be a valid date.", "$parent.occurrence_date")
+    }
+    val covered = stringList(map, "covered_reminder_ids", parent, maximum = 5)
+    if (covered.isEmpty() || covered != covered.sorted() || covered.any { !UuidPattern.matches(it) }) {
+        throw NativeContractViolation(
+            "$parent.covered_reminder_ids must contain 1..5 sorted UUIDs.",
+            "$parent.covered_reminder_ids",
+        )
+    }
+    val deliveryId = requiredUuid(map, "delivery_id", parent)
+    val status = requiredString(map, "status", parent)
+    if (status !in setOf("pending", "completed")) {
+        throw NativeContractViolation("$parent.status is invalid.", "$parent.status")
+    }
+    val completedAt = nullableString(map, "completed_at", parent)
+    if ((status == "completed") != (completedAt != null)) {
+        throw NativeContractViolation("$parent.completed_at does not match status.", "$parent.completed_at")
+    }
+    return V2AnniversaryCatchUpGroup(
+        anniversaryId,
+        occurrenceKey,
+        occurrenceDate,
+        covered,
+        deliveryId,
+        status,
+        completedAt,
+    )
+}
+
+private fun anniversaryCatchUpGroupMap(group: V2AnniversaryCatchUpGroup): Map<String, Any?> = linkedMapOf(
+    "anniversary_id" to group.anniversaryId,
+    "occurrence_key" to group.occurrenceKey,
+    "occurrence_date" to group.occurrenceDate,
+    "covered_reminder_ids" to group.coveredReminderIds,
+    "delivery_id" to group.deliveryId,
+    "status" to group.status,
+    "completed_at" to group.completedAt,
+)
+
+private fun requiredUuid(map: Map<String, Any?>, key: String, parent: String): String {
+    val value = requiredString(map, key, parent)
+    if (!UuidPattern.matches(value)) {
+        throw NativeContractViolation("$parent.$key must be a UUID.", "$parent.$key")
+    }
+    return value
+}
+
 private fun nullableString(map: Map<String, Any?>, key: String, parent: String): String? {
     val value = map[key] ?: return null
     if (value !is String || value.isBlank()) throw NativeContractViolation("$parent.$key must be a non-empty string or null.", "$parent.$key")
@@ -335,3 +492,7 @@ private fun objectMap(value: Any?, parent: String): Map<String, Any?> =
 private fun requiredString(map: Map<String, Any?>, key: String, parent: String): String =
     (map[key] as? String)?.takeIf { it.isNotBlank() }
         ?: throw NativeContractViolation("$parent.$key must be a non-empty string.", "$parent.$key")
+
+private val UuidPattern = Regex(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+)

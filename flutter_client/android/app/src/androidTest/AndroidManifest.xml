@@ -3,6 +3,6 @@
     <instrumentation
         android:name="com.excellentcalendar.excellent_calendar.bridge.native.AnniversaryJniSmokeInstrumentation"
         android:label="Anniversary JNI smoke"
-        android:targetPackage="com.excellentcalendar.excellent_calendar" />
+        android:targetPackage="${applicationId}" />
 
 </manifest>

@@ -20,6 +20,7 @@
 #include "excellent_calendar/domain/reminder.hpp"
 #include "excellent_calendar/domain/reminder_recovery_batch.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/json/anniversary_json_codec.hpp"
 
 namespace excellent_calendar::storage::json {
 namespace {
@@ -163,6 +164,7 @@ void validate_reminders(
   std::set<std::string> ids;
   std::set<std::string> reminder_business_keys;
   for (const auto& reminder : state.reminders) {
+    const bool anniversary = reminder.target_type == domain::kReminderTargetAnniversary;
     const bool recurring = reminder.recurrence_revision.has_value();
     if (!common::is_uuid(reminder.id) || !domain::is_valid_reminder_target_type(reminder.target_type) ||
         !domain::is_valid_reminder_status(reminder.status) || reminder.methods.empty() ||
@@ -178,7 +180,8 @@ void validate_reminders(
          !valid_optional_instant(reminder.reactivated_at) ||
         !valid_optional_instant(reminder.deleted_at) ||
         reminder.reactivation_count < 0 ||
-        recurring != reminder.occurrence_key.has_value() || recurring != reminder.occurrence_start_at.has_value()) {
+        (!anniversary && recurring != reminder.occurrence_key.has_value()) ||
+        recurring != reminder.occurrence_start_at.has_value()) {
       throw DecodeFailure("Reminder invariant is invalid");
     }
     if ((reminder.status == domain::kReminderStatusScheduled &&
@@ -192,8 +195,10 @@ void validate_reminders(
            !reminder.last_cancelled_at.has_value())) ||
          (reminder.status == domain::kReminderStatusExpired &&
           (reminder.is_enabled || reminder.scheduled_at.has_value() ||
-           reminder.expiration_reason != std::optional<std::string>(
-               domain::kReminderExpirationReasonRecoveryWindowElapsed) ||
+           (reminder.expiration_reason != std::optional<std::string>(
+                domain::kReminderExpirationReasonRecoveryWindowElapsed) &&
+            reminder.expiration_reason != std::optional<std::string>(
+                domain::kReminderExpirationReasonAnniversaryOccurrenceElapsed)) ||
            !reminder.expired_at.has_value())) ||
          (reminder.status != domain::kReminderStatusExpired &&
           (reminder.expiration_reason.has_value() || reminder.expired_at.has_value()))) {
@@ -204,6 +209,66 @@ void validate_reminders(
       if (!domain::is_valid_reminder_method(method) || !methods.insert(method).second) {
         throw DecodeFailure("Reminder methods are invalid");
       }
+    }
+    if (!recurring) {
+      if (reminder.methods.size() != 1U ||
+          (reminder.methods.front() != domain::kReminderMethodPopup &&
+           reminder.methods.front() != domain::kReminderMethodRing)) {
+        throw DecodeFailure("Ordinary Reminder methods are invalid");
+      }
+      if (reminder.methods.front() == domain::kReminderMethodRing) {
+        if (reminder.target_type != domain::kReminderTargetEvent) {
+          throw DecodeFailure("Ring Reminder target invariant is invalid");
+        }
+      }
+    }
+    if (anniversary) {
+      const auto anniversary_target = std::find_if(
+          state.anniversaries.begin(), state.anniversaries.end(),
+          [&](const auto& value) { return value.id == reminder.target_id; });
+      const auto reminder_template = reminder.template_key.has_value()
+                                         ? std::find_if(
+                                               state.anniversary_reminder_templates.begin(),
+                                               state.anniversary_reminder_templates.end(),
+                                               [&](const auto& value) {
+                                                 return value.template_key ==
+                                                        *reminder.template_key;
+                                               })
+                                         : state.anniversary_reminder_templates.end();
+      auto occurrence_date = reminder.occurrence_date.has_value()
+                                 ? domain::parse_local_date(*reminder.occurrence_date)
+                                 : common::Result<domain::LocalDate>::failure(
+                                       common::make_error("invalid", "invalid"));
+      if (reminder.recurrence_revision.has_value() ||
+          !reminder.occurrence_key.has_value() ||
+          !common::is_uuid(*reminder.occurrence_key) ||
+          reminder.occurrence_start_at.has_value() ||
+          !reminder.template_key.has_value() || !common::is_uuid(*reminder.template_key) ||
+          !occurrence_date.ok() || !reminder.advance_days.has_value() ||
+          *reminder.advance_days < 0 || *reminder.advance_days > 365 ||
+          !reminder.local_time.has_value() || reminder.local_time->size() != 5U ||
+          reminder.timezone_mode != std::optional<std::string>("follow_device") ||
+          reminder.advance_minutes.has_value() ||
+          reminder.methods != std::vector<std::string>{"popup"} ||
+          anniversary_target == state.anniversaries.end() ||
+          reminder_template == state.anniversary_reminder_templates.end() ||
+          reminder_template->anniversary_id != reminder.target_id ||
+          ((reminder.status == domain::kReminderStatusSent) !=
+           reminder.fulfillment_delivery_id.has_value()) ||
+          (reminder.fulfillment_delivery_id.has_value() &&
+           !common::is_uuid(*reminder.fulfillment_delivery_id))) {
+        throw DecodeFailure("Anniversary Reminder invariant is invalid");
+      }
+      const auto business_key = reminder.target_id + ":" + *reminder.occurrence_key + ":" +
+                                *reminder.template_key;
+      if (!insert_unique(reminder_business_keys, business_key)) {
+        throw DecodeFailure("Anniversary Reminder business identity is duplicated");
+      }
+    } else if (reminder.template_key.has_value() || reminder.occurrence_date.has_value() ||
+               reminder.advance_days.has_value() || reminder.local_time.has_value() ||
+               reminder.timezone_mode.has_value() ||
+               reminder.fulfillment_delivery_id.has_value()) {
+      throw DecodeFailure("Non-Anniversary Reminder contains Anniversary fields");
     }
     if ((reminder.cancellation_reason.has_value() &&
          !domain::is_valid_reminder_cancellation_reason(*reminder.cancellation_reason)) ||
@@ -261,7 +326,8 @@ void validate_notifications(
           notification.status != domain::kNotificationStatusAbandoned) ||
         !domain::is_valid_notification_target_type(notification.target_type) ||
         !common::is_uuid(notification.target_id) ||
-        notification.method != domain::kReminderMethodPopup ||
+        (notification.method != domain::kReminderMethodPopup &&
+         notification.method != domain::kReminderMethodRing) ||
         common::trim_ascii(notification.title).empty() ||
         !common::is_iso8601_utc_datetime(notification.planned_at) ||
          !notification.prepared_at.has_value() ||
@@ -273,21 +339,90 @@ void validate_notifications(
       throw DecodeFailure("Notification invariant is invalid");
     }
     if (notification.kind == "reminder") {
+      const auto reminder = notification.reminder_id.has_value()
+                                ? std::find_if(
+                                      state.reminders.begin(), state.reminders.end(),
+                                      [&](const auto& value) {
+                                        return value.id == *notification.reminder_id;
+                                      })
+                                : state.reminders.end();
       if (!notification.reminder_id.has_value() ||
-          !common::is_uuid(*notification.reminder_id) ||
-          std::find_if(state.reminders.begin(), state.reminders.end(), [&](const auto& reminder) {
-            return reminder.id == *notification.reminder_id;
-          }) == state.reminders.end() ||
-          notification.target_type == "reminder_recovery_batch") {
+          !common::is_uuid(*notification.reminder_id) || reminder == state.reminders.end() ||
+          notification.target_type == "reminder_recovery_batch" ||
+          !notification.covered_reminder_ids.empty()) {
         throw DecodeFailure("Reminder Notification identity is invalid");
+      }
+      if (reminder->methods.size() != 1U ||
+          reminder->methods.front() != notification.method) {
+        throw DecodeFailure("Reminder Notification method is invalid");
+      }
+      if (notification.method == domain::kReminderMethodRing &&
+          (notification.target_type != domain::kReminderTargetEvent ||
+           notification.target_id != reminder->target_id ||
+           reminder->recurrence_revision.has_value() ||
+           notification.occurrence_key.has_value())) {
+        throw DecodeFailure("Ring Notification identity is invalid");
       }
     } else if (notification.kind == "recovery_summary") {
       if (notification.reminder_id.has_value() || !notification.recovery_batch_id.has_value() ||
           !common::is_uuid(*notification.recovery_batch_id) ||
           notification.target_type != "reminder_recovery_batch" ||
           notification.target_id != *notification.recovery_batch_id ||
-          notification.occurrence_key.has_value()) {
+          notification.method != domain::kReminderMethodPopup ||
+          notification.occurrence_key.has_value() ||
+          !notification.covered_reminder_ids.empty()) {
         throw DecodeFailure("Recovery summary Notification identity is invalid");
+      }
+    } else if (notification.kind == "anniversary_catch_up") {
+      if (notification.reminder_id.has_value() ||
+          !notification.recovery_batch_id.has_value() ||
+          !common::is_uuid(*notification.recovery_batch_id) ||
+          notification.target_type != domain::kReminderTargetAnniversary ||
+          !notification.occurrence_key.has_value() ||
+          !common::is_uuid(*notification.occurrence_key) ||
+          notification.method != domain::kReminderMethodPopup ||
+          notification.covered_reminder_ids.empty() ||
+          notification.covered_reminder_ids.size() > 5U) {
+        throw DecodeFailure("Anniversary catch-up Notification identity is invalid");
+      }
+      std::set<std::string> covered;
+      for (const auto& id : notification.covered_reminder_ids) {
+        const auto reminder = std::find_if(
+            state.reminders.begin(), state.reminders.end(),
+            [&](const auto& value) { return value.id == id; });
+        if (!common::is_uuid(id) || !covered.insert(id).second ||
+            reminder == state.reminders.end() ||
+            reminder->target_type != domain::kReminderTargetAnniversary ||
+            reminder->target_id != notification.target_id ||
+            reminder->occurrence_key != notification.occurrence_key) {
+          throw DecodeFailure("Anniversary catch-up membership is invalid");
+        }
+      }
+      if (!std::is_sorted(notification.covered_reminder_ids.begin(),
+                          notification.covered_reminder_ids.end())) {
+        throw DecodeFailure("Anniversary catch-up membership order is invalid");
+      }
+      const auto batch = std::find_if(
+          state.recovery_batches.begin(), state.recovery_batches.end(),
+          [&](const auto& value) {
+            return value.id == *notification.recovery_batch_id;
+          });
+      const domain::ReminderRecoveryBatch::AnniversaryCatchUpGroup* group = nullptr;
+      if (batch != state.recovery_batches.end()) {
+        const auto found_group = std::find_if(
+            batch->anniversary_catch_up_groups.begin(),
+            batch->anniversary_catch_up_groups.end(),
+            [&](const auto& value) {
+              return value.delivery_id == *notification.delivery_id;
+            });
+        if (found_group != batch->anniversary_catch_up_groups.end()) {
+          group = &*found_group;
+        }
+      }
+      if (group == nullptr || group->anniversary_id != notification.target_id ||
+          group->occurrence_key != *notification.occurrence_key ||
+          group->covered_reminder_ids != notification.covered_reminder_ids) {
+        throw DecodeFailure("Anniversary catch-up Notification batch is invalid");
       }
     } else {
       throw DecodeFailure("Notification kind is invalid");
@@ -387,6 +522,40 @@ void validate_recovery_integrity(
         throw DecodeFailure("Recovery batch summary identity is invalid");
       }
     }
+    std::set<std::string> anniversary_members;
+    std::set<std::string> anniversary_deliveries;
+    for (const auto& group : batch.anniversary_catch_up_groups) {
+      if (!common::is_uuid(group.anniversary_id) ||
+          !common::is_uuid(group.occurrence_key) ||
+          !domain::parse_local_date(group.occurrence_date).ok() ||
+          !common::is_uuid(group.delivery_id) ||
+          !anniversary_deliveries.insert(group.delivery_id).second ||
+          group.covered_reminder_ids.empty() ||
+          group.covered_reminder_ids.size() > 5U ||
+          (group.status != "pending" && group.status != "completed") ||
+          ((group.status == "completed") != group.completed_at.has_value()) ||
+          (group.completed_at.has_value() &&
+           !common::is_iso8601_utc_datetime(*group.completed_at)) ||
+          !std::is_sorted(group.covered_reminder_ids.begin(),
+                          group.covered_reminder_ids.end())) {
+        throw DecodeFailure("Anniversary catch-up group invariant is invalid");
+      }
+      for (const auto& id : group.covered_reminder_ids) {
+        const auto reminder = std::find_if(
+            state.reminders.begin(), state.reminders.end(),
+            [&](const auto& value) { return value.id == id; });
+        if (!common::is_uuid(id) || !anniversary_members.insert(id).second ||
+            detail.count(id) != 0U || summary.count(id) != 0U ||
+            reminder == state.reminders.end() ||
+            reminder->target_type != domain::kReminderTargetAnniversary ||
+            reminder->target_id != group.anniversary_id ||
+            reminder->occurrence_key != group.occurrence_key ||
+            reminder->occurrence_date != group.occurrence_date ||
+            reminder->recovery_batch_id != batch.id) {
+          throw DecodeFailure("Anniversary catch-up group membership is invalid");
+        }
+      }
+    }
     const bool needs_summary = !batch.summary_reminder_ids.empty() ||
                                batch.older_skipped_occurrence_count > 0 ||
                                batch.older_skipped_reminder_count > 0;
@@ -425,6 +594,13 @@ void validate_recovery_integrity(
 common::Result<common::Unit> validate_recurring_event_state(
     const repository::RecurringEventState& state) {
   try {
+    repository::AnniversaryState anniversary_state;
+    anniversary_state.anniversaries = state.anniversaries;
+    anniversary_state.recurrences = state.anniversary_recurrences;
+    anniversary_state.reminder_templates = state.anniversary_reminder_templates;
+    anniversary_state.reminders = state.reminders;
+    auto anniversary_valid = validate_anniversary_state(anniversary_state);
+    if (!anniversary_valid.ok()) return anniversary_valid;
     const auto event_ids = validate_events(state);
     const auto recurrence_keys = validate_recurrences(state, event_ids);
     validate_occurrence_states(state, event_ids);

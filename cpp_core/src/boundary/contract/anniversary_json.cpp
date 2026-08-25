@@ -60,6 +60,66 @@ picojson::value anniversary_detail_response_json(
                            ? anniversary_recurrence_response_json(*detail.recurrence)
                            : picojson::value();
   data["countdown"] = anniversary_countdown_response_json(detail.countdown);
+  data["reminder_settings"] =
+      anniversary_reminder_settings_response_json(detail.reminder_settings);
+  return picojson::value(std::move(data));
+}
+
+picojson::value anniversary_reminder_settings_response_json(
+    const application::AnniversaryReminderSettings& settings) {
+  picojson::array templates;
+  for (const auto& item : settings.templates) {
+    picojson::object value;
+    value["template_key"] = picojson::value(item.template_key);
+    value["advance_days"] = picojson::value(static_cast<double>(item.advance_days));
+    value["local_time"] = picojson::value(item.local_time);
+    value["timezone_mode"] = picojson::value(item.timezone_mode);
+    value["method"] = picojson::value(item.method);
+    value["is_enabled"] = picojson::value(item.is_enabled);
+    templates.emplace_back(std::move(value));
+  }
+  picojson::object data;
+  data["reminders_enabled"] = picojson::value(settings.reminders_enabled);
+  data["templates"] = picojson::value(std::move(templates));
+  data["active_reminder_count"] =
+      picojson::value(static_cast<double>(settings.active_reminder_count));
+  data["schedule_reconciliation_required"] =
+      picojson::value(settings.schedule_reconciliation_required);
+  return picojson::value(std::move(data));
+}
+
+picojson::value anniversary_occurrence_list_response_json(
+    const application::AnniversaryOccurrencePage& page) {
+  picojson::array items;
+  for (const auto& item : page.items) {
+    picojson::object value;
+    value["anniversary_id"] = picojson::value(item.anniversary_id);
+    value["occurrence_key"] = picojson::value(item.occurrence_key);
+    value["occurrence_date"] = picojson::value(domain::format_local_date(item.occurrence_date));
+    value["source_date"] = picojson::value(domain::format_local_date(item.source_date));
+    value["title"] = picojson::value(item.title);
+    value["calendar_type"] = picojson::value(item.calendar_type);
+    value["is_repeating"] = picojson::value(item.is_repeating);
+    value["years_elapsed"] = picojson::value(static_cast<double>(item.years_elapsed));
+    value["category_id"] = nullable(item.category_id);
+    value["importance"] = nullable(item.importance);
+    value["has_active_reminders"] = picojson::value(item.has_active_reminders);
+    value["reminder_count"] = picojson::value(static_cast<double>(item.reminder_count));
+    items.emplace_back(std::move(value));
+  }
+  picojson::object data;
+  data["items"] = picojson::value(std::move(items));
+  data["has_more"] = picojson::value(page.has_more);
+  data["next_cursor"] = nullable(page.next_cursor);
+  return picojson::value(std::move(data));
+}
+
+picojson::value anniversary_delete_commit_response_json(
+    const application::AnniversaryDeleteResult& result) {
+  picojson::object data;
+  data["anniversary"] = anniversary_response_json(result.anniversary);
+  data["schedule_reconciliation_required"] =
+      picojson::value(result.schedule_reconciliation_required);
   return picojson::value(std::move(data));
 }
 

@@ -3,6 +3,8 @@ import '../../native_contract/recurrence/recurrence_rule_dto.dart';
 import '../../native_contract/reminder/reminder_draft_request_dto.dart';
 import '../../native_contract/runtime/local_wall_date_time.dart';
 import '../../native_contract/runtime/resolve_local_datetime_dto.dart';
+import '../../gateway_interfaces/ring_native_gateway.dart';
+import '../../native_contract/ring/ring_contract_enums.dart';
 import '../timezone/timezone_application_service.dart';
 import 'create_event_use_case.dart';
 
@@ -14,7 +16,24 @@ enum CreateScheduleSubmitOutcome {
   timezoneFailure,
   gapShifted,
   nativeFailure,
+  ringCapabilityFailure,
   ignored,
+}
+
+class RingCapabilityCheckResult {
+  const RingCapabilityCheckResult._({
+    required this.canEnable,
+    required this.message,
+  });
+
+  const RingCapabilityCheckResult.available()
+    : this._(canEnable: true, message: null);
+
+  const RingCapabilityCheckResult.unavailable(String message)
+    : this._(canEnable: false, message: message);
+
+  final bool canEnable;
+  final String? message;
 }
 
 class CreateScheduleDraft {
@@ -117,11 +136,14 @@ class CreateScheduleController {
   CreateScheduleController({
     required CreateEventUseCase createEventUseCase,
     required TimezoneApplicationService timezoneService,
+    RingNativeGateway? ringGateway,
   }) : _createEventUseCase = createEventUseCase,
-       _timezoneService = timezoneService;
+       _timezoneService = timezoneService,
+       _ringGateway = ringGateway;
 
   final CreateEventUseCase _createEventUseCase;
   final TimezoneApplicationService _timezoneService;
+  final RingNativeGateway? _ringGateway;
   bool _isSubmitting = false;
 
   Future<CreateScheduleTimezoneResult> refreshDeviceTimezone() async {
@@ -155,6 +177,15 @@ class CreateScheduleController {
 
     _isSubmitting = true;
     try {
+      if (draft.isRingingReminderEnabled) {
+        final capability = await checkRingCapability();
+        if (!capability.canEnable) {
+          return CreateScheduleSubmitResult.failure(
+            outcome: CreateScheduleSubmitOutcome.ringCapabilityFailure,
+            message: capability.message ?? '当前设备无法启用响铃提醒',
+          );
+        }
+      }
       final timezoneResult = await refreshDeviceTimezone();
       if (!timezoneResult.succeeded) {
         return CreateScheduleSubmitResult.failure(
@@ -220,7 +251,7 @@ class CreateScheduleController {
           ? selectedAllDayEnd
           : allDayStart.add(const Duration(days: 1));
       final methods = draft.isRingingReminderEnabled
-          ? const ['popup', 'ring']
+          ? const ['ring']
           : const ['popup'];
       final request = CreateEventRequestDto(
         title: draft.title.trim(),
@@ -283,21 +314,65 @@ class CreateScheduleController {
       return '自定义重复规则后续实现';
     }
     final isRecurring = draft.recurrence != CreateScheduleRecurrence.once;
+    if (draft.isRingingReminderEnabled && draft.isAllDay) {
+      return '全天日程不支持响铃提醒';
+    }
+    if (draft.isRingingReminderEnabled && isRecurring) {
+      return '重复日程本期仅支持弹窗提醒';
+    }
+    if (draft.isRingingReminderEnabled &&
+        draft.reminderAdvanceMinutes.isEmpty) {
+      return '请先设置提醒时间再开启响铃';
+    }
     if (isRecurring &&
         draft.reminderAdvanceMinutes.isNotEmpty &&
         draft.isAllDay) {
       return '全天重复日程暂不支持提醒';
-    }
-    if (isRecurring &&
-        draft.reminderAdvanceMinutes.isNotEmpty &&
-        draft.isRingingReminderEnabled) {
-      return '重复日程本期仅支持弹窗提醒';
     }
     if ((!draft.isAllDay && !draft.start.isBefore(draft.end)) ||
         (draft.isAllDay && draft.end.isBefore(draft.start))) {
       return '结束时间必须晚于开始时间';
     }
     return null;
+  }
+
+  Future<RingCapabilityCheckResult> checkRingCapability() async {
+    final gateway = _ringGateway;
+    if (gateway == null) {
+      return const RingCapabilityCheckResult.unavailable('响铃能力尚未连接');
+    }
+    final invocation = await gateway.getState();
+    final state = invocation.result.data;
+    if (!invocation.result.ok || state == null) {
+      final error = invocation.result.error;
+      return RingCapabilityCheckResult.unavailable(
+        error == null ? '无法检查响铃权限' : '${error.code}: ${error.message}',
+      );
+    }
+    final capability = state.capability;
+    if (capability.canEnableRing) {
+      return const RingCapabilityCheckResult.available();
+    }
+    return RingCapabilityCheckResult.unavailable(
+      _blockingReasonMessage(capability.blockingReasons),
+    );
+  }
+
+  static String _blockingReasonMessage(
+    List<RingCapabilityBlockingReason> reasons,
+  ) {
+    if (reasons.isEmpty) return '当前设备无法启用响铃提醒';
+    final labels = reasons.map((reason) {
+      return switch (reason) {
+        RingCapabilityBlockingReason.notificationPermissionUnavailable =>
+          '通知权限不可用',
+        RingCapabilityBlockingReason.exactAlarmPermissionUnavailable =>
+          '精确闹钟权限不可用',
+        RingCapabilityBlockingReason.ringChannelUnavailable => '响铃通知渠道不可用',
+        RingCapabilityBlockingReason.noOutputAvailable => '声音与振动均不可用',
+      };
+    });
+    return '无法开启响铃：${labels.join('、')}';
   }
 
   static String? _optionalText(String value) {

@@ -8,6 +8,8 @@ import com.excellentcalendar.excellent_calendar.android.notification.AndroidNoti
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationPermissionManager
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationRuntime
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
+import com.excellentcalendar.excellent_calendar.bridge.channel.AnniversaryCapabilityProvider
+import com.excellentcalendar.excellent_calendar.bridge.channel.AnniversaryCapabilitySnapshot
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReconcileReminderScheduleContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
 import com.excellentcalendar.excellent_calendar.bridge.native.AndroidNativeBridgeFactory
@@ -16,6 +18,8 @@ import com.excellentcalendar.excellent_calendar.bridge.native.NativeContractRunt
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
+import com.excellentcalendar.excellent_calendar.android.ring.RingRuntimeProvider
+import com.excellentcalendar.excellent_calendar.bridge.ring.RingMethodOrchestrator
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -41,6 +45,7 @@ class MainActivity : FlutterActivity() {
      */
     private var nativeMethodChannelHandler: NativeMethodChannelHandler? = null
     private var notificationPermissionManager: AndroidNotificationPermissionManager? = null
+    private var ringMethodOrchestrator: RingMethodOrchestrator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,6 +102,12 @@ class MainActivity : FlutterActivity() {
             permissions = permissionManager,
             tapStore = AndroidNotificationRuntime.tapPayloadStore,
             captureLaunchPayload = { AndroidNotificationRuntime.handleIntent(intent) },
+            onPermissionResult = {
+                com.excellentcalendar.excellent_calendar.android.alarm.ReminderWorkScheduler.enqueue(
+                    applicationContext,
+                    ReminderScheduleTrigger.ManualRetry,
+                )
+            },
         )
         val pendingScheduleService = PendingReminderScheduleService(
             nativeBridge = nativeBridge,
@@ -108,17 +119,32 @@ class MainActivity : FlutterActivity() {
                 )
             },
         )
+        val ringRuntime = RingRuntimeProvider.get(applicationContext)
+        val ringOrchestrator = RingMethodOrchestrator(this, ringRuntime)
+        ringMethodOrchestrator = ringOrchestrator
         val handler = NativeMethodChannelHandler(
             nativeCalendarCoreBridge = nativeBridge,
             reminderOrchestrator = reminderOrchestrator,
             notificationOrchestrator = notificationOrchestrator,
             pendingReminderScheduleService = pendingScheduleService,
             reminderScheduleCoordinator = reminderScheduleCoordinator,
+            ringRuntime = ringRuntime,
+            ringOrchestrator = ringOrchestrator,
             contractProfile = NativeContractRuntimeProfile.current,
             reconcileRetryEnqueuer = {
                 com.excellentcalendar.excellent_calendar.android.alarm.ReminderWorkScheduler.enqueueContinuation(
                     applicationContext,
                 )
+            },
+            anniversaryCapabilityProvider = AnniversaryCapabilityProvider {
+                permissionManager.status().let { snapshot ->
+                    AnniversaryCapabilitySnapshot(
+                        notificationPermissionStatus = snapshot.notificationPermission,
+                        exactAlarmPermissionStatus = snapshot.exactAlarmPermission,
+                        canPostNotifications = snapshot.canPostNotifications,
+                        canScheduleExactAlarms = snapshot.canScheduleExactAlarms,
+                    )
+                }
             },
         )
         nativeMethodChannelHandler = handler
@@ -136,6 +162,16 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             AndroidNotificationRuntime.DeliveredEventChannel,
         ).setStreamHandler(AndroidNotificationRuntime.eventHub.deliveredStreamHandler)
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            com.excellentcalendar.excellent_calendar.bridge.ring.RingStateEventHub.ChannelName,
+        ).setStreamHandler(RingRuntimeProvider.eventHub.streamHandler)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (ringMethodOrchestrator?.onActivityResult(requestCode, resultCode, data) == true) return
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onRequestPermissionsResult(
@@ -166,12 +202,18 @@ class MainActivity : FlutterActivity() {
         ).setStreamHandler(null)
         EventChannel(
             flutterEngine.dartExecutor.binaryMessenger,
+            com.excellentcalendar.excellent_calendar.bridge.ring.RingStateEventHub.ChannelName,
+        ).setStreamHandler(null)
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
             AndroidNotificationRuntime.DeliveredEventChannel,
         ).setStreamHandler(null)
         nativeMethodChannelHandler?.close()
         nativeMethodChannelHandler = null
         notificationPermissionManager = null
+        ringMethodOrchestrator = null
         AndroidNotificationRuntime.eventHub.clear()
+        RingRuntimeProvider.eventHub.clear()
         super.cleanUpFlutterEngine(flutterEngine)
     }
 }

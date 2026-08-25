@@ -26,6 +26,8 @@ class AppRouter {
     EventDetailRouteBuilder? eventDetailBuilder,
     WidgetBuilder? anniversaryListBuilder,
     AnniversaryDetailRouteBuilder? anniversaryDetailBuilder,
+    WidgetBuilder? ringSettingsBuilder,
+    WidgetBuilder? activeRingBuilder,
   }) {
     final name = settings.name ?? '/today';
     if (name == '/today' || name == '/') {
@@ -38,6 +40,18 @@ class AppRouter {
       return MaterialPageRoute<void>(
         settings: const RouteSettings(name: '/anniversaries'),
         builder: anniversaryListBuilder,
+      );
+    }
+    if (name == '/settings/ring' && ringSettingsBuilder != null) {
+      return MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/settings/ring'),
+        builder: ringSettingsBuilder,
+      );
+    }
+    if (name == '/ring/active' && activeRingBuilder != null) {
+      return MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/ring/active'),
+        builder: activeRingBuilder,
       );
     }
 

@@ -7,6 +7,7 @@
 
 #include "excellent_calendar/repository/anniversary_transaction.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/json/calendar_workflow_coordinator.hpp"
 #include "excellent_calendar/storage/runtime_storage_lease.hpp"
 
 namespace excellent_calendar::storage::json {
@@ -22,6 +23,8 @@ class JsonAnniversaryTransaction final : public repository::AnniversaryTransacti
 
   common::Result<common::Unit> initialize() override;
   common::Result<repository::AnniversaryState> load() override;
+  common::Result<repository::AnniversaryOccurrenceSnapshot>
+  load_occurrence_snapshot() override;
   common::Result<common::Unit> execute(
       std::string_view operation,
       std::string transaction_id,
@@ -30,15 +33,15 @@ class JsonAnniversaryTransaction final : public repository::AnniversaryTransacti
 
  private:
   common::Result<repository::AnniversaryState> load_locked();
-  common::Result<common::Unit> recover_locked();
-  common::Result<common::Unit> ensure_stores_locked();
-  common::Result<common::Unit> apply_after_stores_locked(
-      const picojson::object& after_stores,
-      bool invoke_hooks);
-  common::Result<common::Unit> call_hook(std::string_view phase) const;
+  common::Result<common::Unit> commit_changed_stores_locked(
+      std::string operation,
+      std::string transaction_id,
+      std::string prepared_at,
+      const repository::AnniversaryState& before,
+      const repository::AnniversaryState& after);
 
   AtomicJsonFileStore store_;
-  FailureHook failure_hook_;
+  CalendarWorkflowCoordinator coordinator_;
   std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
 };
 

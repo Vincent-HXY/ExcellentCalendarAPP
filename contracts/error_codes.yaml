@@ -131,6 +131,11 @@ errors:
     message: "Reminder schedule changed before the Android registration acknowledgement"
     retryable: true
 
+  REMINDER_SNOOZE_NOT_ALLOWED:
+    module: reminder
+    message: "The source ring delivery cannot create a snoozed Reminder"
+    retryable: false
+
   DELIVERY_ATTEMPT_INVALID:
     module: notification
     message: "Delivery attempt is missing, not prepared, or finalized with a conflicting outcome"
@@ -201,6 +206,118 @@ errors:
     message: "Anniversary not found"
     retryable: false
 
+  ANNIVERSARY_UPDATE_CONFLICT:
+    module: anniversary
+    message: "Anniversary changed after the caller loaded it"
+    retryable: false
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  ANNIVERSARY_TARGET_DELETED:
+    module: anniversary
+    message: "Anniversary target is deleted"
+    retryable: false
+    boundaries: [native, notification_tap]
+    data_saved_allowed: false
+
+  ANNIVERSARY_REMINDER_CONFIG_INVALID:
+    module: anniversary
+    message: "Anniversary reminder configuration is invalid"
+    retryable: false
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE:
+    module: anniversary
+    message: "Anniversary reminder templates contain a duplicate identity tuple"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED:
+    module: anniversary
+    message: "Anniversary reminder plan contains more than five templates"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_RANGE_INVALID:
+    module: anniversary
+    message: "Anniversary occurrence date range is empty or reversed"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE:
+    module: anniversary
+    message: "Anniversary occurrence date range exceeds 400 natural days"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_FILTER_INVALID:
+    module: anniversary
+    message: "Anniversary occurrence filter contains a duplicate or unsupported value"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_CURSOR_INVALID:
+    module: anniversary
+    message: "Anniversary occurrence cursor is malformed"
+    retryable: false
+    boundaries: [native]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED:
+    module: anniversary
+    message: "Anniversary occurrence cursor is expired or does not match the query snapshot"
+    retryable: true
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  ANNIVERSARY_OCCURRENCE_STALE:
+    module: anniversary
+    message: "Anniversary occurrence identity no longer matches the current target facts"
+    retryable: false
+    boundaries: [native, domain, delivery]
+    data_saved_allowed: false
+
+  ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED:
+    module: anniversary
+    message: "Anniversary reminder is past the occurrence-day catch-up deadline"
+    retryable: false
+    boundaries: [domain, delivery, recovery]
+    data_saved_allowed: false
+
+  ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT:
+    module: notification
+    message: "Anniversary aggregate delivery does not match the frozen RecoveryBatch membership"
+    retryable: false
+    boundaries: [native, domain, delivery, recovery]
+    data_saved_allowed: false
+
+  CALENDAR_WORKFLOW_COMMIT_FAILED:
+    module: storage
+    message: "Calendar workflow logical commit failed before becoming authoritative"
+    retryable: true
+    boundaries: [storage, native]
+    data_saved_allowed: false
+
+  CALENDAR_WORKFLOW_RECOVERY_FAILED:
+    module: storage
+    message: "Calendar workflow recovery could not prove a complete authoritative state"
+    retryable: false
+    boundaries: [storage, runtime_initialize]
+    data_saved_allowed: false
+
+  SCHEDULER_RECONCILIATION_PENDING:
+    module: android
+    message: "Business data is saved but Android scheduling requires later reconciliation"
+    retryable: true
+    boundaries: [method_channel, android_scheduler]
+    data_saved_allowed: true
+
   SEARCH_QUERY_INVALID:
     module: search
     message: "Search query is invalid"
@@ -261,6 +378,16 @@ errors:
     message: "The account is disabled"
     retryable: false
 
+  AUTH_ACCOUNT_NOT_FOUND:
+    module: auth
+    message: "The referenced account does not exist"
+    retryable: false
+
+  AUTH_ACCOUNT_ALREADY_VERIFIED:
+    module: auth
+    message: "The account email is already verified"
+    retryable: false
+
   AUTH_EMAIL_ALREADY_EXISTS:
     module: auth
     message: "The email is already associated with an account"
@@ -284,6 +411,11 @@ errors:
   AUTH_VERIFICATION_USED:
     module: auth
     message: "The verification challenge has already been used"
+    retryable: false
+
+  AUTH_VERIFICATION_ATTEMPTS_EXCEEDED:
+    module: auth
+    message: "The verification challenge exceeded the maximum failed attempts and was invalidated"
     retryable: false
 
   AUTH_PASSWORD_POLICY_VIOLATION:
@@ -375,6 +507,56 @@ errors:
     module: reminder
     message: "Exact alarm permission is denied"
     retryable: true
+
+  RING_CAPABILITY_UNAVAILABLE:
+    module: ring
+    message: "Required Android capability for ring reminders is unavailable"
+    retryable: true
+
+  RING_SETTINGS_CONFLICT:
+    module: ring
+    message: "Ring settings changed before the requested update"
+    retryable: true
+
+  RING_SETTINGS_STORAGE_FAILED:
+    module: ring
+    message: "Device-local ring settings could not be persisted"
+    retryable: true
+
+  RING_SETTINGS_CORRUPTED:
+    module: ring
+    message: "Device-local ring settings cannot be decoded safely"
+    retryable: false
+
+  RING_SESSION_NOT_FOUND:
+    module: ring
+    message: "No matching active ring session exists"
+    retryable: false
+
+  RING_SESSION_CONFLICT:
+    module: ring
+    message: "Active ring session changed before the requested action"
+    retryable: true
+
+  RING_ITEM_NOT_FOUND:
+    module: ring
+    message: "No matching item exists in the active ring session"
+    retryable: false
+
+  RINGTONE_PICKER_FAILED:
+    module: ring
+    message: "Android system ringtone picker failed"
+    retryable: true
+
+  RING_CONTROL_NOTIFICATION_FAILED:
+    module: ring
+    message: "Ring foreground control notification could not be shown"
+    retryable: true
+
+  RING_OUTPUT_UNAVAILABLE:
+    module: ring
+    message: "Neither ring sound nor vibration could be started"
+    retryable: false
 
   UNSUPPORTED_REMINDER_METHOD:
     module: reminder

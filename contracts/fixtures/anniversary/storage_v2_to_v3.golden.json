@@ -1,0 +1,52 @@
+{
+  "fixture_version": 1,
+  "source_storage_version": 2,
+  "target_storage_version": 3,
+  "source": {
+    "anniversary": {
+      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "title": "迁移纪念日",
+      "date": "2020-02-29",
+      "calendar_type": "solar",
+      "category_id": null,
+      "recurrence_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "note": "必须保留",
+      "importance": "important_noturgent",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-02T00:00:00Z",
+      "deleted_at": null
+    },
+    "reminder_new_fields_absent": true,
+    "notification_covered_reminder_ids_absent": true,
+    "recovery_anniversary_groups_absent": true
+  },
+  "expected": {
+    "anniversary": {
+      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "title": "迁移纪念日",
+      "date": "2020-02-29",
+      "calendar_type": "solar",
+      "category_id": null,
+      "recurrence_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "note": "必须保留",
+      "importance": "important_noturgent",
+      "reminders_enabled": false,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-02T00:00:00Z",
+      "deleted_at": null
+    },
+    "anniversary_reminder_templates": [],
+    "reminder_new_fields": {
+      "template_key": null,
+      "occurrence_date": null,
+      "advance_days": null,
+      "local_time": null,
+      "timezone_mode": null,
+      "fulfillment_delivery_id": null
+    },
+    "notification_covered_reminder_ids": [],
+    "recovery_anniversary_catch_up_groups": []
+  },
+  "preserve_exact_fields": ["id", "title", "date", "calendar_type", "category_id", "recurrence_id", "note", "importance", "created_at", "updated_at", "deleted_at"],
+  "rerun_result": "already_migrated"
+}

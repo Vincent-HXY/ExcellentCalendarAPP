@@ -47,7 +47,9 @@ enum NotificationPermissionRequestSource {
 enum NotificationSettingsTarget {
   notification('notification'),
   exactAlarm('exact_alarm'),
-  application('application');
+  application('application'),
+  ringChannel('ring_channel'),
+  fullScreenIntent('full_screen_intent');
 
   const NotificationSettingsTarget(this.wireValue);
   final String wireValue;
@@ -72,7 +74,8 @@ enum NotificationTargetType {
 
 enum NotificationKind {
   reminder('reminder'),
-  recoverySummary('recovery_summary');
+  recoverySummary('recovery_summary'),
+  anniversaryCatchUp('anniversary_catch_up');
 
   const NotificationKind(this.wireValue);
   final String wireValue;

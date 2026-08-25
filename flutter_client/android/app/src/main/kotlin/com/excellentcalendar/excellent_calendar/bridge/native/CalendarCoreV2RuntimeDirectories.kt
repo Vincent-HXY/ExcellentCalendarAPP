@@ -1,6 +1,7 @@
 package com.excellentcalendar.excellent_calendar.bridge.native
 
 import android.content.Context
+import com.excellentcalendar.excellent_calendar.BuildConfig
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 import java.io.File
 import java.io.FileOutputStream
@@ -27,19 +28,18 @@ internal class CalendarCoreV2RuntimeRequestProvider(
 /**
  * Resolves the Contract-owned active path without mutating storage.
  *
- * The C++ v2 bootstrap must be the only component that validates and discards a
- * formal v1 directory before creating the empty v2 stores at the same path.
- * V1 data is not preserved.
+ * The C++ Storage v3 bootstrap is the only component allowed to validate,
+ * migrate, recover, or create Calendar Core stores at this path.
  */
 internal object CalendarCoreV2StorageDirectoryResolver {
-    private const val LocalStorageDirectoryName = "local_storage"
-    private const val ActiveStorageDirectoryName = "calendar_core_storage_json"
-
-    fun resolve(filesDir: File): File {
-        val active = File(File(filesDir, LocalStorageDirectoryName), ActiveStorageDirectoryName)
+    fun resolve(
+        filesDir: File,
+        deviceTest: Boolean = BuildConfig.CALENDAR_CORE_DEVICE_TEST,
+    ): File {
+        val active = CalendarCoreStorageLayout.resolve(filesDir, deviceTest)
 
         if (active.exists() && !active.isDirectory) {
-            throw IOException("Calendar Core v2 storage path is not a directory: ${active.absolutePath}")
+            throw IOException("Calendar Core storage path is not a directory: ${active.absolutePath}")
         }
         return active
     }

@@ -28,6 +28,7 @@ class NativeErrorCodes {
   static const reminderMethodInvalid = 'REMINDER_METHOD_INVALID';
   static const reminderIdempotencyConflict = 'REMINDER_IDEMPOTENCY_CONFLICT';
   static const reminderScheduleConflict = 'REMINDER_SCHEDULE_CONFLICT';
+  static const reminderSnoozeNotAllowed = 'REMINDER_SNOOZE_NOT_ALLOWED';
   static const deliveryAttemptInvalid = 'DELIVERY_ATTEMPT_INVALID';
   static const recoveryBatchConflict = 'RECOVERY_BATCH_CONFLICT';
   static const notificationDeliveryFailed = 'NOTIFICATION_DELIVERY_FAILED';
@@ -44,6 +45,34 @@ class NativeErrorCodes {
   static const anniversaryCalendarUnsupported =
       'ANNIVERSARY_CALENDAR_UNSUPPORTED';
   static const anniversaryNotFound = 'ANNIVERSARY_NOT_FOUND';
+  static const anniversaryUpdateConflict = 'ANNIVERSARY_UPDATE_CONFLICT';
+  static const anniversaryTargetDeleted = 'ANNIVERSARY_TARGET_DELETED';
+  static const anniversaryReminderConfigInvalid =
+      'ANNIVERSARY_REMINDER_CONFIG_INVALID';
+  static const anniversaryReminderTemplateDuplicate =
+      'ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE';
+  static const anniversaryReminderTemplateLimitExceeded =
+      'ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED';
+  static const anniversaryOccurrenceRangeInvalid =
+      'ANNIVERSARY_OCCURRENCE_RANGE_INVALID';
+  static const anniversaryOccurrenceRangeTooLarge =
+      'ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE';
+  static const anniversaryOccurrenceFilterInvalid =
+      'ANNIVERSARY_OCCURRENCE_FILTER_INVALID';
+  static const anniversaryOccurrenceCursorInvalid =
+      'ANNIVERSARY_OCCURRENCE_CURSOR_INVALID';
+  static const anniversaryOccurrenceCursorExpired =
+      'ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED';
+  static const anniversaryOccurrenceStale = 'ANNIVERSARY_OCCURRENCE_STALE';
+  static const anniversaryReminderOccurrenceExpired =
+      'ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED';
+  static const anniversaryAggregateMembershipConflict =
+      'ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT';
+  static const calendarWorkflowCommitFailed = 'CALENDAR_WORKFLOW_COMMIT_FAILED';
+  static const calendarWorkflowRecoveryFailed =
+      'CALENDAR_WORKFLOW_RECOVERY_FAILED';
+  static const schedulerReconciliationPending =
+      'SCHEDULER_RECONCILIATION_PENDING';
   static const searchQueryInvalid = 'SEARCH_QUERY_INVALID';
   static const aiExtractionFailed = 'AI_EXTRACTION_FAILED';
   static const syncConflict = 'SYNC_CONFLICT';
@@ -56,6 +85,17 @@ class NativeErrorCodes {
   static const alarmCancelFailed = 'ALARM_CANCEL_FAILED';
   static const notificationPermissionDenied = 'NOTIFICATION_PERMISSION_DENIED';
   static const exactAlarmPermissionDenied = 'EXACT_ALARM_PERMISSION_DENIED';
+  static const ringCapabilityUnavailable = 'RING_CAPABILITY_UNAVAILABLE';
+  static const ringSettingsConflict = 'RING_SETTINGS_CONFLICT';
+  static const ringSettingsStorageFailed = 'RING_SETTINGS_STORAGE_FAILED';
+  static const ringSettingsCorrupted = 'RING_SETTINGS_CORRUPTED';
+  static const ringSessionNotFound = 'RING_SESSION_NOT_FOUND';
+  static const ringSessionConflict = 'RING_SESSION_CONFLICT';
+  static const ringItemNotFound = 'RING_ITEM_NOT_FOUND';
+  static const ringtonePickerFailed = 'RINGTONE_PICKER_FAILED';
+  static const ringControlNotificationFailed =
+      'RING_CONTROL_NOTIFICATION_FAILED';
+  static const ringOutputUnavailable = 'RING_OUTPUT_UNAVAILABLE';
   static const unsupportedReminderMethod = 'UNSUPPORTED_REMINDER_METHOD';
   static const reminderAlreadyConsumed = 'REMINDER_ALREADY_CONSUMED';
   static const reminderNotDue = 'REMINDER_NOT_DUE';
@@ -88,6 +128,7 @@ class NativeErrorCodes {
     reminderMethodInvalid,
     reminderIdempotencyConflict,
     reminderScheduleConflict,
+    reminderSnoozeNotAllowed,
     deliveryAttemptInvalid,
     recoveryBatchConflict,
     notificationDeliveryFailed,
@@ -102,6 +143,22 @@ class NativeErrorCodes {
     anniversaryDateInvalid,
     anniversaryCalendarUnsupported,
     anniversaryNotFound,
+    anniversaryUpdateConflict,
+    anniversaryTargetDeleted,
+    anniversaryReminderConfigInvalid,
+    anniversaryReminderTemplateDuplicate,
+    anniversaryReminderTemplateLimitExceeded,
+    anniversaryOccurrenceRangeInvalid,
+    anniversaryOccurrenceRangeTooLarge,
+    anniversaryOccurrenceFilterInvalid,
+    anniversaryOccurrenceCursorInvalid,
+    anniversaryOccurrenceCursorExpired,
+    anniversaryOccurrenceStale,
+    anniversaryReminderOccurrenceExpired,
+    anniversaryAggregateMembershipConflict,
+    calendarWorkflowCommitFailed,
+    calendarWorkflowRecoveryFailed,
+    schedulerReconciliationPending,
     searchQueryInvalid,
     aiExtractionFailed,
     syncConflict,
@@ -114,6 +171,16 @@ class NativeErrorCodes {
     alarmCancelFailed,
     notificationPermissionDenied,
     exactAlarmPermissionDenied,
+    ringCapabilityUnavailable,
+    ringSettingsConflict,
+    ringSettingsStorageFailed,
+    ringSettingsCorrupted,
+    ringSessionNotFound,
+    ringSessionConflict,
+    ringItemNotFound,
+    ringtonePickerFailed,
+    ringControlNotificationFailed,
+    ringOutputUnavailable,
     unsupportedReminderMethod,
     reminderAlreadyConsumed,
     reminderNotDue,

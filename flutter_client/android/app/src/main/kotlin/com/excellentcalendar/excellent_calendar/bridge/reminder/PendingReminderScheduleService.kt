@@ -59,7 +59,9 @@ class PendingReminderScheduleService(
                 continue
             }
             when (val scheduled = scheduler.schedule(reminder)) {
-                ScheduleResult.Success -> {
+                ScheduleResult.Success,
+                ScheduleResult.ApproximateSuccess,
+                -> {
                     val marked = markScheduled(reminder.id)
                     if (marked.ok) {
                         scheduledCount += 1

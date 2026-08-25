@@ -15,3 +15,11 @@
 - 解决方式：拆分为聚合 `NativeCalendarCoreBridge` 与各领域窄 Bridge；正式目录切换为 `calendar_core_storage_json`，且 v1 决策明确不再把 `test_storage_json` 当迁移来源。
 - 可吸取的教训：名字是架构约束的一部分；测试命名进入生产路径会误导数据安全和职责判断，应在边界扩张时及时收敛。
 - 来源：`[P3] 存在会长期误导开发的命名`。
+
+## RES-AND-001 全仓 Android Lint error 阻断已清零
+
+- 严重程度：P1（质量门禁）
+- 产生原因：早期记录包含 29 个 error / 20 个 warning，其中 API 兼容和 Windows 属性转义问题被当作当前发布阻断；后续实现与报告变化后，开放问题未同步。
+- 解决方式：2026-08-25 强制重跑 `lintDebug` 成功，XML 报告为 0 errors / 37 warnings；warning 保留为非阻断技术债。API 24–25 的实际运行兼容性独立标记为未验证设备风险，不再错误推断为 Lint 失败。
+- 可吸取的教训：Lint 状态必须来自当前候选工作区的实际报告，设备兼容矩阵不能由静态告警数量替代。
+- 来源：原 `OPEN-ANDROID-001` 与 `docs/status/current.md`。

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_occurrence_list_response.schema.json",
+  "title": "AnniversaryOccurrenceListResponse",
+  "description": "One stable page sorted by (occurrence_date, anniversary_id, occurrence_key) ascending. There is no total-result cap. has_more=true requires a non-null cursor; the terminal page requires next_cursor=null.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "x-order": ["occurrence_date", "anniversary_id", "occurrence_key"],
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "has_more", "next_cursor"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {"$ref": "./anniversary_occurrence_summary_response.schema.json"}
+    },
+    "has_more": {"type": "boolean"},
+    "next_cursor": {"type": ["string", "null"], "pattern": "^annocc1\\.[A-Za-z0-9_-]{20,2048}$"}
+  },
+  "oneOf": [
+    {"properties": {"has_more": {"const": true}, "next_cursor": {"type": "string", "pattern": "^annocc1\\.[A-Za-z0-9_-]{20,2048}$"}}},
+    {"properties": {"has_more": {"const": false}, "next_cursor": {"type": "null"}}}
+  ]
+}

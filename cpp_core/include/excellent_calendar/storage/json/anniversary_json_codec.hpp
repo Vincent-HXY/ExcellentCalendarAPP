@@ -21,6 +21,11 @@ common::Result<common::Unit> decode_anniversary_store(
     const picojson::value& root,
     repository::AnniversaryState& state);
 
+common::Result<common::Unit> decode_anniversary_store_v2_for_migration(
+    std::string_view file_name,
+    const picojson::value& root,
+    repository::AnniversaryState& state);
+
 picojson::value empty_anniversary_store(std::string_view file_name);
 
 }  // namespace excellent_calendar::storage::json

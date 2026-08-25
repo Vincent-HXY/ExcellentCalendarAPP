@@ -6,9 +6,12 @@ import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonC
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeContractViolation
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
+import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderDeliveryRequestContracts
 import com.excellentcalendar.excellent_calendar.bridge.contract.ReminderScheduleTrigger
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2RecoveryPlan
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeReminderBridge
+import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
+import com.excellentcalendar.excellent_calendar.bridge.runtime.DeviceTimezoneProvider
 import java.util.UUID
 
 data class PendingRecoveryRequest(val requestId: String, val triggerSource: String)
@@ -60,6 +63,7 @@ class ReminderRecoveryCoordinator(
     private val notifications: NotificationDisplayService,
     private val requestStore: RecoveryRequestStore,
     private val logger: ReminderOrchestrationLogger,
+    private val timezoneProvider: DeviceTimezoneProvider = AndroidDeviceTimezoneProvider,
 ) : ReminderRecoveryRunner {
     override fun recover(trigger: ReminderScheduleTrigger, canContinue: () -> Boolean): NativeResultContract {
         val triggerSource = trigger.toRecoveryTrigger() ?: return NativeResultContract.success(
@@ -88,10 +92,16 @@ class ReminderRecoveryCoordinator(
             val summary = deliveryService.deliverSummary(planned.batchId)
             if (!summary.completesRecoveryDelivery()) return summary
         }
+        for (group in planned.anniversaryCatchUpGroups) {
+            if (group.status == "completed") continue
+            if (!canContinue()) return continuationRequired()
+            val aggregate = deliveryService.deliverAnniversaryCatchUp(planned.batchId, group.deliveryId)
+            if (!aggregate.completesRecoveryDelivery()) return aggregate
+        }
         for (reminder in planned.detailReminders) {
             if (reminder.isTerminal) continue
             if (!canContinue()) return continuationRequired()
-            val detail = deliveryService.deliverReminder(reminder.reminderId, reminder.remindAt, planned.batchId)
+            val detail = deliveryService.deliverReminder(reminder.reminderId, reminder.remindAt, planned.batchId, reminder.method)
             if (!detail.completesRecoveryDelivery()) return detail
         }
 
@@ -103,20 +113,21 @@ class ReminderRecoveryCoordinator(
         logger.log(
             "reminder.plan_recovery",
             null,
-            "request_id=${pending.requestId} batch_id=${completed.batchId} status=${completed.status} details=${completed.detailReminders.size}",
+            "request_id=${pending.requestId} batch_id=${completed.batchId} status=${completed.status} " +
+                "details=${completed.detailReminders.size} anniversary_groups=${completed.anniversaryCatchUpGroups.size}",
         )
         return recoverySuccess(completed)
     }
 
     private fun plan(pending: PendingRecoveryRequest): NativeResultContract = try {
+        val request = ReminderDeliveryRequestContracts.planRecovery(
+            recoveryRequestId = pending.requestId,
+            triggerSource = pending.triggerSource,
+            timezone = timezoneProvider.currentTimezone(),
+        )
         NativeResultContract.fromJson(
             nativeBridge.planReminderRecovery(
-                NativeContractJsonCodec.encodeObject(
-                    linkedMapOf(
-                        "recovery_request_id" to pending.requestId,
-                        "trigger_source" to pending.triggerSource,
-                    ),
-                ),
+                NativeContractJsonCodec.encodeObject(request),
             ),
             2,
         ) { V2RecoveryPlan.fromData(it) }
@@ -135,6 +146,7 @@ class ReminderRecoveryCoordinator(
             "recovery_batch_id" to plan.batchId,
             "status" to plan.status,
             "detail_count" to plan.detailReminders.size,
+            "anniversary_group_count" to plan.anniversaryCatchUpGroups.size,
             "continuation_required" to false,
         ),
         contractVersion = 2,

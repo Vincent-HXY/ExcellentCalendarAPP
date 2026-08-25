@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_delete_commit_response.schema.json",
+  "title": "AnniversaryDeleteCommitResponse",
+  "description": "C++ delete logical-commit result. Future Reminder cancellation is part of the commit; Android schedule reconciliation is a post-commit effect.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["anniversary", "schedule_reconciliation_required"],
+  "properties": {
+    "anniversary": {"$ref": "./deleted_anniversary_response.schema.json"},
+    "schedule_reconciliation_required": {"type": "boolean"}
+  }
+}

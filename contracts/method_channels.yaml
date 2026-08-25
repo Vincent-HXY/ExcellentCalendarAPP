@@ -237,6 +237,87 @@ methods:
       data: notification/notification_list_response.schema.json
     event_stream: false
 
+  ring.get_state:
+    module: ring
+    implementation: kotlin_local
+    implementation_status: integrated
+    release_status: active
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ring/ring_state_snapshot.schema.json
+    event_stream: false
+
+  ring.pick_ringtone:
+    module: ring
+    implementation: kotlin_local
+    implementation_status: integrated
+    release_status: active
+    request: ring/pick_ringtone_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ring/pick_ringtone_response.schema.json
+    event_stream: false
+
+  ring.update_settings:
+    module: ring
+    implementation: kotlin_local
+    implementation_status: integrated
+    release_status: active
+    request: ring/update_ring_settings_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ring/ring_state_snapshot.schema.json
+    event_stream: false
+
+  ring.test:
+    module: ring
+    implementation: kotlin_local
+    implementation_status: integrated
+    release_status: active
+    request: ring/ring_test_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ring/ring_state_snapshot.schema.json
+    event_stream: false
+
+  ring.stop_active:
+    module: ring
+    implementation: kotlin_local
+    implementation_status: integrated
+    release_status: active
+    request: ring/active_ring_items_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ring/ring_state_snapshot.schema.json
+    event_stream: false
+
+  ring.snooze_active:
+    module: ring
+    implementation: kotlin_workflow
+    implementation_status: integrated
+    release_status: active
+    internal_calls:
+      - reminder.snooze
+    request: ring/active_ring_items_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ring/ring_snooze_active_response.schema.json
+    event_stream: false
+
+  ring.complete_item:
+    module: ring
+    implementation: kotlin_workflow
+    implementation_status: integrated
+    release_status: active
+    internal_calls:
+      - event.complete
+    request: ring/complete_ring_item_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: ring/ring_state_snapshot.schema.json
+    event_stream: false
+
   habit.create:
     module: habit
     request: habit/create_habit_request.schema.json
@@ -277,48 +358,53 @@ methods:
 
   anniversary.create:
     module: anniversary
-    implementation: cpp
+    implementation: kotlin_orchestrated_cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/create_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: anniversary/anniversary_detail_response.schema.json
+      data: anniversary/anniversary_mutation_response.schema.json
     event_stream: false
 
   anniversary.update:
     module: anniversary
-    implementation: cpp
+    implementation: kotlin_orchestrated_cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/update_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: anniversary/anniversary_detail_response.schema.json
+      data: anniversary/anniversary_mutation_response.schema.json
     event_stream: false
 
   anniversary.delete:
     module: anniversary
-    implementation: cpp
+    implementation: kotlin_orchestrated_cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/delete_anniversary_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: anniversary/deleted_anniversary_response.schema.json
+      data: anniversary/anniversary_delete_operation_response.schema.json
     event_stream: false
 
   anniversary.detail:
     module: anniversary
-    implementation: cpp
+    implementation: kotlin_orchestrated_cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/get_anniversary_detail_request.schema.json
     result:
       envelope: common/native_result.schema.json
-      data: anniversary/anniversary_detail_response.schema.json
+      data: anniversary/anniversary_detail_view_response.schema.json
     event_stream: false
 
   anniversary.list:
     module: anniversary
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/list_anniversaries_request.schema.json
     result:
       envelope: common/native_result.schema.json
@@ -329,10 +415,41 @@ methods:
     module: anniversary
     implementation: cpp
     implementation_status: integrated
+    release_status: active
     request: anniversary/preview_anniversary_countdown_request.schema.json
     result:
       envelope: common/native_result.schema.json
       data: anniversary/anniversary_countdown_response.schema.json
+    event_stream: false
+
+  anniversary.set_reminders_enabled:
+    module: anniversary
+    implementation: kotlin_orchestrated_cpp
+    implementation_status: integrated
+    release_status: active
+    request: anniversary/set_anniversary_reminders_enabled_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_mutation_response.schema.json
+    implementation_path:
+      - kotlin_anniversary_handler
+      - anniversary.set_reminders_enabled native call
+      - kotlin_reminder_schedule_reconciliation
+    event_stream: false
+
+  anniversary.list_occurrences:
+    module: anniversary
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: anniversary/list_anniversary_occurrences_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: anniversary/anniversary_occurrence_list_response.schema.json
+    implementation_path:
+      - kotlin_anniversary_handler
+      - anniversary.list_occurrences native call
+      - cpp_anniversary_occurrence_query_service
     event_stream: false
 
   ai.extract:
@@ -409,3 +526,16 @@ event_channels:
     module: notification
     channel: excellent_calendar/events/notification_opened
     data: notification/notification_tap_payload.schema.json
+
+  ring.state_changed:
+    module: ring
+    channel: excellent_calendar/events/ring_state
+    implementation_status: integrated
+    release_status: active
+    data: ring/ring_state_changed_event.schema.json
+    identity:
+      - state.runtime_instance_id
+      - state.sequence
+    ordering: sequence_strictly_increasing_per_runtime_instance
+    duplicate_delivery: allowed
+    recovery: subscribe_then_ring.get_state

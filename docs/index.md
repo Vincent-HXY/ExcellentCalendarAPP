@@ -198,7 +198,7 @@ rg -n -i "<keyword>" <file>
 2. 解析具体目标，例如创建、更新、查询、年度重复、倒计时或持久化；
 3. 在 `docs/domains/` 中检索 `anniversary`、`AnniversaryRecurrence`、`纪念日`，只读取对应领域资料及确认存在的直接依赖；
 4. 在 `docs/architecture/decisions/` 中检索年度重复、日期锚点、时区、身份、事务和存储等与本次目标有关的 ADR；
-5. 查找对应 `docs/plan/active/`；需要判断实际完成度时再读取 `docs/status/current.md`；
+5. Anniversary Reminder R1 与 occurrence 扩展已经发布；当前事实以 `docs/status/current.md` 和 Contract 为准，已完成的总计划位于 `docs/plan/completed/纪念日-02-Reminder与Occurrence开发计划.md`，子计划位于同目录，白盒评审归档于 `docs/reviews/archive/纪念日-02-Reminder与Occurrence-review计划.md`。只有追查需求、实现取舍、发布风险例外或回归原因时才读取这些历史计划；
 6. 根据文档中的实体、方法和调用链定位代码与测试；
 7. 只有规则不明、来源冲突或验证异常时，才查 Anniversary 相关的 completed plan、resolved issue 和 archived review。
 

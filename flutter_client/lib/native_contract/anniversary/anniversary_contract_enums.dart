@@ -62,3 +62,47 @@ enum AnniversarySortDirectionContract {
   const AnniversarySortDirectionContract(this.wireValue);
   final String wireValue;
 }
+
+enum AnniversaryReminderTimezoneModeContract {
+  followDevice('follow_device');
+
+  const AnniversaryReminderTimezoneModeContract(this.wireValue);
+  final String wireValue;
+}
+
+enum AnniversaryScheduleStatusContract {
+  notRequired('not_required'),
+  scheduledExact('scheduled_exact'),
+  scheduledApproximate('scheduled_approximate'),
+  pendingPermission('pending_permission'),
+  pendingReconciliation('pending_reconciliation');
+
+  const AnniversaryScheduleStatusContract(this.wireValue);
+  final String wireValue;
+
+  static AnniversaryScheduleStatusContract fromWireValue(String value) =>
+      values.firstWhere(
+        (item) => item.wireValue == value,
+        orElse: () => throw FormatException(
+          'Unknown Anniversary schedule status: $value',
+        ),
+      );
+}
+
+enum AnniversaryScheduleDegradationReasonContract {
+  notificationPermissionUnavailable('notification_permission_unavailable'),
+  exactAlarmPermissionUnavailable('exact_alarm_permission_unavailable'),
+  schedulerRetryRequired('scheduler_retry_required');
+
+  const AnniversaryScheduleDegradationReasonContract(this.wireValue);
+  final String wireValue;
+
+  static AnniversaryScheduleDegradationReasonContract fromWireValue(
+    String value,
+  ) => values.firstWhere(
+    (item) => item.wireValue == value,
+    orElse: () => throw FormatException(
+      'Unknown Anniversary schedule degradation reason: $value',
+    ),
+  );
+}

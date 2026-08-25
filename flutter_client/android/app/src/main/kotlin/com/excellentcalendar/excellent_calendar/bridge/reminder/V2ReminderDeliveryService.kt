@@ -4,17 +4,26 @@ import com.excellentcalendar.excellent_calendar.android.notification.Notificatio
 import com.excellentcalendar.excellent_calendar.android.notification.NotificationEventHub
 import com.excellentcalendar.excellent_calendar.android.notification.NotificationPostResult
 import com.excellentcalendar.excellent_calendar.android.notification.PreparedNotificationContent
-import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
-import com.excellentcalendar.excellent_calendar.bridge.contract.NativeContractViolation
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeResultContract
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2FinalizeDelivery
 import com.excellentcalendar.excellent_calendar.bridge.contract.V2PreparedDelivery
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeReminderBridge
+import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
+import com.excellentcalendar.excellent_calendar.bridge.runtime.DeviceTimezoneProvider
+import com.excellentcalendar.excellent_calendar.android.ring.RingRuntime
 
 interface V2ReminderDeliverer {
     fun deliverReminder(reminderId: String, expectedRemindAt: String, recoveryBatchId: String? = null): NativeResultContract
+    fun deliverReminder(reminderId: String, expectedRemindAt: String, recoveryBatchId: String?, method: String): NativeResultContract =
+        deliverReminder(reminderId, expectedRemindAt, recoveryBatchId)
     fun deliverSummary(recoveryBatchId: String): NativeResultContract
+    fun deliverAnniversaryCatchUp(recoveryBatchId: String, deliveryId: String): NativeResultContract =
+        NativeResultContract.failure(
+            NativeErrorCodes.FeatureNotImplemented,
+            "Anniversary catch-up delivery is unavailable.",
+            contractVersion = 2,
+        )
 }
 
 class V2ReminderDeliveryService(
@@ -22,14 +31,27 @@ class V2ReminderDeliveryService(
     private val notifications: NotificationDisplayService,
     private val eventHub: NotificationEventHub,
     private val logger: ReminderOrchestrationLogger,
+    private val ringRuntime: RingRuntime? = null,
+    timezoneProvider: DeviceTimezoneProvider = AndroidDeviceTimezoneProvider,
+    private val attemptClient: ReminderDeliveryAttemptClient =
+        ReminderDeliveryAttemptClient(nativeBridge, logger, timezoneProvider),
 ) : V2ReminderDeliverer {
     override fun deliverReminder(reminderId: String, expectedRemindAt: String, recoveryBatchId: String?): NativeResultContract =
+        deliverReminder(reminderId, expectedRemindAt, recoveryBatchId, "popup")
+
+    override fun deliverReminder(
+        reminderId: String,
+        expectedRemindAt: String,
+        recoveryBatchId: String?,
+        method: String,
+    ): NativeResultContract =
         deliver(
             linkedMapOf(
                 "kind" to "reminder",
                 "reminder_id" to reminderId,
                 "recovery_batch_id" to recoveryBatchId,
-                "method" to "popup",
+                "delivery_id" to null,
+                "method" to method,
                 "expected_remind_at" to expectedRemindAt,
             ),
             reminderId,
@@ -40,6 +62,22 @@ class V2ReminderDeliveryService(
             "kind" to "recovery_summary",
             "reminder_id" to null,
             "recovery_batch_id" to recoveryBatchId,
+            "delivery_id" to null,
+            "method" to "popup",
+            "expected_remind_at" to null,
+        ),
+        null,
+    )
+
+    override fun deliverAnniversaryCatchUp(
+        recoveryBatchId: String,
+        deliveryId: String,
+    ): NativeResultContract = deliver(
+        linkedMapOf(
+            "kind" to "anniversary_catch_up",
+            "reminder_id" to null,
+            "recovery_batch_id" to recoveryBatchId,
+            "delivery_id" to deliveryId,
             "method" to "popup",
             "expected_remind_at" to null,
         ),
@@ -47,9 +85,7 @@ class V2ReminderDeliveryService(
     )
 
     private fun deliver(request: Map<String, Any?>, reminderId: String?): NativeResultContract {
-        val preparedResult = parse(nativeBridge.prepareReminderDelivery(NativeContractJsonCodec.encodeObject(request))) {
-            V2PreparedDelivery.fromData(it)
-        }
+        val preparedResult = attemptClient.prepare(request, reminderId)
         if (!preparedResult.ok) {
             val field = preparedResult.error?.details?.get("field") as? String
             logger.log(
@@ -61,6 +97,15 @@ class V2ReminderDeliveryService(
             return preparedResult
         }
         val prepared = V2PreparedDelivery.fromData(preparedResult.data)
+        if (prepared.method == "ring") {
+            val runtime = ringRuntime ?: return NativeResultContract.failure(
+                NativeErrorCodes.RingCapabilityUnavailable,
+                "Android ring runtime is unavailable.",
+                retryable = true,
+                contractVersion = 2,
+            )
+            return runtime.enqueue(prepared)
+        }
         val posted = notifications.postPrepared(
             PreparedNotificationContent(
                 deliveryId = prepared.deliveryId,
@@ -81,15 +126,13 @@ class V2ReminderDeliveryService(
         failure: NotificationPostResult.Failure?,
         reminderId: String?,
     ): NativeResultContract {
-        val request = linkedMapOf<String, Any?>(
-            "delivery_attempt_id" to prepared.attemptId,
-            "outcome" to if (sent) "sent" else "failed",
-            "failure_class" to failure?.let { if (it.retryable) "retryable" else "permanent" },
-            "error_code" to failure?.code,
+        val finalizedResult = attemptClient.finalize(
+            prepared,
+            if (sent) "sent" else "failed",
+            failure?.code,
+            failure?.retryable ?: false,
+            reminderId,
         )
-        val finalizedResult = parse(nativeBridge.finalizeReminderDelivery(NativeContractJsonCodec.encodeObject(request))) {
-            V2FinalizeDelivery.fromData(it)
-        }
         if (!finalizedResult.ok) {
             logger.log(
                 "reminder.finalize_delivery",
@@ -120,14 +163,4 @@ class V2ReminderDeliveryService(
         )
     }
 
-    private fun parse(json: String, validator: (Any?) -> Unit): NativeResultContract = try {
-        NativeResultContract.fromJson(json, 2, validator)
-    } catch (error: NativeContractViolation) {
-        NativeResultContract.failure(
-            code = NativeErrorCodes.ContractValidationFailed,
-            message = error.message ?: "Reminder delivery response is malformed.",
-            details = linkedMapOf("field" to error.field),
-            contractVersion = 2,
-        )
-    }
 }

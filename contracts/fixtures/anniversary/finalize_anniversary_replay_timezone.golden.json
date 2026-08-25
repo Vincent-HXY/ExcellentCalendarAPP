@@ -1,0 +1,58 @@
+{
+  "fixture_version": 1,
+  "prepared_attempt_kind": "anniversary_reminder",
+  "first_finalize": {
+    "request": {
+      "delivery_attempt_id": "77777777-7777-4777-8777-777777777706",
+      "outcome": "sent",
+      "failure_class": null,
+      "error_code": null,
+      "timezone": "Asia/Shanghai"
+    },
+    "projection_input": {
+      "anniversary_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "occurrence_key": "ae3cbe83-4409-5d6c-bab1-629554390e97",
+      "template_key": "f6bf77d5-9a34-5897-a38e-75321fac0f8f",
+      "occurrence_date": "2027-09-01",
+      "advance_days": 7,
+      "local_time": "09:00"
+    },
+    "committed_result": {
+      "idempotent_replay": false,
+      "successor": {
+        "reminder_id": "b01066c8-79ee-5316-820f-1e07d4572abc",
+        "remind_at": "2027-08-25T01:00:00Z"
+      }
+    }
+  },
+  "replay": {
+    "request": {
+      "delivery_attempt_id": "77777777-7777-4777-8777-777777777706",
+      "outcome": "sent",
+      "failure_class": null,
+      "error_code": null,
+      "timezone": "America/New_York"
+    },
+    "expected_result": {
+      "idempotent_replay": true,
+      "successor": {
+        "reminder_id": "b01066c8-79ee-5316-820f-1e07d4572abc",
+        "remind_at": "2027-08-25T01:00:00Z"
+      }
+    }
+  },
+  "retryable_failure": {
+    "request": {
+      "delivery_attempt_id": "77777777-7777-4777-8777-777777777707",
+      "outcome": "failed",
+      "failure_class": "retryable",
+      "error_code": "NOTIFICATION_DELIVERY_FAILED",
+      "timezone": "Asia/Shanghai"
+    },
+    "expected_successor": null
+  },
+  "identity_policy": {
+    "timezone_participates": false,
+    "identity_fields": ["reminder_id", "delivery_id", "delivery_attempt_id"]
+  }
+}

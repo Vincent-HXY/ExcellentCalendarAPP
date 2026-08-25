@@ -9,7 +9,7 @@ import org.junit.Test
 
 class JniNativeCalendarCoreBridgeAnniversaryTest {
     @Test
-    fun everyAnniversaryBridgeMethodReachesItsDeclaredExternalJniCallPoint() {
+    fun everyAnniversaryBridgeMethodUsesANativeDeclarationAndNormalizesAnUnloadedLibrary() {
         val calls = linkedMapOf<String, (JniNativeCalendarCoreBridge) -> String>(
             "nativeCreateAnniversaryV2" to { it.createAnniversary("{}") },
             "nativeUpdateAnniversaryV2" to { it.updateAnniversary("{}") },
@@ -17,6 +17,8 @@ class JniNativeCalendarCoreBridgeAnniversaryTest {
             "nativeGetAnniversaryDetailV2" to { it.getAnniversaryDetail("{}") },
             "nativeListAnniversariesV2" to { it.listAnniversaries("{}") },
             "nativePreviewAnniversaryCountdownV2" to { it.previewAnniversaryCountdown("{}") },
+            "nativeSetAnniversaryRemindersEnabledV2" to { it.setAnniversaryRemindersEnabled("{}") },
+            "nativeListAnniversaryOccurrencesV2" to { it.listAnniversaryOccurrences("{}") },
         )
 
         calls.forEach { (symbol, call) ->
@@ -24,7 +26,7 @@ class JniNativeCalendarCoreBridgeAnniversaryTest {
             assertTrue("$symbol must remain a native declaration", Modifier.isNative(declaration.modifiers))
             try {
                 call(bridge())
-                fail("$symbol unexpectedly resolved without a C++ JNI export")
+                fail("$symbol unexpectedly resolved without loading the native library")
             } catch (error: NativeBridgeUnavailableException) {
                 assertEquals("JNI symbol $symbol is unavailable.", error.message)
                 assertTrue(error.cause is UnsatisfiedLinkError)
@@ -42,7 +44,7 @@ class JniNativeCalendarCoreBridgeAnniversaryTest {
                     "ok" to true,
                     "data" to linkedMapOf(
                         "initialized" to true,
-                        "storage_format_version" to 2,
+                        "storage_format_version" to 3,
                         "tzdb_version" to BundledTzdbExtractor.Version,
                     ),
                     "error" to null,

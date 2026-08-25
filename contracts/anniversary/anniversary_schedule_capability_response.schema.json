@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_schedule_capability_response.schema.json",
+  "title": "AnniversaryScheduleCapabilityResponse",
+  "description": "Kotlin-owned post-commit scheduling/capability result. pending states are successful data results, not NativeResult errors: the Anniversary and Reminder plan remain saved and reconciliation is retryable.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schedule_status", "schedule_reconciliation_required", "notification_permission_status", "exact_alarm_permission_status", "degradation_reasons"],
+  "properties": {
+    "schedule_status": {
+      "type": "string",
+      "enum": ["not_required", "scheduled_exact", "scheduled_approximate", "pending_permission", "pending_reconciliation"]
+    },
+    "schedule_reconciliation_required": {"type": "boolean"},
+    "notification_permission_status": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "permanently_denied", "unknown"]
+    },
+    "exact_alarm_permission_status": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_required", "unknown"]
+    },
+    "degradation_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["notification_permission_unavailable", "exact_alarm_permission_unavailable", "scheduler_retry_required"]
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"schedule_status": {"enum": ["pending_permission", "pending_reconciliation"]}}, "required": ["schedule_status"]},
+      "then": {"properties": {"schedule_reconciliation_required": {"const": true}}}
+    },
+    {
+      "if": {"properties": {"schedule_status": {"enum": ["not_required", "scheduled_exact", "scheduled_approximate"]}}, "required": ["schedule_status"]},
+      "then": {"properties": {"schedule_reconciliation_required": {"const": false}}}
+    }
+  ]
+}

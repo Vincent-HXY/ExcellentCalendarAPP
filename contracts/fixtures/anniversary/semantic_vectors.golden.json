@@ -1,0 +1,48 @@
+{
+  "fixture_version": 1,
+  "occurrence_vectors": [
+    {"name": "one_time_inside", "source_date": "2026-09-01", "recurring": false, "range": ["2026-09-01", "2026-09-02"], "expected_dates": ["2026-09-01"]},
+    {"name": "one_time_outside", "source_date": "2026-09-01", "recurring": false, "range": ["2027-09-01", "2027-09-02"], "expected_dates": []},
+    {"name": "yearly_history_from_source", "source_date": "2020-09-01", "recurring": true, "range": ["2019-01-01", "2022-01-01"], "expected_dates": ["2020-09-01", "2021-09-01"]},
+    {"name": "leap_day_non_leap", "source_date": "2020-02-29", "recurring": true, "range": ["2021-02-01", "2021-03-01"], "expected_dates": ["2021-02-28"]},
+    {"name": "leap_day_leap", "source_date": "2020-02-29", "recurring": true, "range": ["2024-02-01", "2024-03-01"], "expected_dates": ["2024-02-29"]}
+  ],
+  "cursor_vectors": [
+    {"name": "malformed", "cursor": "not-a-valid-cursor", "expected_error": "ANNIVERSARY_OCCURRENCE_CURSOR_INVALID"},
+    {"name": "expired_snapshot", "cursor": "annocc1.expiredsnapshot00000", "expected_error": "ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED"},
+    {"name": "query_mismatch", "cursor": "annocc1.querymismatch000000", "expected_error": "ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED"},
+    {"name": "multi_page_no_duplicate", "page_keys": [["2026-09-01", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "60f0df06-830c-52d2-a659-e8848aa200cd"], ["2027-02-28", "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "22222222-2222-5222-8222-222222222222"]], "expected_unique_count": 2}
+  ],
+  "materialization_vectors": [
+    {"name": "one_time_past_is_not_created", "recurring": false, "occurrence_date": "2026-09-01", "remind_at": "2026-08-25T01:00:00Z", "now": "2026-08-25T01:00:01Z", "expected_reminders": 0},
+    {"name": "yearly_past_rolls_next_year", "recurring": true, "occurrence_date": "2026-09-01", "remind_at": "2026-08-25T01:00:00Z", "now": "2026-08-25T01:00:01Z", "expected_occurrence_date": "2027-09-01"},
+    {"name": "dst_gap_moves_forward", "timezone": "Europe/Berlin", "local_datetime": "2026-03-29T02:30:00", "expected_policy": "first_valid_instant_after_gap"},
+    {"name": "dst_fold_uses_earlier", "timezone": "Europe/Berlin", "local_datetime": "2026-10-25T02:30:00", "expected_policy": "earlier_instant"}
+  ],
+  "catch_up_vectors": [
+    {"name": "before_occurrence_day_end", "occurrence_date": "2026-09-01", "timezone": "Asia/Shanghai", "now": "2026-09-01T15:59:59Z", "expected": "aggregate"},
+    {"name": "at_occurrence_day_end", "occurrence_date": "2026-09-01", "timezone": "Asia/Shanghai", "now": "2026-09-01T16:00:00Z", "expected": "expired", "expiration_reason": "anniversary_occurrence_elapsed"},
+    {"name": "same_occurrence_aggregates", "covered_reminder_ids": ["3b9c75fd-9073-5338-954a-d00ca35c5bf2", "59c487fb-2737-5c31-8c5c-6ba157dc77a6"], "expected_notification_count": 1, "expected_delivery_id": "5a5e9379-77c9-51f3-a0fb-8f09440b557a"},
+    {"name": "different_occurrence_separates", "occurrence_keys": ["60f0df06-830c-52d2-a659-e8848aa200cd", "ae3cbe83-4409-5d6c-bab1-629554390e97"], "expected_notification_count": 2}
+  ],
+  "finalize_vectors": [
+    {"outcome": "sent", "expected_notification_status": "sent", "expected_covered_status": "sent", "shared_fulfillment_delivery_id": "5a5e9379-77c9-51f3-a0fb-8f09440b557a", "create_successors": true},
+    {"outcome": "failed", "failure_class": "retryable", "expected_covered_status": "pending", "create_successors": false},
+    {"outcome": "failed", "failure_class": "permanent", "expected_covered_status": "failed", "create_successors": true},
+    {"outcome": "expired", "expected_covered_status": "expired", "expiration_reason": "anniversary_occurrence_elapsed", "create_successors": true},
+    {"outcome": "replay_same", "expected": "idempotent_original_result"},
+    {"outcome": "replay_conflict", "expected_error": "DELIVERY_ATTEMPT_INVALID"},
+    {"outcome": "membership_conflict", "expected_error": "ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT"}
+  ],
+  "tap_vectors": [
+    {"target_exists": true, "route": "anniversary.detail", "expected_target_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"},
+    {"target_exists": false, "route": "anniversary.detail", "expected_error": "ANNIVERSARY_TARGET_DELETED"}
+  ],
+  "migration_vectors": [
+    {"name": "rerun_v3", "expected": "already_migrated"},
+    {"name": "corrupt_v2_record", "expected_error": "STORAGE_DATA_CORRUPTED", "must_preserve_source": true},
+    {"name": "prepared_migration_replay", "expected": "resume_forward_same_after_images"},
+    {"name": "corrupt_migration_record", "expected_error": "CALENDAR_WORKFLOW_RECOVERY_FAILED", "must_preserve_source": true},
+    {"name": "mixed_versions_without_journal", "expected_error": "STORAGE_DATA_CORRUPTED", "must_preserve_source": true}
+  ]
+}

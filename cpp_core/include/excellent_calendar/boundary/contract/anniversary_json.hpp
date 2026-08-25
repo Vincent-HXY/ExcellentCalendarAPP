@@ -21,4 +21,13 @@ picojson::value anniversary_detail_response_json(
 picojson::value anniversary_list_response_json(
     const application::AnniversaryListPage& page);
 
+picojson::value anniversary_reminder_settings_response_json(
+    const application::AnniversaryReminderSettings& settings);
+
+picojson::value anniversary_occurrence_list_response_json(
+    const application::AnniversaryOccurrencePage& page);
+
+picojson::value anniversary_delete_commit_response_json(
+    const application::AnniversaryDeleteResult& result);
+
 }  // namespace excellent_calendar::boundary::contract

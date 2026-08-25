@@ -1,0 +1,11 @@
+{
+  "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "title": "缺少并发版本令牌",
+  "date": "2026-09-01",
+  "calendar_type": "solar",
+  "category_id": null,
+  "recurrence": {"frequency": "yearly", "interval": 1},
+  "note": null,
+  "importance": "important_noturgent",
+  "timezone": "Asia/Shanghai"
+}

@@ -46,6 +46,20 @@ object NativeErrorCodes {
     const val AnniversaryDateInvalid = "ANNIVERSARY_DATE_INVALID"
     const val AnniversaryCalendarUnsupported = "ANNIVERSARY_CALENDAR_UNSUPPORTED"
     const val AnniversaryNotFound = "ANNIVERSARY_NOT_FOUND"
+    const val AnniversaryUpdateConflict = "ANNIVERSARY_UPDATE_CONFLICT"
+    const val AnniversaryTargetDeleted = "ANNIVERSARY_TARGET_DELETED"
+    const val AnniversaryReminderConfigInvalid = "ANNIVERSARY_REMINDER_CONFIG_INVALID"
+    const val AnniversaryReminderTemplateDuplicate = "ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE"
+    const val AnniversaryReminderTemplateLimitExceeded = "ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED"
+    const val AnniversaryOccurrenceRangeInvalid = "ANNIVERSARY_OCCURRENCE_RANGE_INVALID"
+    const val AnniversaryOccurrenceRangeTooLarge = "ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE"
+    const val AnniversaryOccurrenceFilterInvalid = "ANNIVERSARY_OCCURRENCE_FILTER_INVALID"
+    const val AnniversaryOccurrenceCursorInvalid = "ANNIVERSARY_OCCURRENCE_CURSOR_INVALID"
+    const val AnniversaryOccurrenceCursorExpired = "ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED"
+    const val AnniversaryOccurrenceStale = "ANNIVERSARY_OCCURRENCE_STALE"
+    const val AnniversaryReminderOccurrenceExpired = "ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED"
+    const val AnniversaryAggregateMembershipConflict = "ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT"
+    const val SchedulerReconciliationPending = "SCHEDULER_RECONCILIATION_PENDING"
     const val SearchQueryInvalid = "SEARCH_QUERY_INVALID"
     const val AiExtractionFailed = "AI_EXTRACTION_FAILED"
     const val SyncConflict = "SYNC_CONFLICT"
@@ -63,6 +77,17 @@ object NativeErrorCodes {
     const val ReminderNotDue = "REMINDER_NOT_DUE"
     const val ReminderNotDeliverable = "REMINDER_NOT_DELIVERABLE"
     const val NotificationInitializationFailed = "NOTIFICATION_INITIALIZATION_FAILED"
+    const val ReminderSnoozeNotAllowed = "REMINDER_SNOOZE_NOT_ALLOWED"
+    const val RingCapabilityUnavailable = "RING_CAPABILITY_UNAVAILABLE"
+    const val RingSettingsConflict = "RING_SETTINGS_CONFLICT"
+    const val RingSettingsStorageFailed = "RING_SETTINGS_STORAGE_FAILED"
+    const val RingSettingsCorrupted = "RING_SETTINGS_CORRUPTED"
+    const val RingSessionNotFound = "RING_SESSION_NOT_FOUND"
+    const val RingSessionConflict = "RING_SESSION_CONFLICT"
+    const val RingItemNotFound = "RING_ITEM_NOT_FOUND"
+    const val RingtonePickerFailed = "RINGTONE_PICKER_FAILED"
+    const val RingControlNotificationFailed = "RING_CONTROL_NOTIFICATION_FAILED"
+    const val RingOutputUnavailable = "RING_OUTPUT_UNAVAILABLE"
 
     /** 用于校验 native 返回的错误码是否是协议中声明过的值。 */
     val All = setOf(
@@ -105,6 +130,20 @@ object NativeErrorCodes {
         AnniversaryDateInvalid,
         AnniversaryCalendarUnsupported,
         AnniversaryNotFound,
+        AnniversaryUpdateConflict,
+        AnniversaryTargetDeleted,
+        AnniversaryReminderConfigInvalid,
+        AnniversaryReminderTemplateDuplicate,
+        AnniversaryReminderTemplateLimitExceeded,
+        AnniversaryOccurrenceRangeInvalid,
+        AnniversaryOccurrenceRangeTooLarge,
+        AnniversaryOccurrenceFilterInvalid,
+        AnniversaryOccurrenceCursorInvalid,
+        AnniversaryOccurrenceCursorExpired,
+        AnniversaryOccurrenceStale,
+        AnniversaryReminderOccurrenceExpired,
+        AnniversaryAggregateMembershipConflict,
+        SchedulerReconciliationPending,
         SearchQueryInvalid,
         AiExtractionFailed,
         SyncConflict,
@@ -122,6 +161,17 @@ object NativeErrorCodes {
         ReminderNotDue,
         ReminderNotDeliverable,
         NotificationInitializationFailed,
+        ReminderSnoozeNotAllowed,
+        RingCapabilityUnavailable,
+        RingSettingsConflict,
+        RingSettingsStorageFailed,
+        RingSettingsCorrupted,
+        RingSessionNotFound,
+        RingSessionConflict,
+        RingItemNotFound,
+        RingtonePickerFailed,
+        RingControlNotificationFailed,
+        RingOutputUnavailable,
     )
 }
 

@@ -17,7 +17,8 @@ public:
   explicit JsonCategoryRepository(
       std::filesystem::path storage_directory,
       std::shared_ptr<storage::RuntimeStorageLease> runtime_lease = {},
-      FailureHook failure_hook = {});
+      FailureHook failure_hook = {},
+      int storage_version = 2);
 
   common::Result<common::Unit> initialize() override;
   common::Result<repository::CategoryState> load() override;
@@ -29,6 +30,7 @@ private:
 
   AtomicJsonFileStore store_;
   std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
+  int storage_version_ = 2;
 };
 
 } // namespace excellent_calendar::storage::json

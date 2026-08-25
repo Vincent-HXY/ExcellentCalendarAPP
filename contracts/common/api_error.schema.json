@@ -20,11 +20,14 @@
         "AUTH_INVALID_CREDENTIALS",
         "AUTH_EMAIL_UNVERIFIED",
         "AUTH_ACCOUNT_DISABLED",
+        "AUTH_ACCOUNT_NOT_FOUND",
+        "AUTH_ACCOUNT_ALREADY_VERIFIED",
         "AUTH_EMAIL_ALREADY_EXISTS",
         "AUTH_USERNAME_ALREADY_EXISTS",
         "AUTH_VERIFICATION_INVALID",
         "AUTH_VERIFICATION_EXPIRED",
         "AUTH_VERIFICATION_USED",
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED",
         "AUTH_PASSWORD_POLICY_VIOLATION",
         "AUTH_CURRENT_PASSWORD_INVALID",
         "AUTH_PASSWORD_UNCHANGED",
@@ -66,6 +69,26 @@
       ]
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "AUTH_EMAIL_UNVERIFIED"
+          }
+        },
+        "required": ["code"]
+      },
+      "then": {
+        "required": ["context"],
+        "properties": {
+          "context": {
+            "$ref": "./api_error_context.schema.json"
+          }
+        }
+      }
+    }
+  ],
   "examples": [
     {
       "code": "AUTH_INVALID_CREDENTIALS",
@@ -73,6 +96,24 @@
       "retryable": false,
       "field_errors": [],
       "retry_after_seconds": null
+    },
+    {
+      "code": "AUTH_EMAIL_UNVERIFIED",
+      "message": "The login email has not been verified.",
+      "retryable": false,
+      "field_errors": [],
+      "retry_after_seconds": null,
+      "context": {
+        "verification_challenge": {
+          "challenge_id": "0ca1897b-2a49-4767-b673-53d9c8b39516",
+          "account_id": "3c00d043-6b7c-4eca-92fd-e22a1a6728f4",
+          "purpose": "registration_verification",
+          "masked_email": "u***@example.com",
+          "credential_types": ["code"],
+          "expires_at": "2026-08-01T01:10:00Z",
+          "resend_available_at": "2026-08-01T01:01:00Z"
+        }
+      }
     }
   ]
 }

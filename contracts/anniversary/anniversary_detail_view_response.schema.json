@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_detail_view_response.schema.json",
+  "title": "AnniversaryDetailViewResponse",
+  "description": "Public detail aggregate combining the C++ domain detail with Kotlin-owned current scheduling capability. It contains no Alarm ID, journal, or delivery history.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["detail", "capability"],
+  "properties": {
+    "detail": {"$ref": "./anniversary_detail_response.schema.json"},
+    "capability": {"$ref": "./anniversary_schedule_capability_response.schema.json"}
+  }
+}

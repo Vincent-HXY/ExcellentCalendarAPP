@@ -23,7 +23,7 @@ C++ Application / Workflow / Domain
     ↓
 Repository
     ↓
-Calendar Core JSON Storage v2
+Calendar Core JSON Storage v3
 ```
 
 提醒投递是主链路的 Android 平台分支：
@@ -174,7 +174,7 @@ ExcellentCalendarAPP/
 │  ├─ include/excellent_calendar/application/
 │  ├─ include/excellent_calendar/boundary/
 │  ├─ include/excellent_calendar/repository/
-│  └─ src/storage/json/               当前 JSON v2 持久化实现
+│  └─ src/storage/json/               当前 JSON v3 持久化实现
 ├─ cloud_backend/                     Spring Boot 可选云端模块
 └─ test_environment/flutter_native_smoke/
                                        Flutter→Kotlin→JNI→C++ smoke
@@ -228,10 +228,10 @@ files/local_storage/calendar_core_storage_json
 
 关键事实：
 
-- 当前为版本化 JSON Storage v2，由 C++ Repository 和严格 codec 统一访问。
-- Event/Reminder/Recurrence/Occurrence/Notification/Recovery 使用跨 Store workflow journal。
-- Anniversary 使用独立两 Store transaction 和专用 journal，不改变 Event/Reminder journal。
-- Category 使用独立 `categories.json`，完整快照原子替换和可恢复 sidecar；恢复失败时拒绝暴露不确定的新快照。
+- 当前为版本化 JSON Storage v3，由 C++ Repository、严格 codec 与启动期迁移/恢复流程统一访问。
+- Event/Reminder/Recurrence/Occurrence/Notification/Recovery 与 Anniversary 的共享写入统一使用 `calendar_workflow_transactions.json`；冻结 after-image、Store generation 与目录锁下 CAS 共同保证跨 Workflow 一致性。
+- 旧 `workflow_transactions.json` 和 `anniversary_workflow_transactions.json` 只作为 v2→v3 迁移前的恢复输入，不再接受 v3 写入。
+- Category 使用 v3 `categories.json` 的严格完整快照；单 Store 写入保持原子替换，跨 Store Workflow 才进入统一协调器。
 - Calendar Core runtime 是进程级 owner；Android 通过 `AndroidNativeBridgeFactory` 统一创建和初始化。进程内 JNI 测试必须复用正式 factory，隔离 Store 时使用独立测试进程。
 - V1 数据按已确认决策不迁移、不归档；识别为 v1 后直接清理。回滚到旧版本可能失去本地数据。
 - SQLite/FTS 是后续迁移方向。迁移前必须先冻结 Repository、Schema version、事务、回滚和旧数据验证策略。

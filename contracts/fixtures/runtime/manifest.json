@@ -1,0 +1,17 @@
+{
+  "fixture_version": 1,
+  "cases": [
+    {
+      "name": "Native Contract v2 runtime reports Storage v3",
+      "schema": "../../runtime/initialize_runtime_response.schema.json",
+      "instance": "initialize_runtime_v3.valid.json",
+      "expected_valid": true
+    },
+    {
+      "name": "Native Contract v2 runtime rejects obsolete Storage v2 response",
+      "schema": "../../runtime/initialize_runtime_response.schema.json",
+      "instance": "initialize_runtime_v2.invalid.json",
+      "expected_valid": false
+    }
+  ]
+}

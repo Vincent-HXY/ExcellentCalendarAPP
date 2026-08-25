@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/anniversary/create_anniversary_request.schema.json",
   "title": "CreateAnniversaryRequest",
-  "description": "Complete Anniversary V1 create plan. timezone is the explicit IANA timezone used to calculate the returned countdown. date is the original local calendar date and remains the only yearly anchor. recurrence=null creates a one-time Anniversary with recurrence_id=null; a yearly recurrence object makes C++ create the Anniversary and a new AnniversaryRecurrence atomically. Reminder drafts are intentionally excluded until Anniversary reminder occurrence identity and local trigger-time semantics are frozen. lunar is accepted at the transport boundary so C++ can return ANNIVERSARY_CALENDAR_UNSUPPORTED.",
+  "description": "Complete Anniversary create plan. timezone is the explicit IANA timezone used for countdown and Reminder materialization. date remains the only yearly anchor. recurrence=null creates a one-time Anniversary. reminder_plan is an additive legacy bridge: omission means reminders disabled with an empty template set; an object is the complete initial plan; explicit null is invalid. lunar reaches C++ so it can return ANNIVERSARY_CALENDAR_UNSUPPORTED.",
   "x-contract-version": 2,
   "x-implementation-status": "integrated",
   "type": "object",
@@ -71,6 +71,10 @@
       "type": "string",
       "minLength": 1,
       "description": "IANA timezone used by C++ to derive the local date and calculate the response countdown."
+    },
+    "reminder_plan": {
+      "$ref": "./anniversary_reminder_plan_input.schema.json",
+      "description": "Optional only for legacy v2 callers. Missing means {reminders_enabled:false, templates:[]}; null is never accepted. New writers must always send this field."
     }
   }
 }

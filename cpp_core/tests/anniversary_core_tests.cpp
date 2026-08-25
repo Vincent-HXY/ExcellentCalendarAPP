@@ -1,11 +1,18 @@
+#include <array>
+#include <atomic>
 #include <cstdlib>
 #include <filesystem>
+#include <functional>
 #include <iostream>
 #include <memory>
+#include <regex>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
+#include <utility>
+#include <vector>
 
 #include <picojson/picojson.h>
 
@@ -18,6 +25,7 @@
 #include "excellent_calendar/domain/anniversary.hpp"
 #include "excellent_calendar/infrastructure/time/tzdb_local_time_resolver.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/json/calendar_core_v3_storage_bootstrap.hpp"
 #include "excellent_calendar/storage/json/json_anniversary_transaction.hpp"
 #include "excellent_calendar/storage/json/json_recurring_event_transaction.hpp"
 
@@ -34,6 +42,12 @@ constexpr const char* kCategoryId = "33333333-3333-4333-8333-333333333333";
 
 void require(bool condition, const std::string& message) {
   if (!condition) throw std::runtime_error(message);
+}
+
+void prepare_v3_storage(const std::filesystem::path& path) {
+  auto prepared =
+      excellent_calendar::storage::json::prepare_calendar_core_v3_storage(path);
+  require(prepared.ok(), prepared.ok() ? "" : prepared.error().message);
 }
 
 class TemporaryDirectory {
@@ -194,8 +208,244 @@ void test_date_only_countdown_edges() {
           "invalid date-only input must fail in the Core");
 }
 
+void test_anniversary_r1_identity_vectors() {
+  auto occurrence = excellent_calendar::domain::anniversary_occurrence_key(
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", LocalDate{2026, 9, 1});
+  require(occurrence.ok() && occurrence.value() == "60f0df06-830c-52d2-a659-e8848aa200cd",
+          "Anniversary occurrence UUIDv5 must match the frozen golden vector");
+  auto reminder_template = excellent_calendar::domain::anniversary_reminder_template_key(
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", 7, "09:00");
+  require(reminder_template.ok() &&
+              reminder_template.value() == "f6bf77d5-9a34-5897-a38e-75321fac0f8f",
+          "Anniversary template UUIDv5 must match the frozen golden vector");
+  auto reminder = excellent_calendar::domain::anniversary_reminder_id(
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", occurrence.value(),
+      reminder_template.value());
+  require(reminder.ok() && reminder.value() == "3b9c75fd-9073-5338-954a-d00ca35c5bf2",
+          "Anniversary Reminder UUIDv5 must match the frozen golden vector");
+  auto delivery = excellent_calendar::domain::anniversary_catch_up_delivery_id(
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", occurrence.value(),
+      {"59c487fb-2737-5c31-8c5c-6ba157dc77a6",
+       "3b9c75fd-9073-5338-954a-d00ca35c5bf2"});
+  require(delivery.ok() && delivery.value() == "5a5e9379-77c9-51f3-a0fb-8f09440b557a",
+          "Anniversary aggregate membership must sort before UUIDv5 generation");
+}
+
+void test_reminder_plan_lifecycle_and_occurrence_paging() {
+  TemporaryDirectory directory("reminder_plan");
+  prepare_v3_storage(directory.path());
+  auto transaction = std::make_shared<JsonAnniversaryTransaction>(directory.path());
+  require(transaction->initialize().ok(), "Anniversary Reminder stores must initialize");
+  auto clock = [] { return std::string(kNow); };
+  auto id_index = std::make_shared<std::size_t>(0U);
+  auto id_generator = [id_index] {
+    constexpr std::array<std::string_view, 3> fixed_ids = {
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "cccccccc-cccc-4ccc-8ccc-cccccccccccc"};
+    if (*id_index < fixed_ids.size()) {
+      return std::string(fixed_ids[(*id_index)++]);
+    }
+    return excellent_calendar::common::generate_uuid_v4();
+  };
+  auto time_resolver = resolver();
+  excellent_calendar::application::AnniversaryWorkflowService workflow(
+      transaction, time_resolver, clock, id_generator);
+  excellent_calendar::application::AnniversaryQueryService query(
+      transaction, time_resolver, clock);
+
+  auto input = write_input("R1 anniversary", LocalDate{2020, 9, 1}, true, kCategoryId);
+  excellent_calendar::application::AnniversaryReminderPlanInput plan;
+  plan.reminders_enabled = true;
+  plan.templates.push_back({7, "09:00", "popup", true});
+  plan.templates.push_back({0, "23:59", "popup", true});
+  input.reminder_plan = plan;
+  auto created = workflow.create({input});
+  require(created.ok() && created.value().reminder_settings.reminders_enabled &&
+              created.value().reminder_settings.templates.size() == 2U &&
+              created.value().reminder_settings.active_reminder_count == 2 &&
+              created.value().reminder_settings.schedule_reconciliation_required,
+          "create must atomically persist the complete Anniversary Reminder plan");
+  const auto anniversary_id = created.value().anniversary.id;
+  auto loaded = transaction->load();
+  require(loaded.ok() && loaded.value().reminder_templates.size() == 2U &&
+              loaded.value().reminders.size() == 2U,
+          "each enabled yearly template must materialize one open rolling Reminder");
+  for (const auto& reminder : loaded.value().reminders) {
+    require(reminder.target_type == "anniversary" && reminder.template_key.has_value() &&
+                reminder.occurrence_date == std::optional<std::string>("2026-09-01") &&
+                reminder.occurrence_start_at == std::nullopt &&
+                reminder.recurrence_revision == std::nullopt,
+            "Anniversary Reminder must use date-only target-specific identity fields");
+  }
+
+  auto paused = workflow.set_reminders_enabled({anniversary_id, false, kTimezone});
+  require(paused.ok() && !paused.value().reminder_settings.reminders_enabled &&
+              paused.value().reminder_settings.active_reminder_count == 0,
+          "pause must retain templates while disabling the complete plan");
+  loaded = transaction->load();
+  require(loaded.ok() && std::all_of(loaded.value().reminders.begin(),
+                                    loaded.value().reminders.end(), [](const auto& reminder) {
+                                      return reminder.status == "cancelled" &&
+                                             reminder.cancellation_reason ==
+                                                 std::optional<std::string>("anniversary_paused");
+                                    }),
+          "pause must terminate every future open Anniversary Reminder");
+  auto resumed = workflow.set_reminders_enabled({anniversary_id, true, kTimezone});
+  require(resumed.ok() && resumed.value().reminder_settings.active_reminder_count == 2,
+          "resume must rematerialize the first meaningful deterministic tasks");
+  loaded = transaction->load();
+  require(loaded.ok() && loaded.value().reminders.size() == 2U &&
+              std::all_of(loaded.value().reminders.begin(), loaded.value().reminders.end(),
+                          [](const auto& reminder) {
+                            return reminder.status == "pending" &&
+                                   reminder.reactivation_count == 1;
+                          }),
+          "resume must reactivate matching deterministic Reminder identities without duplicates");
+
+  excellent_calendar::application::ListAnniversaryOccurrencesQuery occurrence_query;
+  occurrence_query.range_start_date = {2026, 8, 1};
+  occurrence_query.range_end_date = {2027, 9, 2};
+  occurrence_query.timezone = kTimezone;
+  occurrence_query.page_size = 1;
+  auto first_page = query.list_occurrences(occurrence_query);
+  require(first_page.ok() && first_page.value().items.size() == 1U &&
+              first_page.value().has_more && first_page.value().next_cursor.has_value() &&
+              first_page.value().items.front().occurrence_date == LocalDate{2026, 9, 1} &&
+              first_page.value().items.front().reminder_count == 2,
+          "occurrence query must project current Reminder summary facts and a stable cursor");
+  constexpr std::string_view kCrossLayerCursorGolden =
+      "annocc1.60f0df06-830c-52d2-a659-e8848aa200cd_3-1-1_55ed42b28911a7e6";
+  require(*first_page.value().next_cursor == kCrossLayerCursorGolden,
+          "fixed C++ occurrence inputs must preserve the shared cross-layer cursor golden");
+  require(
+      std::regex_match(
+          *first_page.value().next_cursor,
+          std::regex(R"(^annocc1\.[A-Za-z0-9_-]{20,2048}$)")),
+      "generated occurrence cursor must satisfy the frozen cross-layer grammar");
+  occurrence_query.cursor = first_page.value().next_cursor;
+  auto second_page = query.list_occurrences(occurrence_query);
+  require(second_page.ok() && second_page.value().items.size() == 1U &&
+              !second_page.value().has_more &&
+              second_page.value().items.front().occurrence_date == LocalDate{2027, 9, 1},
+          "occurrence cursor must page without duplicates or omissions");
+
+  const auto capture_first_cursor = [&]() {
+    occurrence_query.cursor.reset();
+    auto page = query.list_occurrences(occurrence_query);
+    require(page.ok() && page.value().has_more &&
+                page.value().next_cursor.has_value(),
+            "generation cursor fixture must produce a second page");
+    return *page.value().next_cursor;
+  };
+  const auto require_expired = [&](const std::string& cursor,
+                                   const std::string& context) {
+    occurrence_query.cursor = cursor;
+    auto result = query.list_occurrences(occurrence_query);
+    require(!result.ok() &&
+                result.error().code ==
+                    "ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED",
+            context);
+  };
+
+  const auto filter_cursor = capture_first_cursor();
+  auto filter_changed = transaction->execute(
+      "anniversary_update", "18181818-1818-4818-8818-181818181818", kNow,
+      [&](excellent_calendar::repository::AnniversaryState& state) {
+        auto item = std::find_if(
+            state.anniversaries.begin(), state.anniversaries.end(),
+            [&](const auto& value) { return value.id == anniversary_id; });
+        require(item != state.anniversaries.end(),
+                "generation fixture Anniversary must exist");
+        item->importance = "unimportant_urgent";
+        return excellent_calendar::common::Result<
+            excellent_calendar::common::Unit>::success({});
+      });
+  require(filter_changed.ok(),
+          "same-second occurrence filter field change must commit");
+  require_expired(
+      filter_cursor,
+      "same-second importance change must expire the previous occurrence cursor");
+
+  const auto template_cursor = capture_first_cursor();
+  auto template_changed = transaction->execute(
+      "anniversary_update", "19191919-1919-4919-8919-191919191919", kNow,
+      [&](excellent_calendar::repository::AnniversaryState& state) {
+        auto item = std::find_if(
+            state.reminder_templates.begin(), state.reminder_templates.end(),
+            [&](const auto& value) {
+              return value.anniversary_id == anniversary_id && value.is_enabled;
+            });
+        require(item != state.reminder_templates.end(),
+                "generation fixture enabled template must exist");
+        const auto template_key = item->template_key;
+        item->is_enabled = false;
+        for (auto& reminder : state.reminders) {
+          if (reminder.target_type == "anniversary" &&
+              reminder.target_id == anniversary_id &&
+              reminder.template_key ==
+                  std::optional<std::string>(template_key) &&
+              (reminder.status == "pending" ||
+               reminder.status == "scheduled")) {
+            reminder.is_enabled = false;
+            reminder.status = "cancelled";
+            reminder.scheduled_at.reset();
+            reminder.cancellation_reason =
+                "anniversary_template_disabled";
+            reminder.last_cancelled_at = kNow;
+            reminder.updated_at = kNow;
+          }
+        }
+        return excellent_calendar::common::Result<
+            excellent_calendar::common::Unit>::success({});
+      });
+  require(template_changed.ok(),
+          "same-second Reminder template change must commit");
+  require_expired(
+      template_cursor,
+      "same-second template change must expire the previous occurrence cursor");
+
+  const auto restored_cursor = capture_first_cursor();
+  auto before_delete = transaction->load();
+  require(before_delete.ok(), "pre-delete generation snapshot must load");
+  auto removed = workflow.remove({anniversary_id});
+  require(removed.ok() && removed.value().deleted_at.has_value(),
+          removed.ok()
+              ? "generation fixture must soft-delete the Anniversary"
+              : "generation fixture delete failed: " + removed.error().code +
+                    ": " + removed.error().message);
+  auto restored = transaction->execute(
+      "anniversary_update", "20202020-2020-4020-8020-202020202020", kNow,
+      [&](excellent_calendar::repository::AnniversaryState& state) {
+        state = before_delete.value();
+        return excellent_calendar::common::Result<
+            excellent_calendar::common::Unit>::success({});
+      });
+  require(restored.ok(),
+          "generation fixture must restore the exact pre-delete Store snapshot");
+  require_expired(
+      restored_cursor,
+      "delete and exact restore must still expire the previous occurrence cursor");
+
+  occurrence_query.cursor = capture_first_cursor();
+  occurrence_query.range_end_date = {2027, 9, 3};
+  auto expired_cursor = query.list_occurrences(occurrence_query);
+  require(!expired_cursor.ok() &&
+              expired_cursor.error().code == "ANNIVERSARY_OCCURRENCE_CURSOR_EXPIRED",
+          "occurrence cursor must bind the complete query shape");
+
+  occurrence_query.cursor.reset();
+  occurrence_query.range_start_date = {2026, 1, 1};
+  occurrence_query.range_end_date = {2027, 2, 6};
+  auto oversized = query.list_occurrences(occurrence_query);
+  require(!oversized.ok() && oversized.error().code ==
+                                 "ANNIVERSARY_OCCURRENCE_RANGE_TOO_LARGE",
+          "occurrence query must reject windows larger than 400 natural days");
+}
+
 void test_workflow_lifecycle_persistence_and_queries() {
   TemporaryDirectory directory("workflow");
+  prepare_v3_storage(directory.path());
   auto transaction = std::make_shared<JsonAnniversaryTransaction>(directory.path());
   require(transaction->initialize().ok(), "Anniversary stores must initialize");
   auto time_resolver = resolver();
@@ -213,6 +463,7 @@ void test_workflow_lifecycle_persistence_and_queries() {
           "create must atomically persist Anniversary and its yearly rule");
   const auto anniversary_id = created.value().anniversary.id;
   const auto original_recurrence_id = *created.value().anniversary.recurrence_id;
+  const auto created_updated_at = created.value().anniversary.updated_at;
 
   auto reopened = std::make_shared<JsonAnniversaryTransaction>(directory.path());
   require(reopened->initialize().ok(), "Anniversary stores must reopen after restart");
@@ -233,13 +484,32 @@ void test_workflow_lifecycle_persistence_and_queries() {
 
   auto updated_yearly = restarted_workflow.update(
       {anniversary_id,
+       created_updated_at,
        write_input("Updated yearly", LocalDate{2021, 3, 1}, true, kCategoryId)});
+  if (!updated_yearly.ok()) {
+    std::string details;
+    for (const auto& [key, value] : updated_yearly.error().details) {
+      details += " " + key + "=" + value;
+    }
+    require(false, updated_yearly.error().code + ": " +
+                       updated_yearly.error().message + details);
+  }
   require(updated_yearly.ok() && updated_yearly.value().recurrence.has_value() &&
-              updated_yearly.value().recurrence->id == original_recurrence_id,
+              updated_yearly.value().recurrence->id == original_recurrence_id &&
+              updated_yearly.value().anniversary.updated_at != created_updated_at,
           "yearly-to-yearly update must retain recurrence identity");
+
+  auto stale_update = restarted_workflow.update(
+      {anniversary_id,
+       created_updated_at,
+       write_input("Stale update", LocalDate{2022, 3, 1}, true, kCategoryId)});
+  require(!stale_update.ok() &&
+              stale_update.error().code == "ANNIVERSARY_UPDATE_CONFLICT",
+          "a stale expected_updated_at must fail without overwriting the committed update");
 
   auto made_one_time = restarted_workflow.update(
       {anniversary_id,
+       updated_yearly.value().anniversary.updated_at,
        write_input("One time", LocalDate{2026, 8, 9}, false, kCategoryId)});
   require(made_one_time.ok() &&
               !made_one_time.value().anniversary.recurrence_id.has_value() &&
@@ -252,6 +522,7 @@ void test_workflow_lifecycle_persistence_and_queries() {
 
   auto made_yearly = restarted_workflow.update(
       {anniversary_id,
+       made_one_time.value().anniversary.updated_at,
        write_input("Yearly again", LocalDate{2026, 8, 9}, true, kCategoryId)});
   require(made_yearly.ok() && made_yearly.value().recurrence.has_value() &&
               made_yearly.value().recurrence->id != original_recurrence_id,
@@ -276,8 +547,273 @@ void test_workflow_lifecycle_persistence_and_queries() {
           "repeated delete must fail without another mutation");
 }
 
+void test_reminder_toggle_advances_version_and_rejects_stale_plans() {
+  TemporaryDirectory directory("toggle_version");
+  prepare_v3_storage(directory.path());
+  auto transaction =
+      std::make_shared<JsonAnniversaryTransaction>(directory.path());
+  require(transaction->initialize().ok(),
+          "Anniversary toggle version Store must initialize");
+  auto time_resolver = resolver();
+  auto clock = [] { return std::string(kNow); };
+  auto id_generator = [] {
+    return excellent_calendar::common::generate_uuid_v4();
+  };
+  excellent_calendar::application::AnniversaryWorkflowService workflow(
+      transaction, time_resolver, clock, id_generator);
+
+  auto original_input = write_input(
+      "Reminder editor baseline", LocalDate{2020, 9, 1}, true, kCategoryId);
+  excellent_calendar::application::AnniversaryReminderPlanInput plan;
+  plan.reminders_enabled = true;
+  plan.templates.push_back({7, "09:00", "popup", true});
+  original_input.reminder_plan = plan;
+  auto created = workflow.create({original_input});
+  require(created.ok(), created.ok() ? "" : created.error().message);
+  const auto anniversary_id = created.value().anniversary.id;
+  const auto editor_token = created.value().anniversary.updated_at;
+
+  auto paused = workflow.set_reminders_enabled(
+      {anniversary_id, false, kTimezone});
+  require(paused.ok() &&
+              paused.value().anniversary.updated_at ==
+                  "2026-08-08T04:05:07Z",
+          "same-second create then toggle must advance the Anniversary version");
+  auto stale_after_toggle = workflow.update(
+      {anniversary_id, editor_token, original_input});
+  require(!stale_after_toggle.ok() &&
+              stale_after_toggle.error().code ==
+                  "ANNIVERSARY_UPDATE_CONFLICT",
+          "a pre-toggle editor token must not restore the old Reminder plan");
+  auto persisted = transaction->load();
+  require(persisted.ok() &&
+              !persisted.value().anniversaries.front().reminders_enabled &&
+              persisted.value().anniversaries.front().title ==
+                  "Reminder editor baseline",
+          "the rejected pre-toggle editor must perform zero writes");
+
+  auto committed_input = original_input;
+  committed_input.title = "Committed editor update";
+  auto committed_update = workflow.update(
+      {anniversary_id, paused.value().anniversary.updated_at, committed_input});
+  require(committed_update.ok() &&
+              committed_update.value().anniversary.updated_at ==
+                  "2026-08-08T04:05:08Z",
+          "same-second update must advance from the toggle version");
+  auto paused_after_update = workflow.set_reminders_enabled(
+      {anniversary_id, false, kTimezone});
+  require(paused_after_update.ok() &&
+              paused_after_update.value().anniversary.updated_at ==
+                  "2026-08-08T04:05:09Z",
+          "same-second toggle after update must never regress the version");
+
+  auto stale_plan_input = original_input;
+  stale_plan_input.title = "Stale plan overwrite";
+  auto stale_after_update_toggle = workflow.update(
+      {anniversary_id,
+       committed_update.value().anniversary.updated_at,
+       stale_plan_input});
+  require(!stale_after_update_toggle.ok() &&
+              stale_after_update_toggle.error().code ==
+                  "ANNIVERSARY_UPDATE_CONFLICT",
+          "an editor token captured before a later toggle must be rejected");
+  persisted = transaction->load();
+  require(persisted.ok() &&
+              persisted.value().anniversaries.front().updated_at ==
+                  paused_after_update.value().anniversary.updated_at &&
+              persisted.value().anniversaries.front().title ==
+                  "Committed editor update" &&
+              !persisted.value().anniversaries.front().reminders_enabled,
+          "the rejected stale plan must preserve the latest title, plan state, and token");
+}
+
+void test_toggle_and_update_concurrency_preserves_latest_plan() {
+  TemporaryDirectory directory("toggle_update_concurrency");
+  prepare_v3_storage(directory.path());
+  auto initial_transaction =
+      std::make_shared<JsonAnniversaryTransaction>(directory.path());
+  require(initial_transaction->initialize().ok(),
+          "toggle/update concurrency Store must initialize");
+  auto time_resolver = resolver();
+  auto clock = [] { return std::string(kNow); };
+  auto id_generator = [] {
+    return excellent_calendar::common::generate_uuid_v4();
+  };
+  excellent_calendar::application::AnniversaryWorkflowService initial_workflow(
+      initial_transaction, time_resolver, clock, id_generator);
+  auto input = write_input(
+      "Concurrent baseline", LocalDate{2020, 9, 1}, true, kCategoryId);
+  excellent_calendar::application::AnniversaryReminderPlanInput plan;
+  plan.reminders_enabled = true;
+  plan.templates.push_back({0, "09:00", "popup", true});
+  input.reminder_plan = plan;
+  auto created = initial_workflow.create({input});
+  require(created.ok(), created.ok() ? "" : created.error().message);
+
+  auto update_transaction =
+      std::make_shared<JsonAnniversaryTransaction>(directory.path());
+  auto toggle_transaction =
+      std::make_shared<JsonAnniversaryTransaction>(directory.path());
+  require(update_transaction->initialize().ok() &&
+              toggle_transaction->initialize().ok(),
+          "both toggle/update concurrent writers must initialize");
+  excellent_calendar::application::AnniversaryWorkflowService update_workflow(
+      update_transaction, time_resolver, clock, id_generator);
+  excellent_calendar::application::AnniversaryWorkflowService toggle_workflow(
+      toggle_transaction, time_resolver, clock, id_generator);
+
+  struct Outcome {
+    bool ok = false;
+    std::string code;
+    std::string updated_at;
+  };
+  Outcome update_outcome;
+  Outcome toggle_outcome;
+  std::atomic<int> ready{0};
+  std::atomic<bool> start{false};
+  const auto anniversary_id = created.value().anniversary.id;
+  const auto editor_token = created.value().anniversary.updated_at;
+  auto edited_input = input;
+  edited_input.title = "Concurrent editor";
+
+  std::thread update_thread([&] {
+    ready.fetch_add(1, std::memory_order_release);
+    while (!start.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+    auto result = update_workflow.update(
+        {anniversary_id, editor_token, edited_input});
+    update_outcome.ok = result.ok();
+    if (result.ok()) {
+      update_outcome.updated_at = result.value().anniversary.updated_at;
+    } else {
+      update_outcome.code = result.error().code;
+    }
+  });
+  std::thread toggle_thread([&] {
+    ready.fetch_add(1, std::memory_order_release);
+    while (!start.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+    auto result = toggle_workflow.set_reminders_enabled(
+        {anniversary_id, false, kTimezone});
+    toggle_outcome.ok = result.ok();
+    if (result.ok()) {
+      toggle_outcome.updated_at = result.value().anniversary.updated_at;
+    } else {
+      toggle_outcome.code = result.error().code;
+    }
+  });
+  while (ready.load(std::memory_order_acquire) != 2) {
+    std::this_thread::yield();
+  }
+  start.store(true, std::memory_order_release);
+  update_thread.join();
+  toggle_thread.join();
+
+  require(toggle_outcome.ok &&
+              (!update_outcome.ok
+                   ? update_outcome.code == "ANNIVERSARY_UPDATE_CONFLICT"
+                   : update_outcome.updated_at != toggle_outcome.updated_at),
+          "the serialized toggle must either stale the editor or advance beyond it");
+  auto persisted = initial_transaction->load();
+  require(persisted.ok() &&
+              !persisted.value().anniversaries.front().reminders_enabled &&
+              persisted.value().anniversaries.front().updated_at ==
+                  toggle_outcome.updated_at &&
+              persisted.value().anniversaries.front().title ==
+                  (update_outcome.ok ? "Concurrent editor"
+                                     : "Concurrent baseline"),
+          "toggle/update concurrency must preserve the serialized latest plan without token reuse");
+}
+
+void test_update_optimistic_concurrency_serializes_stale_writers() {
+  TemporaryDirectory directory("update_concurrency");
+  prepare_v3_storage(directory.path());
+  auto initial_transaction =
+      std::make_shared<JsonAnniversaryTransaction>(directory.path());
+  require(initial_transaction->initialize().ok(),
+          "Anniversary concurrency Store must initialize");
+  auto time_resolver = resolver();
+  auto clock = [] { return std::string(kNow); };
+  auto id_generator = [] {
+    return excellent_calendar::common::generate_uuid_v4();
+  };
+  excellent_calendar::application::AnniversaryWorkflowService initial_workflow(
+      initial_transaction, time_resolver, clock, id_generator);
+  auto created = initial_workflow.create({write_input(
+      "Concurrency baseline", LocalDate{2020, 9, 1}, true, kCategoryId)});
+  require(created.ok(), created.ok() ? "" : created.error().message);
+
+  auto first_transaction =
+      std::make_shared<JsonAnniversaryTransaction>(directory.path());
+  auto second_transaction =
+      std::make_shared<JsonAnniversaryTransaction>(directory.path());
+  require(first_transaction->initialize().ok() &&
+              second_transaction->initialize().ok(),
+          "both concurrent Anniversary writers must initialize");
+  excellent_calendar::application::AnniversaryWorkflowService first_workflow(
+      first_transaction, time_resolver, clock, id_generator);
+  excellent_calendar::application::AnniversaryWorkflowService second_workflow(
+      second_transaction, time_resolver, clock, id_generator);
+
+  struct Outcome {
+    bool ok = false;
+    std::string code;
+    std::string title;
+    std::string updated_at;
+  };
+  Outcome first;
+  Outcome second;
+  std::atomic<int> ready{0};
+  std::atomic<bool> start{false};
+  const auto anniversary_id = created.value().anniversary.id;
+  const auto expected_updated_at = created.value().anniversary.updated_at;
+  const auto run = [&](excellent_calendar::application::AnniversaryWorkflowService& workflow,
+                       std::string title, Outcome& outcome) {
+    ready.fetch_add(1, std::memory_order_release);
+    while (!start.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+    auto result = workflow.update(
+        {anniversary_id, expected_updated_at,
+         write_input(std::move(title), LocalDate{2020, 9, 1}, true, kCategoryId)});
+    outcome.ok = result.ok();
+    if (result.ok()) {
+      outcome.title = result.value().anniversary.title;
+      outcome.updated_at = result.value().anniversary.updated_at;
+    } else {
+      outcome.code = result.error().code;
+    }
+  };
+  std::thread first_thread(run, std::ref(first_workflow), "Writer one",
+                           std::ref(first));
+  std::thread second_thread(run, std::ref(second_workflow), "Writer two",
+                            std::ref(second));
+  while (ready.load(std::memory_order_acquire) != 2) {
+    std::this_thread::yield();
+  }
+  start.store(true, std::memory_order_release);
+  first_thread.join();
+  second_thread.join();
+
+  require(first.ok != second.ok,
+          "exactly one concurrent writer using the same expected_updated_at must commit");
+  const auto& rejected = first.ok ? second : first;
+  const auto& accepted = first.ok ? first : second;
+  require(rejected.code == "ANNIVERSARY_UPDATE_CONFLICT" &&
+              accepted.updated_at != expected_updated_at,
+          "the serialized stale writer must fail with a stable conflict and no token reuse");
+  auto persisted = first_transaction->load();
+  require(persisted.ok() && persisted.value().anniversaries.size() == 1U &&
+              persisted.value().anniversaries.front().title == accepted.title &&
+              persisted.value().anniversaries.front().updated_at == accepted.updated_at,
+          "the rejected concurrent update must not overwrite any committed field");
+}
+
 void test_narrow_transaction_recovery_and_rollback() {
   TemporaryDirectory directory("recovery");
+  prepare_v3_storage(directory.path());
   auto base = std::make_shared<JsonAnniversaryTransaction>(directory.path());
   require(base->initialize().ok(), "recovery stores must initialize");
 
@@ -285,7 +821,7 @@ void test_narrow_transaction_recovery_and_rollback() {
   JsonAnniversaryTransaction interrupted(
       directory.path(),
       [&](std::string_view phase) {
-        if (phase == "after_anniversaries" && fail_once) {
+        if (phase == "after_store:anniversaries.json" && fail_once) {
           fail_once = false;
           return excellent_calendar::common::Result<excellent_calendar::common::Unit>::failure(
               excellent_calendar::common::make_error(
@@ -342,30 +878,42 @@ void test_narrow_transaction_recovery_and_rollback() {
 
 void test_additive_initialization_and_corruption_failure() {
   TemporaryDirectory additive("additive");
-  excellent_calendar::storage::json::JsonRecurringEventTransaction existing_v2(
-      additive.path());
-  require(existing_v2.initialize().ok(),
-          "existing Event/Reminder v2 store set must initialize");
-  require(!std::filesystem::exists(additive.path() / "anniversaries.json"),
-          "precondition must represent an older v2 directory without Anniversary");
+  AtomicJsonFileStore legacy(additive.path());
+  require(legacy.initialize().ok(), "legacy v2 fixture must initialize");
+  for (const auto& [file, collection] :
+       std::vector<std::pair<std::string, std::string>>{
+           {"events.json", "events"},
+           {"recurrence_versions.json", "recurrence_versions"},
+           {"event_occurrence_states.json", "event_occurrence_states"},
+           {"reminders.json", "reminders"},
+           {"notifications.json", "notifications"},
+           {"reminder_recovery_batches.json", "reminder_recovery_batches"}}) {
+    picojson::object root;
+    root["storage_version"] = picojson::value(2.0);
+    root[collection] = picojson::value(picojson::array{});
+    require(legacy.write_json_file(file, picojson::value(root)).ok(),
+            "legacy v2 Store fixture must be written");
+  }
+  prepare_v3_storage(additive.path());
 
   JsonAnniversaryTransaction anniversary(additive.path());
   require(anniversary.initialize().ok(),
-          "Anniversary stores must be added to an existing valid v2 directory");
+          "missing Anniversary Stores must be added by v2-to-v3 migration");
   require(std::filesystem::exists(additive.path() / "anniversaries.json") &&
               std::filesystem::exists(
-                  additive.path() / "anniversary_recurrences.json") &&
+                   additive.path() / "anniversary_recurrences.json") &&
               std::filesystem::exists(
-                  additive.path() / "anniversary_workflow_transactions.json"),
-          "additive initialization must create the three narrow v2 roots");
+                  additive.path() / "calendar_workflow_transactions.json"),
+          "migration must create Anniversary roots and the unified journal");
 
   TemporaryDirectory corrupt("corrupt");
+  prepare_v3_storage(corrupt.path());
   JsonAnniversaryTransaction corrupt_transaction(corrupt.path());
   require(corrupt_transaction.initialize().ok(),
           "corruption fixture must initialize valid stores first");
   AtomicJsonFileStore raw(corrupt.path());
   picojson::object invalid;
-  invalid["storage_version"] = picojson::value(2.0);
+  invalid["storage_version"] = picojson::value(3.0);
   invalid["anniversaries"] = picojson::value("not-an-array");
   require(raw.write_json_file("anniversaries.json", picojson::value(invalid)).ok(),
           "corruption fixture must overwrite the Anniversary root");
@@ -390,13 +938,28 @@ void test_boundary_contract_and_persistent_round_trip() {
 
   auto create_request = boundary_write_request(
       std::nullopt, "Boundary anniversary", true);
+  picojson::object reminder_template;
+  reminder_template["advance_days"] = picojson::value(7.0);
+  reminder_template["local_time"] = picojson::value("09:00");
+  reminder_template["method"] = picojson::value("popup");
+  reminder_template["is_enabled"] = picojson::value(true);
+  picojson::object reminder_plan;
+  reminder_plan["reminders_enabled"] = picojson::value(true);
+  reminder_plan["templates"] = picojson::value(
+      picojson::array{picojson::value(std::move(reminder_template))});
+  create_request["reminder_plan"] = picojson::value(std::move(reminder_plan));
   auto created_result = parse_native_result(
       create_anniversary_v2(picojson::value(create_request).serialize()),
       "anniversary.create");
   const auto& created = require_success(created_result, "anniversary.create");
   require_exact_fields(
-      created, {"anniversary", "recurrence", "countdown"},
+      created, {"anniversary", "recurrence", "countdown", "reminder_settings"},
       "AnniversaryDetailResponse");
+  require_exact_fields(
+      created.at("reminder_settings").get<picojson::object>(),
+      {"reminders_enabled", "templates", "active_reminder_count",
+       "schedule_reconciliation_required"},
+      "AnniversaryReminderSettingsResponse");
   const auto& anniversary = created.at("anniversary").get<picojson::object>();
   require_exact_fields(
       anniversary,
@@ -412,6 +975,11 @@ void test_boundary_contract_and_persistent_round_trip() {
                       .at("timezone")
                       .get<std::string>() == kTimezone,
           "create response must preserve date facts and return a dynamic countdown");
+  const auto& created_settings = created.at("reminder_settings").get<picojson::object>();
+  require(created_settings.at("reminders_enabled").get<bool>() &&
+              created_settings.at("templates").get<picojson::array>().size() == 1U &&
+              created_settings.at("active_reminder_count").get<double>() == 1.0,
+          "Boundary create must decode and encode the frozen reminder_plan shape");
 
   initialized_result = parse_native_result(
       initialize_runtime_v2_json(picojson::value(initialize_request).serialize()),
@@ -430,6 +998,41 @@ void test_boundary_contract_and_persistent_round_trip() {
                   .at("id")
                   .get<std::string>() == anniversary_id,
           "detail after runtime restart must read the persisted record");
+
+  picojson::object occurrence_request;
+  occurrence_request["range_start_date"] = picojson::value("2026-01-01");
+  occurrence_request["range_end_date"] = picojson::value("2027-02-05");
+  occurrence_request["timezone"] = picojson::value(kTimezone);
+  occurrence_request["category_ids"] = picojson::value(picojson::array{});
+  occurrence_request["importance"] = picojson::value(picojson::array{});
+  occurrence_request["cursor"] = picojson::value();
+  occurrence_request["page_size"] = picojson::value(10.0);
+  const auto occurrence_result = parse_native_result(
+      list_anniversary_occurrences_v2(
+          picojson::value(occurrence_request).serialize()),
+      "anniversary.list_occurrences");
+  const auto& occurrence_page = require_success(
+      occurrence_result, "anniversary.list_occurrences");
+  require_exact_fields(occurrence_page, {"items", "has_more", "next_cursor"},
+                       "AnniversaryOccurrenceListResponse");
+  require(occurrence_page.at("items").get<picojson::array>().size() == 1U,
+          "Boundary occurrence query must return the date-only February 29 projection");
+
+  picojson::object toggle_request;
+  toggle_request["id"] = picojson::value(anniversary_id);
+  toggle_request["reminders_enabled"] = picojson::value(false);
+  toggle_request["timezone"] = picojson::value(kTimezone);
+  const auto toggle_result = parse_native_result(
+      set_anniversary_reminders_enabled_v2(
+          picojson::value(toggle_request).serialize()),
+      "anniversary.set_reminders_enabled");
+  const auto& toggled = require_success(
+      toggle_result, "anniversary.set_reminders_enabled");
+  require(!toggled.at("reminder_settings")
+               .get<picojson::object>()
+               .at("reminders_enabled")
+               .get<bool>(),
+          "Boundary toggle must pause without deleting template configuration");
 
   auto second_create_request = boundary_write_request(
       std::nullopt, "Year-end anniversary", true);
@@ -522,6 +1125,26 @@ void test_boundary_contract_and_persistent_round_trip() {
 
   auto update_request = boundary_write_request(
       anniversary_id, "Updated through boundary", false);
+  update_request["expected_updated_at"] = anniversary.at("updated_at");
+  auto missing_update_token = update_request;
+  missing_update_token.erase("expected_updated_at");
+  require_failure(
+      parse_native_result(
+          update_anniversary_v2(
+              picojson::value(missing_update_token).serialize()),
+          "anniversary.update missing expected_updated_at"),
+      "CONTRACT_VALIDATION_FAILED",
+      "anniversary.update missing expected_updated_at");
+  require_failure(
+      parse_native_result(
+          update_anniversary_v2(picojson::value(update_request).serialize()),
+          "anniversary.update stale after reminder toggle"),
+      "ANNIVERSARY_UPDATE_CONFLICT",
+      "anniversary.update stale after reminder toggle");
+  update_request["expected_updated_at"] =
+      toggled.at("anniversary")
+          .get<picojson::object>()
+          .at("updated_at");
   auto update_result = parse_native_result(
       update_anniversary_v2(picojson::value(update_request).serialize()),
       "anniversary.update");
@@ -532,6 +1155,18 @@ void test_boundary_contract_and_persistent_round_trip() {
                   .at("recurrence_id")
                   .is<picojson::null>(),
           "update must preserve nullable recurrence fields exactly");
+  require(updated.at("anniversary")
+                  .get<picojson::object>()
+                  .at("updated_at")
+                  .get<std::string>() !=
+              anniversary.at("updated_at").get<std::string>(),
+          "successful update must issue a new updated_at token within the same clock second");
+  require_failure(
+      parse_native_result(
+          update_anniversary_v2(picojson::value(update_request).serialize()),
+          "anniversary.update stale expected_updated_at"),
+      "ANNIVERSARY_UPDATE_CONFLICT",
+      "anniversary.update stale expected_updated_at");
 
   picojson::object preview_request;
   preview_request["date"] = picojson::value("2020-02-29");
@@ -578,8 +1213,11 @@ void test_boundary_contract_and_persistent_round_trip() {
       delete_anniversary_v2(picojson::value(delete_request).serialize()),
       "anniversary.delete");
   const auto& deleted = require_success(delete_result, "anniversary.delete");
-  require(deleted.at("deleted_at").is<std::string>(),
-          "delete response must expose the soft-delete instant");
+  require_exact_fields(
+      deleted, {"anniversary", "schedule_reconciliation_required"},
+      "AnniversaryDeleteCommitResponse");
+  require(deleted.at("anniversary").get<picojson::object>().at("deleted_at").is<std::string>(),
+          "delete response must expose the soft-delete instant in the deleted Anniversary");
   require_failure(
       parse_native_result(
           get_anniversary_detail_v2(picojson::value(detail_request).serialize()),
@@ -592,7 +1230,12 @@ void test_boundary_contract_and_persistent_round_trip() {
 int main() {
   try {
     test_date_only_countdown_edges();
+    test_anniversary_r1_identity_vectors();
+    test_reminder_plan_lifecycle_and_occurrence_paging();
     test_workflow_lifecycle_persistence_and_queries();
+    test_reminder_toggle_advances_version_and_rejects_stale_plans();
+    test_toggle_and_update_concurrency_preserves_latest_plan();
+    test_update_optimistic_concurrency_serializes_stale_writers();
     test_narrow_transaction_recovery_and_rollback();
     test_additive_initialization_and_corruption_failure();
     test_boundary_contract_and_persistent_round_trip();

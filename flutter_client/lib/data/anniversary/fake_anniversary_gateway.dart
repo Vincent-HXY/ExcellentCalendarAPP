@@ -118,6 +118,11 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
       iconKey: _iconKeyFor(input.kind),
       recurrence: input.recurrence,
       reminders: input.reminders,
+      remindersEnabled: input.remindersEnabled,
+      activeReminderCount: input.remindersEnabled
+          ? input.reminders.where((item) => item.isEnabled).length
+          : 0,
+      scheduleCapability: _capabilityFor(input.remindersEnabled),
     );
 
     final previousEntries = LinkedHashMap<String, AnniversaryDetail>.from(
@@ -138,6 +143,12 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
     if (existing == null || existing.anniversary.deletedAt != null) {
       throw const AnniversaryGatewayException(AnniversaryFailureCode.notFound);
     }
+    if (input.expectedUpdatedAt.toUtc() !=
+        existing.anniversary.updatedAt.toUtc()) {
+      throw const AnniversaryGatewayException(
+        AnniversaryFailureCode.updateConflict,
+      );
+    }
 
     final recurrenceId = input.recurrence == null
         ? null
@@ -152,7 +163,7 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
       note: input.anniversary.note,
       importance: input.anniversary.importance,
       createdAt: existing.anniversary.createdAt,
-      updatedAt: _clock.now(),
+      updatedAt: _nextUpdateToken(existing.anniversary.updatedAt),
       deletedAt: null,
     );
     final detail = AnniversaryDetail(
@@ -165,8 +176,48 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
       iconKey: _iconKeyFor(input.kind),
       recurrence: input.recurrence,
       reminders: input.reminders,
+      remindersEnabled: input.remindersEnabled,
+      activeReminderCount: input.remindersEnabled
+          ? input.reminders.where((item) => item.isEnabled).length
+          : 0,
+      scheduleCapability: _capabilityFor(input.remindersEnabled),
     );
     _entries[input.id] = detail;
+    return detail;
+  }
+
+  DateTime _nextUpdateToken(DateTime previous) {
+    final now = _clock.now().toUtc();
+    final previousUtc = previous.toUtc();
+    return now.isAfter(previousUtc)
+        ? now
+        : previousUtc.add(const Duration(seconds: 1));
+  }
+
+  @override
+  Future<AnniversaryDetail> setRemindersEnabled(
+    String id, {
+    required bool remindersEnabled,
+  }) async {
+    await _waitForOperation();
+    final existing = _entries[id];
+    if (existing == null || existing.anniversary.deletedAt != null) {
+      throw const AnniversaryGatewayException(AnniversaryFailureCode.notFound);
+    }
+    final detail = AnniversaryDetail(
+      anniversary: existing.anniversary,
+      kind: existing.kind,
+      countdown: existing.countdown,
+      iconKey: existing.iconKey,
+      recurrence: existing.recurrence,
+      reminders: existing.reminders,
+      remindersEnabled: remindersEnabled,
+      activeReminderCount: remindersEnabled
+          ? existing.reminders.where((item) => item.isEnabled).length
+          : 0,
+      scheduleCapability: _capabilityFor(remindersEnabled),
+    );
+    _entries[id] = detail;
     return detail;
   }
 
@@ -197,6 +248,10 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
       iconKey: existing.iconKey,
       recurrence: existing.recurrence,
       reminders: existing.reminders,
+      remindersEnabled: existing.remindersEnabled,
+      activeReminderCount: existing.activeReminderCount,
+      scheduleReconciliationRequired: existing.scheduleReconciliationRequired,
+      scheduleCapability: existing.scheduleCapability,
     );
   }
 
@@ -394,4 +449,16 @@ class FakeAnniversaryGateway implements AnniversaryGateway {
     const labels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
     return labels[value.weekday - 1];
   }
+
+  static AnniversaryScheduleCapability _capabilityFor(bool enabled) => enabled
+      ? const AnniversaryScheduleCapability(
+          status: AnniversaryScheduleStatus.scheduledExact,
+          scheduleReconciliationRequired: false,
+          notificationPermissionStatus:
+              AnniversaryNotificationPermissionStatus.granted,
+          exactAlarmPermissionStatus:
+              AnniversaryExactAlarmPermissionStatus.granted,
+          degradationReasons: [],
+        )
+      : const AnniversaryScheduleCapability.notRequired();
 }

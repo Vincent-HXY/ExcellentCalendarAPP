@@ -1,6 +1,7 @@
 #include "excellent_calendar/domain/anniversary.hpp"
 
 #include <algorithm>
+#include <set>
 
 #include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/string_utils.hpp"
@@ -16,8 +17,15 @@ common::Error contract_invalid(std::string field, std::string reason) {
       {{"field", std::move(field)}, {"reason", std::move(reason)}});
 }
 
-LocalDate occurrence_in_year(const LocalDate& anchor, int year) {
-  return add_local_months_with_anchor(LocalDate{year, anchor.month, 1}, 0, anchor.day);
+bool valid_local_time(std::string_view value) {
+  if (value.size() != 5U || value[2] != ':') return false;
+  const auto digit = [](char value) { return value >= '0' && value <= '9'; };
+  if (!digit(value[0]) || !digit(value[1]) || !digit(value[3]) || !digit(value[4])) {
+    return false;
+  }
+  const int hour = (value[0] - '0') * 10 + value[1] - '0';
+  const int minute = (value[3] - '0') * 10 + value[4] - '0';
+  return hour <= 23 && minute <= 59;
 }
 
 }  // namespace
@@ -76,6 +84,116 @@ common::Result<common::Unit> validate_anniversary(const Anniversary& anniversary
   return common::Result<common::Unit>::success(common::Unit{});
 }
 
+common::Result<common::Unit> validate_anniversary_reminder_template(
+    const AnniversaryReminderTemplate& reminder_template) {
+  if (!common::is_uuid(reminder_template.template_key) ||
+      !common::is_uuid(reminder_template.anniversary_id) ||
+      reminder_template.advance_days < 0 || reminder_template.advance_days > 365 ||
+      !valid_local_time(reminder_template.local_time) ||
+      reminder_template.timezone_mode != kAnniversaryReminderTimezoneFollowDevice ||
+      reminder_template.method != kAnniversaryReminderMethodPopup ||
+      !common::is_iso8601_utc_datetime(reminder_template.created_at) ||
+      !common::is_iso8601_utc_datetime(reminder_template.updated_at) ||
+      (reminder_template.deleted_at.has_value() &&
+       !common::is_iso8601_utc_datetime(*reminder_template.deleted_at))) {
+    return common::Result<common::Unit>::failure(common::make_error(
+        "ANNIVERSARY_REMINDER_CONFIG_INVALID",
+        "Anniversary reminder configuration is invalid",
+        {{"field", "reminder_template"}}));
+  }
+  auto expected = anniversary_reminder_template_key(
+      reminder_template.anniversary_id, reminder_template.advance_days,
+      reminder_template.local_time);
+  if (!expected.ok() || expected.value() != reminder_template.template_key) {
+    return common::Result<common::Unit>::failure(common::make_error(
+        "ANNIVERSARY_REMINDER_CONFIG_INVALID",
+        "Anniversary reminder configuration is invalid",
+        {{"field", "template_key"}, {"reason", "identity does not match content"}}));
+  }
+  return common::Result<common::Unit>::success(common::Unit{});
+}
+
+LocalDate anniversary_occurrence_in_year(const LocalDate& source_date, int year) {
+  return add_local_months_with_anchor(LocalDate{year, source_date.month, 1}, 0,
+                                      source_date.day);
+}
+
+common::Result<std::string> anniversary_occurrence_key(
+    std::string_view anniversary_id,
+    const LocalDate& occurrence_date) {
+  if (!common::is_uuid(anniversary_id) || !is_valid_local_date(occurrence_date)) {
+    return common::Result<std::string>::failure(
+        contract_invalid("anniversary_occurrence", "identity input is invalid"));
+  }
+  const std::string name = "[\"" + std::string(anniversary_id) + "\",\"" +
+                           format_local_date(occurrence_date) + "\"]";
+  return common::generate_uuid_v5(kAnniversaryOccurrenceNamespace, name);
+}
+
+common::Result<std::string> anniversary_reminder_template_key(
+    std::string_view anniversary_id,
+    int advance_days,
+    std::string_view local_time) {
+  if (!common::is_uuid(anniversary_id) || advance_days < 0 || advance_days > 365 ||
+      !valid_local_time(local_time)) {
+    return common::Result<std::string>::failure(common::make_error(
+        "ANNIVERSARY_REMINDER_CONFIG_INVALID",
+        "Anniversary reminder configuration is invalid",
+        {{"field", "reminder_template"}}));
+  }
+  const std::string name = "[\"" + std::string(anniversary_id) + "\"," +
+                           std::to_string(advance_days) + ",\"" +
+                           std::string(local_time) + "\",\"follow_device\",\"popup\"]";
+  return common::generate_uuid_v5(kAnniversaryReminderTemplateNamespace, name);
+}
+
+common::Result<std::string> anniversary_reminder_id(
+    std::string_view anniversary_id,
+    std::string_view occurrence_key,
+    std::string_view template_key) {
+  if (!common::is_uuid(anniversary_id) || !common::is_uuid(occurrence_key) ||
+      !common::is_uuid(template_key)) {
+    return common::Result<std::string>::failure(
+        contract_invalid("anniversary_reminder", "identity input is invalid"));
+  }
+  const std::string name = "[\"anniversary\",\"" + std::string(anniversary_id) +
+                           "\",\"" + std::string(occurrence_key) + "\",\"" +
+                           std::string(template_key) + "\"]";
+  return common::generate_uuid_v5(kAnniversaryReminderNamespace, name);
+}
+
+common::Result<std::string> anniversary_catch_up_delivery_id(
+    std::string_view anniversary_id,
+    std::string_view occurrence_key,
+    std::vector<std::string> covered_reminder_ids) {
+  if (!common::is_uuid(anniversary_id) || !common::is_uuid(occurrence_key) ||
+      covered_reminder_ids.empty() || covered_reminder_ids.size() > 5U) {
+    return common::Result<std::string>::failure(common::make_error(
+        "ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT",
+        "Anniversary aggregate delivery does not match the frozen RecoveryBatch membership"));
+  }
+  std::sort(covered_reminder_ids.begin(), covered_reminder_ids.end());
+  if (std::adjacent_find(covered_reminder_ids.begin(), covered_reminder_ids.end()) !=
+      covered_reminder_ids.end() ||
+      std::any_of(covered_reminder_ids.begin(), covered_reminder_ids.end(),
+                  [](const auto& id) { return !common::is_uuid(id); })) {
+    return common::Result<std::string>::failure(common::make_error(
+        "ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT",
+        "Anniversary aggregate delivery does not match the frozen RecoveryBatch membership"));
+  }
+  std::string members = "[";
+  for (std::size_t index = 0; index < covered_reminder_ids.size(); ++index) {
+    if (index != 0U) members += ',';
+    members += "\"" + covered_reminder_ids[index] + "\"";
+  }
+  members += ']';
+  const std::string name = "[\"anniversary_catch_up\",\"" +
+                           std::string(anniversary_id) + "\",\"" +
+                           std::string(occurrence_key) + "\"," + members +
+                           ",\"popup\"]";
+  return common::generate_uuid_v5(kAnniversaryCatchUpDeliveryNamespace, name);
+}
+
 common::Result<common::Unit> validate_anniversary_recurrence(
     const AnniversaryRecurrence& recurrence) {
   if (!common::is_uuid(recurrence.id) ||
@@ -110,9 +228,9 @@ common::Result<AnniversaryCountdown> calculate_anniversary_countdown(
   LocalDate target = anniversary_date;
   if (repeats_yearly) {
     int target_year = std::max(today.year, anniversary_date.year);
-    target = occurrence_in_year(anniversary_date, target_year);
+    target = anniversary_occurrence_in_year(anniversary_date, target_year);
     if (target < today) {
-      target = occurrence_in_year(anniversary_date, target_year + 1);
+      target = anniversary_occurrence_in_year(anniversary_date, target_year + 1);
     }
   }
 

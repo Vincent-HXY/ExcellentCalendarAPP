@@ -9,7 +9,7 @@ bool is_valid_reminder_target_type(std::string_view value) {
 }
 
 bool is_supported_reminder_target_type(std::string_view value) {
-  return value == kReminderTargetEvent;
+  return value == kReminderTargetEvent || value == kReminderTargetAnniversary;
 }
 
 bool is_valid_reminder_method(std::string_view value) {
@@ -37,7 +37,12 @@ bool is_valid_reminder_cancellation_reason(std::string_view value) {
          value == kReminderCancellationReasonSeriesCompleted ||
          value == kReminderCancellationReasonSeriesCancelled ||
          value == kReminderCancellationReasonSeriesDeleted ||
-         value == kReminderCancellationReasonSeriesUpdated;
+         value == kReminderCancellationReasonSeriesUpdated ||
+         value == kReminderCancellationReasonAnniversaryPaused ||
+         value == kReminderCancellationReasonAnniversaryTemplateDisabled ||
+         value == kReminderCancellationReasonAnniversaryUpdated ||
+         value == kReminderCancellationReasonAnniversaryTemplateReplaced ||
+         value == kReminderCancellationReasonAnniversaryDeleted;
 }
 
 bool is_valid_reminder_source(std::string_view value) {

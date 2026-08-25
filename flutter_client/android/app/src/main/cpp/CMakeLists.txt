@@ -8,19 +8,15 @@ add_subdirectory(
 )
 
 # The v2 runtime installs the bundled IANA source database into app-private storage.
-# Howard Hinnant date otherwise selects Android's binary tzdata reader from compiler
-# predefined macros, which is incompatible with that directory format.
+# USE_OS_TZDB=0 is owned by cpp_core and selects Howard Hinnant date's source
+# database reader. Keep Android's platform macros intact while system headers are
+# parsed, then let the vendored source opt out of date's Android-binary branches.
 if(ANDROID)
-    target_compile_options(
+    target_compile_definitions(
         excellent_calendar_date_tz
-        PUBLIC
-        -UANDROID
-        -U__ANDROID__
+        PRIVATE
+        EXCELLENT_CALENDAR_DATE_SOURCE_TZDB_ANDROID=1
     )
-    # Android's libc does not provide wordexp(3). A harmless initial install
-    # token disables that lookup; Kotlin supplies the real app-private path to
-    # date::set_install before the database is loaded.
-    target_compile_definitions(excellent_calendar_date_tz PRIVATE INSTALL=.)
 endif()
 
 add_library(

@@ -17,6 +17,21 @@ security_defaults:
   challenge_resend_interval_seconds: 60
   challenge_max_failed_attempts: 5
 
+http_conventions:
+  success_status: 200
+  business_error_status: 200
+  envelope_only_errors: true
+  authorization_scheme: Bearer
+  rate_limit_signal: envelope
+  idempotency_key_mismatch_error: API_VALIDATION_FAILED
+  idempotency_key_field_error_field: Idempotency-Key
+  notes:
+    - Every declared endpoint returns HTTP 200 with the ApiResult envelope for each application-level outcome. Authentication failures on declared paths are reported inside the envelope as API_UNAUTHENTICATED, AUTH_SESSION_EXPIRED, or API_FORBIDDEN; no declared endpoint emits raw 401/403 bodies.
+    - A non-200 response without a valid ApiResult envelope is a transport or protocol failure. Flutter must treat it in the transport error path and must never map it to business error codes.
+    - Undeclared paths stay denied outside the ApiResult envelope and must never be called by clients.
+    - ApiError.retry_after_seconds is the only rate-limit retry signal; no Retry-After header semantics are defined.
+    - Reusing an Idempotency-Key with a different business payload returns API_VALIDATION_FAILED with an api_field_error whose field is Idempotency-Key.
+
 endpoints:
   auth.register:
     method: POST
@@ -60,6 +75,7 @@ endpoints:
       - AUTH_VERIFICATION_INVALID
       - AUTH_VERIFICATION_EXPIRED
       - AUTH_VERIFICATION_USED
+      - AUTH_VERIFICATION_ATTEMPTS_EXCEEDED
 
   auth.registration.resend:
     method: POST
@@ -82,6 +98,29 @@ endpoints:
       - AUTH_VERIFICATION_INVALID
       - AUTH_VERIFICATION_EXPIRED
       - AUTH_VERIFICATION_USED
+
+  auth.registration.email.update:
+    method: PATCH
+    path: /auth/registration/email
+    content_type: application/json
+    authentication: public
+    implementation_status: planned
+    idempotency:
+      required: true
+      header: Idempotency-Key
+    request: auth/update_registration_email_request.schema.json
+    result:
+      envelope: common/api_result.schema.json
+      data: auth/registration_pending_response.schema.json
+    errors:
+      - API_VALIDATION_FAILED
+      - API_RATE_LIMITED
+      - API_INTERNAL_ERROR
+      - AUTH_ACCOUNT_NOT_FOUND
+      - AUTH_ACCOUNT_DISABLED
+      - AUTH_ACCOUNT_ALREADY_VERIFIED
+      - AUTH_CURRENT_PASSWORD_INVALID
+      - AUTH_EMAIL_ALREADY_EXISTS
 
   auth.login:
     method: POST
@@ -204,6 +243,7 @@ endpoints:
       - AUTH_VERIFICATION_INVALID
       - AUTH_VERIFICATION_EXPIRED
       - AUTH_VERIFICATION_USED
+      - AUTH_VERIFICATION_ATTEMPTS_EXCEEDED
       - AUTH_PASSWORD_POLICY_VIOLATION
 
   auth.password.change:
@@ -280,6 +320,7 @@ endpoints:
       - AUTH_VERIFICATION_INVALID
       - AUTH_VERIFICATION_EXPIRED
       - AUTH_VERIFICATION_USED
+      - AUTH_VERIFICATION_ATTEMPTS_EXCEEDED
       - AUTH_SESSION_EXPIRED
 
   user.get_current:
@@ -381,4 +422,3 @@ endpoints:
       - API_INTERNAL_ERROR
       - AUTH_ACCOUNT_DISABLED
       - AUTH_SESSION_EXPIRED
-      - AVATAR_UPLOAD_FAILED

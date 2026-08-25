@@ -110,6 +110,7 @@ void test_every_v2_endpoint_rejects_non_object_json_consistently() {
       {"reminder.list", list_reminders_v2},
       {"reminder.enable", enable_reminder_v2},
       {"reminder.disable", disable_reminder_v2},
+      {"reminder.snooze", snooze_reminder_v2},
       {"reminder.list_schedulable", list_schedulable_recurring_reminders_v2},
       {"reminder.get", get_recurring_reminder_v2},
       {"reminder.mark_scheduled", mark_recurring_reminder_scheduled_v2},

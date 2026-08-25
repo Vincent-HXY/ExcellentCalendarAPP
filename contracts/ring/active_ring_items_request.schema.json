@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/ring/active_ring_items_request.schema.json",
+  "title": "ActiveRingItemsRequest",
+  "description": "Optimistic-concurrency request for stopping or snoozing one or more active ring items. Passing every current delivery_id implements the all-items action without an ambiguous all flag.",
+  "x-contract-version": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runtime_instance_id",
+    "session_id",
+    "expected_session_revision",
+    "delivery_ids"
+  ],
+  "properties": {
+    "runtime_instance_id": {"type": "string", "format": "uuid"},
+    "session_id": {"type": "string", "format": "uuid"},
+    "expected_session_revision": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "delivery_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "format": "uuid"}
+    }
+  }
+}

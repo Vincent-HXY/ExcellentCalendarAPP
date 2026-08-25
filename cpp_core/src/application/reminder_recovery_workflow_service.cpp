@@ -11,6 +11,8 @@
 
 #include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/common/uuid.hpp"
+#include "excellent_calendar/application/anniversary_reminder_projection.hpp"
+#include "excellent_calendar/domain/anniversary.hpp"
 #include "excellent_calendar/domain/event_status.hpp"
 
 namespace excellent_calendar::application {
@@ -18,6 +20,7 @@ namespace {
 
 constexpr const char* kDeliveryNamespace = "74f9acf9-a4ce-59d1-9934-5cd7ce796976";
 constexpr std::int64_t kRecoveryWindowSeconds = 72 * 60 * 60;
+constexpr std::int64_t kRingDetailGraceSeconds = 5 * 60;
 constexpr std::size_t kMaximumDetailCount = 20;
 constexpr int kMaximumExpansionCount = 1000000;
 
@@ -296,12 +299,14 @@ ReminderRecoveryWorkflowService::ReminderRecoveryWorkflowService(
     std::shared_ptr<RecurrenceService> recurrence_service,
     std::shared_ptr<RollingReminderService> rolling_reminder_service,
     ClockFn clock,
-    IdGeneratorFn id_generator)
+    IdGeneratorFn id_generator,
+    std::shared_ptr<domain::LocalTimeResolver> local_time_resolver)
     : transaction_(std::move(transaction)),
       recurrence_service_(std::move(recurrence_service)),
       rolling_reminder_service_(std::move(rolling_reminder_service)),
       clock_(std::move(clock)),
-      id_generator_(std::move(id_generator)) {}
+      id_generator_(std::move(id_generator)),
+      local_time_resolver_(std::move(local_time_resolver)) {}
 
 common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan_recovery(
     const PlanReminderRecoveryCommand& command) {
@@ -310,6 +315,20 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
     return common::Result<PlanReminderRecoveryResult>::failure(common::make_error(
         "CONTRACT_VALIDATION_FAILED", "Request does not match contract schema",
         {{"field", "recovery_request_id"}}));
+  }
+  if (command.timezone.empty()) {
+    return common::Result<PlanReminderRecoveryResult>::failure(common::make_error(
+        "CONTRACT_VALIDATION_FAILED", "Request does not match contract schema",
+        {{"field", "timezone"}}));
+  }
+  if (!local_time_resolver_) {
+    return common::Result<PlanReminderRecoveryResult>::failure(
+        internal_error("Anniversary timezone resolver is unavailable"));
+  }
+  auto timezone_valid = local_time_resolver_->validate_timezone(command.timezone);
+  if (!timezone_valid.ok()) {
+    return common::Result<PlanReminderRecoveryResult>::failure(
+        timezone_valid.error());
   }
   const auto now = clock_();
   const auto now_epoch = common::parse_iso8601_utc_epoch_seconds(now);
@@ -333,6 +352,8 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
           output = PlanReminderRecoveryResult{
               *existing, details_for(state, *existing),
               std::move(resolutions.value()), true};
+          output->anniversary_catch_up_groups =
+              existing->anniversary_catch_up_groups;
           return common::Result<common::Unit>::success(common::Unit{});
         }
         const auto active = std::find_if(
@@ -341,6 +362,12 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
             });
         if (active != state.recovery_batches.end()) {
           return common::Result<common::Unit>::failure(recovery_conflict(active->id));
+        }
+
+        auto reprojected = reproject_open_anniversary_reminders(
+            state, command.timezone, now, local_time_resolver_);
+        if (!reprojected.ok()) {
+          return common::Result<common::Unit>::failure(reprojected.error());
         }
 
         domain::ReminderRecoveryBatch batch;
@@ -361,6 +388,100 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
         std::vector<domain::Reminder> reminders_to_expire;
         int unmaterialized_older_reminders = 0;
         const auto watermark = latest_completed_recovery_at(state);
+
+        std::map<std::string, std::vector<std::string>> anniversary_memberships;
+        std::vector<domain::Reminder> anniversary_reminders_to_expire;
+        for (const auto& reminder : state.reminders) {
+          if (reminder.target_type != domain::kReminderTargetAnniversary ||
+              !is_open(reminder)) {
+            continue;
+          }
+          const auto remind_at =
+              common::parse_iso8601_utc_epoch_seconds(reminder.remind_at);
+          if (!remind_at.has_value()) {
+            return common::Result<common::Unit>::failure(
+                internal_error("stored Anniversary Reminder time is invalid"));
+          }
+          if (*remind_at > *now_epoch) continue;
+          auto cutoff = anniversary_occurrence_cutoff_utc(
+              reminder, command.timezone, local_time_resolver_);
+          if (!cutoff.ok()) {
+            return common::Result<common::Unit>::failure(cutoff.error());
+          }
+          const auto cutoff_epoch =
+              common::parse_iso8601_utc_epoch_seconds(cutoff.value());
+          if (!cutoff_epoch.has_value()) {
+            return common::Result<common::Unit>::failure(
+                internal_error("Anniversary occurrence cutoff is invalid"));
+          }
+          if (*now_epoch >= *cutoff_epoch) {
+            anniversary_reminders_to_expire.push_back(reminder);
+            continue;
+          }
+          if (!reminder.occurrence_key.has_value() ||
+              !reminder.occurrence_date.has_value()) {
+            return common::Result<common::Unit>::failure(
+                internal_error("Anniversary Reminder occurrence identity is missing"));
+          }
+          const auto key = *reminder.occurrence_date + "|" + reminder.target_id + "|" +
+                           *reminder.occurrence_key;
+          anniversary_memberships[key].push_back(reminder.id);
+        }
+
+        for (const auto& expired : anniversary_reminders_to_expire) {
+          auto* reminder = find_reminder(state, expired.id);
+          if (reminder == nullptr || !is_open(*reminder)) {
+            return common::Result<common::Unit>::failure(
+                internal_error("Anniversary Reminder disappeared before expiration"));
+          }
+          reminder->status = std::string(domain::kReminderStatusExpired);
+          reminder->is_enabled = false;
+          reminder->scheduled_at = std::nullopt;
+          reminder->expiration_reason = std::string(
+              domain::kReminderExpirationReasonAnniversaryOccurrenceElapsed);
+          reminder->expired_at = now;
+          reminder->updated_at = now;
+          auto successor = ensure_anniversary_successor(
+              state, expired, command.timezone, now, local_time_resolver_);
+          if (!successor.ok()) {
+            return common::Result<common::Unit>::failure(successor.error());
+          }
+        }
+
+        for (auto& [key, member_ids] : anniversary_memberships) {
+          std::sort(member_ids.begin(), member_ids.end());
+          const auto* first = find_reminder(state, member_ids.front());
+          if (first == nullptr || !first->occurrence_key.has_value() ||
+              !first->occurrence_date.has_value()) {
+            return common::Result<common::Unit>::failure(
+                internal_error("Anniversary catch-up group identity is missing"));
+          }
+          auto delivery = domain::anniversary_catch_up_delivery_id(
+              first->target_id, *first->occurrence_key, member_ids);
+          if (!delivery.ok()) {
+            return common::Result<common::Unit>::failure(delivery.error());
+          }
+          domain::ReminderRecoveryBatch::AnniversaryCatchUpGroup group;
+          group.anniversary_id = first->target_id;
+          group.occurrence_key = *first->occurrence_key;
+          group.occurrence_date = *first->occurrence_date;
+          group.covered_reminder_ids = member_ids;
+          group.delivery_id = delivery.value();
+          for (const auto& id : member_ids) {
+            auto* reminder = find_reminder(state, id);
+            if (reminder == nullptr ||
+                (reminder->recovery_batch_id.has_value() &&
+                 reminder->recovery_batch_id != batch.id)) {
+              return common::Result<common::Unit>::failure(
+                  recovery_conflict(reminder == nullptr
+                                        ? batch.id
+                                        : *reminder->recovery_batch_id));
+            }
+            reminder->recovery_batch_id = batch.id;
+            reminder->updated_at = now;
+          }
+          batch.anniversary_catch_up_groups.push_back(std::move(group));
+        }
 
         for (const auto& event : state.events) {
           if (event.deleted_at.has_value() || event.status != domain::kEventStatusActive ||
@@ -423,6 +544,7 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
 
         for (const auto& reminder : state.reminders) {
           if (!is_open(reminder)) continue;
+          if (reminder.target_type == domain::kReminderTargetAnniversary) continue;
           const auto remind_at = common::parse_iso8601_utc_epoch_seconds(reminder.remind_at);
           if (!remind_at.has_value()) {
             return common::Result<common::Unit>::failure(
@@ -472,12 +594,31 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
           reminder->updated_at = now;
           candidates.push_back(*reminder);
         }
-        std::sort(candidates.begin(), candidates.end(), [](const auto& left, const auto& right) {
-          if (left.remind_at != right.remind_at) return left.remind_at > right.remind_at;
-          return left.id > right.id;
-        });
-        const auto detail_count = std::min(kMaximumDetailCount, candidates.size());
-        std::vector<domain::Reminder> details(candidates.begin(), candidates.begin() + detail_count);
+        const auto ring_detail_start_epoch = *now_epoch - kRingDetailGraceSeconds;
+        std::vector<domain::Reminder> detail_eligible;
+        std::vector<domain::Reminder> forced_summaries;
+        for (const auto& reminder : candidates) {
+          const auto remind_at = common::parse_iso8601_utc_epoch_seconds(reminder.remind_at);
+          if (!remind_at.has_value()) {
+            return common::Result<common::Unit>::failure(
+                internal_error("recovery candidate time is invalid"));
+          }
+          if (reminder.methods == std::vector<std::string>{"ring"} &&
+              *remind_at < ring_detail_start_epoch) {
+            forced_summaries.push_back(reminder);
+          } else {
+            detail_eligible.push_back(reminder);
+          }
+        }
+        std::sort(
+            detail_eligible.begin(), detail_eligible.end(),
+            [](const auto& left, const auto& right) {
+              if (left.remind_at != right.remind_at) return left.remind_at > right.remind_at;
+              return left.id > right.id;
+            });
+        const auto detail_count = std::min(kMaximumDetailCount, detail_eligible.size());
+        std::vector<domain::Reminder> details(
+            detail_eligible.begin(), detail_eligible.begin() + detail_count);
         std::sort(details.begin(), details.end(), [](const auto& left, const auto& right) {
           if (left.remind_at != right.remind_at) return left.remind_at < right.remind_at;
           return left.id < right.id;
@@ -486,7 +627,9 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
           batch.detail_reminder_ids.push_back(reminder.id);
         }
 
-        std::vector<domain::Reminder> summaries(candidates.begin() + detail_count, candidates.end());
+        std::vector<domain::Reminder> summaries = std::move(forced_summaries);
+        summaries.insert(
+            summaries.end(), detail_eligible.begin() + detail_count, detail_eligible.end());
         std::sort(summaries.begin(), summaries.end(), [](const auto& left, const auto& right) {
           if (left.remind_at != right.remind_at) return left.remind_at < right.remind_at;
           return left.id < right.id;
@@ -509,7 +652,8 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
         auto resolved = resolve_prepared_attempts(
             state, batch, expired_reminder_ids, now);
         if (!resolved.ok()) return resolved;
-        if (batch.detail_reminder_ids.empty() && !needs_summary) {
+        if (batch.detail_reminder_ids.empty() && !needs_summary &&
+            batch.anniversary_catch_up_groups.empty()) {
           batch.status = std::string(domain::kRecoveryCompleted);
           batch.completed_at = now;
         }
@@ -518,6 +662,8 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
         if (!resolutions.ok()) return common::Result<common::Unit>::failure(resolutions.error());
         output = PlanReminderRecoveryResult{
             batch, std::move(details), std::move(resolutions.value()), false};
+        output->anniversary_catch_up_groups =
+            batch.anniversary_catch_up_groups;
         return common::Result<common::Unit>::success(common::Unit{});
       });
   if (!committed.ok()) {

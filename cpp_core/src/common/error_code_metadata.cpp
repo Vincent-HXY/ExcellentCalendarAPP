@@ -10,7 +10,7 @@ namespace {
 // Contract v2 snapshot of contracts/error_codes.yaml. Keeping an explicit
 // allow-list is intentional: a newly added cross-layer error code must not be
 // accepted by an older Core until its retryability semantics are understood.
-constexpr std::array<std::pair<std::string_view, bool>, 79> kErrorCodeMetadata{{
+constexpr std::array<std::pair<std::string_view, bool>, 90> kErrorCodeMetadata{{
     {"NATIVE_INTERNAL_ERROR", false},
     {"CONTRACT_VALIDATION_FAILED", false},
     {"CONTRACT_VERSION_UNSUPPORTED", false},
@@ -87,9 +87,20 @@ constexpr std::array<std::pair<std::string_view, bool>, 79> kErrorCodeMetadata{{
     {"NOTIFICATION_PERMISSION_DENIED", true},
     {"EXACT_ALARM_PERMISSION_DENIED", true},
     {"UNSUPPORTED_REMINDER_METHOD", false},
+    {"REMINDER_SNOOZE_NOT_ALLOWED", false},
     {"REMINDER_ALREADY_CONSUMED", false},
     {"REMINDER_NOT_DUE", true},
     {"REMINDER_NOT_DELIVERABLE", false},
+    {"RING_CAPABILITY_UNAVAILABLE", true},
+    {"RING_SETTINGS_CONFLICT", true},
+    {"RING_SETTINGS_STORAGE_FAILED", true},
+    {"RING_SETTINGS_CORRUPTED", false},
+    {"RING_SESSION_NOT_FOUND", false},
+    {"RING_SESSION_CONFLICT", true},
+    {"RING_ITEM_NOT_FOUND", false},
+    {"RINGTONE_PICKER_FAILED", true},
+    {"RING_CONTROL_NOTIFICATION_FAILED", true},
+    {"RING_OUTPUT_UNAVAILABLE", false},
 }};
 
 }  // namespace

@@ -11,5 +11,7 @@ std::string delete_anniversary_v2(std::string_view request_json);
 std::string get_anniversary_detail_v2(std::string_view request_json);
 std::string list_anniversaries_v2(std::string_view request_json);
 std::string preview_anniversary_countdown_v2(std::string_view request_json);
+std::string set_anniversary_reminders_enabled_v2(std::string_view request_json);
+std::string list_anniversary_occurrences_v2(std::string_view request_json);
 
 }  // namespace excellent_calendar::boundary::api

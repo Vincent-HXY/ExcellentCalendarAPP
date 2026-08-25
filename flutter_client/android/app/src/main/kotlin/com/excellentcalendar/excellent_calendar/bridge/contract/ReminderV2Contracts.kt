@@ -4,6 +4,7 @@ package com.excellentcalendar.excellent_calendar.bridge.contract
 internal object ReminderV2Contracts {
     private val responseFields = setOf(
         "reminder_id", "target_type", "target_id", "recurrence_revision", "occurrence_key", "occurrence_start_at",
+        "template_key", "occurrence_date", "advance_days", "local_time", "timezone_mode", "fulfillment_delivery_id",
         "remind_at", "advance_minutes", "methods", "message", "is_enabled", "status", "scheduled_at",
         "last_triggered_at", "failure_reason", "last_cancellation_reason", "last_cancelled_at", "expiration_reason",
         "expired_at", "reactivated_at", "reactivation_count", "created_at", "updated_at", "deleted_at",
@@ -108,7 +109,14 @@ internal object ReminderV2Contracts {
             setOf("pending", "scheduled", "sent", "failed", "cancelled", "expired"),
         )
         ContractValidators.requireString(map, "reminder_id", "ReminderResponse", nonEmpty = true)
+        ContractValidators.requireEnum(map, "target_type", "ReminderResponse", setOf("event", "habit", "anniversary"))
+        ContractValidators.requireString(map, "target_id", "ReminderResponse", nonEmpty = true)
         ContractValidators.requireString(map, "remind_at", "ReminderResponse", nonEmpty = true)
+        val methods = map["methods"] as? List<*>
+        if (methods == null || methods.size != 1 || methods.single() !in setOf("ring", "popup")) {
+            throw NativeContractViolation("ReminderResponse.methods must contain exactly one supported method.", "ReminderResponse.methods")
+        }
+        validateTargetShape(map, methods.single() as String)
     }
 
     fun listResponse(data: Any?) {
@@ -130,6 +138,46 @@ internal object ReminderV2Contracts {
         ContractValidators.requireEnum(map, "source", parent, ContractEnums.ReminderSource)
         validateMethods(map, parent)
         if (requireTime) validateExactlyOneReminderTime(map, parent)
+    }
+
+    private fun validateTargetShape(map: Map<String, Any?>, method: String) {
+        val parent = "ReminderResponse"
+        val targetType = map["target_type"] as String
+        val status = map["status"] as String
+        val anniversaryFields = listOf("template_key", "occurrence_date", "advance_days", "local_time", "timezone_mode")
+        val anniversary = targetType == "anniversary"
+        if (anniversary) {
+            if (map["recurrence_revision"] != null || map["occurrence_start_at"] != null ||
+                map["occurrence_key"] !is String || anniversaryFields.any { map[it] == null } ||
+                map["timezone_mode"] != "follow_device" || map["advance_minutes"] != null || method != "popup"
+            ) {
+                throw NativeContractViolation("$parent Anniversary target fields are inconsistent.", "$parent.target_type")
+            }
+            val advanceDays = V2ContractPrimitives.integerValue(map["advance_days"])
+            if (advanceDays == null || advanceDays !in 0L..365L ||
+                (map["local_time"] as? String)?.matches(Regex("^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")) != true
+            ) {
+                throw NativeContractViolation("$parent Anniversary schedule projection is invalid.", "$parent.advance_days")
+            }
+            if ((status == "sent") != (map["fulfillment_delivery_id"] is String)) {
+                throw NativeContractViolation("$parent.fulfillment_delivery_id must match sent status.", "$parent.fulfillment_delivery_id")
+            }
+        } else {
+            if (anniversaryFields.any { map[it] != null } || map["fulfillment_delivery_id"] != null) {
+                throw NativeContractViolation("$parent non-Anniversary target contains Anniversary fields.", "$parent.target_type")
+            }
+            if (targetType == "habit" &&
+                (map["recurrence_revision"] != null || map["occurrence_key"] != null || map["occurrence_start_at"] != null)
+            ) {
+                throw NativeContractViolation("$parent Habit target occurrence fields must be null.", "$parent.target_type")
+            }
+            if (method == "ring" &&
+                (targetType != "event" || map["recurrence_revision"] != null || map["occurrence_key"] != null ||
+                    map["occurrence_start_at"] != null)
+            ) {
+                throw NativeContractViolation("$parent ring target fields are invalid.", "$parent.methods")
+            }
+        }
     }
 
     private fun validateMethods(map: Map<String, Any?>, parent: String) {

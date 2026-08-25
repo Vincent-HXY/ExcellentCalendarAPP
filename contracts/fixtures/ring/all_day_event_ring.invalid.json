@@ -1,0 +1,27 @@
+{
+  "title": "全天事件不能响铃",
+  "content": null,
+  "start_at": null,
+  "end_at": null,
+  "start_date": "2026-08-22",
+  "end_date": "2026-08-23",
+  "is_all_day": true,
+  "category_id": null,
+  "importance": null,
+  "location": null,
+  "timezone": "Asia/Shanghai",
+  "source": "manual",
+  "recurrence": null,
+  "reminders": [
+    {
+      "target_type": "event",
+      "target_id": null,
+      "remind_at": "2026-08-22T00:00:00Z",
+      "advance_minutes": null,
+      "methods": ["ring"],
+      "message": null,
+      "is_enabled": true,
+      "source": "manual"
+    }
+  ]
+}

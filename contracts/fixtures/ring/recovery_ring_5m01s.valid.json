@@ -1,0 +1,22 @@
+{
+  "batch": {
+    "recovery_batch_id": "44444444-4444-4444-8444-444444444443",
+    "recovery_request_id": "55555555-5555-4555-8555-555555555553",
+    "trigger_source": "alarm_reconcile",
+    "started_at": "2026-08-22T10:00:00Z",
+    "window_start_at": "2026-08-19T10:00:00Z",
+    "detail_reminder_ids": [],
+    "summary_reminder_ids": ["33333333-3333-4333-8333-333333333343"],
+    "older_skipped_occurrence_count": 0,
+    "older_skipped_reminder_count": 0,
+    "window_overflow_count": 1,
+    "summary_delivery_id": "66666666-6666-4666-8666-666666666663",
+    "anniversary_catch_up_groups": [],
+    "status": "in_progress",
+    "completed_at": null
+  },
+  "detail_reminders": [],
+  "anniversary_catch_up_groups": [],
+  "prepared_attempt_resolutions": [],
+  "idempotent_replay": false
+}

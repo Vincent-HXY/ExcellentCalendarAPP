@@ -8,6 +8,8 @@ import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCore
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCategoryBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeContractProfile
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
+import com.excellentcalendar.excellent_calendar.android.ring.RingRuntime
+import com.excellentcalendar.excellent_calendar.bridge.ring.RingMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.PendingReminderScheduleService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderNativeOrchestrator
 import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderScheduleReconciler
@@ -58,8 +60,18 @@ class NativeMethodChannelHandler(
     private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
     private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
     private val reminderScheduleCoordinator: ReminderScheduleReconciler? = null,
+    private val ringRuntime: RingRuntime? = null,
+    private val ringOrchestrator: RingMethodOrchestrator? = null,
     private val contractProfile: NativeContractProfile = NativeContractProfile.V1,
     private val reconcileRetryEnqueuer: (() -> Unit)? = null,
+    private val anniversaryCapabilityProvider: AnniversaryCapabilityProvider = AnniversaryCapabilityProvider {
+        AnniversaryCapabilitySnapshot(
+            notificationPermissionStatus = "unknown",
+            exactAlarmPermissionStatus = "unknown",
+            canPostNotifications = false,
+            canScheduleExactAlarms = false,
+        )
+    },
     private val executor: Executor = Executors.newSingleThreadExecutor(),
     private val resultDispatcher: ResultDispatcher = MainThreadResultDispatcher(),
     private val logger: NativeBridgeLogger = AndroidNativeBridgeLogger(),
@@ -68,6 +80,12 @@ class NativeMethodChannelHandler(
     private val nativeCallExecutor = NativeCallExecutor(executor, contractProfile, logger)
     private val mutationScheduleHook = MutationScheduleHook(
         reminderScheduleCoordinator,
+        reconcileRetryEnqueuer,
+        logger,
+    )
+    private val anniversaryOrchestrator = AnniversaryMethodOrchestrator(
+        reminderScheduleCoordinator,
+        anniversaryCapabilityProvider,
         reconcileRetryEnqueuer,
         logger,
     )
@@ -94,6 +112,7 @@ class NativeMethodChannelHandler(
                 nativeAnniversaryBridge,
                 contractProfile,
                 nativeCallExecutor,
+                anniversaryOrchestrator,
             ),
             ReminderMethodHandler(
                 nativeCalendarCoreBridge,
@@ -105,6 +124,7 @@ class NativeMethodChannelHandler(
                 reminderScheduleCoordinator,
             ),
             NotificationMethodHandler(notificationOrchestrator, nativeCallExecutor),
+            RingMethodHandler(contractProfile, nativeCallExecutor, ringRuntime, ringOrchestrator),
         ),
     )
 
@@ -118,6 +138,7 @@ class NativeMethodChannelHandler(
             executor.shutdownNow()
         }
         notificationOrchestrator?.close()
+        ringOrchestrator?.close()
     }
 
     private fun createMethodRegistry(handlers: List<ChannelMethodHandler>): Map<String, ChannelMethodHandler> {
@@ -158,6 +179,8 @@ class NativeMethodChannelHandler(
         const val MethodAnniversaryDetail = "anniversary.detail"
         const val MethodAnniversaryList = "anniversary.list"
         const val MethodAnniversaryPreviewCountdown = "anniversary.preview_countdown"
+        const val MethodAnniversarySetRemindersEnabled = "anniversary.set_reminders_enabled"
+        const val MethodAnniversaryListOccurrences = "anniversary.list_occurrences"
         const val MethodCategoryList = "category.list"
         const val MethodCategoryCreate = "category.create"
         const val MethodReminderCreate = "reminder.create"
@@ -171,6 +194,13 @@ class NativeMethodChannelHandler(
         const val MethodNotificationRequestPermission = "notification.request_permission"
         const val MethodNotificationOpenSettings = "notification.open_settings"
         const val MethodNotificationGetInitialTapPayload = "notification.get_initial_tap_payload"
+        const val MethodRingGetState = "ring.get_state"
+        const val MethodRingPickRingtone = "ring.pick_ringtone"
+        const val MethodRingUpdateSettings = "ring.update_settings"
+        const val MethodRingTest = "ring.test"
+        const val MethodRingStopActive = "ring.stop_active"
+        const val MethodRingSnoozeActive = "ring.snooze_active"
+        const val MethodRingCompleteItem = "ring.complete_item"
         const val LogTag = "ExcellentCalendarNative"
     }
 }

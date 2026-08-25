@@ -1,0 +1,29 @@
+{
+  "notification_id": "99999999-9999-4999-8999-999999999991",
+  "delivery_id": "5a5e9379-77c9-51f3-a0fb-8f09440b557a",
+  "delivery_attempt_id": "99999999-9999-4999-8999-999999999992",
+  "kind": "anniversary_catch_up",
+  "reminder_id": null,
+  "recovery_batch_id": "44444444-4444-4444-8444-444444444444",
+  "resolved_by_recovery_batch_id": null,
+  "target_type": "anniversary",
+  "target_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "occurrence_key": "60f0df06-830c-52d2-a659-e8848aa200cd",
+  "covered_reminder_ids": [
+    "3b9c75fd-9073-5338-954a-d00ca35c5bf2",
+    "59c487fb-2737-5c31-8c5c-6ba157dc77a6"
+  ],
+  "method": "popup",
+  "title": "明天是“项目纪念日”",
+  "body": "已合并 2 条提醒",
+  "planned_at": "2026-08-25T01:00:00Z",
+  "status": "prepared",
+  "failure_class": null,
+  "error_code": null,
+  "abandon_reason": null,
+  "prepared_at": "2026-08-31T02:00:00Z",
+  "finalized_at": null,
+  "sent_at": null,
+  "created_at": "2026-08-31T02:00:00Z",
+  "updated_at": "2026-08-31T02:00:00Z"
+}

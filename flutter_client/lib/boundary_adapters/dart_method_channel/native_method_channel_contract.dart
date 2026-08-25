@@ -4,6 +4,7 @@ class NativeMethodChannelNames {
   static const native = 'excellent_calendar/native';
   static const notificationOpened =
       'excellent_calendar/events/notification_opened';
+  static const ringState = 'excellent_calendar/events/ring_state';
 }
 
 class NativeEventMethods {
@@ -58,6 +59,8 @@ class NativeAnniversaryMethods {
   static const detail = 'anniversary.detail';
   static const list = 'anniversary.list';
   static const previewCountdown = 'anniversary.preview_countdown';
+  static const setRemindersEnabled = 'anniversary.set_reminders_enabled';
+  static const listOccurrences = 'anniversary.list_occurrences';
 }
 
 class NativeCategoryMethods {
@@ -75,4 +78,16 @@ class NativeNotificationMethods {
   static const requestPermission = 'notification.request_permission';
   static const openSettings = 'notification.open_settings';
   static const getInitialTapPayload = 'notification.get_initial_tap_payload';
+}
+
+class NativeRingMethods {
+  const NativeRingMethods._();
+
+  static const getState = 'ring.get_state';
+  static const pickRingtone = 'ring.pick_ringtone';
+  static const updateSettings = 'ring.update_settings';
+  static const test = 'ring.test';
+  static const stopActive = 'ring.stop_active';
+  static const snoozeActive = 'ring.snooze_active';
+  static const completeItem = 'ring.complete_item';
 }

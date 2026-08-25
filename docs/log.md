@@ -1,5 +1,41 @@
 # 开发日志
 
+## 2026-08-17 13:51 +08:00 认证与个人信息前后端 Review 计划编制
+
+- 使用 Skill：无（纯文档编制任务）。
+- 负责板块：`docs/reviews/active/`；未修改 contracts、plan 与实现代码。
+- 任务目标：基于两份 `docs/plan/active/` 计划、`docs/architecture/overview.md` 与 contracts 认证边界，编制前后端针对性 Review 计划，聚焦重点审查内容与 AI 编程高频错误模式。
+- 任务结果：新增 `docs/reviews/active/认证与个人信息-01-后端CloudBackend-Review计划.md`（15 个审查域：信封与错误码、Argon2id、Refresh Token 原子轮换、会话撤销矩阵、Challenge 生命周期、幂等、限流、隐私防枚举、Flyway 与并发约束、模块边界、JWT 过滤链、头像上传管线、测试真实性、跨端一致性等）与 `docs/reviews/active/认证与个人信息-02-前端本地-Review计划.md`（14 个审查域：Token 边界、分层、单飞刷新与 200 信封约定、页面状态机、错误映射、启动恢复、Keystore/MethodChannel、dio、表单与缓存、头像、Token Pair 续接、测试真实性、跨端一致性等）。
+- 验证状态：纯文档编制，未执行构建/测试（不适用）。
+- 开发时间：2026-08-17 13:51（Asia/Shanghai）。
+
+## 2026-08-15 20:47 +08:00 认证两份 plan 与协议同步（经用户授权）
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责板块：`docs/plan/active/认证与个人信息-01-后端CloudBackend.md`、`docs/plan/active/认证与个人信息-02-前端本地.md`；未修改 contracts 与实现代码。
+- 任务目标：按用户授权，将两份 plan 与已修订协议同步：端点计数 16→17；后端阶段 0/1 纳入 `auth.registration.email.update`；后端登录验收补 `AUTH_EMAIL_UNVERIFIED` 必带非空 `context.verification_challenge`；限流清单纳入新端点。
+- 任务结果：后端 plan 五处计数改为 17，§5 幂等与限流清单纳入 `auth.registration.email.update`，阶段 0 核对清单新增密码所有权证明、登录上下文不变量与 `AUTH_VERIFICATION_ATTEMPTS_EXCEEDED` 分支，阶段 1 端点列表与验收表新增该端点行并强化 `auth.login` 未验证分支的上下文要求，§7 对应表同步；前端 plan 计数改为 17，阶段 0 走查项同步新端点与上下文不变量，阶段 2 登录"邮箱未验证"分支明确依赖后端保证的上下文，新增"修改邮箱入口"协议调用说明（新邮箱 + 注册密码 + `Idempotency-Key`），§7 对应表同步。grep 复核两份 plan 已无残留"16 个端点"表述。
+- 验证状态：纯文档同步，未执行构建/测试。
+- 开发时间：2026-08-15 20:47（Asia/Shanghai）。
+
+## 2026-08-15 20:21 +08:00 认证协议两项阻断缺陷研判与修复
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责板块：`contracts/`（`backend_api.yaml`、`auth/update_registration_email_request`、`common/api_error`、`common/api_error_context`）与 `docs/domains/user_account.md`、`docs/domains/email_action_challenge.md`；未修改 Flutter、Kotlin、C++、后端实现代码。
+- 任务目标：针对外部评审提出的两项阻断缺陷（①注册前更正邮箱缺少所有权证明；②`AUTH_EMAIL_UNVERIFIED` 不保证客户端能继续验证），研判其是否真实存在，存在则修复并输出证据链。
+- 任务结果：两项缺陷均确认存在。①公开的 `auth.registration.email.update` 仅凭非秘密的 `account_id`（注册响应与登录错误上下文均携带）即可改变登录身份，结合密码重置可构成完整账号接管链 → 请求 schema 新增必填 `current_password`（注册时设置的密码作为所有权证明），端点错误码新增 `AUTH_CURRENT_PASSWORD_INVALID`；②`ApiError.context` 原为可选可空，Schema 允许返回不带上下文的 `AUTH_EMAIL_UNVERIFIED`，而验证/重发/更正邮箱全部强制 `challenge_id`，客户端会进入死路 → `api_error` 新增 `allOf` 条件（该错误码时 `context` 必填且非空），`api_error_context` 收紧为 `verification_challenge` 必填非空，并新增对应示例。领域文档与契约总则同步所有权证明与上下文不变量。Python 交叉校验（JSON 解析、17 端点引用闭合、错误码双域覆盖、两项修复的结构断言、新码不泄漏进 `native_error`）全部通过。
+- 验证状态：协议层结构校验全通过；未执行 Flutter/后端构建与测试（本任务只改协议层，尚无消费方代码）。遗留：两份 plan 仍写“16 个端点”，且后端 plan 阶段 1 登录验收未提及必须携带 `context.verification_challenge`、限流清单未包含新端点，需人工同步。
+- 开发时间：2026-08-15 20:21（Asia/Shanghai）。
+
+## 2026-08-15 19:54 +08:00 认证与个人信息模块 Contract 走查与协议补充
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责板块：`contracts/`（`backend_api.yaml`、`auth/` 与 `common/` schema、`error_codes.yaml`）及 `docs/domains/user_account.md`；未修改 Flutter、Kotlin、C++、后端实现代码。
+- 任务目标：对照 `docs/plan/active/` 中认证与个人信息前后端两份任务清单，逐端点、逐字段走查现有协议能否支撑完整开发；确认缺陷后对协议做最小完整性补充，并输出修改/新增原因的证据链。
+- 任务结果：判定协议主体可支撑开发（16 端点、信封、幂等、session_policy、隐私与头像约束均已声明），但存在三处真实缺陷并已修复：① 前端清单要求验证页提供“修改邮箱入口”，但 16 个端点中无任何能力可更正未激活账号邮箱（重新注册会被 `AUTH_USERNAME_ALREADY_EXISTS` 拦截，登录态 `auth.email_change.request` 又不可用）→ 新增 `auth.registration.email.update` 端点与 `update_registration_email_request.schema.json`；② 后端清单要求“错码/过期/已用/超次→对应错误码”，协议缺少超次专用码 → 新增 `AUTH_VERIFICATION_ATTEMPTS_EXCEEDED` 并挂入三个 verify/confirm 端点，同时为改邮箱端点新增 `AUTH_ACCOUNT_NOT_FOUND`、`AUTH_ACCOUNT_ALREADY_VERIFIED`；③ 登录未验证路径依赖 `api_error_context.verification_challenge` 但缺 `account_id`，导致该路径无法使用改邮箱能力 → 补充必填 `account_id`。另声明 HTTP 200 + `ApiResult` 统一约定与幂等键冲突规则（消除前后端对 401/429 的分歧），并移除 `user.avatar.delete` 中语义不成立的 `AVATAR_UPLOAD_FAILED`。
+- 验证状态：全部 `contracts/*.schema.json` 通过 Python JSON 解析；自研交叉校验脚本通过（17 个端点 request/envelope/data 引用闭合、全部端点错误码同时存在于 `error_codes.yaml` 与 `api_error` 枚举、4 个 `auth.refresh_token.*` MethodChannel schema 引用闭合、新码未泄漏进 `native_error` 枚举）。未执行 Flutter/后端构建与测试（本任务仅改协议层）。两份 plan 中“16 个端点”的表述需人工同步为 17 个。
+- 开发时间：2026-08-15 19:54（Asia/Shanghai）。
+
 ## 2026-08-14 20:23 +08:00 Anniversary C++ 开发过程归档
 
 - 使用 Skill：未使用专项 Skill；本任务为既有开发过程的纯 Markdown 总结。
@@ -224,3 +260,364 @@
 - 任务目标：将 `HXY-study` 上的现有提交及未提交文档变化归拢到 `HXY`，并说明从 `HXY` 建立 `HXY-backend`、`HXY-user` 两个独立工作树的安全流程。
 - 任务结果：提交当前文档变化，并以 fast-forward 方式同步本地 `HXY`；工作树与派生分支仅提供方案，未在本任务中创建。
 - 验证状态：已核对分支祖先关系、工作区状态与工作树列表；纯 Git/文档流程，未执行产品构建或运行测试。
+
+## 2026-08-15 20:12 +08:00 认证与个人信息前后端 Contract 完整性审查
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：`contracts/backend_api.yaml`、认证/用户/公共 JSON Schema、错误码、Refresh Token MethodChannel、相关认证领域文档，以及两份 `docs/plan/active/认证与个人信息-*` 前后端计划。
+- 任务目标：判断现有协议能否支撑两份计划的完整 Flutter/Kotlin ↔ CloudBackend 交互，逐字段排除局部不完整造成的误判，并在确认缺陷后给出证据链；不修改协议或实现。
+- 任务结果：确认主体认证、Token 轮换与安全存储、资料/偏好缓存、密码与已登录邮箱变更、头像等协议链路基本闭合；确认注册前邮箱更正缺少所有权证明、`AUTH_EMAIL_UNVERIFIED` 未强制携带可继续验证的 Challenge 上下文，并识别用户协议版本语义未冻结。另确认当前 Contract 已有 17 个端点，而两份计划仍按 16 个端点编排且前端仍以 HTTP 401 描述刷新验收，属于计划与协议漂移。
+- 验证状态：132 个 JSON 文件均可解析且 `$id` 唯一，本地 `$ref` 与 `backend_api.yaml` 引用均闭合；Backend endpoint 错误码与 `error_codes.yaml`、`ApiError.code` 枚举无缺失。环境缺少完整 JSON Schema metaschema/实例校验器，未执行构建或运行测试（只读协议审查，不适用）。
+- 开发时间：2026-08-15 20:12 +08:00（Asia/Shanghai）。
+
+## 2026-08-15 认证与个人信息前后端 Review 计划编制
+
+- 使用 Skill：无；本次为纯文档任务（依据计划、契约与完成报告编制审查要点），不修改代码。
+- 负责模块：`docs/reviews/active/认证与个人信息-01-后端CloudBackend-review计划.md`、`docs/reviews/active/认证与个人信息-02-前端本地-review计划.md`。
+- 任务目标：针对 `docs/plan/active/` 两份开发计划编制针对性 review 计划，重点标注 AI 编程高频错误点，并把前后端 AI 的完成报告声称列为必须逐项核验的对象。
+- 任务结果：两份 review 计划各含事实基线（独立重建，禁止沿用报告结论）、完成报告声称逐项核验、分主题审查要点（协议合规/session_policy/refresh 轮换/Challenge/幂等/隐私/密码/安全链/并发/媒体/模块边界；前端另含分层、Token 边界、单飞刷新、状态机、幂等 Key、缓存、Keystore、导航）、AI 高频错误速查表与四项判定输出要求。编制期间独立核对契约发现：当前 `backend_api.yaml` 实为 17 个端点且 `auth.registration.email.update` 明确存在，而两份完成报告均声称"契约只有 16 个端点、该端点不存在"；另确认契约 `envelope_only_errors: 200` 与"无 Retry-After 语义"约定，与后端报告所述"429+Retry-After/409"冲突，均列为最高优先级核验项。
+- 验证状态：已逐条核对 `backend_api.yaml` 17 端点清单、`http_conventions`、`error_codes.yaml` 26 个错误码、`method_channels.yaml` 四方法声明与 `contracts/auth/` schema 存在性；纯文档编制，未执行构建或运行测试。
+- 开发时间：2026-08-15（Asia/Shanghai）。
+
+## 2026-08-22 14:23 +08:00 响铃提醒跨层实施计划拆分
+
+- 使用 Skill：`cross-layer-feature`、`calendar-data-contracts`、`frontend-flutter-feature`、`android-kotlin-native-feature`、`cpp-core-feature`。
+- 负责模块：`contracts/**`、`cpp_core/**`、`flutter_client/android/**`、`flutter_client/lib/**` 的响铃提醒调用链；本次仅做只读架构盘点与任务编排。
+- 任务目标：依据现有 Dispatcher、两阶段投递和 Notification attempt 模型，将响铃提醒目标拆分为 Contracts、C++、Kotlin、Flutter 四个可独立开发并最终集成的执行计划。
+- 任务结果：完成四层现状与依赖核对，冻结建议的协议面、层级职责、并行边界、合并顺序和端到端验收矩阵；识别普通 Reminder 多渠道语义、Recovery 溢出计数不变量及 Android 前台服务类型三个必须先处理的架构闸门。未修改产品代码、Contract 或既有计划文件。
+- 验证状态：已定向核对权威领域文档、Schema、Dart 创建链路、Kotlin 调度/投递链路、C++ 校验/恢复链路和 Android 平台约束；本次为计划任务，未执行构建或运行测试，实施后的分层验证要求已纳入计划。
+- 开发时间：2026-08-22 14:23 +08:00（Asia/Shanghai）。
+
+## 2026-08-22 15:31 +08:00 响铃功能 Contract R1 冻结
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：`contracts/**` 与 `docs/domains/reminder.md`、`notification.md`、`reminder_recovery_batch.md`、`enums.md`；Flutter、Kotlin、JNI、C++ 实现保持只读。
+- 任务目标：严格落实 `docs/plan/active/响铃功能-03-contracts设计.md`，冻结普通 ring Reminder、Notification sent 语义、5 分钟 Recovery、公开 `ring.*`、内部 `reminder.snooze`、隐私安全状态 DTO、错误码、身份、兼容与 fixture。
+- 任务结果：普通 Reminder 成功态收口为单一 popup/ring、重复 Reminder 保持 popup，新增七个 blocked `ring.*` MethodChannel、`ring.state_changed` EventChannel、内部 snooze Schema/UUIDv5、Ring settings/capability/session/state DTO 与稳定错误；Recovery 固定 4:59/5:00/5:01 边界，并为避免计划外 JSON v2 migration 保留原 Batch 记录形状，将 `window_overflow_count` 冻结为全部窗口内摘要成员数。新增 19 个 Golden/正反例；能力保持 `planned/blocked`，等待架构批准及 04–06 层实现。
+- 验证状态：168 个 Contract JSON 可解析，148 个 Draft 2020-12 Schema 元校验通过，7 份 YAML 可解析，全部本地 `$ref`、MethodChannel/JNI Schema 引用、错误码、枚举、UUIDv5 向量及 19 个 fixture 断言通过；Dart Reminder/Notification 合同回归 7 项通过。Android 既有回归未验证：首次被本机 Gradle 8.14 全局缓存损坏阻断，隔离缓存两次重跑又被 plugins.gradle.org TLS 握手中断，均未进入项目编译；未修改或清理用户全局缓存。未执行 C++/APK/真机验证（本轮不修改实现层且 ring 发布状态仍 blocked）。
+- 开发时间：2026-08-22 15:31 +08:00（Asia/Shanghai）。
+
+## 2026-08-22 18:01 +08:00 响铃功能 Kotlin/Android 原生实现
+
+- 使用 Skill：`android-kotlin-native-feature`。
+- 负责模块：`flutter_client/android/**` 的 ring 投递分流、持久化会话、前台服务、声音/振动、通知/锁屏交互、能力检测、`ring.*` MethodChannel/EventChannel、Native workflow 适配及测试。
+- 任务目标：依据 `docs/plan/active/响铃功能-05-Kotlin开发.md` 实现 Android 响铃能力；对尚未可用的 C++ snooze/complete 上游仅在 Debug 构建使用确定性假结果，不让 Kotlin 开发等待下层。
+- 任务结果：完成 popup/ring 分流、prepare→可见控制通知→输出→finalize 顺序、单一持久化 RingSession（含并发 revision、去重、进程恢复和 5 分钟硬上限）、API 31+ exact-alarm FGS 交接、静音独立控制通道、单/多条操作、隐私安全全屏页、铃声选择/测试、能力与设置状态、全部 ring 方法/事件以及 Debug-only Native fake；Release 在 JNI 缺失时保持失败，不伪造底层成功。
+- 验证状态：`:app:compileDebugKotlin`、`:app:testDebugUnitTest`（112 项，0 失败、1 跳过；其中 Ring 新增 5 项全通过）和 `:app:assembleDebug` 通过；Lint 的 ring 相关错误为 0，但全项目 `:app:lintDebug` 仍被既有 API 24 `java.time` 等 29 个错误阻断。Debug APK 已在 Android 13/API 33 国产 ROM 真机安装并启动，无启动崩溃；设备通知权限处于 denied，未擅自授权，因此真实响铃输出未执行。`connectedDebugAndroidTest` 因设备 instrumentation 退出后 UTP 客户端无结果挂起而中止；JNI smoke 及 API 24/31/34/35/36 矩阵未验证。按计划完成标准，本轮不得宣称响铃功能整体完成。
+- 开发时间：2026-08-22 18:01 +08:00（Asia/Shanghai）。
+
+## 2026-08-22 19:12 +08:00 响铃功能跨层审查、真实 Native 收口与集成验证
+
+- 使用 Skill：`review-worktree-architecture`、`cross-layer-feature`、`debug`。
+- 负责模块：响铃 Contracts、Flutter、Kotlin/Android、JNI、C++ Core 的跨层一致性审查；修正范围为 `flutter_client/android/**` 与 C++ Category 测试生命周期缺陷，并保护工作区既有认证、后端及其他未提交修改。
+- 任务目标：逐项核验四层完成报告是否由真实实现支撑，移除假数据路径，补齐 Flutter → Kotlin → JNI → C++ 的真实调用链，并按原四层计划重跑构建、测试和设备 smoke。
+- 任务结果：确认 Contracts、C++ 与 Flutter 主体实现符合计划；发现 Kotlin 声明了 `nativeSnoozeReminderV2` 但 APK JNI adapter 未导出，且 Debug 在 Native 不可用时伪造 snooze UUID 与 Event 完成成功。现已补齐 JNI 导出、删除全部 Debug fake 并增加失败回归测试；将前台服务的 Native/音频准备移至单线程执行器，避免阻塞主线程；启用官方 Android core library desugaring 并修正 API 31 能力检查，关闭原有 29 个 API 24 lint 错误；仅忽略 Flutter 在 Windows 自动生成且不入库的 `local.properties` 驱动器转义提示。最终 C++ 复跑另发现 Category 测试 helper 从临时 JSON 返回内部引用导致悬空引用，已改为按值返回并消除约 10% 的随机段错误。
+- 验证状态：Contract 168 个 JSON 解析及 87 个本地 `$ref` 目标闭合；C++ Category 复现为修复前 20 次失败 2 次、修复后连续 30 次零失败，随后 `excellent_calendar_check` 6/6 通过；Flutter `flutter test` 225 项通过、`flutter analyze` 0 问题、`flutter build apk --debug` 通过；Kotlin JVM 114 项通过（0 失败、1 跳过，Ring 7 项通过）、`:app:lintDebug`、`:app:assembleDebug` 通过；APK 的 arm64 Native Library 已确认导出 `nativeSnoozeReminderV2`；Android 13/API 33 realme RMX3687 真机覆盖安装、冷启动成功且进程存活。API 24/31/34/35/36 设备矩阵、真实响铃声音/振动/锁屏/进程恢复和 ring 动作到 C++ 的设备级调用仍未验证，因此 Contract 的 `planned/blocked` 发布闸门保持不变，未宣称整体发布完成。
+- 开发时间：2026-08-22 19:12 +08:00（Asia/Shanghai）。
+
+## 2026-08-22 20:02 +08:00 Flutter 真机启动与 Android 时区链路修复
+
+- 使用 Skill：`cross-layer-feature`、`debug`。
+- 负责模块：本机 Gradle 8.14 缓存、`flutter_client/android/app/src/main/cpp/CMakeLists.txt`、vendored `date` Android 时区加载边界；其余响铃 Contracts、Flutter、Kotlin 与 C++ 业务实现仅做回归验证。
+- 任务目标：解决无额外环境变量执行 `flutter run -d ZXNZDEW4ZPN7499L` 时的 Gradle transform metadata 损坏，并确保应用启动后的 Flutter → Kotlin → JNI → C++ 提醒/响铃链路真实可用。
+- 任务结果：停止 Gradle daemon 后，将 42 个缺少 `metadata.bin` 的 transform 目录移动到可恢复备份 `C:\Users\vincent\.gradle\caches\8.14\transforms.corrupt-20260822-flutter-run-1918`，从已验证的隔离缓存恢复 41 个同哈希目录并非破坏性合并完整 module/transform 缓存，未删除用户缓存。随后真机暴露独立的 `TIMEZONE_DATABASE_UNAVAILABLE`：原 Android CMake 通过 `-UANDROID/-U__ANDROID__` 让 date v3.0.4 走源码 TZDB，却同时破坏平台头文件选择；改为在系统头解析后仅关闭 date 自身的 Android 二进制分支，并在源码 TZDB 行读取处归一化 Windows CRLF，消除空行 `\r` 触发的 `ios_base::clear`。未修改 Contract、提醒语义或存储格式。
+- 验证状态：全局 Gradle active transform 2841 个且缺失 metadata 为 0；最终原样 `flutter run -d ZXNZDEW4ZPN7499L` 成功构建、安装、连接 VM Service，应用保持运行，启动日志中 `ring.get_state`、四次 `event.search`、`reminder.reconcile_schedule` 均 `ok=true`，ReminderQueue Worker 为 `SUCCESS`；真机独立 JNI persistence/reinitialize smoke 通过；`flutter build apk --debug`、`flutter analyze`、Flutter 225 项测试、Android `testDebugUnitTest`、C++ `excellent_calendar_check` 6/6、`git diff --check` 均通过。未擅自授予设备通知权限，因此真实声音、振动、锁屏全屏和 ring 操作链仍按原发布闸门标记为未验证。
+- 开发时间：2026-08-22 20:02 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 14:49 +08:00 “123456”日程响铃 ADB 只读核验
+
+- 使用 Skill：`debug`。
+- 负责模块：Android 真机上的 Event、Reminder 持久化状态与 AlarmManager Dispatcher 调度状态，只读诊断，未修改设备数据或业务代码。
+- 任务目标：通过 ADB 检查标题为“123456”的日程是否成功创建响铃提醒。
+- 任务结果：确认 Event `d29c46a3-f766-4e42-b9fd-246bf2db23a0` 存在且为 active；关联 Reminder `6102788a-688c-407f-92c0-42f747aa3cb2` 使用 `ring`，本地计划时间为 2026-08-23 14:50，状态为 `scheduled` 且无失败原因；Android AlarmManager 中存在同一时刻的精确 `REMINDER_DISPATCH_ALARM`，精确闹钟权限为 allow。由此确认响铃提醒已成功创建并进入系统调度。
+- 验证状态：已在 RMX5100 / Android 16 / `com.excellentcalendar.excellent_calendar` debug 包上完成 ADB 真机核验；复查时设备时间为 14:48:52，尚未到触发时刻，因此本次未验证到点后的实际声音、振动、控制通知及 Native 投递终态。
+- 开发时间：2026-08-23 14:49 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 14:54 +08:00 “123456”日程到点响铃行为 ADB 复查
+
+- 使用 Skill：`debug`。
+- 负责模块：Android Reminder 到点投递、Ring 前台控制通知、声音、振动与会话状态，只读真机诊断。
+- 任务目标：确认“123456”在 14:50 到点后是否出现预期响铃行为。
+- 任务结果：Dispatcher Alarm 与 `START_RING_SERVICE` 均实际唤醒；Reminder 在 14:50:05 转为 `sent`，对应 `ring` Notification attempt 完成 prepare/finalize 且无错误码；Android MediaPlayer 于 14:50:05.702 使用 `USAGE_ALARM` 启动，振动于 14:50:05.711 启动并持续约 9 秒，控制通知也曾发布。发现厂商系统在 14:50:06.104 记录 `AudioHardening background playback would be muted`，MediaPlayer 随即被静音，因此声音只启动约 0.4 秒，未达到持续响铃预期。复查时 Ring 持久化会话为 null、服务已结束，未发现业务投递失败或崩溃。
+- 验证状态：RMX5100 / Android 16 真机 ADB 已确认调度、Native 投递终态、通知、音频启动和振动启动；声音持续性未通过，领先原因是 realme/OPPO 厂商后台音频限制，尚未通过改变前台/锁屏状态等区分实验确认应用侧可规避方案。本轮未修改业务代码或设备设置。
+- 开发时间：2026-08-23 14:54 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 15:00 +08:00 Anniversary occurrence 查询与日历聚合方案解释
+
+- 使用 Skill：`self-learning`。
+- 负责模块：Anniversary、Event occurrence 与 Calendar Query Engine 的查询职责和架构边界，只读分析。
+- 任务目标：解释路线图中“提供日历聚合所需的 occurrence 查询”的必要性，并比较不提供独立 occurrence 查询时的替代方案。
+- 任务结果：确认当前 Anniversary list 是以“本地今天”为基准的下一次 occurrence/countdown 投影，不能完整回答任意月/周/日半开区间内的所有实例；Calendar 聚合需要按区间动态展开 Anniversary occurrence，并与普通 Event、重复 Event occurrence、Habit 等统一排序。比较了领域 occurrence 查询、聚合服务内嵌展开、前端展开、有限窗口物化索引、影子 Event 等方案；推荐保留 C++ 领域内唯一日期规则，并由 Calendar Query Engine 调用有界 occurrence 查询或等价的内部查询接口。
+- 验证状态：已核对 `docs/status/roadmap.md`、`docs/status/current.md`、Anniversary/Event occurrence 领域文档与 ADR、现有 `event.list_occurrences` Contract/C++ 实现及 Calendar Query Engine 职责；未修改业务代码，未运行构建或测试。
+- 开发时间：2026-08-23 15:00 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 15:05 +08:00 Recurrence 与 occurrence 心智模型校准
+
+- 使用 Skill：`self-learning`。
+- 负责模块：重复日程动态展开、日历查询投影与 occurrence 稀疏状态持久化的概念边界，只读教学说明。
+- 任务目标：确认“通过 occurrence 引擎计算每次重复日期并记录到日历”的理解，并纠正可能导致无限预生成的误区。
+- 任务结果：确认主线理解正确；补充区分 Recurrence 规则、Occurrence 实例投影和 EventOccurrenceState 稀疏状态，强调普通 occurrence 默认按查询窗口动态展开、不逐条持久化，只有完成、跳过、取消、重新打开等用户操作才保存对应 occurrence 的状态。
+- 验证状态：基于上一轮已核对的 Event occurrence Contract、C++ 查询实现、领域文档与 ADR 完成解释；未修改业务代码，未运行构建或测试。
+- 开发时间：2026-08-23 15:05 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 15:10 +08:00 多领域 occurrence 日历统一投影解释
+
+- 使用 Skill：`self-learning`。
+- 负责模块：Event、Anniversary、未来 Habit 到 Calendar Query Engine 的统一读取投影边界，只读架构教学。
+- 任务目标：确认多种领域对象生成 occurrence 后统一汇入日历视图是否合理。
+- 任务结果：确认该方向适合作为 Calendar read model；强调只统一日历所需的公共投影，不统一各领域实体、Recurrence Contract、身份、状态和操作语义。Event、Anniversary、Habit 应由各自领域查询生成 occurrence，再由 Calendar Query Engine 归一化、合并和排序，并通过 source type/id 路由详情和操作。
+- 验证状态：依据已核对的 Recurrence/Anniversary ADR、Calendar Query Engine 职责和当前 occurrence Contract 完成解释；未修改业务代码，未运行构建或测试。
+- 开发时间：2026-08-23 15:10 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 C++ Core 初学者项目走读与能力训练路线
+
+- 使用 Skill：`self-learning`。
+- 负责模块：`cpp_core` 架构、Event 创建调用链、Repository、JSON Storage、错误模型、构建与测试入口；只读教学分析。
+- 任务目标：为刚接触项目的 C++ 初学者建立分层地图、推荐走读顺序，以及面向实际开发的分阶段能力训练方案。
+- 任务结果：选定 Event 创建为第一条代表性主链，梳理了 Boundary API → Workflow → Application Service → Repository → JSON Storage 的控制流，以及 Native Runtime 的对象组装、`Result<T>` 错误传播、`shared_ptr` 生命周期、RAII 加锁和 CMake 测试目标；给出从可复述到可修改、可调试、可设计的渐进练习。
+- 验证状态：已核对架构概览、文档索引、Event 领域定义与 Accepted ADR、C++ 实际实现、CMake 和测试入口；本任务未修改业务代码，未执行构建或测试。当前工作区存在用户已有的大量未提交修改，教学结论已区分稳定架构与在开发实现。
+- 开发时间：2026-08-23（Asia/Shanghai）。
+
+## 2026-08-24 C++ Core 项目地图复述评估与概念校准
+
+- 使用 Skill：`self-learning`。
+- 负责模块：`cpp_core` 的 include/src 组织，以及 Application、Boundary、Contract、Common、Domain、Infrastructure、Repository、Storage 职责边界；只读教学分析。
+- 任务目标：评估学习者对 C++ 项目目录地图的口语化复述，确认已掌握内容并纠正影响后续走读的概念偏差。
+- 任务结果：确认学习者已能识别主要层级及总体依赖方向，当前约达到“能解释”等级；重点校准了头文件声明与编译/链接边界不等同于依赖倒置、Boundary 仅建立结构可信而不能替代领域校验、Contract 同时覆盖请求/响应类型但当前旧路径存在解析职责混放、Domain 头文件与源文件分别承载类型声明和规则实现、Infrastructure 负责领域所需外部技术能力的具体适配等概念。
+- 验证状态：已核对架构概览、文档索引，以及 Anniversary Query Service、Event Boundary/Contract、Common DateTime/Error Metadata、LocalTimeResolver/TZDB Infrastructure、Anniversary Domain、Event Repository/JSON Storage 的实际头文件和实现；未修改业务代码，未运行构建或测试。
+- 开发时间：2026-08-24（Asia/Shanghai）。
+
+## 2026-08-24 C++ 抽象依赖与校验分层掌握检验
+
+- 使用 Skill：`self-learning`。
+- 负责模块：Anniversary 时间解析依赖、Event Boundary/Application 校验、Event Repository 抽象及测试替身；只读教学反馈。
+- 任务目标：评估学习者对 `LocalTimeResolver`、Boundary 与业务校验、`EventRepository` 可替换性的三项回答，并纠正依赖方向表述。
+- 任务结果：确认三项核心判断均正确，掌握程度达到“2 能解释”；补充指出 `TzdbLocalTimeResolver` 是项目内 Infrastructure 适配器而非第三方代码本身，替换实现时通常不修改 `LocalTimeResolver` 接口；Boundary 会验证 `start_at/end_at` 均为 ISO 8601 字符串，Application 再比较时间先后；`JsonEventRepository` 实现而非被 `EventRepository` 调用，迁移 SQLite 时新增实现并在 composition root 更换注入，同时测试可继续使用 InMemory/Failing Repository。
+- 验证状态：已核对 Event Boundary 时间格式校验、EventService 时间关系校验、Native Runtime 的 Resolver 注入，以及 Event Repository 测试替身；未修改业务代码，未运行构建或测试。
+- 开发时间：2026-08-24（Asia/Shanghai）。
+
+## 2026-08-23 16:06 +08:00 响铃稍后提醒与恢复投递一致性修复
+
+- 使用 Skill：`cross-layer-feature`、`debug`。
+- 负责模块：Android/Kotlin Ring session workflow、Flutter Ring EventChannel 边界、Reminder recovery/live reconcile 失败隔离及相关 JVM 回归测试；Contracts、C++ snooze 语义与 Flutter 页面协议保持只读。
+- 任务目标：核验并修复评审发现的“C++ 已创建稍后 Reminder 但当前 Ring session 未移除/未停止”、`RING_SETTINGS_STORAGE_FAILED` 误报及恢复失败阻断后续合法实时 Reminder 的跨层一致性问题。
+- 任务结果：确认问题真实存在。根因一是 Ring session 持久化、内存提交与 EventChannel 广播共用同一异常边界，广播异常会被误报为存储失败；根因二是 snooze 忽略 session remove 结果且没有统一触发 Reminder 重规划；根因三是 V2 due batch 对首个投递失败直接返回。现已拆分持久化与广播边界并将 Ring 状态事件切回 Android 主线程；新增单一 `RingSnoozeWorkflowCoordinator`，严格按 C++ 逐项结果移除成功项、保留失败项、阻止旧 revision 重放，并同步触发权威队列重规划，调度失败时入 WorkManager 恢复且通过 `ALARM_SCHEDULE_FAILED` 明确返回“已创建、调度待恢复”；通知栏和全屏页也会显示部分失败/待恢复反馈。V2 reconcile 改为记录失败 Reminder、继续同批后续投递并重挂未来队首，避免 recovery/ring 局部失败污染合法实时提醒。
+- 验证状态：新增回归在修复前 2/2 稳定失败，修复后通过；Android JVM 119 项 0 失败、1 跳过，`lintDebug`、`assembleDebug` 通过，Debug APK 已生成；Flutter 225 项、`flutter analyze`、Dart format 242 文件通过；C++ 构建后 `excellent_calendar_check` 6/6 通过；`git diff --check` 无格式错误（仅既有 LF/CRLF 提示）。当前 ADB 无连接设备且无本地 AVD，因此本轮修复后的真机“稍后全部 → 10 分钟后重响”和 API 24/31/33/34/35/36 矩阵仍未验证；Contract 的 `planned/blocked` 发布状态未提前修改。
+- 开发时间：2026-08-23 16:06 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 16:55 +08:00 响铃跨层真机验收与发布状态校准
+
+- 使用 Skill：`android-kotlin-native-feature`、`calendar-data-contracts`。
+- 负责模块：Android/Kotlin Ring snooze 响应映射、Android device acceptance instrumentation、Flutter→Android 构建安装链路，以及 Ring MethodChannel/EventChannel/JNI Contract 发布状态。
+- 任务目标：在物理 Android 设备复验评审阻断项、确认 Gradle transforms 构建问题消失，并在满足发布门禁后解除 Ring Contract 阻塞。
+- 任务结果：真机首轮复现了新的跨层数值映射缺陷：C++ JSON 将 Contract integer `snooze_minutes=10` 序列化为 `10.0`，Kotlin 只接受 `Int/Long`，导致 C++ 已创建稍后 Reminder 后被误报为 `NATIVE_INTERNAL_ERROR`。现已按 JSON integer 语义接受值为 10 的任意 `Number`，增加 JVM 回归与脱敏错误日志。新增设备验收入口，以正式 AlarmManager→Dispatcher→JNI→C++→RingRuntime 链路验证双 Reminder 单会话合并、稍后全部逐项成功、成功项立即移除、C++ UUID 幂等重放、重复 Android 操作拒绝、随后新普通 Ring 正常投递并 finalize sent、五分钟自动转为 quiet_pending、输出停止但控制通知保留，以及进程结束后按原 session/deadline 恢复并可关闭。测试 Event 均在 finally 中软删除，Ring active session、重启 marker 和精确 Reminder Alarm 均已清理；未清空应用数据、未修改设备权限或系统设置。原 Gradle metadata 故障未复现，`flutter run --no-resident` 已在同一设备重新构建、安装并冷启动成功。
+- 验证状态：realme RMX5100 / Android 16（API 36）通知权限和 exact alarm 能力通过；Ring quick、five-minute、restart prepare/verify 四项 instrumentation 均通过，关键日志无 `RING_SETTINGS_STORAGE_FAILED`、`ok=false`、`NATIVE_INTERNAL_ERROR` 或崩溃；Android JVM 120 项 0 失败、1 跳过，`lintDebug`、Debug APK 与 androidTest APK 构建通过；Flutter 225/225、`flutter analyze` 通过；C++ 构建后 `excellent_calendar_check` 6/6 通过；相关 `git diff --check` 无错误，仅既有 LF/CRLF 提示。当前机器只有 API 36 真机且没有 system image/AVD，Kotlin 有效计划要求的 API 24、31、33、34、35 运行矩阵无法执行；因此 Contract 已从不准确的 `planned` 校准为 `implemented_unintegrated`，但 `release_status` 继续保持 `blocked`，未虚假解除发布门禁。
+- 开发时间：2026-08-23 16:55 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 17:03 +08:00 响铃一期发布门禁豁免与 Contract 激活
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Ring 一期发布门禁、Flutter↔Kotlin MethodChannel/EventChannel 能力图、Kotlin↔C++ `reminder.snooze` 内部能力图及 Contract 发布说明。
+- 任务目标：依据用户明确批准，以 realme RMX5100 / Android 16（API 36）国产 ROM 验收替代一期 API 24/31/33/34/35/36 完整矩阵，并解除 Ring 发布阻塞。
+- 任务结果：有效 Kotlin 计划已将 API 36 国产 ROM 的 AlarmManager、Dispatcher、JNI/C++、声音/振动、稍后提醒、五分钟安全停止和进程恢复验收确认为一期发布门禁；API 24、31、33、34、35 调整为后续非阻塞兼容矩阵，API 24 静态 lint 仍为必过项。七个 `ring.*` MethodChannel、`ring.state_changed` EventChannel 和内部 `reminder.snooze` 已统一切换为 `implementation_status: integrated`、`release_status: active`，Contract README 的发布状态与兼容说明同步收口。此次仅改变发布状态和验收规则，不改变 Native Contract v2 payload、业务语义、错误码、身份、Storage 格式或历史数据解释，因此无需版本提升或数据迁移。
+- 验证状态：168 份 Contract JSON 解析通过；七个 Ring MethodChannel、一个 Ring EventChannel 和 `reminder.snooze` 状态逐项检查均为 integrated / active；相关 `git diff --check` 无格式错误，仅既有 LF/CRLF 提示。激活所依赖的同一 APK 真机与全量回归证据来自紧邻上一轮记录：API 36 四项 device instrumentation、Android JVM 120 项、lint/Debug APK、Flutter 225 项/analyze、C++ 6/6 均通过。
+- 开发时间：2026-08-23 17:03 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 21:01 +08:00 纪念日 Reminder 与 Occurrence 需求冻结及开发计划
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Anniversary、Reminder、Notification、Recovery、日历 occurrence projection，以及 JSON Repository 到未来 SQLite transaction 的存储边界；本轮仅完成需求分析与计划文档，未修改业务代码。
+- 任务目标：结合现有 Anniversary/Reminder/Occurrence 架构，通过分轮产品访谈冻结一次性与年度提醒、多个 popup、当地时间与时区、迟到补发、聚合通知、编辑删除联动、日历历史 occurrence 和摘要查询需求，并形成可执行的跨层开发计划。
+- 任务结果：新增 Active Plan `docs/plan/active/纪念日-02-Reminder与Occurrence开发计划.md`。确认每个纪念日最多 5 条、默认关闭、0～365 天和分钟级当地时间、跟随设备时区；补发有效期延续至 occurrence 当天结束；同一 occurrence 多条逾期 Reminder 只展示一条聚合 Notification，但 covered Reminder 均以同一 fulfillment delivery 进入 sent 并分别滚动 successor；occurrence 查询使用最多 400 个自然日的半开窗口、无 200 条总上限、内部 cursor 分批并返回标题/周年数/分类/重要性/小铃铛/提醒数量摘要。架构采用 Application Workflow + 窄 Repository port；当前 JSON 使用可恢复的 scoped logical commit，未来由 SQLite transaction 替换，不建设大型统一 CalendarTransaction；Scheduler 在数据提交后 reconciliation。`docs/index.md` 已增加该 Active Plan 导航。
+- 验证状态：已核对当前架构概览、Anniversary/Reminder/Recurrence/Notification 领域文档、Accepted ADR、Active status/roadmap/open issue、相关 Contract、C++ Workflow/Repository/JSON transaction 和 Flutter prototype；`git diff --check` 无错误，仅报告 `docs/index.md` 既有行尾转换提示。计划文件的关键规则、阶段门禁、跨层清单、迁移与测试矩阵已完成定向一致性检查；本轮为文档规划任务，未运行构建、单元测试或真机验证。
+- 开发时间：2026-08-23 21:01 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 22:09 +08:00 纪念日 Reminder 与 Occurrence 白盒 Review 计划
+
+- 使用 Skill：`review-worktree-architecture`。
+- 负责模块：Anniversary、Reminder、Notification、Recovery、Occurrence projection 的 Contract、C++ Domain/Application/Boundary、JSON Storage、Kotlin/JNI/Android Scheduler/Notification、Dart/Flutter 及跨层验证；本轮只制定未来审查计划，未修改生产代码。
+- 任务目标：为尚未实施的 `纪念日-02-Reminder与Occurrence开发计划.md` 预先冻结一份偏白盒、面向真实代码控制流和故障场景的 Review 计划，重点标明项目中最容易被混淆、遗漏或以假实现通过的风险。
+- 任务结果：新增 `docs/reviews/active/纪念日-02-Reminder与Occurrence-review计划.md` 并在 `docs/index.md` 增加导航。计划包含发布阻断红线、跨层能力闭环、date-only occurrence、身份与 DST、编辑/暂停/恢复并发状态机、聚合履约、共享 `reminders.json` 的跨 journal 覆盖、v2→v3 migration、C++/JNI/Kotlin/Flutter 白盒检查、既有 Event/Ring/Recovery 回归、独立 test oracle、崩溃注入点、测试质量和 AI/赶工高频错误速查表；同时纳入 Contract 子计划的总开关/单条开关语义、partial-success、日末补发与既有 72 小时 Recovery 关系等停止条件。
+- 验证状态：已读取项目级 Agent 规则、架构概览、文档索引、上位计划、Contract 子计划、相关领域文档与 Accepted ADR、开放风险、跨层审查参考、现有 Contract 和真实 C++/Kotlin/Dart 代码入口；新增文档引用路径均存在。相关 `git diff --check` 无格式错误，仅有 `docs/index.md` 既有 LF/CRLF 转换提示。本轮为文档规划任务，未运行构建、单元测试或真机验收；工作树中其他计划移动和新增文件均保留且未改动。
+- 开发时间：2026-08-23 22:09 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 22:16 +08:00 纪念日 Reminder 与 Occurrence 四层执行计划拆分
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Anniversary、Reminder、Notification、Recovery、Calendar occurrence projection 的 Contracts、Flutter、Kotlin/Android、C++ Core/JSON Storage 任务边界，以及最终跨层集成门禁；本轮只制定计划，未修改业务代码。
+- 任务目标：在不改变 `纪念日-02-Reminder与Occurrence开发计划.md` 任何产品行为、领域不变量、测试或完成标准的前提下，拆成四份可分别交给 Contracts、Flutter、Kotlin、C++ 负责人的可执行计划；Contract 先行冻结，后三层基于同一提交使用受控 Fake/Test Double 并行开发，最后由集成人接入真实链路并清理生产 Fake。
+- 任务结果：新增 `纪念日-03-contracts设计.md`、`纪念日-04-Flutter开发.md`、`纪念日-05-Kotlin开发.md`、`纪念日-06-CPP开发.md`。每份计划均包含当前代码基线、目录所有权、禁止范围、分阶段任务、Fake 边界、需求追踪、测试矩阵、交接包、停止条件和“并行交付就绪”定义；总计划新增四计划导航、共同真相源、分支/worktree 规则、责任覆盖矩阵，并将实施拓扑调整为 Contract 唯一前置、三层并行、最终按 Contract→C++→Kotlin/JNI→Flutter 合并、生产 Fake 审计和跨层真机门禁。`docs/index.md` 已补充导航，同时保留并发加入的白盒 Review 计划入口。
+- 验证状态：已核对架构总览、文档索引、当前状态/路线图/open issue、Anniversary/Reminder/Notification/Recovery 领域文档与 Accepted ADR、相关 Contract，以及真实 Dart/Kotlin/JNI/C++/JSON 入口；五份计划文件均存在、标题结构完整、相对链接目标存在，`git diff --check` 无格式错误，仅有既有 LF/CRLF 转换提示。本轮为文档计划任务，未运行业务构建、单元测试或真机验证。
+- 开发时间：2026-08-23 22:16 +08:00（Asia/Shanghai）。
+
+## 2026-08-23 23:26 +08:00 纪念日 Reminder 与 Occurrence Contract R1 冻结
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Anniversary、Reminder、Notification、ReminderRecoveryBatch 领域语义；Native MethodChannel/JNI Schema、枚举、错误、UUIDv5 identity；Calendar Core JSON v2→v3 目标迁移；Anniversary 与既有 Ring Contract fixture。
+- 任务目标：执行 `纪念日-03-contracts设计.md`，在不修改 Dart、Kotlin、JNI、C++ 生产实现的前提下冻结 Anniversary date-only occurrence、最多五条 popup 模板、create/update/toggle/delete 生命周期、日末补发聚合、真实 delivery 履约、partial-success、分页 cursor、身份算法和 Storage migration，使三层实现可从同一基线并行开发。
+- 任务结果：新增 Accepted ADR 与四份领域文档闭环；新增 Anniversary template/plan/settings/capability、occurrence request/summary/page、toggle/delete response、catch-up group 等强类型 Schema；Reminder 改为 Event/Habit/Anniversary 严格 target-specific 分支，Notification/Recovery/prepare/finalize/tap 冻结 `anniversary_catch_up`、covered membership 和 fulfillment 关系；新增 15 类稳定错误、相关枚举、4 个 namespace 与 9 个 Anniversary identity vectors；Native Wire 保持 v2 但受影响方法准确标记 blocked，Calendar Core 明确采用 planned/blocked v3 与可恢复 v2→v3 migration/shared coordinator；交接与追踪矩阵位于 `contracts/anniversary/README.md`。冻结提交为 `7217523`。
+- 验证状态：隔离验证环境中实际执行 `python contracts/validate_anniversary_r1.py`，162 个 Draft 2020-12 Schema 通过 metaschema、唯一 `$id` 与 `$ref` 闭合检查，Anniversary/Ring 43 个正反 fixture 通过，16 个 UUIDv5 vector 独立重算一致；`git diff --cached --check` 通过，仅有仓库既有 LF/CRLF 转换提示。未运行 Dart/Kotlin/C++ 构建、真实 v2→v3 migration、JNI/APK/Alarm/Notification 或真机测试，因为本阶段禁止修改并尚未接入这些实现；相关能力保持 blocked，不能据此宣称功能已集成或可发布。
+- 开发时间：2026-08-23 23:26 +08:00（Asia/Shanghai）。
+
+## 2026-08-24 15:08 +08:00 纪念日 Reminder 与 Occurrence Flutter 并行交付
+
+- 使用 Skill：`frontend-flutter-feature`。
+- 负责模块：Flutter Anniversary typed DTO/Gateway/Application、创建/编辑/详情提醒交互、Notification permission/capability 展示、typed occurrence 自动分页 port、Notification tap 路由及直接相关测试；生产组合继续使用真实 `MethodChannelAnniversaryAdapter`。
+- 任务目标：执行 `纪念日-04-Flutter开发.md`，依据冻结 Contract R1 实现纪念日提醒总开关、最多五条 popup 模板、暂停/恢复、保存与调度部分成功反馈、权限与 exact alarm 降级提示、date-only occurrence 查询和聚合通知点击详情，同时不在 Dart 重算 occurrence、周年数、DST、successor 或底层 identity。
+- 任务结果：新增分钟级当地时间与提醒模板强类型、Reminder plan/settings/capability/mutation/detail/delete/occurrence 严格 mapper、`anniversary.set_reminders_enabled` 与 `anniversary.list_occurrences` MethodChannel 接线、窄 occurrence Gateway 和全页 Use Case；表单支持当天/提前 1 天/提前 7 天快捷项、自定义 0～365 天、逐条启停/编辑/删除、重复与五条上限即时校验，权限拒绝后仍保留草稿并允许保存；详情展示活动数量、模板、暂停/恢复、pending reconciliation 和系统设置入口；normal/aggregate Anniversary tap 均透传 occurrence identity 到真实详情路由。生产入口未引入本功能 Fake 或占位成功，范围外 `FakeAnniversaryShareGateway` 保持不变。开发期间工作区同时出现的 C++/Kotlin/文档并行改动均未修改或整理。
+- 验证状态：纪念日定向 DTO/Gateway/Application/Widget/路由测试通过；`dart format --output=none --set-exit-if-changed lib test` 通过（246 文件、0 变化）；`flutter analyze` 通过；`flutter test` 236 项全部通过；`flutter build apk --debug` 成功生成 `build/app/outputs/flutter-apk/app-debug.apk`；`git diff --check` 无错误，仅有既有 LF/CRLF 提示。Flutter 单层已达到计划定义的“并行交付就绪”；未执行物理设备上的真实 Flutter→Kotlin→JNI→C++→JSON→Alarm→Notification 到点/补发/权限/时区/旧 Alarm 验收，因此不能据此宣称上位跨层计划完成或 Contract 可发布。
+- 开发时间：2026-08-24 15:08 +08:00（Asia/Shanghai）。
+
+## 2026-08-24 15:18 +08:00 纪念日 Reminder 与 Occurrence Kotlin/Android 并行交付
+
+- 使用 Skill：`android-kotlin-native-feature`。
+- 负责模块：`flutter_client/android/**` 内的 Anniversary MethodChannel/Kotlin Contract/JNI、Reminder reconciliation、Alarm 调度、系统恢复触发、Notification/Recovery v2 投递与点击边界，以及直接相关 JVM/Android smoke 测试。
+- 任务目标：执行 `纪念日-05-Kotlin开发.md`，依据冻结 Contract R1 接通 Anniversary 提醒计划、暂停/恢复和 occurrence 查询，保证逻辑提交后的可恢复调度、popup exact-alarm 近似降级、系统/权限恢复、同 occurrence 聚合补发一次 post、稳定 delivery identity 与 Anniversary detail 点击载荷；不得引入 production Fake 或在 Kotlin 重算 occurrence/successor/identity。
+- 任务结果：新增严格 request/response validator 和窄 `AnniversaryMethodOrchestrator`，接通 `anniversary.set_reminders_enabled`、`anniversary.list_occurrences`、partial-success capability 与提交后统一 reconciliation；notification permission 拒绝或调度失败时保留数据并进入现有 retry。共享 Dispatcher 仅允许 popup 在 exact 权限缺失时走 inexact Alarm，Ring 继续要求 exact；补齐 `DATE_CHANGED` 和权限授权后的主动恢复。Recovery/Delivery/Notification Contract 支持冻结的 Anniversary catch-up group、covered Reminder membership、单 prepared attempt/单 finalize、delivery 稳定 tag 和 occurrence 点击 identity。并行 C++ Boundary 已提供真实 API 后，补上 `nativeSetAnniversaryRemindersEnabledV2` 与 `nativeListAnniversaryOccurrencesV2` 生产 JNI thunk；debug 设备 smoke 扩展为 create→update→detail→toggle→occurrence 正反例。生产 source set 未加入 Fake、占位成功或第二套 Anniversary Alarm。
+- 验证状态：定向测试与 `:app:testDebugUnitTest` 通过，共 127 项、0 failure、0 error、1 项既有 skip；`:app:lintDebug`、`:app:assembleDebug`、`:app:assembleDebugAndroidTest` 均通过，arm64-v8a/armeabi-v7a/x86_64 CMake/JNI 构建成功；用 NDK `llvm-nm` 在 x86_64 `libexcellent_calendar_native.so` 中确认两个新增 JNI symbol 已导出；`git diff --check -- flutter_client/android` 无格式错误，仅报告既有 LF/CRLF 转换提示。`adb devices -l` 未发现在线设备，因此 instrumentation、真实 Alarm 到点、聚合通知、权限/时区变化、旧 Alarm 拒绝、冷/热启动点击及进程重启幂等仍为 **未验证**，不能据此宣称上位跨层计划已完成或可发布。工作树中并行存在的 C++、Flutter、Contract/计划改动均保留，未由本任务整理或覆盖。
+- 开发时间：2026-08-24 15:18 +08:00（Asia/Shanghai）。
+
+## 2026-08-24 15:51 +08:00 Anniversary finalize 时区 Contract 兼容修正
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：共享 `reminder.finalize_delivery`、`plan_recovery`、`prepare_delivery` Contract，Anniversary finalize/Recovery 语义、幂等 golden fixture 与 Contract 验证门禁；未修改 Flutter、Kotlin、JNI 或 C++ 代码。
+- 任务目标：解除 C++ 年度 successor 无法在重启后可靠进行 DST 投影的协议阻塞，同时保持 Event、Ring 和普通 Recovery 旧 finalize payload 的 Native v2 兼容性。
+- 任务结果：为共享 finalize 请求新增结构可选、非空 IANA `timezone`；冻结 prepared attempt 加载后的条件语义——Anniversary Reminder 与 `anniversary_catch_up` 缺失时返回 `CONTRACT_VALIDATION_FAILED`、非法 ID 返回 `TIMEZONE_ID_INVALID`，普通旧调用方无需补字段。首次成功 finalize 使用当前时区持久化 successor；提交后重放返回原对象且不因新时区重算，timezone 不进入 Reminder/delivery/attempt identity，可重试失败不生成 successor。`plan_recovery.timezone` 继续必填并负责 Anniversary 日末、expired successor 与 Recovery 重物化；`prepare_delivery` 明确不接收时区。新增有效、缺失、非法、Event/Ring 回归和跨时区重放 fixtures，并提供标准库自举入口将验证依赖安装到系统临时缓存。兼容修正冻结提交为 `1961953`。
+- 验证状态：实际执行 `python contracts/run_anniversary_r1_validation.py` 成功，自举安装 `jsonschema`、`PyYAML` 与 `tzdata`；162 个 Draft 2020-12 Schema、49 个 Anniversary/Ring fixture、16 个 UUIDv5 vector 全部通过。全部 Contract JSON 解析与相关 `git diff --check` 通过，仅有仓库既有 LF/CRLF 转换提示。未运行或修改 Dart/Kotlin/C++ 构建、测试、JNI/APK 与真机流程；这些层仍需按新 Contract 接线并完成各自验证。
+- 开发时间：2026-08-24 15:51 +08:00（Asia/Shanghai）。
+
+## 2026-08-24 Contracts 计划向上交付总结补充
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：`纪念日-03-contracts设计.md` 交付记录。
+- 任务目标：将 Anniversary finalize 时区兼容修正的开发结果精炼为面向上级的交付总结，不包含下游实现指导。
+- 任务结果：在计划末尾追加交付结果、完成内容、验证证据和状态边界，明确 Contract 修正提交 `1961953`、兼容策略及整体能力仍 blocked；未修改任何业务代码。
+- 验证状态：新增计划内容经 `git diff --check` 检查；本轮为文档整理，不重复运行业务构建和 Contract 门禁。
+- 开发时间：2026-08-24（Asia/Shanghai）。
+
+## 2026-08-24 纪念日 C++ Core 交付总结回填
+
+- 使用 Skill：`cpp-core-feature`。
+- 负责模块：纪念日 C++ Core 开发计划交付记录。
+- 任务目标：将已完成内容、验证结果、剩余门禁和关键约束精炼追加到对应计划。
+- 任务结果：已在 `纪念日-06-CPP开发.md` 末尾追加实施交付总结，明确 C++ 核心业务能力已完成，Storage v3/shared coordinator 与跨层真机验收仍待完成。
+- 验证状态：已检查文档差异和格式；本轮未修改业务代码，未重复运行构建测试。
+- 开发时间：2026-08-24（Asia/Shanghai）。
+
+## 2026-08-24 纪念日 Flutter 交付总结回填
+
+- 使用 Skill：未使用专项 Skill（仅进行计划文档回填）。
+- 负责模块：纪念日 Flutter 开发计划交付记录。
+- 任务目标：将 Flutter 已完成内容、验证结果和后续修复注意事项精炼追加到对应计划，删除对维护无帮助的过程性描述。
+- 任务结果：已在 `纪念日-04-Flutter开发.md` 末尾追加实施交付总结，明确功能落点、关键语义、验证证据和未完成的真机集成门禁。
+- 验证状态：已检查目标文档差异和格式；本轮未修改业务代码，未重复运行 Flutter 测试或构建。
+- 开发时间：2026-08-24（Asia/Shanghai）。
+
+## 2026-08-24 纪念日 Kotlin/Android 交付总结回填
+
+- 使用 Skill：未使用专项 Skill（仅进行计划文档回填）。
+- 负责模块：纪念日 Kotlin/Android 开发计划交付记录。
+- 任务目标：将 Kotlin/Android 已完成内容、验证结果和交付边界精炼追加到对应计划，仅陈述实际工作，不包含上层验收建议或 C++ 后续安排。
+- 任务结果：已在 `纪念日-05-Kotlin开发.md` 末尾追加开发交付总结，覆盖 Anniversary Channel/JNI、提醒调度、通知与恢复、时区协同、测试范围和关键约束。
+- 验证状态：检查目标文档差异及格式；本轮未修改业务代码，未重复运行 Android 测试或构建。
+- 开发时间：2026-08-24（Asia/Shanghai）。
+
+## 2026-08-24 18:11 +08:00 Calendar Core Storage v3 与跨 Workflow 一致性
+
+- 使用 Skill：`cpp-core-feature`。
+- 负责模块：`cpp_core/**` 的 Calendar Core JSON Storage v3、v2→v3 migration、统一 workflow transaction coordinator、generation/CAS、Runtime bootstrap 与专项测试。
+- 任务目标：将 Storage v3 从占位状态落为正式可运行格式，无损升级非空及部分 v2 真机旧存储，统一 Anniversary、Event、Recovery、Delivery、Snooze 对共享 Store 的提交和恢复，并阻止陈旧 after-image 覆盖新数据。
+- 任务结果：全部正式 Store 严格读写 `storage_version: 3`；新增可中断续跑、保存 source hash/after-image/阶段的幂等迁移，迁移前严格恢复两类 v2 journal，缺少后加入 Anniversary/统一事务文件的非空 v2 可安全升级且不生成虚假 Reminder；新增目录锁级统一事务协调器，将相关 Workflow 接入同一 `calendar_workflow_transactions.json`，使用持久化 Store generation、`before_generation` CAS 和冻结 after-image 完成提交/重放；Runtime 按迁移、校验、统一恢复、服务构造顺序启动并报告 format v3。未修改冻结 Contract、JNI、Kotlin 或持久化 `projection_timezone`。
+- 验证状态：新增完整 populated/partial/空存储迁移、两类遗留 journal、11 个 Store 替换点故障恢复、重复迁移、v3 round-trip、未知/缺失字段、非法与陈旧 generation、跨 Workflow 顺序写、CAS 冲突及统一 journal 重启恢复测试；实际执行规定的 CMake 配置和 `excellent_calendar_check`，7/7 测试目标全部通过，`git diff --check -- cpp_core` 无格式错误（仅既有 LF/CRLF 提示）。跨层 APK/真机验收不属于本轮 C++ 单层门禁，仍未执行。
+- 开发时间：2026-08-24 18:11 +08:00（Asia/Shanghai）。
+
+## 2026-08-24 20:01 +08:00 纪念日 Reminder 与 Occurrence 最终跨层整合
+
+- 使用 Skill：`calendar-data-contracts`、`cross-layer-feature`。
+- 负责模块：Anniversary Reminder/Occurrence 的 Contract、Flutter/Dart、Kotlin/Android、JNI、C++ Core、Calendar Core JSON Storage v3 真实接线，以及跨层和物理设备验收。
+- 任务目标：审计四层并行交付，依据总计划修正偏差，移除生产可达的本功能 Fake/占位链路，并完成 Flutter→MethodChannel→Kotlin→JNI→C++→JSON→Alarm→Notification→详情点击整合。
+- 任务结果：统一 Runtime Contract 与 Kotlin bootstrap 为 Native Contract v2/Storage format v3；修复 notification permission 拒绝时关闭或删除提醒被错误阻塞的问题；冻结并实现普通 Anniversary notification tap 的 `anniversary.detail` route；生产 Flutter 使用真实 `NativeAnniversaryGateway`，Android 使用真实 `AndroidNativeBridgeFactory`/JNI，C++ 使用 Storage v3 JSON Repository 与统一 workflow coordinator。新增真实 Flutter 设备集成测试和进程终止后的 Alarm/Notification/tap instrumentation；受影响 Contract 能力标记为已整合，但在完整真机矩阵完成前保持发布 blocked。测试 Fake 仅保留在测试边界；范围外 `FakeAnniversaryShareGateway` 未修改。
+- 验证状态：Contract 校验通过（162 schemas、54 fixtures、16 identity vectors）；C++ 构建后 `excellent_calendar_check` 7/7 通过；Flutter 236 项测试、`flutter analyze`、`flutter build apk --debug` 通过；Android `testDebugUnitTest`、`lintDebug`、Debug APK 与 androidTest APK 构建通过；独立 `test_environment/flutter_native_smoke` test/analyze/build 通过。物理设备 RMX3687 完成真实 create/detail/toggle/occurrence/update/list/delete round-trip、Storage v2→v3 smoke、进程终止后正常 Alarm 到点、单 Notification、年度 successor、普通 Anniversary 详情 route 与重复点击去重。总计划要求的真机聚合补发、时区切换、exact-alarm 拒绝近似降级、删除/改期后的真实陈旧 Alarm 仍未逐项执行，相关逻辑由 Contract/C++/Kotlin 自动测试覆盖但标记为真机未验证。
+- 设备与数据说明：Flutter integration test runner 在测试流程中卸载应用，导致设备原应用私有数据被清除；之后已重装 APK，当前 Store 仅包含验收产生并软删除的记录，无法恢复测试前私有数据。验收后已恢复通知权限为拒绝、移除 device-idle 白名单并在 ColorOS UI 关闭完全后台/自启动；系统 `RUN_ANY_IN_BACKGROUND` 仍显示 `allow`，无法通过受限 shell 恢复到验收前的 `ignore`。
+- 开发时间：2026-08-24 20:01 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 12:26 +08:00 纪念日 Reminder/Occurrence 跨层白盒审查
+
+- 使用 Skill：`review-worktree-architecture`。
+- 负责模块：Anniversary Reminder/Occurrence 的未提交 Contract、Flutter、Kotlin/JNI、C++、Storage v3、Android 调度/通知、测试与状态文档。
+- 任务目标：依据总计划、专项 review 计划、领域不变量和机器 Contract，对最终整合结果进行 dirty-worktree 架构与白盒审查，不修改生产实现。
+- 任务结果：结论为“阻塞，需修正后复审”。确认生产主链已真实接线且常规自动化基线通过，但发现 commit 已权威成立后仍返回 `CALENDAR_WORKFLOW_COMMIT_FAILED`、时区广播未重投影未来 Anniversary `remind_at`、Update 缺少计划要求的 `expected_updated_at` 并发门禁、设备集成测试继续复用正式 application id、Flutter 普通 Anniversary tap 未拒绝缺失 route、occurrence cursor 未绑定真实 Store generation，以及能力/计划/状态文档互相漂移等问题。
+- 验证状态：Contract 162 schemas/54 fixtures/16 identity vectors通过；C++ 构建后 `excellent_calendar_check` 7/7 通过；Flutter 236 项测试、`flutter analyze`、Debug APK 通过；Android JVM、lintDebug、androidTest APK 构建通过；独立 Flutter/Native smoke test/analyze/build 通过；`git diff --check` 通过。另以临时独立 oracle 复现“返回 commit failed 但重启后 generation 已权威递增”，并复现 Flutter 接受 Contract 标记为 invalid 的缺 route tap payload；临时文件均已删除。为避免再次清除设备数据，未重跑 Flutter 真机 integration runner；未执行用户列出的剩余物理设备矩阵。
+- 开发时间：2026-08-25 12:26 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 13:22 +08:00 纪念日 Reminder/Occurrence 审查问题修正
+
+- 使用 Skill：`debug`、`cross-layer-feature`，并按专项范围使用 `calendar-data-contracts`、`frontend-flutter-feature`、`android-kotlin-native-feature`、`cpp-core-feature`。
+- 负责模块：Anniversary Reminder/Occurrence 的 Contract、Flutter/Dart、Kotlin/Android、C++ Application/Storage、设备测试隔离和状态文档。
+- 任务目标：逐项复核 2026-08-25 白盒审查的 4 个 P1、4 个 P2；确认真实问题后以总计划、机器 Contract 和领域不变量为准修正，保护现有跨层实现与用户数据。
+- 任务结果：8 项 finding 均确认真实并完成修正。Storage v3 在 committed marker 后的 cleanup/compaction 失败不再谎报未保存，重放保持 after-image 与 generation 幂等；Occurrence cursor 原子绑定 Anniversary/Recurrence/Template 的真实 Store generation。时区恢复在同一 C++ 事务内按当前 IANA timezone 重投影所有 open Anniversary Reminder，保留 occurrence/template identity 并使旧 `expected_remind_at` Alarm 失效。Update 全链新增必填 `expected_updated_at`、稳定 `ANNIVERSARY_UPDATE_CONFLICT`、事务内零写入 CAS 与同秒新 token，并覆盖双线程 barrier 竞争。普通 Anniversary tap 强制 `route = anniversary.detail`。Android Debug/integration 默认使用 `.device_test` application ID 与独立 Store，Application 首个业务副作用前校验包名和目录，Release/Profile integration target 在 Gradle 配置期拒绝；Scheduler 的实际 exact/approximate 结果已类型化贯通至 Anniversary capability。identity、Contracts README、status、roadmap、open issue、计划、架构概览和 Anniversary 领域文档已统一为 Storage v3 `integrated + active`、Anniversary R1 `integrated + release blocked`。另修复 Anniversary C++ 测试中引用临时 NativeResult 导致的非确定性悬空引用。
+- 验证状态：Contract validator 通过（162 schemas、55 fixtures、16 identity vectors）；Flutter `analyze` 通过，238 项测试全部通过；Android JVM 141 项通过、1 项既有 skip，`lintDebug`、Debug APK、androidTest APK 与 integration Debug target 构建通过，APK/target package 均核验为 `.device_test`，Release integration target 按预期在配置期失败；C++ 按规定重新配置并执行构建后 `excellent_calendar_check`，7/7 通过，Anniversary 套件额外连续运行 10 次通过；`git diff --check` 无空白错误，仅既有 LF/CRLF 提示。realme Android 13 上隔离 APK 安装被 ColorOS 人工确认界面阻塞后安全中止，未卸载/清除正式包、未修改权限；剩余聚合补发、时区切换、exact/inexact、陈旧 Alarm 和重启/离线真机矩阵仍为 **未验证**，因此发布状态继续 blocked。
+- 开发时间：2026-08-25 13:22 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 13:43 +08:00 纪念日 Reminder/Occurrence 修正复审
+
+- 使用 Skill：`review-worktree-architecture`。
+- 负责模块：Anniversary Reminder/Occurrence 八项审查修正、跨层 Contract、C++ 并发与 cursor、Android 设备测试隔离及状态文档。
+- 任务目标：独立核验总工程师报告的八项修正是否真实闭环，并检查修正过程是否引入新的代码、Contract 或架构问题；不修改生产实现。
+- 任务结果：原 Storage post-commit、时区重投影、tap route、实际 exact/approximate 结果和设备隔离修正已确认闭环；复审仍判定为 `CHANGES REQUIRED`。发现 `set_reminders_enabled` 在同秒内复用或回退 Anniversary `updated_at`，使关闭提醒前的陈旧编辑仍能通过 `expected_updated_at` 并覆盖完整 Reminder plan；Occurrence cursor 改用 `1.2.3` Store generation 后，生成值不符合 Schema/Kotlin/Dart 共同冻结的无点号正则，导致多页生产链在第一页响应校验处失败；`contracts/README.md` 开头仍保留“v2 active、v3 blocked”的旧描述，与同文件及机器状态冲突。
+- 验证状态：Contract validator 162 schemas/55 fixtures/16 identity vectors通过；构建后 C++ `excellent_calendar_check` 7/7 通过，Anniversary 套件连续 10/10 通过；Flutter 238 项测试和 `flutter analyze` 通过；Android JVM 141 项通过、1 项 skip，lint、Debug APK、androidTest APK 通过；integration Debug APK 构建并核验 application id 为 `.device_test`，Release integration dry-run 在 Gradle 配置期按预期拒绝；`git diff --check` 通过。独立临时 C++ oracle 复现陈旧编辑覆盖提醒开关，独立 Schema oracle 证明实际 generation cursor 被当前正则拒绝；临时文件均已删除。未执行真机安装或剩余物理设备矩阵。
+- 开发时间：2026-08-25 13:43 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 14:48 +08:00 纪念日 Reminder/Occurrence 二次复审问题修正
+
+- 使用 Skill：`debug`、`cross-layer-feature`；按 `SPECIALIST_SPLIT` 分别处理 C++ 版本令牌、跨层 cursor 契约回归和 Contract 状态文档。
+- 负责模块：Anniversary C++ workflow 与 occurrence cursor、Kotlin/Dart cursor validator/DTO 回归、`contracts/README.md` Storage 状态说明。
+- 任务目标：复核并修正提醒开关复用 `updated_at`、generation cursor 不符合冻结 grammar、根 Contract README 同时宣称 Storage v2/v3 active 状态的三项复审 finding，且不破坏既有 Storage v3 与跨层生产链。
+- 任务结果：三项 finding 均确认真实。Anniversary update/toggle/delete 的当前事实变更统一使用严格单调的逻辑版本令牌；同秒 create→toggle、update→toggle 和真实 toggle/update 竞争均不会再让陈旧完整 Reminder plan 通过 CAS，冲突稳定返回 `ANNIVERSARY_UPDATE_CONFLICT` 且零写入。Occurrence snapshot generation 从 `1.2.3` 改为 grammar 允许且无歧义的 `1-2-3`；C++ 固定真实输入生成精确 cursor golden 并原样完成第二页查询，Kotlin 与 Dart 使用同一 golden 覆盖 response→next request，完整旧点号形状作为负例。根 Contract README 已统一为 Storage v3 `integrated + active`，v2 仅为 migration source/downgrade guard，Category 当前 Store 说明同步为 v3。
+- 验证状态：Contract validator 通过（162 schemas、55 fixtures、16 identity vectors）；C++ 按规定执行构建后 `excellent_calendar_check`，7/7 通过，Anniversary 套件并发回归额外连续运行 10/10 通过；Flutter `analyze` 无问题、240 项测试全部通过；Android JVM 143 项、0 failure、0 error、1 skip，`lintDebug` 通过；目标文件 `git diff --check` 无空白错误，仅既有 LF/CRLF 提示。本轮不涉及系统调度行为变更，未重复执行真机矩阵，Anniversary R1 发布状态继续 blocked。
+- 开发时间：2026-08-25 14:48 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 17:49 +08:00 纪念日发布文档与设备验收令牌修正
+
+- 使用 Skill：`debug`、`cross-layer-feature`；按 `SPECIALIST_SPLIT` 分别处理发布文档一致性与 Flutter 设备验收脚本。
+- 负责模块：`docs/plan/active/纪念日-06-CPP开发.md`、`docs/status/current.md`、`flutter_client/integration_test/anniversary_release_acceptance_test.dart`。
+- 任务目标：复核并修正 C++ 计划 Completed 状态与未勾选清单/Storage v3 旧交付说明冲突、Android Lint 旧统计，以及设备验收在两次 Reminder toggle 后仍复用 create `updated_at` 的问题。
+- 任务结果：两项 P2 均确认真实。C++ 计划完成清单已全部闭环，交付总结同步 Storage v3 严格读写、v2→v3 migration、统一事务协调器、generation/CAS、Runtime v3 启动与最终 7/7 C++ 门禁，并保留 Anniversary R1 完整真机矩阵的 release blocked 边界。当前状态文档改为强制重跑所得 `0 errors / 37 warnings`，Lint 已无 error 级阻断，API 24–25 仍需真实设备矩阵。设备验收先以 create token 明确断言 `ANNIVERSARY_UPDATE_CONFLICT`，通过 detail/list 双读证明零写入，再使用 `disabled.anniversary.updatedAt` 完成正常更新；生产 Detail/Form Controller 已正确消费 toggle 返回的新 detail，未修改生产代码。
+- 验证状态：设备验收 Dart 文件格式检查通过；`flutter analyze` 无问题，Flutter 240 项测试全部通过；integration target 成功构建 Debug APK，并核验 application id 为 `com.excellentcalendar.excellent_calendar.device_test`；Android `:app:lintDebug --rerun-tasks` 成功，XML report 独立解析为 0 errors / 37 warnings；目标文件 whitespace 检查通过。未安装或操作真机，因此修正后的真实 Flutter→Kotlin→JNI→C++→Storage 设备流程仍为 **未验证**；本轮未修改 C++，未重复运行 C++ 门禁。
+- 开发时间：2026-08-25 17:49 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 15:59 +08:00 纪念日 Reminder/Occurrence 三项修正复审
+
+- 使用 Skill：`review-worktree-architecture`。
+- 负责模块：Anniversary C++ 乐观并发版本令牌与 occurrence cursor、Kotlin/Dart cursor Contract 回归、Contract Storage 状态文档。
+- 任务目标：依据实际 dirty worktree 独立复核总工程师报告的三项修正，确认旧问题是否闭环并检查修正是否引入新的代码、Contract 或架构问题；不修改生产实现。
+- 任务结果：三项修正均真实闭环，未发现误报或新的可执行 finding。update/toggle/delete 已统一通过旧令牌与当前时钟计算严格单调的 Anniversary `updated_at`，update 的 `expected_updated_at` 比较仍位于同一 Store 事务内，陈旧完整 Reminder plan 返回 `ANNIVERSARY_UPDATE_CONFLICT` 且零写入；Occurrence generation 使用 Contract grammar 允许的 `1-2-3` 形状，C++ 真实 generation golden 可原样通过 Kotlin response/request validator 与 Dart response/request DTO；根 Contract README、Anniversary README 和机器 Storage Contract 一致声明 Storage v3 `integrated + active`、v2 仅作为 migration source/downgrade guard。Anniversary R1 继续保持 `integrated + release blocked`。
+- 验证状态：Contract validator 通过（162 schemas、55 fixtures、16 identity vectors）；C++ 按规定重新配置、重新构建并执行 `excellent_calendar_check`，7/7 通过，Anniversary 套件额外连续 10/10 通过；Flutter `analyze` 无问题、240/240 测试通过；Android JVM 全量强制重跑为 143 tests、0 failure、0 error、1 skip，新增 cursor suite 2/2 通过，`lintDebug` 通过；`git diff --check` 退出码 0，仅既有 LF/CRLF 提示。未安装应用、未访问或修改真机数据，也未执行仍待完成的聚合补发、真实时区切换、exact/inexact、陈旧 Alarm、重启/离线物理设备矩阵。
+- 开发时间：2026-08-25 15:59 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 16:46 +08:00 纪念日 Reminder/Occurrence 发布黑盒复审
+
+- 使用 Skill：`review-worktree-architecture`。
+- 负责模块：Anniversary Reminder/Occurrence 的 Contract、C++ Core/Storage v3、Flutter、Kotlin/JNI、Android Alarm/Notification、发布门禁与状态文档。
+- 任务目标：以产品经理和发布经理视角，对当前完整 dirty worktree 执行独立黑盒与发布复审；仅在全部门禁通过时解除 Anniversary R1 的发布阻塞，不修改生产实现。
+- 任务结果：结论为 **BLOCKED / 不可定位发布版本**。真机正常到点链路已首次实际通过：隔离 `.device_test` 包在 realme RMX3687 Android 13 上创建年度纪念日、写入 Storage v3、登记精确 Alarm、结束进程后由系统唤醒，产生一个 Notification，Reminder/Notification 共享 delivery identity，年度 successor 唯一生成，tap payload 与重复点击去重通过。但黑盒证据同时确认，Alarm 准时触发后先进入 Recovery，最终持久化为 `kind=anniversary_catch_up`，正文为“你有 1 条纪念日提醒待查看”，未满足计划冻结的当天“今天是……”/提前“距离……还有 N 天”正常通知语义。Flutter 设备验收还因在两次提醒开关更新后复用 create 的旧 `expected_updated_at` 而稳定失败；这是验收脚本令牌使用错误，产品详情 Controller 已使用最新 detail，但当前发布门禁仍无法绿色通过。工作树仍含 180 个未提交路径（143 tracked unstaged、37 untracked），无法形成可复现发布 SHA；同 occurrence 多提醒聚合、日末补发边界、exact 拒绝近似降级、权限拒绝后恢复、时区/DST 与旧 Alarm、改期/暂停/删除陈旧 Alarm、重启/长离线、真实详情页面点击仍未完成物理设备矩阵。Contract 的 Anniversary 新能力保持 `integrated + release_status: blocked`，未解除 `OPEN-ANN-001`。
+- 验证状态：Contract validator 通过（162 schemas、55 fixtures、16 identity vectors）；C++ 按规定配置并执行构建后 `excellent_calendar_check`，7/7 通过；Flutter 240/240 测试与 `flutter analyze` 通过；Android `testDebugUnitTest lintDebug --rerun-tasks` 成功，Debug APK、Release APK、androidTest APK 构建成功；独立 `test_environment/flutter_native_smoke` test/analyze/Debug APK 通过；APK 含 arm64/armeabi-v7a/x86_64 `libexcellent_calendar_native.so` 且 Anniversary/Reminder JNI symbols 可见；`git diff --check` 通过。`connectedDebugAndroidTest` 首次因 Maven TLS 下载失败，随后使用本地隔离 APK 手动安装并执行 instrumentation；JNI create/update/detail/toggle/occurrence/recovery/finalize smoke 通过。Flutter 全链设备验收在 stale `expected_updated_at` 处失败；其前置 create/detail/toggle/occurrence 已通过。未执行上述剩余真机矩阵，发布阻塞保留。
+- 开发时间：2026-08-25 16:46 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 18:25 +08:00 准时 Anniversary Alarm 被 Recovery 误归类修正
+
+- 使用 Skill：`debug`、`cross-layer-feature`。
+- 负责模块：Android Dispatcher Alarm/Reminder V2 协调、C++ 普通 Anniversary Notification 文案、Kotlin/C++ 回归测试。
+- 任务目标：复核并修正真机准时 Alarm 在系统晚 2 秒唤醒时先被 Recovery 消费为 `anniversary_catch_up` 的 P1；确保 Alarm 冻结的 `planned_at` 进入权威 C++ 查询，匹配任务优先走普通投递，更早遗留任务随后进入 Recovery，且普通 Notification 使用冻结产品文案。
+- 任务结果：finding 确认真实。Dispatcher PendingIntent 原已携带 `planned_at`，但 Receiver 仅记录日志，V2 Coordinator 在任何 due delivery 前先执行 Recovery。现由 Receiver 将 dispatcher `planned_at` 传给内部协调入口；Coordinator 先用现有 `list_schedulable_reminders` 对 `from_at=to_at=planned_at` 查询 C++ 权威 Store，并以现有 `expected_remind_at` prepare CAS 普通投递，成功后再执行 Recovery。陈旧 Alarm 无匹配项时不会普通投递；普通投递发生可重试失败时本轮不进入 Recovery，而是安排 continuation，避免同一任务立即被重新归类为补发。C++ 普通 Anniversary prepare 根据当前标题与 `advance_days` 生成 `kind=reminder` 的“今天是“{title}””或“距离“{title}”还有 N 天”，不改变 Event Reminder 自定义 message 语义。未变更公开 Contract。
+- 验证状态：固定 13:38:00 计划、13:38:02 执行的 Kotlin 回归验证普通投递先于 Recovery、精确查询边界原样下传；另覆盖普通投递可重试失败不落入 Recovery。C++ 回归验证当天与提前 7 天 Notification 均为 `kind=reminder` 且正文精确匹配计划。C++ 按规定重新配置并执行构建后 `excellent_calendar_check`，7/7 通过；Android JVM 全量 145 tests、0 failure、0 error、1 skip，`lintDebug` 为 0 error / 37 warning，Debug APK 与 androidTest APK 构建成功；目标文件 `git diff --check` 无空白错误，仅既有 LF/CRLF 提示。随后仅覆盖安装隔离 `.device_test` 包到 realme RMX3687 Android 13：创建计划于设备本地 15:27:00 的精确 Alarm，测试进程退出后由系统于 15:27:02.498 重新唤醒并展示“今天是“{title}””；真机验收同时确认持久化 `kind=reminder`、正文一致、原 Reminder 转 sent、年度 successor 唯一生成、Notification/Reminder delivery identity 一致，以及 tap payload 和重复点击去重通过，测试数据与通知已清理，正式包及其数据未操作。此 P1 的物理到点链路已验证；Anniversary R1 的其余发布矩阵仍保持原有 blocked 状态。
+- 开发时间：2026-08-25 18:25 +08:00（Asia/Shanghai）。
+
+## 2026-08-25 20:11 +08:00 Anniversary Reminder R1 发布放行
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。
+- 负责模块：Anniversary Reminder/Occurrence 发布 Contract、identity capability、发布验证器、计划/评审归档、状态/路线图与问题登记。
+- 任务目标：独立复核准时 Alarm 误归类、C++/状态文档和旧并发令牌设备验收三项修正；确认闭环后按产品负责人明确授权解除 Anniversary R1 发布门禁，同时保留未覆盖设备矩阵的真实风险边界。
+- 任务结果：三项修正均确认闭环，未发现新的 P0/P1/P2 可执行 finding。八项 Anniversary MethodChannel/native call 与 `anniversary_reminder_r1` identity capability 统一切换为 `implementation_status: integrated`、`release_status: active`；Contract validator 同步要求 active。`OPEN-ANN-001`、过期的 Android Lint error 阻断和设备测试隔离风险归档为 RES-ANN-005、RES-AND-001、RES-ANN-006；纪念日五份计划移入 `docs/plan/completed/`，白盒评审移入 `docs/reviews/archive/`。测试隔离、安全 guard、权限校验、CAS、Storage 严格校验和数据保护均保留；“解除限制”只作用于 Anniversary R1 发布门禁。API 24–25、更多 ROM、聚合补发、权限恢复、时区/DST、旧 Alarm、重启与长离线仍明确记录为产品负责人接受但未验证的发布残余风险。
+- 验证状态：发布状态切换前后 Contract validator 均通过（162 schemas、55 fixtures、16 identity vectors）；C++ 构建后 `excellent_calendar_check` 7/7；Flutter 240/240 且 analyze 无问题；Android JVM 145 tests、0 failure、0 error、1 skip，Lint XML 0 errors / 37 warnings，Debug 与 androidTest APK 构建成功；realme RMX3687 / Android 13 上重新执行 `anniversary_release_acceptance_test.dart` 通过，确认旧 create token 冲突、detail/list 零写入与最新 token 正常更新；`test_environment/flutter_native_smoke` test/analyze/Debug APK 通过；Release APK 构建成功（60.6 MB）；`git diff --check` 无空白错误，仅既有 LF/CRLF 提示。正常到点 Alarm 使用同日 15:27 已保存真机证据；本轮尝试重装 `.device_test` 复验时因 realme USB 安装确认超时未再次执行，不将其计为新的通过记录。正式应用及其数据未被操作，未执行剩余设备矩阵。
+- 开发时间：2026-08-25 20:11 +08:00（Asia/Shanghai）。

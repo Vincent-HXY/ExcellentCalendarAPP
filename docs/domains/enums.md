@@ -110,6 +110,79 @@
 | --- | --- |
 | `recovery_window_elapsed` | `planRecovery` 判定已物化 Reminder 严格早于 72 小时恢复窗口 |
 
+### RingSessionPhase
+
+| 值 | 说明 |
+| --- | --- |
+| `prepared` | attempt 已加入持久化 Android 会话，控制通知或输出尚未确认 |
+| `audible` | 控制通知已展示，声音或振动至少一种正在工作 |
+| `quiet_pending` | 最长 5 分钟输出已停止，但待处理控制通知与 item 仍保留 |
+
+### RingTestState
+
+| 值 | 说明 |
+| --- | --- |
+| `inactive` | 设置页没有输出测试 |
+| `audible` | 设置页测试已真实启动至少一种输出；测试不创建 Reminder、Notification 或活动会话 |
+
+### RingTestAction
+
+| 值 | 说明 |
+| --- | --- |
+| `start` | 使用当前设置启动输出测试 |
+| `stop` | 幂等停止当前输出测试 |
+
+### FullScreenIntentPermissionStatus
+
+| 值 | 说明 |
+| --- | --- |
+| `granted` | 当前平台允许全屏 Intent |
+| `denied` | 当前平台或用户设置不允许全屏 Intent；ring 降级而非失败 |
+| `not_required` | 当前 Android 版本不要求独立授权 |
+| `unknown` | Kotlin 无法可靠判定，按不可用降级 |
+
+### RingRingtoneSelectionStatus
+
+| 值 | 说明 |
+| --- | --- |
+| `selected` | 系统选择器返回并保存了新的铃声选择 |
+| `cancelled` | 用户取消系统选择器；作为成功结果返回且不改变设置 revision |
+
+### RingCapabilityBlockingReason
+
+| 值 | 说明 |
+| --- | --- |
+| `notification_permission_unavailable` | 无法展示必需的控制通知 |
+| `exact_alarm_permission_unavailable` | 无法保证 ring 所需的精确触发 |
+| `ring_channel_unavailable` | 独立 ring 通知 Channel 不可用或被关闭 |
+| `no_output_available` | 声音与振动输出均不可用 |
+
+### RingCapabilityDegradationReason
+
+| 值 | 说明 |
+| --- | --- |
+| `full_screen_intent_unavailable` | 不能全屏展示，降级为高优先级通知 |
+| `selected_ringtone_unavailable` | 已选 URI 失效，Kotlin 回退系统默认 Alarm ringtone |
+| `audio_output_unavailable` | 声音不可用但仍可依赖振动 |
+| `vibration_unavailable` | 振动不可用但仍可依赖声音 |
+
+### RingStateChangeReason
+
+| 值 | 说明 |
+| --- | --- |
+| `settings_changed` | 设备本地 Ring Settings 已变化 |
+| `capability_changed` | Android 权限、Channel 或输出能力快照已变化 |
+| `test_changed` | 设置页测试状态已变化 |
+| `session_changed` | 活动会话的阶段、generation、revision 或 items 已变化 |
+| `session_recovered` | Kotlin 从持久化记录恢复了活动会话状态 |
+
+### RingItemActionStatus
+
+| 值 | 说明 |
+| --- | --- |
+| `succeeded` | 当前 item 的 snooze 已成功且已从会话移除 |
+| `failed` | 当前 item 的 snooze 失败，携带 NativeError 并继续保留在会话中 |
+
 ### NotificationKind
 
 | 值 | 说明 |

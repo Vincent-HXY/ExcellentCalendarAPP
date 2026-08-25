@@ -82,30 +82,6 @@
 - 关闭条件：先冻结 Habit recurrence、check-in 身份、Reminder 目标与幂等规则，再实施 Contract 和各层代码。
 - 来源：Native v2 剩余风险。
 
-### OPEN-ANN-001 Anniversary Reminder 的 occurrence、幂等和调度语义未设计
-
-- 类型：领域 / Contract 缺口
-- 现状：Anniversary 基础年度规则、查询和 Storage 已完成，但 Reminder 关联尚未冻结 occurrence identity、唯一键、滚动 successor、reconciliation 与 Recovery 语义。
-- 影响：不得把 Event v2 的规则静默套用到 Anniversary；当前无法安全提供纪念日提醒闭环。
-- 关闭条件：完成独立 Contract 设计、跨层实现和真机调度验证。
-- 来源：Anniversary 年度规则条目的残余门禁与 `develop_record.md` 当前风险。
-
-### OPEN-ANDROID-001 全仓 Android lint 仍被既有问题阻断
-
-- 类型：质量门禁失败 / 技术债
-- 现状：最近记录为 29 个 error、20 个 warning；首个问题位于 Reminder Alarm API 兼容路径。Category/Anniversary 本轮文件为零 finding，不等于全仓 lint 通过。
-- 影响：无法把 lint 作为可靠的发布门禁，且 minSdk/API 兼容缺陷可能继续潜伏。
-- 关闭条件：逐项归属和整改全部 lint error，明确 warning 策略，并在 CI 中执行全仓 `lintDebug`。
-- 来源：Category“验证结果与残余风险”、Anniversary minSdk 修复记录。
-
-### OPEN-TEST-001 部分 Flutter 集成测试命令会卸载正式包并删除设备数据
-
-- 类型：测试基础设施 / 数据破坏风险
-- 现状：`flutter test integration_test` 与 `flutter drive` 曾在收尾卸载正式 application id，删除不可恢复的私有沙盒数据。当前仅形成了人工规避流程。
-- 影响：在带真实数据的设备上重跑会造成数据丢失，并污染验收结论。
-- 关闭条件：为设备测试使用独立 application id 和独立 Store，或加入自动保护检查；在此之前禁止对正式 Store 使用会卸载应用的命令。
-- 来源：Category“验证结果与残余风险”。
-
 ## P2：中优先级
 
 ### OPEN-NOT-003 批量调度失败反馈仍不完整

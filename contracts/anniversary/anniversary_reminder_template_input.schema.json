@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_reminder_template_input.schema.json",
+  "title": "AnniversaryReminderTemplateInput",
+  "description": "One persisted Anniversary reminder configuration. local_time is a device-local wall-clock minute; C++ combines it with occurrence_date and the current IANA timezone. V1 supports popup only.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["advance_days", "local_time", "method", "is_enabled"],
+  "properties": {
+    "advance_days": {"type": "integer", "minimum": 0, "maximum": 365},
+    "local_time": {
+      "type": "string",
+      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+      "description": "Exact HH:mm, 24-hour, zero-padded, minute precision. Seconds and offsets are forbidden."
+    },
+    "method": {"const": "popup"},
+    "is_enabled": {"type": "boolean"}
+  }
+}

@@ -14,6 +14,8 @@ import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderSchedule
 import com.excellentcalendar.excellent_calendar.bridge.reminder.SharedPreferencesRecoveryRequestStore
 import com.excellentcalendar.excellent_calendar.bridge.reminder.V2ReminderDeliveryService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.V2ReminderScheduleCoordinator
+import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
+import com.excellentcalendar.excellent_calendar.android.ring.RingRuntimeProvider
 
 object ReminderCoordinatorFactory {
     fun create(context: Context): ReminderScheduleReconciler {
@@ -30,6 +32,8 @@ object ReminderCoordinatorFactory {
                 notifications = notifications,
                 eventHub = AndroidNotificationRuntime.eventHub,
                 logger = logger,
+                ringRuntime = RingRuntimeProvider.get(appContext),
+                timezoneProvider = AndroidDeviceTimezoneProvider,
             )
             val recovery = ReminderRecoveryCoordinator(
                 nativeBridge = bridge,
@@ -37,6 +41,7 @@ object ReminderCoordinatorFactory {
                 notifications = notifications,
                 requestStore = SharedPreferencesRecoveryRequestStore(appContext),
                 logger = logger,
+                timezoneProvider = AndroidDeviceTimezoneProvider,
             )
             return V2ReminderScheduleCoordinator(
                 nativeBridge = bridge,

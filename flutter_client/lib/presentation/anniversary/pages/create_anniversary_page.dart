@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app/bootstrap/notification_permission_controller.dart';
 import '../../../application/anniversary/app_clock.dart';
 import '../../../application/anniversary/anniversary_form_controller.dart';
 import '../../../application/anniversary/anniversary_models.dart';
@@ -14,12 +15,14 @@ class CreateAnniversaryPage extends StatefulWidget {
     required this.gateway,
     required this.clock,
     this.initialDetail,
+    this.permissionController,
     super.key,
   });
 
   final AnniversaryGateway gateway;
   final AppClock clock;
   final AnniversaryDetail? initialDetail;
+  final NotificationPermissionController? permissionController;
 
   @override
   State<CreateAnniversaryPage> createState() => _CreateAnniversaryPageState();
@@ -37,6 +40,7 @@ class _CreateAnniversaryPageState extends State<CreateAnniversaryPage> {
     _controller = AnniversaryFormController(
       gateway: widget.gateway,
       initialDetail: widget.initialDetail,
+      permissionController: widget.permissionController,
     );
     _titleController = TextEditingController(text: _controller.title);
     _noteController = TextEditingController(text: _controller.note);
@@ -85,6 +89,23 @@ class _CreateAnniversaryPageState extends State<CreateAnniversaryPage> {
     }
     _formKey.currentState?.validate();
     if (result != null) {
+      final warning = _controller.submitWarning;
+      if (warning != null) {
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('纪念日已保存'),
+            content: Text(warning),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('知道了'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted) return;
+      }
       Navigator.of(context).pop(result);
       return;
     }
@@ -93,6 +114,112 @@ class _CreateAnniversaryPageState extends State<CreateAnniversaryPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error)));
+    }
+  }
+
+  Future<void> _addCustomReminder() => _showReminderEditor();
+
+  Future<void> _editReminder(int index) => _showReminderEditor(index: index);
+
+  Future<void> _showReminderEditor({int? index}) async {
+    final existing = index == null ? null : _controller.reminders[index];
+    var selectedTime = existing == null
+        ? const TimeOfDay(hour: 9, minute: 0)
+        : TimeOfDay(
+            hour: existing.localTime.hour,
+            minute: existing.localTime.minute,
+          );
+    var itemEnabled = existing?.isEnabled ?? true;
+    String? localError;
+    final daysController = TextEditingController(
+      text: (existing?.advanceDays ?? 0).toString(),
+    );
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text(index == null ? '添加自定义提醒' : '修改提醒'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  key: const ValueKey('anniversary-reminder-days-field'),
+                  controller: daysController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: '提前天数（0～365）',
+                    errorText: localError,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  key: const ValueKey('anniversary-reminder-time-button'),
+                  onPressed: () async {
+                    final time = await showTimePicker(
+                      context: dialogContext,
+                      initialTime: selectedTime,
+                      helpText: '选择当地提醒时间',
+                    );
+                    if (time != null) {
+                      setDialogState(() => selectedTime = time);
+                    }
+                  },
+                  icon: const Icon(Icons.schedule_rounded),
+                  label: Text('时间 ${selectedTime.format(context)}'),
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('启用这条提醒'),
+                  value: itemEnabled,
+                  onChanged: (value) =>
+                      setDialogState(() => itemEnabled = value),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                key: const ValueKey('anniversary-reminder-confirm'),
+                onPressed: () {
+                  final days = int.tryParse(daysController.text);
+                  if (days == null || days < 0 || days > 365) {
+                    setDialogState(() => localError = '请输入 0 到 365 之间的整数');
+                    return;
+                  }
+                  final reminder = ReminderDraft(
+                    advanceDays: days,
+                    localTime: AnniversaryReminderLocalTime(
+                      selectedTime.hour,
+                      selectedTime.minute,
+                    ),
+                    isEnabled: itemEnabled,
+                    templateKey: existing?.templateKey,
+                  );
+                  final accepted = index == null
+                      ? _controller.addReminder(reminder)
+                      : _controller.replaceReminder(index, reminder);
+                  if (!accepted) {
+                    setDialogState(
+                      () => localError = _controller.reminderError ?? '提醒设置不正确',
+                    );
+                    return;
+                  }
+                  Navigator.of(dialogContext).pop();
+                },
+                child: const Text('确定'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      daysController.dispose();
     }
   }
 
@@ -149,6 +276,8 @@ class _CreateAnniversaryPageState extends State<CreateAnniversaryPage> {
                               titleController: _titleController,
                               noteController: _noteController,
                               onPickDate: _pickDate,
+                              onAddCustomReminder: _addCustomReminder,
+                              onEditReminder: _editReminder,
                             ),
                             if (_controller.submitError != null) ...[
                               const SizedBox(height: 14),

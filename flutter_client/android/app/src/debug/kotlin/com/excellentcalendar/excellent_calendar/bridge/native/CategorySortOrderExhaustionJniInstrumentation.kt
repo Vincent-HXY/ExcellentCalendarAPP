@@ -6,6 +6,7 @@ import android.app.Instrumentation
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import com.excellentcalendar.excellent_calendar.BuildConfig
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 import java.io.File
@@ -56,8 +57,8 @@ class CategorySortOrderExhaustionJniInstrumentation : Instrumentation() {
     }
 
     private companion object {
-        const val DedicatedProcessName =
-            "com.excellentcalendar.excellent_calendar:category_sort_order_exhaustion_jni_test"
+        val DedicatedProcessName: String =
+            "${BuildConfig.APPLICATION_ID}:category_sort_order_exhaustion_jni_test"
     }
 }
 

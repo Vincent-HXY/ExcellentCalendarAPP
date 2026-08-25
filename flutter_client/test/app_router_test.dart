@@ -165,6 +165,28 @@ void main() {
     expect(find.text('anniversary detail loaded'), findsOneWidget);
     expect(receivedId, 'promise/2026?source=tap');
   });
+
+  testWidgets('ring settings and active session use configured builders', (
+    tester,
+  ) async {
+    for (final entry in <String, String>{
+      '/settings/ring': 'ring settings page',
+      '/ring/active': 'active ring page',
+    }.entries) {
+      final route = AppRouter.onGenerateRoute(
+        RouteSettings(name: entry.key),
+        todayBuilder: (_) => const Text('today'),
+        ringSettingsBuilder: (_) =>
+            const Scaffold(body: Text('ring settings page')),
+        activeRingBuilder: (_) =>
+            const Scaffold(body: Text('active ring page')),
+      );
+
+      await _pushRoute(tester, route);
+      expect(find.text(entry.value), findsOneWidget);
+      expect(find.text('today'), findsNothing);
+    }
+  });
 }
 
 Future<void> _pushRoute(WidgetTester tester, Route<dynamic> route) async {

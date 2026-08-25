@@ -51,13 +51,15 @@ class NotificationPermissionController {
   }
 
   Future<NotificationPermissionRequestResult> request(
-    NotificationPermissionStatusDto status,
-  ) async {
+    NotificationPermissionStatusDto status, {
+    NotificationPermissionRequestSource source =
+        NotificationPermissionRequestSource.appStartup,
+  }) async {
     final invocation = await _gateway.requestPermission(
       RequestNotificationPermissionRequestDto(
         requestNotificationPermission: !status.canPostNotifications,
         requestExactAlarmPermission: !status.canScheduleExactAlarms,
-        source: NotificationPermissionRequestSource.appStartup,
+        source: source,
       ),
     );
     if (!invocation.result.ok || invocation.result.data == null) {
@@ -80,6 +82,12 @@ class NotificationPermissionController {
             !status.canScheduleExactAlarms
         ? NotificationSettingsTarget.exactAlarm
         : NotificationSettingsTarget.notification;
+    await _gateway.openSettings(
+      OpenNotificationSettingsRequestDto(settingsTarget: target),
+    );
+  }
+
+  Future<void> openSettingsTarget(NotificationSettingsTarget target) async {
     await _gateway.openSettings(
       OpenNotificationSettingsRequestDto(settingsTarget: target),
     );

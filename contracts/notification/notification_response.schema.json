@@ -2,63 +2,42 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/notification/notification_response.schema.json",
   "title": "NotificationResponse",
-  "description": "Contract v2 record for one prepared or finalized delivery attempt. Notification is an audit log, never a scheduling queue.",
+  "description": "One prepared or finalized delivery attempt. reminder is one Reminder delivery, recovery_summary is the unchanged ordinary recovery summary, and anniversary_catch_up is one real popup fulfilling a frozen set of Anniversary Reminders.",
   "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "x-ring-sent-invariant": "kind=reminder and method=ring and status=sent is valid only after Kotlin observes control-notification visibility and sound_started || vibration_started.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "notification_id",
-    "delivery_id",
-    "delivery_attempt_id",
-    "kind",
-    "reminder_id",
-    "recovery_batch_id",
-    "resolved_by_recovery_batch_id",
-    "target_type",
-    "target_id",
-    "occurrence_key",
-    "method",
-    "title",
-    "body",
-    "planned_at",
-    "status",
-    "failure_class",
-    "error_code",
-    "abandon_reason",
-    "prepared_at",
-    "finalized_at",
-    "sent_at",
-    "created_at",
-    "updated_at"
+    "notification_id", "delivery_id", "delivery_attempt_id", "kind", "reminder_id", "recovery_batch_id",
+    "resolved_by_recovery_batch_id", "target_type", "target_id", "occurrence_key", "covered_reminder_ids",
+    "method", "title", "body", "planned_at", "status", "failure_class", "error_code", "abandon_reason",
+    "prepared_at", "finalized_at", "sent_at", "created_at", "updated_at"
   ],
   "properties": {
     "notification_id": {"type": "string", "format": "uuid"},
     "delivery_id": {"type": "string", "format": "uuid"},
     "delivery_attempt_id": {"type": "string", "format": "uuid"},
-    "kind": {"type": "string", "enum": ["reminder", "recovery_summary"]},
+    "kind": {"type": "string", "enum": ["reminder", "recovery_summary", "anniversary_catch_up"]},
     "reminder_id": {"type": ["string", "null"], "format": "uuid"},
     "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
     "resolved_by_recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
-    "target_type": {
-      "type": "string",
-      "enum": ["event", "habit", "anniversary", "reminder_recovery_batch"]
-    },
+    "target_type": {"type": "string", "enum": ["event", "habit", "anniversary", "reminder_recovery_batch"]},
     "target_id": {"type": "string", "format": "uuid"},
     "occurrence_key": {"type": ["string", "null"], "format": "uuid"},
-    "method": {"type": "string", "enum": ["ring", "popup", "wechat"]},
+    "covered_reminder_ids": {
+      "type": "array", "maxItems": 5, "uniqueItems": true,
+      "items": {"type": "string", "format": "uuid"},
+      "x-order": "lowercase UUID text ascending"
+    },
+    "method": {"type": "string", "enum": ["ring", "popup"]},
     "title": {"type": "string", "minLength": 1},
     "body": {"type": ["string", "null"]},
     "planned_at": {"type": "string", "format": "date-time"},
     "status": {"type": "string", "enum": ["prepared", "sent", "failed", "abandoned"]},
-    "failure_class": {
-      "type": ["string", "null"],
-      "enum": ["retryable", "permanent", null]
-    },
+    "failure_class": {"type": ["string", "null"], "enum": ["retryable", "permanent", null]},
     "error_code": {"type": ["string", "null"], "minLength": 1},
-    "abandon_reason": {
-      "type": ["string", "null"],
-      "enum": ["recovery_window_elapsed", "recovery_summary_superseded", null]
-    },
+    "abandon_reason": {"type": ["string", "null"], "enum": ["recovery_window_elapsed", "recovery_summary_superseded", null]},
     "prepared_at": {"type": "string", "format": "date-time"},
     "finalized_at": {"type": ["string", "null"], "format": "date-time"},
     "sent_at": {"type": ["string", "null"], "format": "date-time"},
@@ -66,122 +45,57 @@
     "updated_at": {"type": "string", "format": "date-time"}
   },
   "allOf": [
+    {"not": {"properties": {"recovery_batch_id": {"type": "string"}, "resolved_by_recovery_batch_id": {"type": "string"}}, "required": ["recovery_batch_id", "resolved_by_recovery_batch_id"]}},
     {
-      "not": {
-        "properties": {
-          "recovery_batch_id": {"type": "string"},
-          "resolved_by_recovery_batch_id": {"type": "string"}
-        }
+      "if": {"properties": {"status": {"const": "prepared"}}, "required": ["status"]},
+      "then": {"properties": {"failure_class": {"type": "null"}, "error_code": {"type": "null"}, "abandon_reason": {"type": "null"}, "finalized_at": {"type": "null"}, "sent_at": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "sent"}}, "required": ["status"]},
+      "then": {"properties": {"failure_class": {"type": "null"}, "error_code": {"type": "null"}, "abandon_reason": {"type": "null"}, "finalized_at": {"type": "string", "format": "date-time"}, "sent_at": {"type": "string", "format": "date-time"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "failed"}}, "required": ["status"]},
+      "then": {"properties": {"failure_class": {"type": "string", "enum": ["retryable", "permanent"]}, "error_code": {"type": "string", "minLength": 1}, "abandon_reason": {"type": "null"}, "finalized_at": {"type": "string", "format": "date-time"}, "sent_at": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "abandoned"}}, "required": ["status"]},
+      "then": {"properties": {"resolved_by_recovery_batch_id": {"type": "string", "format": "uuid"}, "failure_class": {"type": "null"}, "error_code": {"type": "null"}, "abandon_reason": {"type": "string", "enum": ["recovery_window_elapsed", "recovery_summary_superseded"]}, "finalized_at": {"type": "string", "format": "date-time"}, "sent_at": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"method": {"const": "ring"}}, "required": ["method"]},
+      "then": {"properties": {"kind": {"const": "reminder"}, "target_type": {"const": "event"}, "occurrence_key": {"type": "null"}, "covered_reminder_ids": {"maxItems": 0}}}
+    }
+  ],
+  "oneOf": [
+    {
+      "title": "SingleReminderAttempt",
+      "properties": {
+        "kind": {"const": "reminder"}, "reminder_id": {"type": "string", "format": "uuid"},
+        "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
+        "target_type": {"enum": ["event", "habit", "anniversary"]}, "covered_reminder_ids": {"maxItems": 0}
+      },
+      "allOf": [
+        {"if": {"properties": {"target_type": {"const": "anniversary"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "string", "format": "uuid"}, "method": {"const": "popup"}}}},
+        {"if": {"properties": {"target_type": {"const": "habit"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "null"}}}}
+      ]
+    },
+    {
+      "title": "OrdinaryRecoverySummary",
+      "properties": {
+        "kind": {"const": "recovery_summary"}, "reminder_id": {"type": "null"},
+        "recovery_batch_id": {"type": "string", "format": "uuid"}, "resolved_by_recovery_batch_id": {"type": "null"},
+        "target_type": {"const": "reminder_recovery_batch"}, "occurrence_key": {"type": "null"},
+        "covered_reminder_ids": {"maxItems": 0}, "method": {"const": "popup"}
       }
     },
     {
-      "if": {
-        "properties": {
-          "resolved_by_recovery_batch_id": {"type": "string"}
-        },
-        "required": ["resolved_by_recovery_batch_id"]
-      },
-      "then": {
-        "properties": {"kind": {"const": "reminder"}}
-      }
-    },
-    {
-      "if": {
-        "properties": {"kind": {"const": "reminder"}},
-        "required": ["kind"]
-      },
-      "then": {
-        "properties": {
-          "reminder_id": {"type": "string", "format": "uuid"},
-          "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
-          "target_type": {"enum": ["event", "habit", "anniversary"]}
-        }
-      },
-      "else": {
-        "properties": {
-          "reminder_id": {"type": "null"},
-          "recovery_batch_id": {"type": "string", "format": "uuid"},
-          "target_type": {"const": "reminder_recovery_batch"},
-          "method": {"const": "popup"},
-          "occurrence_key": {"type": "null"}
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {"status": {"const": "prepared"}},
-        "required": ["status"]
-      },
-      "then": {
-        "properties": {
-          "failure_class": {"type": "null"},
-          "error_code": {"type": "null"},
-          "abandon_reason": {"type": "null"},
-          "finalized_at": {"type": "null"},
-          "sent_at": {"type": "null"}
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {"status": {"const": "sent"}},
-        "required": ["status"]
-      },
-      "then": {
-        "properties": {
-          "failure_class": {"type": "null"},
-          "error_code": {"type": "null"},
-          "abandon_reason": {"type": "null"},
-          "finalized_at": {"type": "string", "format": "date-time"},
-          "sent_at": {"type": "string", "format": "date-time"}
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {"status": {"const": "failed"}},
-        "required": ["status"]
-      },
-      "then": {
-        "properties": {
-          "failure_class": {"type": "string", "enum": ["retryable", "permanent"]},
-          "error_code": {"type": "string", "minLength": 1},
-          "abandon_reason": {"type": "null"},
-          "finalized_at": {"type": "string", "format": "date-time"},
-          "sent_at": {"type": "null"}
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {"status": {"const": "abandoned"}},
-        "required": ["status"]
-      },
-      "then": {
-        "properties": {
-          "resolved_by_recovery_batch_id": {"type": "string", "format": "uuid"},
-          "failure_class": {"type": "null"},
-          "error_code": {"type": "null"},
-          "abandon_reason": {
-            "type": "string",
-            "enum": ["recovery_window_elapsed", "recovery_summary_superseded"]
-          },
-          "finalized_at": {"type": "string", "format": "date-time"},
-          "sent_at": {"type": "null"}
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "target_type": {"enum": ["habit", "anniversary"]}
-        },
-        "required": ["target_type"]
-      },
-      "then": {
-        "properties": {
-          "occurrence_key": {"type": "null"}
-        }
+      "title": "AnniversaryCatchUpAttempt",
+      "properties": {
+        "kind": {"const": "anniversary_catch_up"}, "reminder_id": {"type": "null"},
+        "recovery_batch_id": {"type": "string", "format": "uuid"}, "resolved_by_recovery_batch_id": {"type": "null"},
+        "target_type": {"const": "anniversary"}, "occurrence_key": {"type": "string", "format": "uuid"},
+        "covered_reminder_ids": {"minItems": 1, "maxItems": 5}, "method": {"const": "popup"}
       }
     }
   ]

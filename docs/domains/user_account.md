@@ -18,6 +18,7 @@
 
 - `normalizedEmail` 在未软删除账号中大小写不敏感唯一；跨层只返回 `email`。
 - 注册创建 `pending_verification` 账号；验证成功后原子切换为 `active` 并写入 `emailVerifiedAt`。
+- `pending_verification` 账号在验证前允许更正登录邮箱；更正必须以注册时设置的密码证明所有权（`account_id` 只是普通标识符，不构成授权凭证），成功后该账号既有注册验证 Challenge 全部失效，并向新邮箱签发新 Challenge。已激活账号的邮箱变更必须走登录态 `EmailChangeRequest` 流程。
 - `disabled` 与 `deleted` 账号不能登录或刷新会话。
 
 ## 枚举定义

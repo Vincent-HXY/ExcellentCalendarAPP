@@ -1,0 +1,9 @@
+{
+  "range_start_date": "2026-01-01",
+  "range_end_date": "2027-02-05",
+  "timezone": "Asia/Shanghai",
+  "category_ids": [],
+  "importance": [],
+  "cursor": null,
+  "page_size": 500
+}

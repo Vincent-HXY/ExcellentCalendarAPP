@@ -25,11 +25,13 @@ common::Error internal_error(std::string reason) {
 JsonCategoryRepository::JsonCategoryRepository(
     std::filesystem::path storage_directory,
     std::shared_ptr<storage::RuntimeStorageLease> runtime_lease,
-    FailureHook failure_hook)
+    FailureHook failure_hook,
+    int storage_version)
     : store_(std::move(storage_directory), std::move(failure_hook),
              AtomicJsonFileStore::DirectorySyncFailurePolicy::
                  kRestorePreviousSnapshot),
-      runtime_lease_(std::move(runtime_lease)) {}
+      runtime_lease_(std::move(runtime_lease)),
+      storage_version_(storage_version) {}
 
 common::Result<common::Unit> JsonCategoryRepository::initialize() {
   auto runtime_access =
@@ -46,9 +48,10 @@ common::Result<common::Unit> JsonCategoryRepository::initialize() {
   if (!root.ok())
     return common::Result<common::Unit>::failure(root.error());
   if (!root.value().has_value()) {
-    return store_.write_json_file(kCategoryStoreFile, empty_category_store());
+    return store_.write_json_file(kCategoryStoreFile,
+                                  empty_category_store(storage_version_));
   }
-  auto records = decode_category_store(*root.value());
+  auto records = decode_category_store(*root.value(), storage_version_);
   if (!records.ok())
     return common::Result<common::Unit>::failure(records.error());
   auto state = category_state_from_storage_records(records.value());
@@ -77,7 +80,7 @@ JsonCategoryRepository::load_locked() {
         storage_data_corrupted("categories.json is missing",
                                kCategoryStoreFile));
   }
-  auto records = decode_category_store(*root.value());
+  auto records = decode_category_store(*root.value(), storage_version_);
   return records.ok() ? category_state_from_storage_records(records.value())
                       : common::Result<repository::CategoryState>::failure(
                             records.error());
@@ -107,7 +110,7 @@ JsonCategoryRepository::execute(std::string_view operation,
   auto records = category_storage_records_from_state(state);
   if (!records.ok())
     return common::Result<common::Unit>::failure(records.error());
-  auto encoded = encode_category_store(records.value());
+  auto encoded = encode_category_store(records.value(), storage_version_);
   if (!encoded.ok())
     return common::Result<common::Unit>::failure(encoded.error());
   return store_.write_json_file(kCategoryStoreFile, encoded.value());

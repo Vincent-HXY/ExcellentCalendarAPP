@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/ring/active_ring_item.schema.json",
+  "title": "ActiveRingItem",
+  "description": "Privacy-safe identity for one active ring delivery. Event title/content and Reminder message/body are deliberately absent; Flutter fetches Event detail after unlock through the existing Event Gateway.",
+  "x-contract-version": 2,
+  "x-sensitive-field-exclusions": ["title", "content", "body", "message", "ringtone_uri"],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notification_id",
+    "delivery_id",
+    "delivery_attempt_id",
+    "reminder_id",
+    "event_id",
+    "recovery_batch_id",
+    "planned_at",
+    "added_at"
+  ],
+  "properties": {
+    "notification_id": {"type": "string", "format": "uuid"},
+    "delivery_id": {"type": "string", "format": "uuid"},
+    "delivery_attempt_id": {"type": "string", "format": "uuid"},
+    "reminder_id": {"type": "string", "format": "uuid"},
+    "event_id": {"type": "string", "format": "uuid"},
+    "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
+    "planned_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "added_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    }
+  }
+}

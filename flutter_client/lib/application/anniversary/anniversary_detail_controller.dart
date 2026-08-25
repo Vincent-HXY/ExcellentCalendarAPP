@@ -4,7 +4,13 @@ import '../../gateway_interfaces/anniversary_gateway.dart';
 import '../../gateway_interfaces/anniversary_share_gateway.dart';
 import 'anniversary_models.dart';
 
-enum AnniversaryDetailPhase { loading, ready, error, deleting }
+enum AnniversaryDetailPhase {
+  loading,
+  ready,
+  error,
+  deleting,
+  updatingReminders,
+}
 
 class AnniversaryDetailController extends ChangeNotifier {
   AnniversaryDetailController({
@@ -74,6 +80,35 @@ class AnniversaryDetailController extends ChangeNotifier {
       if (_isDisposed) {
         return false;
       }
+      _phase = AnniversaryDetailPhase.ready;
+      _errorMessage = anniversaryFailureMessage(error);
+      _notify();
+      return false;
+    }
+  }
+
+  Future<bool> setRemindersEnabled(bool enabled) async {
+    final current = _detail;
+    if (current == null ||
+        _phase == AnniversaryDetailPhase.updatingReminders ||
+        _phase == AnniversaryDetailPhase.deleting) {
+      return false;
+    }
+    _phase = AnniversaryDetailPhase.updatingReminders;
+    _errorMessage = null;
+    _notify();
+    try {
+      final updated = await _gateway.setRemindersEnabled(
+        anniversaryId,
+        remindersEnabled: enabled,
+      );
+      if (_isDisposed) return false;
+      _detail = updated;
+      _phase = AnniversaryDetailPhase.ready;
+      _notify();
+      return true;
+    } catch (error) {
+      if (_isDisposed) return false;
       _phase = AnniversaryDetailPhase.ready;
       _errorMessage = anniversaryFailureMessage(error);
       _notify();

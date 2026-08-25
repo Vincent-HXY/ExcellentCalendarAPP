@@ -53,7 +53,7 @@ data class OpenNotificationSettingsContract(
                 map,
                 "settings_target",
                 parent,
-                setOf("notification", "exact_alarm", "application"),
+                setOf("notification", "exact_alarm", "application", "ring_channel", "full_screen_intent"),
             )
             return OpenNotificationSettingsContract(map["settings_target"] as String)
         }
@@ -240,6 +240,31 @@ object NotificationTapPayloadContract {
             ContractValidators.optionalString(map, "recovery_batch_id", parent)
             ContractValidators.optionalString(map, "occurrence_key", parent)
             ContractValidators.optionalString(map, "route", parent)
+            val kind = map["kind"] as String
+            val targetType = map["target_type"] as String
+            if (kind !in setOf("reminder", "recovery_summary", "anniversary_catch_up") ||
+                targetType !in setOf("event", "habit", "anniversary", "reminder_recovery_batch")
+            ) {
+                throw NativeContractViolation("$parent contains an unsupported kind or target_type.", parent)
+            }
+            val identityIsValid = when (kind) {
+                "reminder" -> map["reminder_id"] is String &&
+                    (targetType != "anniversary" ||
+                        (map["occurrence_key"] is String && map["route"] == "anniversary.detail"))
+                "recovery_summary" -> map["reminder_id"] == null && map["recovery_batch_id"] is String &&
+                    targetType == "reminder_recovery_batch" && map["occurrence_key"] == null
+                "anniversary_catch_up" -> map["reminder_id"] == null && map["recovery_batch_id"] is String &&
+                    targetType == "anniversary" && map["occurrence_key"] is String && map["route"] == "anniversary.detail"
+                else -> false
+            }
+            if (!identityIsValid) {
+                throw NativeContractViolation("$parent identity fields are inconsistent with kind.", "$parent.kind")
+            }
+            try {
+                java.time.Instant.parse(map["opened_at"] as String)
+            } catch (_: java.time.DateTimeException) {
+                throw NativeContractViolation("$parent.opened_at must be a UTC instant.", "$parent.opened_at")
+            }
             return map
         }
         ContractValidators.rejectUnknownFields(

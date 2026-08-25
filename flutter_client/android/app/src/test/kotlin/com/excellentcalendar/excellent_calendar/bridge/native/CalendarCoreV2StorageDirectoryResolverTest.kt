@@ -17,7 +17,7 @@ class CalendarCoreV2StorageDirectoryResolverTest {
             active.resolve("events.json").writeText("formal-v1")
             legacy.resolve("events.json").writeText("[]")
 
-            val resolved = CalendarCoreV2StorageDirectoryResolver.resolve(filesDir)
+        val resolved = CalendarCoreV2StorageDirectoryResolver.resolve(filesDir, deviceTest = false)
 
             assertEquals(active, resolved)
             assertEquals("formal-v1", active.resolve("events.json").readText())
@@ -38,7 +38,7 @@ class CalendarCoreV2StorageDirectoryResolverTest {
             legacy.resolve("events.json").writeText("v1")
 
             val active = root.resolve("calendar_core_storage_json")
-            assertEquals(active, CalendarCoreV2StorageDirectoryResolver.resolve(filesDir))
+        assertEquals(active, CalendarCoreV2StorageDirectoryResolver.resolve(filesDir, deviceTest = false))
             assertTrue(active.notExists())
             assertTrue(legacy.resolve("events.json").isFile)
         } finally {

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/anniversary/anniversary_reminder_settings_response.schema.json",
+  "title": "AnniversaryReminderSettingsResponse",
+  "description": "Domain-owned reminder configuration and queue reconciliation hint. It intentionally excludes Alarm IDs, journals, Notification history, and platform permission state.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reminders_enabled", "templates", "active_reminder_count", "schedule_reconciliation_required"],
+  "properties": {
+    "reminders_enabled": {"type": "boolean"},
+    "templates": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {"$ref": "./anniversary_reminder_template_response.schema.json"},
+      "x-unique-by": ["advance_days", "local_time", "method"]
+    },
+    "active_reminder_count": {"type": "integer", "minimum": 0, "maximum": 5},
+    "schedule_reconciliation_required": {"type": "boolean"}
+  },
+  "x-count-invariant": "active_reminder_count equals zero when reminders_enabled is false; otherwise it equals the number of templates with is_enabled=true."
+}

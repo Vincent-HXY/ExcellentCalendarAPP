@@ -1,0 +1,13 @@
+{
+  "notification_id": "99999999-9999-4999-8999-999999999971",
+  "delivery_id": "6698d197-a738-5619-a953-a950959dc457",
+  "delivery_attempt_id": "99999999-9999-4999-8999-999999999972",
+  "kind": "reminder",
+  "reminder_id": "3b9c75fd-9073-5338-954a-d00ca35c5bf2",
+  "recovery_batch_id": null,
+  "target_type": "anniversary",
+  "target_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "occurrence_key": "60f0df06-830c-52d2-a659-e8848aa200cd",
+  "route": "anniversary.detail",
+  "opened_at": "2026-08-31T02:05:00Z"
+}

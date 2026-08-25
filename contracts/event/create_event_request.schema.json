@@ -77,7 +77,19 @@
           "start_at": {"type": "null"},
           "end_at": {"type": "null"},
           "start_date": {"type": "string", "format": "date"},
-          "end_date": {"type": "string", "format": "date"}
+          "end_date": {"type": "string", "format": "date"},
+          "reminders": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {"$ref": "../reminder/reminder_draft_request.schema.json"},
+                {
+                  "properties": {"methods": {"not": {"const": ["ring"]}}},
+                  "required": ["methods"]
+                }
+              ]
+            }
+          }
         }
       }
     },

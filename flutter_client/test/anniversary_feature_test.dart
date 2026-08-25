@@ -49,7 +49,7 @@ void main() {
     },
   );
 
-  testWidgets('V1 form hides unsupported kind and Reminder controls', (
+  testWidgets('form exposes typed Reminder controls and rejects duplicates', (
     tester,
   ) async {
     await _pumpList(
@@ -70,11 +70,30 @@ void main() {
       find.byKey(const ValueKey('anniversary-kind-birthday')),
       findsNothing,
     );
-    expect(find.text('提醒'), findsNothing);
     expect(
-      find.byKey(const ValueKey('anniversary-reminder-sameDay')),
-      findsNothing,
+      find.byKey(const ValueKey('anniversary-reminders-switch')),
+      findsOneWidget,
     );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('anniversary-reminders-switch')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('anniversary-reminders-switch')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('anniversary-reminder-quick-0')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('anniversary-reminder-quick-0')),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('anniversary-reminder-quick-0')),
+    );
+    await tester.pump();
+    expect(find.text('不能添加相同时间的重复提醒'), findsOneWidget);
 
     await tester.ensureVisible(
       find.byKey(const ValueKey('anniversary-calendar-lunar')),
@@ -91,6 +110,52 @@ void main() {
     );
     expect(solarChip.selected, isTrue);
   });
+
+  testWidgets(
+    'detail pauses and resumes reminders without deleting templates',
+    (tester) async {
+      final reminderGateway = FakeAnniversaryGateway(
+        clock: clock,
+        seedDefaults: false,
+      );
+      final created = await reminderGateway.create(
+        CreateAnniversaryPlan(
+          anniversary: AnniversaryDraft(
+            title: '有提醒的纪念日',
+            date: DateTime(2026, 9, 1),
+            calendarType: AnniversaryCalendarType.solar,
+            categoryId: null,
+            note: null,
+            importance: AnniversaryImportance.importantNotUrgent,
+          ),
+          kind: AnniversaryKind.anniversary,
+          recurrence: const RecurrenceDraft.yearly(),
+          reminders: const [ReminderDraft(advanceDays: 7)],
+          remindersEnabled: true,
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AnniversaryDetailPage(
+            anniversaryId: created.anniversary.id,
+            gateway: reminderGateway,
+            shareGateway: shareGateway,
+            clock: clock,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('当前 1 条活动提醒'), findsOneWidget);
+      expect(find.text('提前 7 天 · 09:00'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('anniversary-reminder-detail-switch')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('已暂停，1 条配置已保留'), findsOneWidget);
+      expect(find.text('提前 7 天 · 09:00'), findsOneWidget);
+    },
+  );
 
   testWidgets('load more makes the twenty-first active anniversary reachable', (
     tester,

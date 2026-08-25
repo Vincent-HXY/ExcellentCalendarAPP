@@ -2,11 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/finalize_delivery_response.schema.json",
   "title": "FinalizeDeliveryResponse",
-  "description": "Atomic result of finalizing a reminder delivery or recovery summary. Bulk Reminder mutations caused by a recovery summary are represented by recovery_batch and can be reloaded by ID; reminder/successor describe only a single kind=reminder delivery.",
+  "description": "Atomic finalize result. Single Reminder deliveries retain reminder/successor. Ordinary recovery summaries expose batch-only bulk effects. Anniversary catch-up exposes the complete covered Reminder set and each generated yearly successor without fabricating per-member Notification attempts.",
   "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "x-idempotency-invariants": [
+    "The first successful Anniversary finalize uses the request timezone to project and persist each yearly successor.",
+    "After the transaction or journal is committed, replay returns the persisted successor set exactly and does not reproject it when a later request supplies a different timezone.",
+    "timezone is excluded from Reminder, delivery, and delivery-attempt identity.",
+    "A retryable failure creates no successor."
+  ],
   "type": "object",
   "additionalProperties": false,
-  "required": ["notification", "reminder", "successor", "recovery_batch", "idempotent_replay"],
+  "required": ["notification", "reminder", "successor", "covered_reminders", "successors", "recovery_batch", "idempotent_replay"],
   "properties": {
     "notification": {"$ref": "https://excellent-calendar.local/contracts/notification/notification_response.schema.json"},
     "reminder": {
@@ -21,6 +28,16 @@
         {"type": "null"}
       ]
     },
+    "covered_reminders": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json"}
+    },
+    "successors": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json"}
+    },
     "recovery_batch": {
       "oneOf": [
         {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json"},
@@ -29,58 +46,38 @@
     },
     "idempotent_replay": {"type": "boolean"}
   },
-  "allOf": [
+  "oneOf": [
     {
-      "if": {
-        "properties": {
-          "notification": {
-            "properties": {"kind": {"const": "recovery_summary"}},
-            "required": ["kind"]
-          }
-        },
-        "required": ["notification"]
-      },
-      "then": {
-        "properties": {
-          "reminder": {"type": "null"},
-          "successor": {"type": "null"},
-          "recovery_batch": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json"}
-        }
-      },
-      "else": {
-        "properties": {
-          "reminder": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json"}
-        }
+      "title": "SingleReminderFinalize",
+      "properties": {
+        "notification": {"properties": {"kind": {"const": "reminder"}}, "required": ["kind"]},
+        "reminder": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json"},
+        "covered_reminders": {"maxItems": 0}, "successors": {"maxItems": 0}
       }
     },
     {
-      "if": {
-        "properties": {
-          "notification": {
-            "anyOf": [
-              {
-                "properties": {"recovery_batch_id": {"type": "string"}},
-                "required": ["recovery_batch_id"]
-              },
-              {
-                "properties": {"resolved_by_recovery_batch_id": {"type": "string"}},
-                "required": ["resolved_by_recovery_batch_id"]
-              }
-            ]
-          }
-        },
-        "required": ["notification"]
-      },
-      "then": {
-        "properties": {
-          "recovery_batch": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json"}
-        }
-      },
-      "else": {
-        "properties": {
-          "recovery_batch": {"type": "null"}
-        }
+      "title": "OrdinaryRecoverySummaryFinalize",
+      "properties": {
+        "notification": {"properties": {"kind": {"const": "recovery_summary"}}, "required": ["kind"]},
+        "reminder": {"type": "null"}, "successor": {"type": "null"},
+        "covered_reminders": {"maxItems": 0}, "successors": {"maxItems": 0},
+        "recovery_batch": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json"}
       }
+    },
+    {
+      "title": "AnniversaryCatchUpFinalize",
+      "properties": {
+        "notification": {"properties": {"kind": {"const": "anniversary_catch_up"}}, "required": ["kind"]},
+        "reminder": {"type": "null"}, "successor": {"type": "null"},
+        "covered_reminders": {"minItems": 1, "maxItems": 5},
+        "recovery_batch": {"$ref": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json"}
+      },
+      "x-finalize-invariants": [
+        "covered_reminders contains exactly notification.covered_reminder_ids in that order.",
+        "For outcome sent, every covered Reminder is sent and fulfillment_delivery_id equals notification.delivery_id.",
+        "successors contains at most one future Reminder per recurring template and is empty for retryable failure.",
+        "The first committed result freezes successors; an idempotent replay returns those persisted objects even when the replay timezone differs."
+      ]
     }
   ]
 }

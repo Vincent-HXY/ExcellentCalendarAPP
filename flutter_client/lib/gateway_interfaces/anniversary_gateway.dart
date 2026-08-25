@@ -9,6 +9,11 @@ abstract interface class AnniversaryGateway {
 
   Future<AnniversaryDetail> update(UpdateAnniversaryPlan input);
 
+  Future<AnniversaryDetail> setRemindersEnabled(
+    String id, {
+    required bool remindersEnabled,
+  });
+
   Future<void> delete(String id);
 
   Future<CountdownSnapshot> previewCountdown(

@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "data": {
+    "captured_at": "2026-08-22T11:00:00Z",
+    "runtime_instance_id": "77777777-7777-4777-8777-777777777778",
+    "sequence": 0,
+    "session_revision": 0,
+    "settings": {
+      "revision": 0,
+      "ringtone_display_name": "系统默认闹钟铃声",
+      "ringtone_available": true,
+      "strong_reminder_enabled": false
+    },
+    "capability": {
+      "evaluated_at": "2026-08-22T11:00:00Z",
+      "sdk_int": 36,
+      "notification_permission": "denied",
+      "exact_alarm_permission": "denied",
+      "full_screen_intent_permission": "denied",
+      "can_post_notifications": false,
+      "can_schedule_exact_alarms": false,
+      "can_use_full_screen_intent": false,
+      "ring_channel_enabled": true,
+      "has_audio_output": true,
+      "has_vibrator": true,
+      "can_enable_ring": false,
+      "blocking_reasons": [
+        "notification_permission_unavailable",
+        "exact_alarm_permission_unavailable"
+      ],
+      "degradation_reasons": ["full_screen_intent_unavailable"]
+    },
+    "active_session": null,
+    "test_state": "inactive"
+  },
+  "error": null,
+  "contract_version": 2,
+  "request_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+}

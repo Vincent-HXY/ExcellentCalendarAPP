@@ -22,6 +22,8 @@ class AnniversaryQueryService {
 
   common::Result<AnniversaryDetail> detail(const GetAnniversaryDetailQuery& query) const;
   common::Result<AnniversaryListPage> list(const ListAnniversariesQuery& query) const;
+  common::Result<AnniversaryOccurrencePage> list_occurrences(
+      const ListAnniversaryOccurrencesQuery& query) const;
   common::Result<domain::AnniversaryCountdown> preview(
       const PreviewAnniversaryCountdownQuery& query) const;
 

@@ -23,6 +23,18 @@ namespaces:
   delivery:
     uuid: 74f9acf9-a4ce-59d1-9934-5cd7ce796976
     derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/delivery")
+  anniversary_occurrence:
+    uuid: 81d70a6c-365e-5622-9d5a-afefe28c95a0
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/anniversary-occurrence")
+  anniversary_reminder_template:
+    uuid: 9df8756b-f1a2-5b5a-9b36-8c2defa75790
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/anniversary-reminder-template")
+  anniversary_reminder:
+    uuid: 228c4486-53b8-5b2e-8d13-62d9d6cfee56
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/anniversary-reminder")
+  anniversary_catch_up_delivery:
+    uuid: f159a148-554a-56d2-a79c-9d4bd9646973
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/anniversary-catch-up-delivery")
 
 identities:
   occurrence:
@@ -41,6 +53,14 @@ identities:
     notes:
       - message is not part of identity.
       - Contract v2 recurring reminders require canonical_methods to equal ["popup"].
+  snoozed_reminder:
+    algorithm: UUIDv5
+    namespace: reminder
+    name: '[source_delivery_id, "snooze", 10]'
+    notes:
+      - The integer 10 is the frozen snooze duration in minutes and is never supplied by Dart or Kotlin.
+      - The first successful workflow call stores remind_at from the C++ Clock plus 10 minutes.
+      - Replays return the same stored Reminder and never recompute remind_at from a later Clock value.
   reminder_delivery:
     algorithm: UUIDv5
     namespace: delivery
@@ -49,6 +69,39 @@ identities:
     algorithm: UUIDv5
     namespace: delivery
     name: '["recovery_summary", recovery_batch_id, "popup"]'
+  anniversary_occurrence:
+    algorithm: UUIDv5
+    namespace: anniversary_occurrence
+    name: '[anniversary_id, occurrence_date]'
+    notes:
+      - occurrence_date is exact zero-padded YYYY-MM-DD in the requested local calendar.
+      - title, note, category_id, importance, timezone, and recurrence_id are excluded.
+      - Restoring the same Anniversary date restores the same deterministic occurrence identity.
+  anniversary_reminder_template:
+    algorithm: UUIDv5
+    namespace: anniversary_reminder_template
+    name: '[anniversary_id, advance_days, local_time, "follow_device", "popup"]'
+    notes:
+      - local_time is exact zero-padded HH:mm; is_enabled is deliberately excluded.
+      - V1 has exactly follow_device and popup; changing advance_days or local_time changes identity.
+  anniversary_reminder:
+    algorithm: UUIDv5
+    namespace: anniversary_reminder
+    name: '["anniversary", anniversary_id, occurrence_key, template_key]'
+    notes:
+      - remind_at, message, title, note, category, importance, and scheduler state are excluded.
+  anniversary_catch_up_delivery:
+    algorithm: UUIDv5
+    namespace: anniversary_catch_up_delivery
+    name: '["anniversary_catch_up", anniversary_id, occurrence_key, covered_reminder_ids_sorted, "popup"]'
+    notes:
+      - covered_reminder_ids_sorted is a JSON array of canonical lowercase UUID strings sorted by Unicode code point.
+      - Membership is frozen in ReminderRecoveryBatch before prepare and cannot accept later candidates.
+
+capability_status:
+  anniversary_reminder_r1:
+    implementation_status: integrated
+    release_status: active
 
 test_vectors:
   timed_occurrence:
@@ -60,9 +113,42 @@ test_vectors:
   recurring_reminder:
     canonical_name: '["11111111-1111-4111-8111-111111111111",1,"24c7eda2-669c-5400-bf21-b8291b40395e",15,["popup"]]'
     uuid: a5c24834-aa63-5130-a5f7-3fbcec2468c0
+  ring_reminder_delivery:
+    canonical_name: '["33333333-3333-4333-8333-333333333333","ring"]'
+    uuid: be8443d8-44c1-5ade-ad4a-4f35c9077510
+  snoozed_reminder:
+    canonical_name: '["be8443d8-44c1-5ade-ad4a-4f35c9077510","snooze",10]'
+    uuid: ea67fe35-87fe-5f0d-b5bf-a491495bdc1d
   reminder_delivery:
     canonical_name: '["a5c24834-aa63-5130-a5f7-3fbcec2468c0","popup"]'
     uuid: b35d3bf5-f666-54e6-8340-423379f37a77
   recovery_summary_delivery:
     canonical_name: '["recovery_summary","22222222-2222-4222-8222-222222222222","popup"]'
     uuid: 0cb2958b-7c4a-5e0e-b4a7-8fd7eb048c87
+  anniversary_occurrence:
+    canonical_name: '["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","2026-09-01"]'
+    uuid: 60f0df06-830c-52d2-a659-e8848aa200cd
+  anniversary_occurrence_changed_date:
+    canonical_name: '["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","2027-09-01"]'
+    uuid: ae3cbe83-4409-5d6c-bab1-629554390e97
+  anniversary_occurrence_restored_date:
+    canonical_name: '["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","2026-09-01"]'
+    uuid: 60f0df06-830c-52d2-a659-e8848aa200cd
+  anniversary_reminder_template:
+    canonical_name: '["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",7,"09:00","follow_device","popup"]'
+    uuid: f6bf77d5-9a34-5897-a38e-75321fac0f8f
+  anniversary_reminder_template_changed:
+    canonical_name: '["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",1,"09:00","follow_device","popup"]'
+    uuid: 92d49f33-12f1-529b-b3f5-6366bfa9debb
+  anniversary_reminder:
+    canonical_name: '["anniversary","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","60f0df06-830c-52d2-a659-e8848aa200cd","f6bf77d5-9a34-5897-a38e-75321fac0f8f"]'
+    uuid: 3b9c75fd-9073-5338-954a-d00ca35c5bf2
+  anniversary_reminder_second_template:
+    canonical_name: '["anniversary","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","60f0df06-830c-52d2-a659-e8848aa200cd","92d49f33-12f1-529b-b3f5-6366bfa9debb"]'
+    uuid: 59c487fb-2737-5c31-8c5c-6ba157dc77a6
+  anniversary_catch_up_single:
+    canonical_name: '["anniversary_catch_up","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","60f0df06-830c-52d2-a659-e8848aa200cd",["3b9c75fd-9073-5338-954a-d00ca35c5bf2"],"popup"]'
+    uuid: 6698d197-a738-5619-a953-a950959dc456
+  anniversary_catch_up_multi_sorted:
+    canonical_name: '["anniversary_catch_up","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","60f0df06-830c-52d2-a659-e8848aa200cd",["3b9c75fd-9073-5338-954a-d00ca35c5bf2","59c487fb-2737-5c31-8c5c-6ba157dc77a6"],"popup"]'
+    uuid: 5a5e9379-77c9-51f3-a0fb-8f09440b557a

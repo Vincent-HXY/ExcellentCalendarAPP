@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/reminder/anniversary_catch_up_group_response.schema.json",
+  "title": "AnniversaryCatchUpGroupResponse",
+  "description": "RecoveryBatch-owned frozen membership for one Anniversary occurrence catch-up delivery. covered_reminder_ids are unique and sorted by lowercase UUID text before delivery identity is calculated.",
+  "x-contract-version": 2,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["anniversary_id", "occurrence_key", "occurrence_date", "covered_reminder_ids", "delivery_id", "status", "completed_at"],
+  "properties": {
+    "anniversary_id": {"type": "string", "format": "uuid"},
+    "occurrence_key": {"type": "string", "format": "uuid"},
+    "occurrence_date": {"type": "string", "format": "date"},
+    "covered_reminder_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {"type": "string", "format": "uuid"},
+      "x-order": "lowercase UUID text ascending"
+    },
+    "delivery_id": {"type": "string", "format": "uuid"},
+    "status": {"type": "string", "enum": ["pending", "completed"]},
+    "completed_at": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "if": {"properties": {"status": {"const": "completed"}}, "required": ["status"]},
+  "then": {"properties": {"completed_at": {"type": "string", "format": "date-time"}}},
+  "else": {"properties": {"completed_at": {"type": "null"}}}
+}

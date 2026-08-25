@@ -1,0 +1,34 @@
+{
+  "items": [
+    {
+      "anniversary_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "occurrence_key": "11111111-1111-5111-8111-111111111111",
+      "occurrence_date": "2026-02-28",
+      "source_date": "2000-02-29",
+      "title": "闰日纪念",
+      "calendar_type": "solar",
+      "is_repeating": true,
+      "years_elapsed": 26,
+      "category_id": null,
+      "importance": null,
+      "has_active_reminders": false,
+      "reminder_count": 0
+    },
+    {
+      "anniversary_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "occurrence_key": "60f0df06-830c-52d2-a659-e8848aa200cd",
+      "occurrence_date": "2026-09-01",
+      "source_date": "2026-09-01",
+      "title": "项目纪念日",
+      "calendar_type": "solar",
+      "is_repeating": true,
+      "years_elapsed": 0,
+      "category_id": null,
+      "importance": "important_noturgent",
+      "has_active_reminders": true,
+      "reminder_count": 2
+    }
+  ],
+  "has_more": true,
+  "next_cursor": "annocc1.abcdefghijklmnopqrst"
+}

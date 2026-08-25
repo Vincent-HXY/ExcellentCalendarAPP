@@ -1,0 +1,53 @@
+{
+  "data_saved": true,
+  "detail": {
+    "anniversary": {
+      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "title": "项目纪念日",
+      "date": "2026-09-01",
+      "calendar_type": "solar",
+      "category_id": null,
+      "recurrence_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "note": null,
+      "importance": "important_noturgent",
+      "created_at": "2026-08-23T00:00:00Z",
+      "updated_at": "2026-08-23T00:00:00Z",
+      "deleted_at": null
+    },
+    "recurrence": {
+      "recurrence_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "frequency": "yearly",
+      "interval": 1
+    },
+    "countdown": {
+      "relation": "remaining",
+      "days": 9,
+      "target_occurrence_date": "2026-09-01",
+      "iso_weekday": 2,
+      "timezone": "Asia/Shanghai",
+      "calculated_at": "2026-08-23T00:00:00Z"
+    },
+    "reminder_settings": {
+      "reminders_enabled": true,
+      "templates": [
+        {
+          "template_key": "f6bf77d5-9a34-5897-a38e-75321fac0f8f",
+          "advance_days": 7,
+          "local_time": "09:00",
+          "timezone_mode": "follow_device",
+          "method": "popup",
+          "is_enabled": true
+        }
+      ],
+      "active_reminder_count": 1,
+      "schedule_reconciliation_required": true
+    }
+  },
+  "capability": {
+    "schedule_status": "pending_permission",
+    "schedule_reconciliation_required": true,
+    "notification_permission_status": "denied",
+    "exact_alarm_permission_status": "granted",
+    "degradation_reasons": ["notification_permission_unavailable"]
+  }
+}
