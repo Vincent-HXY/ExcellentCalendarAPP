@@ -874,3 +874,12 @@
 - 任务结果：确认“我的”已改为 `/today` 内的 Tab，但邮箱修改成功仍一直弹栈查找独立 `/profile`，最终弹空根路由；现改为优先返回显式 `/profile`，不存在时安全停在承载“我的”的首路由。确认 Flutter 默认会为初始 `/auth-check` 同时生成底层 `/`，而 `/` 被项目映射为已认证首页，导致通知 Host 提前启动并在鉴权清栈时随弹窗一起移除；现启动只生成单一鉴权路由，并让重建后的通知 Host 主动恢复尚未处理的权限说明。确认 `LoginOutcome.failed` 与 `sessionEnded` 共用了 `goToLogin()`，错误地清栈重建登录页；现失败分支原地保留错误和邮箱、仅清空密码，只有会话结束才重新进入登录页。未修改 Backend、Contract、Kotlin/C++、数据库或依赖版本。
 - 验证状态：新增黑屏与登录失败测试在旧实现上分别复现为根页面消失、`goToLogin` 被错误调用，通知 Host 重建测试在旧实现上复现为待处理说明无法恢复；修复后认证导航、登录、通知及路由定向测试通过；`flutter analyze` 无问题；完整 `flutter test` 400/400 通过；`flutter build apk --debug` 成功并覆盖安装到 RMX5100。最终真机冷启动停留登录页，鉴权前未提前启动通知模块，未发现 Flutter/Fatal 异常；测试版当前 `POST_NOTIFICATIONS` 已为 granted。为避免再次修改真实邮箱，未重复执行真实邮箱变更提交，相关成功返回后的导航由真实 Navigator Widget 测试覆盖。
 - 开发时间：2026-08-27 20:59 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 00:28 +08:00 HXY-study-before-sync1 文档核对
+
+- 使用 Skill：无（纯 Git 文档核对与分支同步）。
+- 负责模块：`docs/**` 分支内容比对、关键 Domain/ADR 冲突识别与 HXY 分支提交。
+- 任务目标：将 `backup/HXY-study-before-sync1` 中 HXY 尚不存在的文档提交到 `HXY`；同路径关键领域或决策文件不擅自覆盖，留待用户定夺。
+- 任务结果：确认来源分支的 68 个文档路径已全部存在于 HXY，HXY 另有 3 个文档，因此没有来源独有文件需要导入；57 个文件内容完全相同，11 个同路径文件内容不同。来源提交 `5f7ae98` 是 HXY 的祖先，差异来自 HXY 后续提交；其中 4 个关键差异位于 Anniversary ADR、Anniversary Domain、Category Domain 与 Domain 索引，主要反映 SQLite Storage v4 落地和 Category active 状态。按用户要求保留 HXY 现状，未用来源旧内容覆盖，最终报告列出冲突供用户决策。
+- 验证状态：通过两分支 `docs` tree blob 映射核对文件路径与内容，验证来源提交为 HXY 祖先并审阅 4 个关键文件的逐行差异；本次仅追加日志，提交前执行 `git diff --check` 和分支/文件计数复核。未运行代码构建或测试，因为没有修改功能代码、Contract 或运行时文档定义。
+- 开发时间：2026-08-28 00:28 +08:00（Asia/Shanghai）。
