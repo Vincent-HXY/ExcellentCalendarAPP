@@ -2,7 +2,7 @@
 
 > 定位：这是项目的**当前架构地图**，用于快速判断系统如何分层、代码应放在哪里、哪些边界不能绕过，以及哪些能力已经真实落地。
 >
-> 基线：2026-08-15。架构来源为项目 `README.md`；实现状态以仓库内 `docs/develop_record.md`、`docs/problems.md` 和实际代码为准。Contract 或目录存在，不代表对应生产能力已经完成。
+> 基线：2026-08-27。实现状态以 `docs/status/current.md`、机器 Contract 和实际代码为准。Contract 或目录存在，不代表对应生产能力已经完成。
 
 ## 1. Architecture at a Glance
 
@@ -23,7 +23,7 @@ C++ Application / Workflow / Domain
     ↓
 Repository
     ↓
-Calendar Core JSON Storage v3
+Calendar Core SQLite Storage v4
 ```
 
 提醒投递是主链路的 Android 平台分支：
@@ -174,7 +174,8 @@ ExcellentCalendarAPP/
 │  ├─ include/excellent_calendar/application/
 │  ├─ include/excellent_calendar/boundary/
 │  ├─ include/excellent_calendar/repository/
-│  └─ src/storage/json/               当前 JSON v3 持久化实现
+│  ├─ src/storage/sqlite/             当前 SQLite v4 Repository/事务实现
+│  └─ src/storage/json/               v1/v2/v3 迁移 codec 与旧格式兼容实现
 ├─ cloud_backend/                     Spring Boot 可选云端模块
 └─ test_environment/flutter_native_smoke/
                                        Flutter→Kotlin→JNI→C++ smoke
@@ -228,13 +229,14 @@ files/local_storage/calendar_core_storage_json
 
 关键事实：
 
-- 当前为版本化 JSON Storage v3，由 C++ Repository、严格 codec 与启动期迁移/恢复流程统一访问。
-- Event/Reminder/Recurrence/Occurrence/Notification/Recovery 与 Anniversary 的共享写入统一使用 `calendar_workflow_transactions.json`；冻结 after-image、Store generation 与目录锁下 CAS 共同保证跨 Workflow 一致性。
-- 旧 `workflow_transactions.json` 和 `anniversary_workflow_transactions.json` 只作为 v2→v3 迁移前的恢复输入，不再接受 v3 写入。
-- Category 使用 v3 `categories.json` 的严格完整快照；单 Store 写入保持原子替换，跨 Store Workflow 才进入统一协调器。
+- 当前唯一正式 writer 是 `calendar_core.sqlite3`（Storage v4）。C++ Repository 接口不变，实体写入、Store generation 与跨 Workflow 修改统一进入 SQLite 事务。
+- Event/Reminder/Recurrence/Occurrence/Notification/Recovery、Anniversary 与 Category 共用一个进程级数据库连接；回调失败会同时回滚业务行和 generation。
+- SQLite 以主键、业务唯一索引和 Reminder 调度索引约束身份与查询；严格 v3 codec 仍负责完整字段及跨 Store 领域校验，避免迁移漏字段。
+- JSON v2 会先完成既有可恢复 v2→v3 迁移，再进入 SQLite；严格 JSON v3 逐记录无损导入。JSON v1 的 Event/Reminder/Notification 进入隔离兼容表，不被错误解释为 v3 数据。
+- SQLite 成功后，原 JSON 集合保留为诊断/恢复快照，并把根 `storage_version` 标为 4 作为降级 guard；运行时不再从这些文件读取业务数据。旧两类 journal 只在迁移前恢复。
 - Calendar Core runtime 是进程级 owner；Android 通过 `AndroidNativeBridgeFactory` 统一创建和初始化。进程内 JNI 测试必须复用正式 factory，隔离 Store 时使用独立测试进程。
-- V1 数据按已确认决策不迁移、不归档；识别为 v1 后直接清理。回滚到旧版本可能失去本地数据。
-- SQLite/FTS 是后续迁移方向。迁移前必须先冻结 Repository、Schema version、事务、回滚和旧数据验证策略。
+- 回滚到任何 JSON writer 都不安全；旧运行时必须因 v4 guard 拒绝目录，不能继续写快照形成双写分叉。
+- SQLite 已完成；FTS 仍是后续能力，当前搜索继续通过既有 Repository 语义实现。
 
 ## 7. Representative Flows
 
@@ -250,7 +252,7 @@ EventFormPage
   → JNI
   → C++ Boundary Request
   → Event / Recurrence / Reminder workflow
-  → Repository + JSON transaction
+  → Repository + SQLite transaction
   → EventResponse
   → NativeResult<EventResponse>
   → Flutter Application / UI

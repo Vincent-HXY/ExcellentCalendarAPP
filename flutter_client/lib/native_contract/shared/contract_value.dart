@@ -2,7 +2,7 @@ import 'contract_json_object.dart';
 
 abstract final class ContractValue {
   static final RegExp _utcDateTimePattern = RegExp(
-    r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?Z$',
+    r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z$',
   );
   static final RegExp _localDatePattern = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
 
@@ -202,7 +202,15 @@ abstract final class ContractValue {
         second > 59) {
       throw FormatException('$field must be a valid UTC instant.');
     }
-    return DateTime.parse(value).toUtc();
+    final fraction = match.group(7);
+    // Dart DateTime stores microseconds, while Java Instant may serialize up
+    // to nanoseconds. Preserve the represented instant at Dart's supported
+    // precision instead of rejecting an otherwise valid RFC 3339 timestamp.
+    final parseableValue = fraction != null && fraction.length > 6
+        ? '${value.substring(0, value.length - fraction.length - 1)}'
+              '${fraction.substring(0, 6)}Z'
+        : value;
+    return DateTime.parse(parseableValue).toUtc();
   }
 
   static String localDate(

@@ -106,6 +106,20 @@ void main() {
   });
 
   group('Challenge payloads', () {
+    test('parses backend nanosecond UTC instants at Dart precision', () {
+      final json = challengeJson();
+      json['expires_at'] = '2026-08-27T11:27:11.997726526Z';
+      json['resend_available_at'] = '2026-08-27T11:18:11.997726526Z';
+
+      final dto = EmailChallengeResponseDto.fromJson(json);
+
+      expect(dto.expiresAt, DateTime.utc(2026, 8, 27, 11, 27, 11, 997, 726));
+      expect(
+        dto.resendAvailableAt,
+        DateTime.utc(2026, 8, 27, 11, 18, 11, 997, 726),
+      );
+    });
+
     test('email change challenge carries action_id', () {
       final dto = challengeDto(
         purpose: 'email_change',

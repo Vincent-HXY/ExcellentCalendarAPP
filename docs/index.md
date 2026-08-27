@@ -43,6 +43,7 @@
 | ---------------------------------- | ---------------------------------- | ------------------------------------------------------ |
 | 项目架构、组织、设计理念和硬性要求 | `docs/architecture/overview.md`    | 每个独立任务必读                                       |
 | 某模块、领域实体或数据形式         | `docs/domains/`                    | 按模块名、实体名、字段名和功能关键词定位；不读完整目录 |
+| Calendar Core 持久化格式与迁移     | `contracts/storage/calendar_core_storage.yaml` | Storage/SQLite/JSON migration 任务读取当前 active format 及直接相关 legacy 章节 |
 | 已确认的重大设计取舍               | `docs/architecture/decisions/`     | 检索与目标模块或决策主题相关的 Accepted ADR            |
 | 工具、SDK、依赖和构建版本          | `docs/guides/version.md`           | 版本、依赖、工具链或兼容性任务时读取                   |
 | Windows 安装与开发环境配置         | `docs/guides/dev-setup-windows.md` | 安装、环境恢复或环境故障任务时读取                     |
@@ -205,6 +206,8 @@ rg -n -i "<keyword>" <file>
 除非实际数据关系、调用链或测试影响证明相关，不加载 Habit、Search、Sync 等其他模块的全部资料。
 
 ## 9. 开发前的停止条件
+
+当前 Habit 主计划：`docs/plan/active/习惯-01-Habit与HabitCheckIn闭环开发计划.md`。开发 Habit、HabitCheckIn、Habit recurrence、统计、每日提醒或 Habit 页面时，应先读取该计划，再按其中阶段进入对应 Domain、Contract 和代码入口。
 
 开始修改代码前，Codex 应能够明确回答：
 

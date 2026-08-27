@@ -7,6 +7,7 @@
 #include <picojson/picojson.h>
 
 #include "excellent_calendar/common/datetime.hpp"
+#include "excellent_calendar/storage/json/legacy_json_codec.hpp"
 
 namespace excellent_calendar::storage::json {
 namespace {
@@ -274,6 +275,53 @@ picojson::value reminder_to_storage_json(const domain::Reminder& reminder) {
 
 }  // namespace
 
+common::Result<std::vector<domain::Reminder>> decode_legacy_reminder_store(
+    const picojson::value& root) {
+  if (!root.is<picojson::object>()) {
+    return common::Result<std::vector<domain::Reminder>>::failure(
+        storage_corrupted("root must be object"));
+  }
+  const auto& object = root.get<picojson::object>();
+  const auto* version = object_field(object, "storage_version");
+  if (version == nullptr || !version->is<double>() ||
+      !is_integer_number(version->get<double>()) ||
+      static_cast<int>(version->get<double>()) != 1) {
+    return common::Result<std::vector<domain::Reminder>>::failure(
+        storage_corrupted("storage_version must be 1", "storage_version"));
+  }
+  const auto* values = object_field(object, "reminders");
+  if (values == nullptr || !values->is<picojson::array>()) {
+    return common::Result<std::vector<domain::Reminder>>::failure(
+        storage_corrupted("reminders must be array", "reminders"));
+  }
+  std::vector<domain::Reminder> reminders;
+  const auto& records = values->get<picojson::array>();
+  reminders.reserve(records.size());
+  for (std::size_t index = 0; index < records.size(); ++index) {
+    auto parsed = parse_reminder_record(records[index], index);
+    if (!parsed.ok()) {
+      return common::Result<std::vector<domain::Reminder>>::failure(
+          parsed.error());
+    }
+    reminders.push_back(std::move(parsed.value()));
+  }
+  return common::Result<std::vector<domain::Reminder>>::success(
+      std::move(reminders));
+}
+
+picojson::value encode_legacy_reminder_store(
+    const std::vector<domain::Reminder>& reminders) {
+  picojson::array records;
+  records.reserve(reminders.size());
+  for (const auto& reminder : reminders) {
+    records.push_back(reminder_to_storage_json(reminder));
+  }
+  picojson::object root;
+  root["storage_version"] = picojson::value(1.0);
+  root["reminders"] = picojson::value(std::move(records));
+  return picojson::value(std::move(root));
+}
+
 JsonReminderRepository::JsonReminderRepository(
     std::filesystem::path storage_directory,
     std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
@@ -393,48 +441,13 @@ common::Result<std::vector<domain::Reminder>> JsonReminderRepository::load_remin
     return common::Result<std::vector<domain::Reminder>>::success({});
   }
 
-  const auto& root = *loaded.value();
-  if (!root.is<picojson::object>()) {
-    return common::Result<std::vector<domain::Reminder>>::failure(storage_corrupted("root must be object"));
-  }
-  const auto& object = root.get<picojson::object>();
-  const auto* version = object_field(object, "storage_version");
-  if (version == nullptr || !version->is<double>() || !is_integer_number(version->get<double>()) ||
-      static_cast<int>(version->get<double>()) != 1) {
-    return common::Result<std::vector<domain::Reminder>>::failure(
-        storage_corrupted("storage_version must be 1", "storage_version"));
-  }
-  const auto* reminders_value = object_field(object, "reminders");
-  if (reminders_value == nullptr || !reminders_value->is<picojson::array>()) {
-    return common::Result<std::vector<domain::Reminder>>::failure(
-        storage_corrupted("reminders must be array", "reminders"));
-  }
-
-  std::vector<domain::Reminder> reminders;
-  const auto& array = reminders_value->get<picojson::array>();
-  reminders.reserve(array.size());
-  for (std::size_t index = 0; index < array.size(); ++index) {
-    auto parsed = parse_reminder_record(array[index], index);
-    if (!parsed.ok()) {
-      return common::Result<std::vector<domain::Reminder>>::failure(parsed.error());
-    }
-    reminders.push_back(std::move(parsed.value()));
-  }
-  return common::Result<std::vector<domain::Reminder>>::success(std::move(reminders));
+  return decode_legacy_reminder_store(*loaded.value());
 }
 
 common::Result<common::Unit> JsonReminderRepository::save_reminders_locked(
     const std::vector<domain::Reminder>& reminders) {
-  picojson::array reminder_array;
-  reminder_array.reserve(reminders.size());
-  for (const auto& reminder : reminders) {
-    reminder_array.push_back(reminder_to_storage_json(reminder));
-  }
-
-  picojson::object root;
-  root["storage_version"] = picojson::value(1.0);
-  root["reminders"] = picojson::value(std::move(reminder_array));
-  return store_.write_json_file("reminders.json", picojson::value(root));
+  return store_.write_json_file("reminders.json",
+                                encode_legacy_reminder_store(reminders));
 }
 
 }  // namespace excellent_calendar::storage::json

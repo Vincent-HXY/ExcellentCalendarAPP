@@ -45,7 +45,7 @@ class RecurringEventTransaction {
   virtual common::Result<RecurringEventState> load() = 0;
   virtual common::Result<common::Unit> prepare_notification(
       const NotificationPrepareOperation& action) = 0;
-  /** Atomically replaces only reminders.json for a single-entity Reminder transition. */
+  /** Atomically updates only the Reminder Store for a single-entity transition. */
   virtual common::Result<common::Unit> update_reminders(
       const ReminderUpdateOperation& action) = 0;
   virtual common::Result<common::Unit> execute(std::string_view operation,

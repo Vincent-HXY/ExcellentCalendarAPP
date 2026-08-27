@@ -21,7 +21,7 @@
 
 `AnniversaryRecurrence` 是 Anniversary 独占的轻量年度规则，持久化集合命名为 `anniversary_recurrences`。它不属于 Event v2 的不可变 Recurrence revision，也不保存 `anniversaryId`、月、日、时区、UTC occurrence 或 RRULE；关系真相只保存在 `Anniversary.recurrenceId`。
 
-当前 JSON Storage v3 已激活 `anniversaries.json`、`anniversary_recurrences.json` 与 `anniversary_reminder_templates.json`。Anniversary create/update/delete/toggle/recovery/finalize 与其他会共享 Reminder 等 Store 的 Workflow，统一通过 `calendar_workflow_transactions.json`、冻结 after-image、Store generation 和 CAS 原子提交；旧 Anniversary 专用 journal 只在 v2→v3 迁移前恢复，不再承担 v3 写入。
+当前 SQLite Storage v4 已激活 `anniversaries`、`anniversary_recurrences` 与 `anniversary_reminder_templates` 表。Anniversary create/update/delete/toggle/recovery/finalize 与其他会共享 Reminder 等表的 Workflow，统一通过同一 SQLite 连接和数据库事务原子提交；旧 JSON workflow journal 只在 v1/v2/v3→v4 迁移前恢复，不再承担运行时写入。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
@@ -79,7 +79,7 @@ Occurrence 与查询不变量：
 ### Workflow、补发与调度边界
 
 - Create/Update/Delete/Toggle、occurrence 查询、时区重算、recovery、prepare/finalize 都属于 C++ workflow；Flutter 只提交用户意图，Kotlin 只执行平台调度和真实通知副作用。
-- 跨 Anniversary、Recurrence、Template、Reminder、Notification 和 RecoveryBatch 的变更通过窄 `AnniversaryReminderWorkflowRepository`（或等价拆分）提交。当前 JSON adapter 使用共享 storage-level 可恢复 logical commit；未来 SQLite 以同一 port 使用数据库事务，不建立暴露全部实体的 `CalendarTransaction`。
+- 跨 Anniversary、Recurrence、Template、Reminder、Notification 和 RecoveryBatch 的变更通过窄 `AnniversaryReminderWorkflowRepository`（或等价拆分）提交。当前 SQLite adapter 以同一 port 使用数据库事务，不建立暴露全部实体的 `CalendarTransaction`；冻结 JSON adapter 只服务旧数据迁移。
 - 数据 logical commit 先成功，Scheduler reconciliation 后执行且可重试。调度或权限失败不能回滚、删除或清空已保存 Anniversary、模板或 Reminder。
 - Anniversary 迟到补发窗口为 `[remind_at, occurrence_date 在当前设备时区下的次日 00:00)`。同一 `(anniversary_id, occurrence_key)` 的到期任务聚合为一个真实 popup；不同 occurrence 不合并。
 - 聚合 membership 在 recovery plan/prepare 前由 C++ 冻结。真实发送成功后，所有 covered Reminder 写入同一 `fulfillment_delivery_id` 并分别滚动 successor；Kotlin 不重新分组、不追加成员，也不把 Android Alarm 当作真相源。

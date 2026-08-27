@@ -7,6 +7,7 @@ import '../../native_contract/auth/store_refresh_token_request_dto.dart';
 import '../../native_contract/auth/token_pair_response_dto.dart';
 import '../../native_contract/user/current_user_response_dto.dart';
 import 'auth_session_controller.dart';
+import 'local_test_account.dart';
 
 /// Android Keystore could not persist the rotated Refresh Token.
 class SecureTokenStoreException implements Exception {
@@ -44,6 +45,18 @@ class AuthService {
   /// The profile cache backing cache-first reads; exposed so Application
   /// controllers can build projections without reaching into the data layer.
   UserProfileCacheStore get profileCache => _profileCache;
+
+  /// Starts an in-memory test session without contacting the backend or
+  /// persisting credentials. The account is unavailable outside Debug builds.
+  void establishLocalTestSession() {
+    if (!LocalTestAccount.enabled) {
+      throw StateError('Local test login is disabled outside Debug builds.');
+    }
+    _session.markAuthenticated(
+      accessToken: LocalTestAccount.accessToken,
+      currentUser: LocalTestAccount.createCurrentUser(),
+    );
+  }
 
   /// Establishes an authenticated in-memory session from a full auth
   /// response: Access Token stays in memory, the Refresh Token is written to

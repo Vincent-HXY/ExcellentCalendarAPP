@@ -1302,7 +1302,7 @@ deleted_at
 5. 不提前生成 2027、2028、2029 等 occurrence。C++ 查询按请求 IANA timezone 动态计算下一次本地日期；2 月 29 日在非闰目标年落到二月最后一天。
 6. Anniversary V1 occurrence 没有持久化状态或 Reminder 身份。未来增加提醒前必须另行完成 occurrence identity、幂等与 reconciliation 设计门禁。
 
-Anniversary Contract 已切换为 `implementation_status: integrated`。Calendar Core JSON v2 以增量方式增加 `anniversaries.json`、`anniversary_recurrences.json` 和独立的 `anniversary_workflow_transactions.json`；合法旧 v2 目录会初始化空 Store，不迁移或改写 Event/Reminder 数据。Anniversary create/update/delete 使用专用两 Store journal，既有 Event/Reminder 六 Store journal 不变。六条 Flutter → Kotlin → JNI → C++ 调用、Repository/workflow、重启恢复和真机持久化 smoke 已完成；Anniversary Reminder 仍须通过独立 occurrence identity 与调度语义门禁后再扩展。
+Anniversary Contract 已切换为 `implementation_status: integrated`。正式本地持久化是 Calendar Core SQLite Storage v4；`anniversaries`、`anniversary_recurrences`、Reminder template、Reminder 与 Notification 等逻辑 Store 通过同一数据库事务原子提交。合法 JSON v2/v3 目录会连续迁移到 SQLite v4，旧集合保留为带版本 4 降级 guard 的诊断快照，不再参与运行时读写。Flutter → Kotlin → JNI → C++ 调用、Repository/workflow、Anniversary Reminder/Notification、occurrence 查询及自动化回归均已接入；迁移后的真机证据以 `docs/log.md` 的 v4 记录为准。
 
 ------
 

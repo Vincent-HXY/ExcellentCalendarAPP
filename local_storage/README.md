@@ -4,8 +4,8 @@
 
 ## 负责范围
 
-- SQLite 结构化数据。
-- SQLite FTS 全文搜索索引。
+- Calendar Core SQLite v4 结构化数据（当前由 `cpp_core` 的 Repository adapter 实现）。
+- SQLite FTS 全文搜索索引（规划中，尚不是当前运行时依赖）。
 - 图片、导入文件、附件。
 - 本地增删改操作日志。
 

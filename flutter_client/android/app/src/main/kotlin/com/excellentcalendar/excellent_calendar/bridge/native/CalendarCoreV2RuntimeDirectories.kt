@@ -28,8 +28,8 @@ internal class CalendarCoreV2RuntimeRequestProvider(
 /**
  * Resolves the Contract-owned active path without mutating storage.
  *
- * The C++ Storage v3 bootstrap is the only component allowed to validate,
- * migrate, recover, or create Calendar Core stores at this path.
+ * The C++ SQLite Storage v4 bootstrap is the only component allowed to
+ * validate, migrate, recover, or create Calendar Core stores at this path.
  */
 internal object CalendarCoreV2StorageDirectoryResolver {
     fun resolve(

@@ -4,9 +4,9 @@ Status: Integrated / active
 
 Native envelope: v2
 
-Calendar Core JSON: v3 (`integrated`, `active`)
+Calendar Core SQLite: v4 (`integrated`, `active`)
 
-本包是 Anniversary Reminder、date-only occurrence 查询、catch-up 聚合 delivery 与 Storage migration 的跨层真相源。Flutter、Kotlin/JNI、C++ 与 Storage v3 已完成正式接线，正常到点通知、持久化普通投递类型、年度 successor、点击去重和完整 Native 更新链已通过 realme Android 13 验证。经产品负责人 2026-08-25 明确批准，`method_channels.yaml` 与 `native_calls.yaml` 的八项 Anniversary 能力统一为 `integrated` / `active`；其余设备矩阵作为已接受但未验证的残余风险继续跟踪。
+本包是 Anniversary Reminder、date-only occurrence 查询、catch-up 聚合 delivery 与 Storage migration 的跨层真相源。Flutter、Kotlin/JNI、C++ 与 SQLite Storage v4 已完成正式接线，正常到点通知、持久化普通投递类型、年度 successor、点击去重和完整 Native 更新链已通过 realme Android 13 验证。经产品负责人 2026-08-25 明确批准，`method_channels.yaml` 与 `native_calls.yaml` 的八项 Anniversary 能力统一为 `integrated` / `active`；其余设备矩阵作为已接受但未验证的残余风险继续跟踪。
 
 ## Stable schema IDs
 
@@ -98,10 +98,10 @@ Calendar Core JSON: v3 (`integrated`, `active`)
 | Notification / covered IDs | C++ prepare/finalize | Kotlin display/finalize、C++ audit/recovery |
 | tap identity | C++ prepare，Android 仅追加 `opened_at` | Kotlin EventChannel、Flutter router |
 | RecoveryBatch groups | C++ recovery planner | C++ prepare/finalize、Kotlin 顺序执行 |
-| v3 roots / migration | C++ JSON storage adapter | C++ bootstrap/repositories |
+| SQLite v4 tables / JSON migration | C++ SQLite storage adapter；冻结 JSON codec 仅负责迁移解码 | C++ bootstrap/repositories |
 | schedule capability | Kotlin platform coordinator | Flutter application/UI |
 
-不存在孤立、无 owner 的新字段。未来 Backend、导入导出和备份有独立版本域，不复用 Native v2 或 Calendar Core v3。
+不存在孤立、无 owner 的新字段。未来 Backend、导入导出和备份有独立版本域，不复用 Native v2 或 Calendar Core SQLite v4。
 
 ## Requirement traceability
 
@@ -114,11 +114,11 @@ Calendar Core JSON: v3 (`integrated`, `active`)
 | §4 occurrence 查询 | 半开区间 request、summary/page、cursor/order、400/500 边界 | Flutter、Kotlin、C++ |
 | §5 身份与时间 | 四个 namespace、canonical names、golden vectors、DST policy | 三层共同消费 |
 | §6 Reminder/Notification | target-specific `oneOf`、catch-up attempt、fulfillment 审计 | Kotlin、C++ |
-| §7 Workflow/Repository | ADR、v3 shared coordinator、commit-before-reconcile response | Kotlin、C++ |
+| §7 Workflow/Repository | ADR、SQLite v4 transaction、commit-before-reconcile response | Kotlin、C++ |
 | §8.3 errors | 16 个稳定错误/部分成功元数据 | 三层映射 |
-| §8.4 compatibility | `contracts/README.md` 两张矩阵、Storage v2→v3 连续迁移 | 三层同 APK、C++ Storage |
+| §8.4 compatibility | `contracts/README.md` 两张矩阵、JSON v1/v2/v3→SQLite v4 连续迁移 | 三层同 APK、C++ Storage |
 | §12.1 | Anniversary + Ring 回归 manifests、semantic/storage vectors、validator | 三层测试直接复用 |
-| §14～17 门禁 | 代码与 Storage v3 已激活；Anniversary R1 经负责人风险接受后发布，未覆盖设备矩阵继续明确标记为未验证 | 最终集成 owner |
+| §14～17 门禁 | 代码与 SQLite Storage v4 已激活；Anniversary R1 经负责人风险接受后发布，未覆盖设备矩阵继续明确标记为未验证 | 最终集成 owner |
 
 ## Fixtures and validation
 

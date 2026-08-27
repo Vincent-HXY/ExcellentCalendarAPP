@@ -65,6 +65,8 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
       case LoginOutcome.failed:
+        // Keep this page alive so the inline error and email remain visible.
+        return;
       case LoginOutcome.sessionEnded:
         widget.navigator.goToLogin();
     }

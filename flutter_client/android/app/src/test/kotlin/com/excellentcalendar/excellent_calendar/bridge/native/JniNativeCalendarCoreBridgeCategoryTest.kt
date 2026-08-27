@@ -52,7 +52,7 @@ class JniNativeCalendarCoreBridgeCategoryTest {
                     "ok" to true,
                     "data" to linkedMapOf(
                         "initialized" to true,
-                        "storage_format_version" to 3,
+                        "storage_format_version" to 4,
                         "tzdb_version" to BundledTzdbExtractor.Version,
                     ),
                     "error" to null,

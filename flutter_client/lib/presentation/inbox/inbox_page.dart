@@ -11,7 +11,6 @@ import '../../gateway_interfaces/ring_native_gateway.dart';
 import '../app_design_tokens.dart';
 import '../new_schedule/new_schedule_page.dart';
 import 'components/add_task_button.dart';
-import 'components/bottom_nav_bar.dart';
 import 'components/inbox_top_bar.dart';
 import 'components/task_list_card.dart';
 import 'inbox_controller.dart';
@@ -142,7 +141,7 @@ class _InboxPageState extends State<InboxPage> {
                       InboxSpacing.pageHorizontal,
                       InboxSpacing.cardTop,
                       InboxSpacing.pageHorizontal,
-                      InboxSpacing.contentBottom,
+                      24,
                     ),
                     child: ListenableBuilder(
                       listenable: _controller,
@@ -154,14 +153,8 @@ class _InboxPageState extends State<InboxPage> {
             ),
             Positioned(
               right: 36,
-              bottom: 96,
+              bottom: 24,
               child: AddTaskButton(onPressed: _openNewSchedulePage),
-            ),
-            const Positioned(
-              left: 32,
-              right: 32,
-              bottom: 14,
-              child: BottomNavBar(selectedIndex: 0),
             ),
           ],
         ),

@@ -101,6 +101,97 @@ void main() {
     await notificationGateway.openedController.close();
   });
 
+  testWidgets('a recreated host restores a pending permission explanation', (
+    tester,
+  ) async {
+    final notificationGateway = _notificationGateway(
+      canPost: false,
+      canScheduleExact: false,
+    );
+    final reminderGateway = _reminderGateway(
+      onReconcile: (_) async => successInvocation(reconcileResponse),
+    );
+    final bootstrap = AppNotificationBootstrap(
+      notificationGateway: notificationGateway,
+      reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
+        reminderGateway,
+      ),
+      notificationTapRouter: NotificationTapRouter(
+        navigator: FakeAppRouteNavigator(),
+      ),
+    );
+    await bootstrap.start();
+    expect(bootstrap.state.needsPermissionExplanation, isTrue);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AppNotificationHost(
+          bootstrap: bootstrap,
+          child: const Scaffold(body: SizedBox.expand()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('开启通知提醒'), findsOneWidget);
+    expect(bootstrap.state.permissionRequestHandled, isFalse);
+
+    bootstrap.dismissPermissionExplanation();
+    await tester.pumpAndSettle();
+    await notificationGateway.openedController.close();
+  });
+
+  testWidgets('permission explanation survives the home route transition', (
+    tester,
+  ) async {
+    final notificationGateway = _notificationGateway(
+      canPost: false,
+      canScheduleExact: false,
+    );
+    final bootstrap = AppNotificationBootstrap(
+      notificationGateway: notificationGateway,
+      reconcileReminderScheduleUseCase: ReconcileReminderScheduleUseCase(
+        _reminderGateway(
+          onReconcile: (_) async => successInvocation(reconcileResponse),
+        ),
+      ),
+      notificationTapRouter: NotificationTapRouter(
+        navigator: FakeAppRouteNavigator(),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil('/today', (_) => false),
+            child: const Text('login'),
+          ),
+        ),
+        onGenerateRoute: (settings) => MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => AppNotificationHost(
+            bootstrap: bootstrap,
+            child: const Scaffold(body: Text('today')),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('login'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('today'), findsOneWidget);
+    expect(find.text('开启通知提醒'), findsOneWidget);
+
+    bootstrap.dismissPermissionExplanation();
+    await tester.pumpAndSettle();
+    await notificationGateway.openedController.close();
+  });
+
   test('warm opened event routes and duplicate is ignored', () async {
     final navigator = FakeAppRouteNavigator();
     final notificationGateway = _notificationGateway(

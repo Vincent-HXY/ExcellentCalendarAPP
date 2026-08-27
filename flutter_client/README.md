@@ -47,7 +47,7 @@ Flutter UI
   -> Dart MethodChannel Adapter
   -> Kotlin MethodChannel Handler
   -> JNI / C++ Core
-  -> JSON Storage Repository
+  -> SQLite Storage Repository
 ```
 
-Keep UI code out of JSON file access, native Android APIs, and C++ details.
+Keep UI code out of database access, native Android APIs, and C++ details.

@@ -148,6 +148,8 @@ class EmailVerificationController extends ChangeNotifier {
       _resendIdempotencyKey = null;
       _challenge = challenge;
       _code = '';
+      _codeError = null;
+      _formError = null;
       _scheduleTicker();
       return true;
     } on BackendApiException catch (error) {

@@ -1,52 +1,71 @@
-// 文件作用：Inbox 底部导航栏，展示当前阶段的五个主入口占位。
-// 设计边界：导航项尚未接入路由，后续应由页面状态或路由层统一处理。
 import 'package:flutter/material.dart';
 
 import 'bottom_nav_item.dart';
 
 class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({required this.selectedIndex, super.key});
+  const BottomNavBar({
+    required this.selectedIndex,
+    required this.onSelected,
+    super.key,
+  });
 
-  // 数据块作用：标记当前选中的底部导航项索引，用于渲染选中态。
   final int selectedIndex;
+  final ValueChanged<int> onSelected;
 
-  // 关键数据：当前标签仍是英文占位，后续应与中文产品导航命名统一。
-  // 数据块作用：底部导航的静态配置列表，集中管理图标和可访问性标签。
   static const _items = [
-    BottomNavItemData(icon: Icons.inbox_rounded, label: 'Inbox'),
-    BottomNavItemData(icon: Icons.calendar_month_rounded, label: 'Calendar'),
-    BottomNavItemData(icon: Icons.location_on_rounded, label: 'Location'),
-    BottomNavItemData(icon: Icons.search_rounded, label: 'Search'),
-    BottomNavItemData(icon: Icons.more_horiz_rounded, label: 'More'),
+    BottomNavItemData(
+      icon: Icons.view_agenda_outlined,
+      selectedIcon: Icons.view_agenda_rounded,
+      label: '日程',
+    ),
+    BottomNavItemData(
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month_rounded,
+      label: '日历',
+    ),
+    BottomNavItemData(
+      icon: Icons.search_rounded,
+      selectedIcon: Icons.manage_search_rounded,
+      label: '搜索',
+    ),
+    BottomNavItemData(
+      icon: Icons.person_outline_rounded,
+      selectedIcon: Icons.person_rounded,
+      label: '我的',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // 函数作用：把导航项配置渲染成横向底部导航栏。
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
+    return DecoratedBox(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: const [
+        border: Border(top: BorderSide(color: Color(0x0D111827))),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x16000000),
-            blurRadius: 22,
-            offset: Offset(0, 10),
+            color: Color(0x0D111827),
+            blurRadius: 12,
+            offset: Offset(0, -2),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          for (var index = 0; index < _items.length; index++)
-            BottomNavItem(
-              data: _items[index],
-              isSelected: index == selectedIndex,
-              onTap: () {},
-            ),
-        ],
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 68,
+          child: Row(
+            children: [
+              for (var index = 0; index < _items.length; index++)
+                Expanded(
+                  child: BottomNavItem(
+                    data: _items[index],
+                    isSelected: index == selectedIndex,
+                    onTap: () => onSelected(index),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

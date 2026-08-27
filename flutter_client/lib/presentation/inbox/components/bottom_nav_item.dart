@@ -3,11 +3,14 @@
 import 'package:flutter/material.dart';
 
 class BottomNavItemData {
-  const BottomNavItemData({required this.icon, required this.label});
+  const BottomNavItemData({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
 
-  // 数据块作用：导航项图标，用于按钮主体显示。
   final IconData icon;
-  // 数据块作用：导航项文字标签，目前主要用于 tooltip 和测试识别。
+  final IconData selectedIcon;
   final String label;
 }
 
@@ -20,32 +23,44 @@ class BottomNavItem extends StatelessWidget {
   });
 
   final BottomNavItemData data;
-  // 数据块作用：是否为当前选中导航项，决定按钮背景和图标颜色。
   final bool isSelected;
-  // 数据块作用：点击导航项时触发的父级回调。
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    // 函数作用：绘制单个底部导航图标按钮，并根据选中态切换样式。
-    // 关键视觉：选中态使用主强调色填充，未选中态仅显示灰色图标。
-    return Tooltip(
-      message: data.label,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF38B9C5) : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(
-            data.icon,
-            color: isSelected ? Colors.white : const Color(0xFF9AA3A7),
-            size: 26,
+    final color = isSelected
+        ? const Color(0xFF24AFC0)
+        : const Color(0xFF515B61);
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: data.label,
+      child: Tooltip(
+        message: data.label,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox.expand(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isSelected ? data.selectedIcon : data.icon,
+                  color: color,
+                  size: 25,
+                ),
+                const SizedBox(height: 4),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 160),
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    height: 1,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  child: Text(data.label),
+                ),
+              ],
+            ),
           ),
         ),
       ),

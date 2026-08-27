@@ -8,6 +8,7 @@
 #include "excellent_calendar/domain/data_source.hpp"
 #include "excellent_calendar/domain/event_status.hpp"
 #include "excellent_calendar/domain/importance.hpp"
+#include "excellent_calendar/storage/json/legacy_json_codec.hpp"
 
 namespace excellent_calendar::storage::json {
 namespace {
@@ -209,6 +210,53 @@ picojson::value event_to_storage_json(const domain::Event& event) {
 
 }  // namespace
 
+common::Result<std::vector<domain::Event>> decode_legacy_event_store(
+    const picojson::value& root) {
+  if (!root.is<picojson::object>()) {
+    return common::Result<std::vector<domain::Event>>::failure(
+        storage_corrupted("root must be object"));
+  }
+  const auto& object = root.get<picojson::object>();
+  const auto* version = object_field(object, "storage_version");
+  if (version == nullptr || !version->is<double>() ||
+      !is_integer_number(version->get<double>()) ||
+      static_cast<int>(version->get<double>()) != 1) {
+    return common::Result<std::vector<domain::Event>>::failure(
+        storage_corrupted("storage_version must be 1", "storage_version"));
+  }
+  const auto* values = object_field(object, "events");
+  if (values == nullptr || !values->is<picojson::array>()) {
+    return common::Result<std::vector<domain::Event>>::failure(
+        storage_corrupted("events must be array", "events"));
+  }
+  std::vector<domain::Event> events;
+  const auto& records = values->get<picojson::array>();
+  events.reserve(records.size());
+  for (std::size_t index = 0; index < records.size(); ++index) {
+    auto parsed = parse_event_record(records[index], index);
+    if (!parsed.ok()) {
+      return common::Result<std::vector<domain::Event>>::failure(
+          parsed.error());
+    }
+    events.push_back(std::move(parsed.value()));
+  }
+  return common::Result<std::vector<domain::Event>>::success(
+      std::move(events));
+}
+
+picojson::value encode_legacy_event_store(
+    const std::vector<domain::Event>& events) {
+  picojson::array records;
+  records.reserve(events.size());
+  for (const auto& event : events) {
+    records.push_back(event_to_storage_json(event));
+  }
+  picojson::object root;
+  root["storage_version"] = picojson::value(1.0);
+  root["events"] = picojson::value(std::move(records));
+  return picojson::value(std::move(root));
+}
+
 /** 保存存储目录路径，实际目录创建放在 initialize()。 */
 JsonEventRepository::JsonEventRepository(
     std::filesystem::path storage_directory,
@@ -329,51 +377,13 @@ common::Result<std::vector<domain::Event>> JsonEventRepository::load_events_lock
     return common::Result<std::vector<domain::Event>>::success({});
   }
 
-  const auto& root = *loaded.value();
-  if (!root.is<picojson::object>()) {
-    return common::Result<std::vector<domain::Event>>::failure(storage_corrupted("root must be object"));
-  }
-  const auto& object = root.get<picojson::object>();
-  const auto* version = object_field(object, "storage_version");
-  // storage_version 用于未来升级文件格式；当前只接受版本 1。
-  if (version == nullptr || !version->is<double>() || !is_integer_number(version->get<double>()) ||
-      static_cast<int>(version->get<double>()) != 1) {
-    return common::Result<std::vector<domain::Event>>::failure(
-        storage_corrupted("storage_version must be 1", "storage_version"));
-  }
-  const auto* events_value = object_field(object, "events");
-  if (events_value == nullptr || !events_value->is<picojson::array>()) {
-    return common::Result<std::vector<domain::Event>>::failure(storage_corrupted("events must be array", "events"));
-  }
-
-  std::vector<domain::Event> events;
-  const auto& array = events_value->get<picojson::array>();
-  events.reserve(array.size());
-  // 逐条解析，任何一条损坏都会让整个读取失败，避免返回半可信数据。
-  for (std::size_t index = 0; index < array.size(); ++index) {
-    auto parsed = parse_event_record(array[index], index);
-    if (!parsed.ok()) {
-      return common::Result<std::vector<domain::Event>>::failure(parsed.error());
-    }
-    events.push_back(std::move(parsed.value()));
-  }
-  return common::Result<std::vector<domain::Event>>::success(std::move(events));
+  return decode_legacy_event_store(*loaded.value());
 }
 
 /** 在已持有 mutex_ 的前提下保存 events.json。 */
 common::Result<common::Unit> JsonEventRepository::save_events_locked(const std::vector<domain::Event>& events) {
-  // 组装根对象：版本号 + 事件数组。
-  picojson::array event_array;
-  event_array.reserve(events.size());
-  for (const auto& event : events) {
-    event_array.push_back(event_to_storage_json(event));
-  }
-
-  picojson::object root;
-  root["storage_version"] = picojson::value(1.0);
-  root["events"] = picojson::value(event_array);
-
-  return store_.write_json_file("events.json", picojson::value(root));
+  return store_.write_json_file("events.json",
+                                encode_legacy_event_store(events));
 }
 
 }  // namespace excellent_calendar::storage::json

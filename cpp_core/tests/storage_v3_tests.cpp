@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <array>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -7,6 +9,13 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#if defined(_WIN32)
+#include <process.h>
+#else
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 #include <picojson/picojson.h>
 
@@ -26,8 +35,14 @@
 #include "excellent_calendar/storage/json/calendar_workflow_coordinator.hpp"
 #include "excellent_calendar/storage/json/category_json_codec.hpp"
 #include "excellent_calendar/storage/json/json_anniversary_transaction.hpp"
+#include "excellent_calendar/storage/json/json_event_repository.hpp"
+#include "excellent_calendar/storage/json/json_notification_repository.hpp"
 #include "excellent_calendar/storage/json/json_recurring_event_transaction.hpp"
+#include "excellent_calendar/storage/json/json_reminder_repository.hpp"
 #include "excellent_calendar/storage/json/recurring_event_json_codec.hpp"
+#include "excellent_calendar/storage/sqlite/sqlite_calendar_database.hpp"
+
+#include <sqlite/sqlite3.h>
 
 namespace {
 
@@ -51,6 +66,7 @@ constexpr const char* kAnniversaryId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 constexpr const char* kAnniversaryRecurrenceId =
     "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 constexpr const char* kCategoryId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+std::filesystem::path g_test_executable;
 
 void require(bool condition, const std::string& message) {
   if (!condition) throw std::runtime_error(message);
@@ -92,6 +108,30 @@ class TemporaryDirectory {
  private:
   std::filesystem::path path_;
 };
+
+int run_migration_child(const std::filesystem::path& directory,
+                        const std::string& phase) {
+  const std::string executable = g_test_executable.string();
+  const std::string storage_directory = directory.string();
+#if defined(_WIN32)
+  const char* arguments[] = {executable.c_str(), "--sqlite-cutover-child",
+                             storage_directory.c_str(), phase.c_str(), nullptr};
+  return static_cast<int>(
+      _spawnv(_P_WAIT, executable.c_str(), arguments));
+#else
+  const pid_t child = ::fork();
+  require(child >= 0, "migration child process must fork");
+  if (child == 0) {
+    ::execl(executable.c_str(), executable.c_str(), "--sqlite-cutover-child",
+            storage_directory.c_str(), phase.c_str(), nullptr);
+    std::_Exit(127);
+  }
+  int status = 0;
+  require(::waitpid(child, &status, 0) == child,
+          "migration child process must be reaped");
+  return status;
+#endif
+}
 
 excellent_calendar::domain::Event populated_event() {
   excellent_calendar::domain::Event event;
@@ -1074,9 +1114,698 @@ void test_unified_prepared_journal_replays_frozen_after_image() {
           "successful shared recovery must compact its journal");
 }
 
+class RawSqlite final {
+ public:
+  explicit RawSqlite(const std::filesystem::path& path) {
+    const int code = sqlite3_open_v2(path.string().c_str(), &database_,
+                                     SQLITE_OPEN_READWRITE |
+                                         SQLITE_OPEN_FULLMUTEX,
+                                     nullptr);
+    if (code != SQLITE_OK) {
+      const std::string reason =
+          database_ == nullptr ? "open failed" : sqlite3_errmsg(database_);
+      if (database_ != nullptr) sqlite3_close_v2(database_);
+      database_ = nullptr;
+      throw std::runtime_error("raw SQLite open failed: " + reason);
+    }
+  }
+
+  ~RawSqlite() {
+    if (database_ != nullptr) sqlite3_close_v2(database_);
+  }
+
+  RawSqlite(const RawSqlite&) = delete;
+  RawSqlite& operator=(const RawSqlite&) = delete;
+
+  int scalar_int(const std::string& sql) const {
+    sqlite3_stmt* statement = nullptr;
+    require(sqlite3_prepare_v2(database_, sql.c_str(), -1, &statement,
+                               nullptr) == SQLITE_OK,
+            "raw SQLite scalar query must prepare");
+    const int step = sqlite3_step(statement);
+    require(step == SQLITE_ROW && sqlite3_column_type(statement, 0) ==
+                                      SQLITE_INTEGER,
+            "raw SQLite scalar query must return an integer");
+    const int value = sqlite3_column_int(statement, 0);
+    require(sqlite3_step(statement) == SQLITE_DONE,
+            "raw SQLite scalar query must return one row");
+    sqlite3_finalize(statement);
+    return value;
+  }
+
+  void execute(const std::string& sql) const {
+    char* message = nullptr;
+    const int code = sqlite3_exec(database_, sql.c_str(), nullptr, nullptr,
+                                  &message);
+    const std::string reason =
+        message == nullptr ? sqlite3_errmsg(database_) : message;
+    sqlite3_free(message);
+    require(code == SQLITE_OK, "raw SQLite execution failed: " + reason);
+  }
+
+  int insert_payload(const std::string& table,
+                     const std::string& key,
+                     std::int64_t position,
+                     const std::string& payload) const {
+    const std::string sql = "INSERT INTO " + table +
+                            "(record_key,position,payload_json) "
+                            "VALUES(?1,?2,?3)";
+    sqlite3_stmt* statement = nullptr;
+    if (sqlite3_prepare_v2(database_, sql.c_str(), -1, &statement, nullptr) !=
+        SQLITE_OK) {
+      return sqlite3_errcode(database_);
+    }
+    int code = sqlite3_bind_text(statement, 1, key.c_str(), -1,
+                                 SQLITE_TRANSIENT);
+    if (code == SQLITE_OK) {
+      code = sqlite3_bind_int64(statement, 2, position);
+    }
+    if (code == SQLITE_OK) {
+      code = sqlite3_bind_text(statement, 3, payload.c_str(),
+                               static_cast<int>(payload.size()),
+                               SQLITE_TRANSIENT);
+    }
+    if (code == SQLITE_OK) code = sqlite3_step(statement);
+    sqlite3_finalize(statement);
+    return code;
+  }
+
+ private:
+  sqlite3* database_ = nullptr;
+};
+
+picojson::object sqlite_v3_roots(
+    excellent_calendar::storage::sqlite::SqliteCalendarDatabase& database) {
+  auto recurring = database.load_recurring_state();
+  require(recurring.ok(), "SQLite recurring state must decode: " +
+                              (recurring.ok() ? std::string{}
+                                              : error_text(recurring.error())));
+  auto roots = encoded_v3_roots(recurring.value());
+  auto categories = database.load_category_state();
+  require(categories.ok(), "SQLite Category state must decode");
+  auto records =
+      excellent_calendar::storage::json::category_storage_records_from_state(
+          categories.value());
+  require(records.ok(), "SQLite Category state must encode");
+  auto encoded_categories =
+      excellent_calendar::storage::json::encode_category_store(records.value(),
+                                                                3);
+  require(encoded_categories.ok(), "SQLite Category root must encode");
+  roots["categories"] = std::move(encoded_categories.value());
+  return roots;
+}
+
+void require_roots_equal(const picojson::object& expected,
+                         const picojson::object& actual,
+                         const std::string& phase) {
+  require(expected.size() == actual.size(), phase + " Store count differs");
+  for (const auto& [name, expected_root] : expected) {
+    const auto found = actual.find(name);
+    require(found != actual.end(), phase + " is missing " + name);
+    require(found->second.serialize() == expected_root.serialize(),
+            phase + " changed fields or record order in " + name);
+  }
+}
+
+void test_sqlite_v4_migrates_v3_exactly_and_ignores_snapshot_after_commit() {
+  TemporaryDirectory directory;
+  write_v2_fixture(directory.path(), populated_state());
+  auto prepared = excellent_calendar::storage::json::
+      prepare_calendar_core_v3_storage(directory.path());
+  require(prepared.ok(), "SQLite migration fixture must reach JSON v3");
+  const auto expected = encoded_v3_roots(populated_state());
+
+  AtomicJsonFileStore source(directory.path());
+  std::map<std::string, std::string> source_snapshots;
+  for (const auto& definition :
+       excellent_calendar::storage::json::calendar_core_v3_data_stores()) {
+    source_snapshots[definition.file_name] =
+        read_required(source, definition.file_name).serialize();
+  }
+
+  auto opened = excellent_calendar::storage::sqlite::SqliteCalendarDatabase::
+      open(directory.path());
+  require(opened.ok(), "JSON v3 to SQLite v4 migration must succeed: " +
+                           (opened.ok() ? std::string{}
+                                        : error_text(opened.error())));
+  require(std::filesystem::exists(directory.path() / "calendar_core.sqlite3"),
+          "SQLite v4 database file must be published atomically");
+  require_roots_equal(expected, sqlite_v3_roots(*opened.value()),
+                      "SQLite migration");
+  for (const auto& [file_name, snapshot] : source_snapshots) {
+    picojson::value expected_guarded;
+    require(picojson::parse(expected_guarded, snapshot).empty(),
+            "source snapshot fixture must parse");
+    expected_guarded.get<picojson::object>()["storage_version"] =
+        picojson::value(4.0);
+    require(read_required(source, file_name).serialize() ==
+                expected_guarded.serialize(),
+            "migration must preserve every JSON field while installing the v4 downgrade guard: " +
+                file_name);
+  }
+
+  {
+    RawSqlite raw(opened.value()->database_path());
+    require(raw.scalar_int("PRAGMA user_version") == 4,
+            "SQLite user_version must be 4");
+    require(raw.scalar_int(
+                "SELECT COUNT(*) FROM schema_metadata WHERE "
+                "key='storage_format_version' AND value='4'") == 1,
+            "SQLite schema metadata must advertise v4");
+    require(raw.scalar_int(
+                "SELECT COUNT(*) FROM migration_history WHERE "
+                "migration_id='calendar_core_json_v3_to_sqlite_v4'") == 1,
+            "SQLite migration history must be durable");
+    require(raw.scalar_int(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND "
+                "name IN ('events','recurrence_versions',"
+                "'event_occurrence_states','anniversaries',"
+                "'anniversary_recurrences',"
+                "'anniversary_reminder_templates','reminders',"
+                "'notifications','reminder_recovery_batches','categories',"
+                "'legacy_events','legacy_reminders',"
+                "'legacy_notifications')") == 13,
+            "SQLite schema must contain every modern and compatibility Store");
+    require(raw.scalar_int(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND "
+                "name IN ('ix_reminders_schedulable',"
+                "'ix_legacy_reminders_schedulable',"
+                "'ux_recurrence_identity','ux_notification_attempt_id')") ==
+                4,
+            "SQLite scheduling and identity indexes must exist");
+  }
+
+  opened.value().reset();
+  require(std::filesystem::remove(directory.path() / "categories.json"),
+          "snapshot mutation fixture must remove categories.json");
+  auto reopened = excellent_calendar::storage::sqlite::SqliteCalendarDatabase::
+      open(directory.path());
+  require(reopened.ok(), "committed SQLite v4 must reopen without JSON");
+  require_roots_equal(expected, sqlite_v3_roots(*reopened.value()),
+                      "SQLite reopen");
+  require(!std::filesystem::exists(directory.path() / "categories.json"),
+          "SQLite reopen must not rewrite a retained JSON snapshot");
+}
+
+void test_sqlite_v4_rolls_back_every_modern_store_atomically() {
+  TemporaryDirectory directory;
+  auto database =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          directory.path());
+  require(database.ok(), "empty SQLite v4 database must initialize");
+  auto before_recurring = database.value()->load_recurring_state();
+  auto before_categories = database.value()->load_category_state();
+  require(before_recurring.ok() && before_categories.ok(),
+          "empty SQLite states must load");
+  auto after_recurring = populated_state();
+  auto after_categories =
+      excellent_calendar::storage::json::category_state_from_storage_records(
+          populated_categories());
+  require(after_categories.ok(), "populated Category fixture must decode");
+
+  auto rolled_back = database.value()->transaction([&]() {
+    auto recurring = database.value()->write_recurring_changes(
+        before_recurring.value(), after_recurring);
+    if (!recurring.ok()) return recurring;
+    auto categories = database.value()->write_category_changes(
+        before_categories.value(), after_categories.value());
+    if (!categories.ok()) return categories;
+    return injected_failure("sqlite_before_commit");
+  });
+  require(!rolled_back.ok() && rolled_back.error().code == "TEST_INTERRUPTION",
+          "injected SQLite transaction failure must propagate");
+  auto after_rollback_recurring = database.value()->load_recurring_state();
+  auto after_rollback_categories = database.value()->load_category_state();
+  require(after_rollback_recurring.ok() &&
+              after_rollback_recurring.value().events.empty() &&
+              after_rollback_recurring.value().reminders.empty() &&
+              after_rollback_recurring.value().notifications.empty() &&
+              after_rollback_recurring.value().anniversaries.empty() &&
+              after_rollback_categories.ok() &&
+              after_rollback_categories.value().categories.empty(),
+          "rollback must leave all ten modern Stores at their preimage");
+
+  auto committed = database.value()->transaction([&]() {
+    auto recurring = database.value()->write_recurring_changes(
+        before_recurring.value(), after_recurring);
+    if (!recurring.ok()) return recurring;
+    return database.value()->write_category_changes(
+        before_categories.value(), after_categories.value());
+  });
+  require(committed.ok(), "the same SQLite transaction must commit on retry");
+  require_roots_equal(encoded_v3_roots(after_recurring),
+                      sqlite_v3_roots(*database.value()),
+                      "SQLite committed transaction");
+}
+
+void test_sqlite_v4_enforces_constraints_and_rejects_corruption() {
+  TemporaryDirectory directory;
+  auto database =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          directory.path());
+  require(database.ok(), "constraint SQLite fixture must initialize");
+  auto before = database.value()->load_recurring_state();
+  require(before.ok() &&
+              database.value()
+                  ->write_recurring_changes(before.value(), populated_state())
+                  .ok(),
+          "constraint fixture must persist populated state");
+  const auto recurrence_root =
+      encoded_v3_roots(populated_state())
+          .at("recurrence_versions")
+          .get<picojson::object>()
+          .at("recurrence_versions")
+          .get<picojson::array>()
+          .front()
+          .serialize();
+  const auto database_path = database.value()->database_path();
+  database.value().reset();
+
+  {
+    RawSqlite raw(database_path);
+    const int duplicate = raw.insert_payload(
+        "recurrence_versions", "forged-record-key", 99, recurrence_root);
+    require(duplicate == SQLITE_CONSTRAINT ||
+                (duplicate & 0xff) == SQLITE_CONSTRAINT,
+            "recurrence business identity must be protected by SQLite UNIQUE");
+    raw.execute("UPDATE events SET payload_json='{}' WHERE position=0");
+  }
+  auto corrupted =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          directory.path());
+  require(!corrupted.ok() &&
+              corrupted.error().code == "STORAGE_DATA_CORRUPTED",
+          "valid JSON with a mismatched row identity must block SQLite open");
+
+  TemporaryDirectory unsupported_directory;
+  auto unsupported =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          unsupported_directory.path());
+  require(unsupported.ok(), "unsupported-version fixture must initialize");
+  const auto unsupported_path = unsupported.value()->database_path();
+  unsupported.value().reset();
+  {
+    RawSqlite raw(unsupported_path);
+    raw.execute("PRAGMA user_version=99");
+  }
+  auto rejected =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          unsupported_directory.path());
+  require(!rejected.ok() &&
+              rejected.error().code == "STORAGE_DATA_CORRUPTED",
+          "unknown SQLite schema version must be rejected without rewrite");
+
+  TemporaryDirectory missing_index_directory;
+  auto indexed =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          missing_index_directory.path());
+  require(indexed.ok(), "missing-index fixture must initialize");
+  const auto missing_index_path = indexed.value()->database_path();
+  indexed.value().reset();
+  {
+    RawSqlite raw(missing_index_path);
+    raw.execute("DROP INDEX ix_reminders_schedulable");
+  }
+  auto missing_index =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          missing_index_directory.path());
+  require(!missing_index.ok() &&
+              missing_index.error().code == "STORAGE_DATA_CORRUPTED",
+          "a missing required SQLite index must block runtime publication");
+}
+
+void test_sqlite_v4_rejects_every_same_name_wrong_schema_definition() {
+  const std::array<const char*, 16> tables{
+      "schema_metadata",
+      "store_generations",
+      "migration_history",
+      "events",
+      "recurrence_versions",
+      "event_occurrence_states",
+      "anniversaries",
+      "anniversary_recurrences",
+      "anniversary_reminder_templates",
+      "reminders",
+      "notifications",
+      "reminder_recovery_batches",
+      "categories",
+      "legacy_events",
+      "legacy_reminders",
+      "legacy_notifications",
+  };
+  const std::array<const char*, 16> indexes{
+      "ux_recurrence_identity",
+      "ux_occurrence_state_identity",
+      "ux_reminder_recurring_identity",
+      "ux_notification_attempt_id",
+      "ux_notification_prepared_delivery",
+      "ux_notification_sent_delivery",
+      "ux_recovery_request_id",
+      "ux_single_recovery_in_progress",
+      "ux_anniversary_template_identity",
+      "ix_reminders_schedulable",
+      "ix_events_active_time",
+      "ix_events_category",
+      "ix_notifications_reminder",
+      "ix_categories_active_order",
+      "ix_legacy_reminders_schedulable",
+      "ix_legacy_notifications_reminder",
+  };
+
+  for (const auto* table : tables) {
+    TemporaryDirectory directory;
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(database.ok(), "wrong-table fixture must initialize");
+    const auto database_path = database.value()->database_path();
+    database.value().reset();
+    {
+      RawSqlite raw(database_path);
+      raw.execute("DROP TABLE " + std::string(table));
+      raw.execute("CREATE TABLE " + std::string(table) + "(wrong TEXT)");
+    }
+    auto reopened =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(!reopened.ok() &&
+                reopened.error().code == "STORAGE_DATA_CORRUPTED",
+            "same-name wrong table definition must be rejected: " +
+                std::string(table));
+  }
+
+  for (const auto* index : indexes) {
+    TemporaryDirectory directory;
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(database.ok(), "wrong-index fixture must initialize");
+    const auto database_path = database.value()->database_path();
+    database.value().reset();
+    {
+      RawSqlite raw(database_path);
+      raw.execute("DROP INDEX " + std::string(index));
+      raw.execute("CREATE INDEX " + std::string(index) +
+                  " ON events(record_key)");
+    }
+    auto reopened =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(!reopened.ok() &&
+                reopened.error().code == "STORAGE_DATA_CORRUPTED",
+            "same-name wrong index definition must be rejected: " +
+                std::string(index));
+  }
+}
+
+void test_sqlite_v4_records_only_the_migrations_that_occurred() {
+  {
+    TemporaryDirectory directory;
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(database.ok(), "fresh history fixture must initialize");
+    const auto path = database.value()->database_path();
+    database.value().reset();
+    RawSqlite raw(path);
+    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 1 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_fresh_sqlite_v4' AND "
+                    "source_format='none' AND source_version=0 AND "
+                    "target_version=4") == 1 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_json_v3_to_sqlite_v4'") == 0,
+            "fresh SQLite must not claim a JSON migration");
+  }
+
+  {
+    TemporaryDirectory directory;
+    excellent_calendar::storage::json::JsonEventRepository events(
+        directory.path());
+    require(events.initialize().ok(), "v1 history fixture must initialize");
+    require(events.create(populated_event()).ok(),
+            "v1 history fixture must persist an Event");
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(database.ok(), "v1 history fixture must migrate");
+    const auto path = database.value()->database_path();
+    database.value().reset();
+    RawSqlite raw(path);
+    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 1 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_json_v1_compat_to_sqlite_v4' "
+                    "AND source_version=1 AND target_version=4") == 1 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_json_v3_to_sqlite_v4'") == 0,
+            "v1 import must not claim a v3 import");
+  }
+
+  {
+    TemporaryDirectory directory;
+    write_v2_fixture(directory.path(), populated_state());
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(database.ok(), "v2 history fixture must migrate");
+    const auto path = database.value()->database_path();
+    database.value().reset();
+    RawSqlite raw(path);
+    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 2 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_json_v2_to_v3_anniversary_"
+                    "reminder_r1' AND source_version=2 AND target_version=3") ==
+                    1 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_json_v3_to_sqlite_v4' AND "
+                    "source_version=3 AND target_version=4") == 1,
+            "v2 source must record its adjacent v2-to-v3-to-v4 path");
+  }
+
+  {
+    TemporaryDirectory directory;
+    write_v2_fixture(directory.path(), populated_state());
+    auto prepared = excellent_calendar::storage::json::
+        prepare_calendar_core_v3_storage(directory.path());
+    require(prepared.ok(), "v3 history fixture must prepare");
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(database.ok(), "v3 history fixture must migrate");
+    const auto path = database.value()->database_path();
+    database.value().reset();
+    RawSqlite raw(path);
+    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 1 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_json_v3_to_sqlite_v4' AND "
+                    "source_version=3 AND target_version=4") == 1,
+            "an already-v3 source must record only v3-to-v4");
+  }
+}
+
+void test_sqlite_v4_cutover_recovers_after_process_kill_at_every_boundary() {
+  const std::vector<std::string> phases{
+      "cutover_after_candidate_sync",
+      "cutover_after_journal_prepared",
+      "cutover_after_json_guard:storage_migrations.json",
+      "cutover_after_json_guard:events.json",
+      "cutover_after_json_guard:reminders.json",
+      "cutover_after_json_guard:notifications.json",
+      "cutover_after_json_guard:recurrence_versions.json",
+      "cutover_after_json_guard:event_occurrence_states.json",
+      "cutover_after_json_guard:anniversaries.json",
+      "cutover_after_json_guard:anniversary_recurrences.json",
+      "cutover_after_json_guard:anniversary_reminder_templates.json",
+      "cutover_after_json_guard:reminder_recovery_batches.json",
+      "cutover_after_json_guard:categories.json",
+      "cutover_after_json_guard:event_reminder_transaction.json",
+      "cutover_after_json_guard:reminder_notification_transaction.json",
+      "cutover_after_json_guard:workflow_transactions.json",
+      "cutover_after_json_guard:anniversary_workflow_transactions.json",
+      "cutover_after_json_guard:calendar_workflow_transactions.json",
+      "cutover_after_guards_installed",
+      "cutover_after_database_publish",
+      "cutover_after_journal_cleanup",
+  };
+  const std::array<const char*, 16> guarded_files{
+      "storage_migrations.json",
+      "events.json",
+      "reminders.json",
+      "notifications.json",
+      "recurrence_versions.json",
+      "event_occurrence_states.json",
+      "anniversaries.json",
+      "anniversary_recurrences.json",
+      "anniversary_reminder_templates.json",
+      "reminder_recovery_batches.json",
+      "categories.json",
+      "event_reminder_transaction.json",
+      "reminder_notification_transaction.json",
+      "workflow_transactions.json",
+      "anniversary_workflow_transactions.json",
+      "calendar_workflow_transactions.json",
+  };
+  const std::set<std::string> required_guard_files{
+      "storage_migrations.json", "events.json", "reminders.json",
+      "notifications.json"};
+
+  for (const auto& phase : phases) {
+    TemporaryDirectory directory;
+    write_v2_fixture(directory.path(), populated_state());
+    const int child_status = run_migration_child(directory.path(), phase);
+    require(child_status != 0,
+            "migration child must be forcibly terminated at " + phase);
+
+    auto recovered =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(recovered.ok(), "cutover must recover after process kill at " +
+                                phase + ": " +
+                                (recovered.ok()
+                                     ? std::string{}
+                                     : error_text(recovered.error())));
+    require_roots_equal(encoded_v3_roots(populated_state()),
+                        sqlite_v3_roots(*recovered.value()),
+                        "recovered cutover at " + phase);
+    require(!std::filesystem::exists(
+                directory.path() / "calendar_core_sqlite_cutover.json") &&
+                !std::filesystem::exists(
+                    directory.path() / "calendar_core.sqlite3.migrating"),
+            "successful recovery must clean cutover artifacts at " + phase);
+
+    AtomicJsonFileStore retained(directory.path());
+    for (const auto* file : guarded_files) {
+      auto root = retained.read_json_file(file);
+      require(root.ok(), "retained writer root must remain readable: " +
+                             std::string(file));
+      if (!root.value().has_value()) {
+        require(required_guard_files.count(file) == 0U,
+                "mandatory legacy runtime guard must exist after " + phase +
+                    ": " + file);
+        continue;
+      }
+      require(root.value()->is<picojson::object>() &&
+                  root.value()
+                          ->get<picojson::object>()
+                          .at("storage_version")
+                          .get<double>() == 4.0,
+              "every retained legacy writer root must carry a v4 guard after " +
+                  phase + ": " + file);
+    }
+  }
+}
+
+void test_sqlite_v4_publish_never_leaves_a_writable_json_truth() {
+  TemporaryDirectory directory;
+  excellent_calendar::storage::json::JsonEventRepository original_writer(
+      directory.path());
+  require(original_writer.initialize().ok(),
+          "legacy writer fixture must initialize");
+  require(original_writer.create(populated_event()).ok(),
+          "legacy writer fixture must persist its first Event");
+
+  const int child_status = run_migration_child(
+      directory.path(), "cutover_after_database_publish");
+  require(child_status != 0,
+          "migration process must terminate immediately after publication");
+  require(std::filesystem::exists(directory.path() / "calendar_core.sqlite3"),
+          "database must have reached the tested publication boundary");
+
+  auto second = populated_event();
+  second.id = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+  second.title = "must never fork into JSON";
+  excellent_calendar::storage::json::JsonEventRepository stale_writer(
+      directory.path());
+  auto stale_write = stale_writer.create(second);
+  require(!stale_write.ok(),
+          "a pre-v4 JSON writer must reject the durable guard after SQLite "
+          "publication");
+
+  auto recovered =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          directory.path());
+  require(recovered.ok(), "published cutover must finish on restart");
+  auto events = recovered.value()->load_legacy_events();
+  require(events.ok() && events.value().size() == 1 &&
+              events.value().front().id == kEventId,
+          "SQLite must retain the one authoritative pre-cutover Event");
+  AtomicJsonFileStore retained(directory.path());
+  auto event_root = read_required(retained, "events.json");
+  require(event_root.get<picojson::object>()
+                  .at("events")
+                  .get<picojson::array>()
+                  .size() == 1,
+          "rejected stale JSON write must not create a second truth");
+}
+
+void test_sqlite_v4_rejects_mixed_v1_and_modern_json_without_loss() {
+  TemporaryDirectory directory;
+  AtomicJsonFileStore store(directory.path());
+  require(store.initialize().ok(), "mixed-version fixture Store must initialize");
+
+  const std::map<std::string, picojson::value> roots{
+      {"events.json",
+       picojson::value(picojson::object{
+           {"events", picojson::value(picojson::array{})},
+           {"storage_version", picojson::value(1.0)}})},
+      {"reminders.json",
+       picojson::value(picojson::object{
+           {"reminders", picojson::value(picojson::array{})},
+           {"storage_version", picojson::value(1.0)}})},
+      {"notifications.json",
+       picojson::value(picojson::object{
+           {"notifications", picojson::value(picojson::array{})},
+           {"storage_version", picojson::value(1.0)}})},
+      {"categories.json",
+       picojson::value(picojson::object{
+           {"categories", picojson::value(picojson::array{})},
+           {"storage_version", picojson::value(2.0)}})},
+  };
+  for (const auto& [file_name, root] : roots) {
+    require(store.write_json_file(file_name, root).ok(),
+            "mixed-version fixture root must be written");
+  }
+
+  auto opened =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+          directory.path());
+  require(!opened.ok() && opened.error().code == "STORAGE_DATA_CORRUPTED",
+          "mixed JSON v1 and modern Stores must fail instead of dropping data");
+  require(!std::filesystem::exists(directory.path() / "calendar_core.sqlite3") &&
+              !std::filesystem::exists(directory.path() /
+                                       "calendar_core.sqlite3.migrating"),
+          "mixed-version rejection must not publish a SQLite database");
+  for (const auto& [file_name, root] : roots) {
+    require(read_required(store, file_name).serialize() == root.serialize(),
+            "mixed-version rejection must preserve every source root exactly");
+  }
+}
+
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc == 4 && std::string(argv[1]) == "--sqlite-cutover-child") {
+    const std::string target_phase = argv[3];
+    auto opened =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            argv[2], [&](std::string_view phase) {
+              if (phase == target_phase) std::_Exit(86);
+              return success();
+            });
+    std::cerr << "cutover child did not reach " << target_phase << ": "
+              << (opened.ok() ? "migration completed"
+                              : error_text(opened.error()))
+              << '\n';
+    return 87;
+  }
+  g_test_executable = std::filesystem::absolute(argv[0]);
   const std::vector<std::pair<std::string, void (*)()>> tests = {
       {"populated v2 to v3 golden and idempotency",
        test_populated_v2_to_v3_golden_and_idempotency},
@@ -1095,6 +1824,22 @@ int main() {
        test_post_commit_cleanup_failures_preserve_committed_success},
       {"unified prepared journal recovery",
        test_unified_prepared_journal_replays_frozen_after_image},
+      {"SQLite v4 exact migration and snapshot isolation",
+       test_sqlite_v4_migrates_v3_exactly_and_ignores_snapshot_after_commit},
+      {"SQLite v4 all-Store rollback",
+       test_sqlite_v4_rolls_back_every_modern_store_atomically},
+      {"SQLite v4 constraints and corruption rejection",
+       test_sqlite_v4_enforces_constraints_and_rejects_corruption},
+      {"SQLite v4 exact schema-definition rejection",
+       test_sqlite_v4_rejects_every_same_name_wrong_schema_definition},
+      {"SQLite v4 truthful migration history",
+       test_sqlite_v4_records_only_the_migrations_that_occurred},
+      {"SQLite v4 process-kill cutover recovery",
+       test_sqlite_v4_cutover_recovers_after_process_kill_at_every_boundary},
+      {"SQLite v4 no writable JSON truth after publish",
+       test_sqlite_v4_publish_never_leaves_a_writable_json_truth},
+      {"SQLite v4 mixed-version source rejection",
+       test_sqlite_v4_rejects_mixed_v1_and_modern_json_without_loss},
   };
   int failures = 0;
   for (const auto& [name, test] : tests) {
@@ -1107,7 +1852,7 @@ int main() {
     }
   }
   if (failures != 0) {
-    std::cerr << failures << " Storage v3 test(s) failed\n";
+    std::cerr << failures << " storage test(s) failed\n";
     return 1;
   }
   return 0;

@@ -28,3 +28,7 @@ Anniversary 已经是 date-only 的独立实体，并使用专属年度规则。
 - JSON Storage 必须升级为 v3 并提供连续、可恢复、无损的 v2→v3 migration；旧 App 不可安全降级打开 v3 目录。
 - 新 Wire shape 在三层与真实 APK 验收前保持 blocked，不得因 Schema 已冻结而被当成已发布能力。
 - SQLite 迁移可以替换存储 adapter，而不改变 occurrence、Reminder、Notification、RecoveryBatch 或 Scheduler 边界。
+
+## Implementation Note（2026-08-27）
+
+上述替换已经以 Calendar Core SQLite Storage v4 落地：Application 端口和工作流语义未变，原 v3 coordinator 的跨 Store 原子性由同一 SQLite `BEGIN IMMEDIATE` 事务承担；JSON v3 仅保留为严格记录 codec、迁移源和带 v4 降级 guard 的快照。v2 journal 恢复与 v2→v3 转换仍在首次 SQLite 导入前执行。

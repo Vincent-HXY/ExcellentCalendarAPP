@@ -34,6 +34,8 @@
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
 #include "excellent_calendar/storage/json/json_category_repository.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
+#include "excellent_calendar/storage/sqlite/sqlite_calendar_database.hpp"
+#include "excellent_calendar/storage/sqlite/sqlite_repository_adapters.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
 #include "excellent_calendar/storage/json/calendar_core_v3_storage_bootstrap.hpp"
 #include "excellent_calendar/storage/json/json_recurring_event_transaction.hpp"
@@ -692,7 +694,7 @@ void test_v2_transaction_rejects_unprepared_v1_directory_without_partial_writes(
           "failed v1 preflight must not create any partial v2 stores");
 }
 
-void test_v2_runtime_discards_confirmed_v1_before_initialization() {
+void test_sqlite_runtime_preserves_confirmed_v1_in_compatibility_tables() {
   TemporaryDirectory parent;
   const auto active = parent.path() / "calendar_core_storage_json";
   std::filesystem::create_directories(active);
@@ -705,20 +707,19 @@ void test_v2_runtime_discards_confirmed_v1_before_initialization() {
       active.string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
   require(initialized.ok(), initialized.ok()
                                 ? ""
-                                : "v1-to-v3 runtime initialize failed: " +
+                                : "v1-to-SQLite runtime initialize failed: " +
                                       initialized.error().code + " " +
                                       initialized.error().message + " " +
                                       (initialized.error().details.count("reason")
                                            ? initialized.error().details.at("reason")
                                            : std::string{}));
-  require(initialized.value().storage_format_version == 3,
-          "runtime should report Storage v3 after discarding confirmed v1");
+  require(initialized.value().storage_format_version == 4,
+          "runtime should report SQLite Storage v4");
   require(std::filesystem::is_directory(active) &&
-              std::filesystem::exists(active / "recurrence_versions.json") &&
-              std::filesystem::exists(
-                  active / "calendar_workflow_transactions.json") &&
-              std::filesystem::exists(active / "storage_migrations.json"),
-          "runtime should publish a complete v3 directory at the active path");
+              std::filesystem::exists(active / "calendar_core.sqlite3") &&
+              std::filesystem::exists(active / "events.json") &&
+              !std::filesystem::exists(active / "recurrence_versions.json"),
+          "runtime should retain guarded JSON snapshots and publish SQLite v4");
 
   const auto prefix = active.filename().generic_string() + ".v1.archived.";
   for (const auto& entry : std::filesystem::directory_iterator(parent.path())) {
@@ -727,11 +728,15 @@ void test_v2_runtime_discards_confirmed_v1_before_initialization() {
             "v1 must not be preserved as a sibling archive");
   }
 
-  excellent_calendar::storage::json::JsonRecurringEventTransaction v2(active);
-  require(v2.initialize().ok(), "new active v2 directory should reopen cleanly");
-  auto state = v2.load();
-  require(state.ok() && state.value().events.empty() && state.value().reminders.empty(),
-          "v1 data must not be reinterpreted or migrated into the empty v2 store");
+  auto database =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(active);
+  require(database.ok(), "SQLite v4 should reopen cleanly");
+  auto state = database.value()->load_recurring_state();
+  auto legacy_events = database.value()->load_legacy_events();
+  require(state.ok() && state.value().events.empty() &&
+              state.value().reminders.empty() && legacy_events.ok() &&
+              legacy_events.value().size() == 1U,
+          "v1 data must remain intact in compatibility tables without being reinterpreted as v3");
 }
 
 void test_v2_runtime_refuses_corrupt_v1_without_discarding_or_partial_v2() {
@@ -751,8 +756,9 @@ void test_v2_runtime_refuses_corrupt_v1_without_discarding_or_partial_v2() {
           "a version marker alone must not qualify a directory as confirmed v1");
   require(std::filesystem::exists(active / "events.json") &&
               !std::filesystem::exists(active / "recurrence_versions.json") &&
-              !std::filesystem::exists(active / "workflow_transactions.json"),
-          "failed v1 preflight must preserve the source and create no v2 files");
+              !std::filesystem::exists(active / "calendar_core.sqlite3") &&
+              !std::filesystem::exists(active / "calendar_core.sqlite3.migrating"),
+          "failed v1 preflight must preserve the source and publish no SQLite database");
   const auto prefix = active.filename().generic_string() + ".v1.archived.";
   const bool discarded = std::any_of(
       std::filesystem::directory_iterator(parent.path()),
@@ -762,7 +768,7 @@ void test_v2_runtime_refuses_corrupt_v1_without_discarding_or_partial_v2() {
   require(!discarded, "corrupt v1 must never be removed or treated as valid");
 }
 
-void test_v1_discard_classifier_rejects_v2_reminder_enums() {
+void test_sqlite_v1_compatibility_preserves_newer_reminder_enums() {
   for (const auto& variant : {std::string("expired"),
                               std::string("occurrence_reopened")}) {
     TemporaryDirectory parent;
@@ -789,18 +795,28 @@ void test_v1_discard_classifier_rejects_v2_reminder_enums() {
 
     auto initialized = excellent_calendar::boundary::api::initialize_recurring_runtime(
         active.string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
-    require(!initialized.ok() && initialized.error().code == "STORAGE_DATA_CORRUPTED",
-            "v1 discard classifier must reject v2-only Reminder enum values");
+    require(initialized.ok() && initialized.value().storage_format_version == 4,
+            "lossless SQLite migration may preserve newer enum text in v1 compatibility data");
     const auto prefix = active.filename().generic_string() + ".v1.archived.";
     const bool discarded = std::any_of(
         std::filesystem::directory_iterator(parent.path()),
         std::filesystem::directory_iterator(), [&](const auto& entry) {
           return entry.path().filename().generic_string().rfind(prefix, 0) == 0U;
         });
-    require(!discarded &&
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(active);
+    auto reminders = database.ok()
+                         ? database.value()->load_legacy_reminders()
+                         : excellent_calendar::common::Result<
+                               std::vector<excellent_calendar::domain::Reminder>>::
+                               failure(database.error());
+    require(!discarded && database.ok() && reminders.ok() &&
+                reminders.value().size() == 1U &&
+                reminders.value().front().status == reminder.status &&
                 std::filesystem::exists(active / "reminders.json") &&
+                std::filesystem::exists(active / "calendar_core.sqlite3") &&
                 !std::filesystem::exists(active / "recurrence_versions.json"),
-            "rejected v2-only values must preserve v1 data without partial v2 output");
+            "v1 compatibility migration must preserve enum text and install guarded snapshots");
   }
 }
 
@@ -809,9 +825,9 @@ void test_recurring_runtime_initializes_pinned_tzdb_and_v2_services() {
   auto initialized = excellent_calendar::boundary::api::initialize_recurring_runtime(
       directory.path().string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
   require(initialized.ok() && initialized.value().initialized &&
-              initialized.value().storage_format_version == 3 &&
+              initialized.value().storage_format_version == 4 &&
               initialized.value().tzdb_version == "2026c",
-          "recurring runtime must initialize storage v3 after validating pinned TZDB");
+          "recurring runtime must initialize SQLite storage v4 after validating pinned TZDB");
   require(excellent_calendar::boundary::api::current_recurring_event_workflow_service() !=
                   nullptr &&
               excellent_calendar::boundary::api::
@@ -3445,9 +3461,9 @@ int main() {
     test_timed_recurrence_rejects_nonpositive_local_interval_across_fold();
     test_storage_v2_reload_and_prepared_journal_replay();
     test_v2_transaction_rejects_unprepared_v1_directory_without_partial_writes();
-    test_v2_runtime_discards_confirmed_v1_before_initialization();
+    test_sqlite_runtime_preserves_confirmed_v1_in_compatibility_tables();
     test_v2_runtime_refuses_corrupt_v1_without_discarding_or_partial_v2();
-    test_v1_discard_classifier_rejects_v2_reminder_enums();
+    test_sqlite_v1_compatibility_preserves_newer_reminder_enums();
     test_recurring_runtime_initializes_pinned_tzdb_and_v2_services();
     test_failed_v2_reinitialization_clears_previously_published_writers();
     test_create_and_complete_occurrence_rolls_next_reminder_atomically();

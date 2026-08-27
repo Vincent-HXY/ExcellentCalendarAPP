@@ -29,6 +29,9 @@ class _AppNotificationHostState extends State<AppNotificationHost>
     widget.bootstrap.addListener(_handleBootstrapChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(widget.bootstrap.start());
+      // A previous host may have been removed by navigation after bootstrap
+      // had already published its state. Restore any still-pending prompt.
+      _handleBootstrapChanged();
     });
   }
 
@@ -38,6 +41,9 @@ class _AppNotificationHostState extends State<AppNotificationHost>
     if (oldWidget.bootstrap != widget.bootstrap) {
       oldWidget.bootstrap.removeListener(_handleBootstrapChanged);
       widget.bootstrap.addListener(_handleBootstrapChanged);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _handleBootstrapChanged();
+      });
     }
   }
 

@@ -1,6 +1,38 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project(excellent_calendar_core LANGUAGES CXX)
+project(excellent_calendar_core LANGUAGES C CXX)
+
+add_library(
+    excellent_calendar_sqlite
+    STATIC
+    third_party/sqlite/sqlite3.c
+)
+
+set_target_properties(
+    excellent_calendar_sqlite
+    PROPERTIES
+    C_STANDARD 11
+    C_STANDARD_REQUIRED YES
+    C_EXTENSIONS NO
+)
+
+target_compile_definitions(
+    excellent_calendar_sqlite
+    PRIVATE
+    SQLITE_DEFAULT_FOREIGN_KEYS=1
+    SQLITE_DEFAULT_WAL_SYNCHRONOUS=2
+    SQLITE_DQS=0
+    SQLITE_ENABLE_API_ARMOR=1
+    SQLITE_OMIT_LOAD_EXTENSION=1
+    SQLITE_TEMP_STORE=2
+    SQLITE_THREADSAFE=1
+)
+
+target_include_directories(
+    excellent_calendar_sqlite
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sqlite
+)
 
 add_library(
     excellent_calendar_date_tz
@@ -109,11 +141,19 @@ add_library(
     src/storage/json/json_snapshot_transaction.cpp
     src/storage/json/recurring_event_json_codec.cpp
     src/storage/json/recurring_event_state_validator.cpp
+    src/storage/sqlite/sqlite_calendar_database.cpp
+    src/storage/sqlite/sqlite_repository_adapters.cpp
 )
 
 target_compile_features(excellent_calendar_core PUBLIC cxx_std_17)
 
-target_link_libraries(excellent_calendar_core PUBLIC excellent_calendar_date_tz)
+target_link_libraries(
+    excellent_calendar_core
+    PUBLIC
+    excellent_calendar_date_tz
+    PRIVATE
+    excellent_calendar_sqlite
+)
 
 target_include_directories(
     excellent_calendar_core

@@ -3,10 +3,15 @@ WORKDIR /workspace
 
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw --batch-mode --no-transfer-progress dependency:go-offline
+RUN chmod +x mvnw
 
 COPY src/ src/
-RUN ./mvnw --batch-mode --no-transfer-progress -DskipTests package
+RUN --mount=type=cache,id=excellent-calendar-maven,target=/root/.m2,sharing=locked \
+    for attempt in 1 2 3; do \
+      ./mvnw --batch-mode --no-transfer-progress --update-snapshots -Dmaven.test.skip=true package && exit 0; \
+      test "$attempt" -lt 3 || exit 1; \
+      echo "Maven package download interrupted; retrying with the persistent cache (attempt $((attempt + 1))/3)"; \
+    done
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app

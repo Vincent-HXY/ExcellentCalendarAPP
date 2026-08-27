@@ -15,15 +15,15 @@
 
 ## 当前阶段约定
 
-- 当前正式本地持久化仍是 JSON；SQLite 是后续目标，不与 JSON 同时作为可写真相源。
-- Calendar Core JSON Storage format 升级为 `2`。v1 不读取、不迁移、不保留；首次切换只允许在确认目录属于 v1 后清理该目录，再初始化空 v2；确认或初始化失败必须停止初始化且不得删除任何数据。
-- Native Contract v2 是一次协调发布的 breaking change，已于 2026-08-08 作为同一发行版本激活。Dart DTO/Gateway、Kotlin validator/bridge、JNI、Android 调度与 JSON Storage v2 均已切换，真机验证记录见 `docs/develop_record.md`。
+- 当前正式本地持久化是 Calendar Core SQLite Storage v4，`calendar_core.sqlite3` 是唯一可写真相源；历史 JSON 只作为迁移输入、冻结 payload codec 和带版本 4 降级 guard 的诊断快照，不实行双写。
+- 首次启动支持严格 JSON v2→v3→SQLite v4 连续迁移、JSON v3→SQLite v4 完整导入，以及 JSON v1 Event/Reminder/Notification 向隔离兼容表的无损导入。未知版本、混合 v1/现代目录、损坏记录或不完整 schema 必须停止初始化且不得发布候选数据库。
+- Native Contract v2 的跨层 DTO/Gateway、Kotlin validator/bridge、JNI 与 Android 调度保持不变；运行时只把 `storage_format_version` 协调升级为 `4`，C++ Application 继续依赖既有 Repository/Transaction ports。
 - 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
 - `AIExtraction`、`SyncOperation` 等模型先作为未来能力预留，字段可先保持文档级设计。
 - 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
 - `Reminder` 作为独立实体保存，不嵌入 `Event`、`Habit`、`Anniversary`。
 - 一个 `Event`、`Habit` 或 `Anniversary` 可以关联多条 `Reminder`。业务上可以理解为“提醒时间列表”，存储上是多条提醒记录。
-- 本轮 occurrence 状态和滚动 Reminder 仍只定义 Event 闭环。Anniversary V1 使用本文件独立定义的 `AnniversaryRecurrence` 年度规则，不能复用 Event v2 的 revision/UTC 锚点语义；Habit 重复规则与 Anniversary Reminder 仍为计划态。
+- Event occurrence 状态和滚动 Reminder 继续使用 Event 专属 revision/UTC 锚点语义。Anniversary 使用独立的 `AnniversaryRecurrence`、Reminder template 与 date-based occurrence identity，不能复用 Event 规则；Habit 重复规则仍为计划态。
 
 ## 时区解析与运行时门禁
 
@@ -516,52 +516,34 @@
 - Category 归属于设备、本地资料还是具体云端用户，以及系统默认分类的初始化/隐藏/复制规则，
   仍待账号与同步架构冻结后另行设计；本轮不得据此新增字段或预设写入。
 
-### Category Storage v2 映射（已实现，尚未通过发布集成门禁）
+### Category Storage v4 映射（integrated / active）
 
-Category 使用 Calendar Core JSON v2 目录中的独立逻辑 Store：
+Category 使用 Calendar Core SQLite v4 的独立 `categories` 表。每行保存主键 `record_key`、稳定连续的
+`position` 和由冻结 Category v3 codec 严格编解码的完整 `payload_json`；schema、迁移与索引以
+`contracts/storage/calendar_core_storage.yaml` 的 `calendar_core_v4` 为准。
 
-```json
-{
-  "storage_version": 2,
-  "categories": []
-}
-```
-
-- 文件名固定为 `categories.json`，根对象只允许 `storage_version` 与 `categories`；严格格式由
-  `contracts/storage/category_store.schema.json` 定义。
 - `CategoryStorageRecord` 与 Create Request、Response DTO、领域对象分离，但使用同一组稳定事实字段：
   `id/name/description/color/icon/sort_order/created_at/updated_at/deleted_at`。所有 nullable 字段也必须
   显式保存，禁止依赖语言默认值补字段。
-- 正式本地 Store 比兼容性 Response reader 更严格：`color` 与 `sort_order` 在磁盘上必须非空；
-  request 的空顺序由 C++ 在持久化前物化。Response 保留这两项可空只用于既有草案/非 Store reader 兼容，
-  不能据此向新 `categories.json` 写入 null。
-- 存储快照按 `id` 升序序列化，使同一状态产生稳定文件；本地 Store 投影按
-  `sortOrder -> createdAt -> id` 排序，兼容性 Response comparator 仍把非 Store 来源的 null 放在最后；
-  任何情况下都不能把数组下标当作排序事实。
+- 正式持久化记录比兼容性 Response reader 更严格：`color` 与 `sort_order` 必须非空；request 的空顺序由
+  C++ 在持久化前物化。Response 保留这两项可空只用于既有草案/非 Store reader 兼容。
+- 持久化位置按 `id` 升序稳定生成；本地 Store 投影按 `sortOrder -> createdAt -> id` 排序，兼容性 Response
+  comparator 仍把非 Store 来源的 null 放在最后；任何情况下都不能把 `position` 或 SQLite rowid 当作业务排序事实。
 - Request、Response 与 Store 的 `sort_order` 都限制为 `0..9007199254740991`。请求直接超限返回
   `CONTRACT_VALIDATION_FAILED`，磁盘记录超限返回 `STORAGE_DATA_CORRUPTED`；`category.create.sort_order = null`
-  时 C++ workflow 在目录级写锁内按活动记录的最大 `sort_order + 1` 生成持久化值，没有活动记录时从
+  时 C++ workflow 在同一 SQLite 事务内按活动记录的最大 `sort_order + 1` 生成持久化值，没有活动记录时从
   `0` 开始，最大值已达上界时返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。显式重复顺序值合法，
   由列表次级键稳定消歧。
-- 当前 create 只修改 `categories.json`，完整快照校验后使用同目录临时文件、flush/fsync、原子替换和目录同步，
-  成功完成目录同步才是 Contract 提交点；任何阶段返回失败都必须让旧快照继续权威。单文件原子替换就是事务
-  边界，不需要扩展现有 Event/Reminder 或 Anniversary journal。
-- 未来若一个 Category workflow 必须同时修改其他逻辑 Store，必须先定义独立的可恢复 journal；不得静默扩大
-  两个既有 journal 的精确 Store 集合。
+- Category create 在一个数据库事务内替换经校验的表状态并递增 generation；COMMIT 失败时旧状态继续权威。
+  未来跨 Store workflow 仍复用同一数据库事务和窄 Repository port，不向 Application 暴露 `sqlite3` handle。
 - 已有 Event/Habit/Anniversary 的 `categoryId` 是弱引用：Category Store 加载不扫描、不清空也不规范化其他
-  Store 的引用。缺失或软删除 Category 时保留原 ID，聚合投影可以返回空 Category。
-- 这是 Storage v2 的可加性独立文件，不改变现有 Store 的根包络、记录 codec 或 journal。合法旧 v2 目录在
-  Category Storage 正式激活后只创建空根；若已有 `categories.json`，必须完整校验并原样保留，损坏或未知版本
-  显式失败，禁止重置。
+  Store 的引用。缺失或软删除 Category 时保留原 ID，聚合投影可以返回空 Category，因此不建立级联外键。
+- 历史 `categories.json` v2/v3 是迁移输入；既有记录必须严格校验并逐字段保留。迁移完成后 JSON 集合只保留为
+  `storage_version=4` downgrade guard，不再参与运行时读写。
 - 没有正式 Category v1 Store，也禁止把 Flutter Fake、“默认日程”fixture 或 owner 文案迁入正式存储。
-- 当前选择严格 JSON 完整快照，是因为 Category 属于低基数配置数据，公开操作只有 list/create，且可以直接复用
-  现有目录锁、原子替换和损坏检测。Repository 边界保持不变；以后出现账号分区同步、高频写入或明显规模压力时，
-  再用显式 migration 切换 SQLite，而不是让 UI/DTO 依赖文件格式。
 
-Category 的 C++ Domain/Repository/JSON codec、bootstrap、JNI export 与真实磁盘读写代码已经存在，故 Store
-和两条调用统一标记为 `implementation_status: implemented_unintegrated`；但 `release_status: blocked` 仍表示
-不能宣称产品闭环已完成。解除条件是 Event detail 聚合、Kotlin Event Category 校验、原子写 post-replace
-失败语义、跨层安全整数/规范化一致性、Flutter 生产 composition 与设备 smoke 全部通过。
+Category 的 C++ Domain/Repository/SQLite adapter、bootstrap、JNI export、真实磁盘读写与生产 composition
+已经接入，Store 和两条公开调用统一为 `implementation_status: integrated`、`release_status: active`。
 
 ## Recurrence：重复规则
 
@@ -949,7 +931,7 @@ AI 解析结果保存从自然语言、图片或分享文本中提取出的候�
 
 `AnniversaryRecurrence` 是 Anniversary 独占的轻量年度规则，持久化集合命名为 `anniversary_recurrences`。它不属于 Event v2 的不可变 Recurrence revision，也不保存 `anniversaryId`、月、日、时区、UTC occurrence 或 RRULE；关系真相只保存在 `Anniversary.recurrenceId`。
 
-当前 JSON Storage v2 已激活 `anniversaries.json` 与 `anniversary_recurrences.json`，create/update/delete 通过独立 `anniversary_workflow_transactions.json` 两 Store journal 原子提交。该 journal 不参与也不改变 Event/Reminder 既有六 Store 事务。
+当前 SQLite Storage v4 使用 `anniversaries` 与 `anniversary_recurrences` 表保存这两个逻辑集合；create/update/delete 在同一数据库事务中原子提交，不再依赖 JSON workflow journal。冻结 v3 codec 仍负责完整字段与领域不变量，SQLite 负责持久性、主键、业务唯一约束和事务。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |

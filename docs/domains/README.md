@@ -15,15 +15,15 @@
 
 ## 当前阶段约定
 
-- 当前正式本地持久化仍是 JSON；SQLite 是后续目标，不与 JSON 同时作为可写真相源。
-- Calendar Core JSON Storage format 升级为 `2`。v1 不读取、不迁移、不保留；首次切换只允许在确认目录属于 v1 后清理该目录，再初始化空 v2；确认或初始化失败必须停止初始化且不得删除任何数据。
-- Native Contract v2 是一次协调发布的 breaking change，已于 2026-08-08 作为同一发行版本激活。Dart DTO/Gateway、Kotlin validator/bridge、JNI、Android 调度与 JSON Storage v2 均已切换，真机验证记录见 `docs/develop_record.md`。
+- 当前唯一正式本地 writer 是 Calendar Core SQLite Storage v4；所有 C++ Repository 共享同一数据库连接和事务，JSON 不再作为可写真相源。
+- JSON v1/v2/v3 只保留为冻结迁移输入：v1 Event/Reminder/Notification 进入隔离兼容表，v2 先完成 journal recovery 与 v2→v3 转换，v3 严格记录再事务导入 SQLite。迁移成功后原集合保留，但根版本改为 `storage_version=4`，阻止旧 JSON App 静默分叉数据。
+- Native Contract v2 是一次协调发布的 breaking change，已于 2026-08-08 作为同一发行版本激活。Dart DTO/Gateway、Kotlin validator/bridge、JNI、Android 调度与 SQLite Storage v4 当前保持同一发行链路。
 - 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
 - `AIExtraction`、`SyncOperation` 等模型先作为未来能力预留，字段可先保持文档级设计。
 - 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
 - `Reminder` 作为独立实体保存，不嵌入 `Event`、`Habit`、`Anniversary`。
 - 一个 `Event`、`Habit` 或 `Anniversary` 可以关联多条 `Reminder`。业务上可以理解为“提醒时间列表”，存储上是多条提醒记录。
-- 本轮 occurrence 状态和滚动 Reminder 仍只定义 Event 闭环。Anniversary V1 使用本文件独立定义的 `AnniversaryRecurrence` 年度规则，不能复用 Event v2 的 revision/UTC 锚点语义；Habit 重复规则与 Anniversary Reminder 仍为计划态。
+- Event occurrence 状态和滚动 Reminder 使用 Event 闭环。Anniversary V1 使用本文件独立定义的 `AnniversaryRecurrence` 年度规则，不能复用 Event v2 的 revision/UTC 锚点语义；Anniversary Reminder 已接入当前链路，Habit 重复规则仍为计划态。
 
 ## 时区解析与运行时门禁
 

@@ -259,6 +259,32 @@ class AuthFlowIT extends ApiIntegrationTestSupport {
     }
 
     @Test
+    void resendOfExpiredChallengeIssuesFreshChallengeAndCode() {
+        String email = uniqueEmail();
+        String challengeId = register(email,
+                "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12),
+                "CorrectHorseBattery");
+        String firstCode = mailSender.latestCode(email);
+        jdbcTemplate.update("""
+                UPDATE email_action_challenges
+                SET expires_at = now() - interval '1 second',
+                    resend_available_at = now() - interval '1 second'
+                WHERE id = ?
+                """, UUID.fromString(challengeId));
+
+        ApiResponse response = postJson("/auth/registration/resend", """
+                {"challenge_id":"%s"}
+                """.formatted(challengeId),
+                "Idempotency-Key", UUID.randomUUID().toString());
+
+        assertThat(response.status()).as("resend body: %s", response.body())
+                .isEqualTo(HttpStatus.OK.value());
+        String newChallengeId = response.body().path("data").path("challenge_id").asText();
+        assertThat(newChallengeId).isNotBlank().isNotEqualTo(challengeId);
+        assertThat(mailSender.latestCode(email)).isNotEqualTo(firstCode);
+    }
+
+    @Test
     void expiredChallengeIsRejectedAsExpired() {
         String email = uniqueEmail();
         String challengeId = register(email, "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12), "CorrectHorseBattery");
@@ -350,6 +376,29 @@ class AuthFlowIT extends ApiIntegrationTestSupport {
         // The existing active registration challenge is reused; no duplicate mail is sent.
         assertThat(challenge.path("challenge_id").asText()).isEqualTo(registerChallengeId);
         assertThat(mailSender.hasMailFor(email)).isFalse();
+    }
+
+    @Test
+    void loginOnUnverifiedAccountReplacesExpiredChallenge() {
+        String email = uniqueEmail();
+        String registerChallengeId =
+                register(email, "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12), "CorrectHorseBattery");
+        jdbcTemplate.update("""
+                UPDATE email_action_challenges SET expires_at = now() - interval '1 second'
+                WHERE id = ?
+                """, UUID.fromString(registerChallengeId));
+        mailSender.clear();
+
+        ApiResponse login = postJson("/auth/login", """
+                {"email":"%s","password":"CorrectHorseBattery"}
+                """.formatted(email));
+
+        assertThat(login.status()).isEqualTo(HttpStatus.FORBIDDEN.value());
+        JsonNode challenge = login.body().path("error").path("context").path("verification_challenge");
+        assertThat(challenge.path("challenge_id").asText())
+                .isNotBlank()
+                .isNotEqualTo(registerChallengeId);
+        assertThat(mailSender.hasMailFor(email)).isTrue();
     }
 
     @Test

@@ -11,7 +11,16 @@
         android:targetProcesses="${applicationId}:category_sort_order_exhaustion_jni_test"
         tools:targetApi="o" />
 
-    <application>
+    <!--
+        Debug and integration-test APKs use the isolated `.device_test`
+        application id. Keep their launcher name visibly different from the
+        production app: an integration-test target is not a standalone app
+        entry point and otherwise looks like a permanently stuck production
+        launch when opened from the launcher.
+    -->
+    <application
+        android:label="Excellent Calendar (测试版)"
+        tools:replace="android:label">
         <receiver
             android:name="com.excellentcalendar.excellent_calendar.bridge.native.AnniversaryJniSmokeReceiver"
             android:exported="true"

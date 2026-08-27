@@ -5,6 +5,7 @@
 #include "excellent_calendar/common/datetime.hpp"
 #include "excellent_calendar/domain/notification.hpp"
 #include "excellent_calendar/domain/reminder.hpp"
+#include "excellent_calendar/storage/json/legacy_json_codec.hpp"
 
 namespace excellent_calendar::storage::json {
 namespace {
@@ -141,6 +142,49 @@ picojson::value to_json(const domain::Notification& notification) {
 
 }  // namespace
 
+common::Result<std::vector<domain::Notification>>
+decode_legacy_notification_store(const picojson::value& root_value) {
+  if (!root_value.is<picojson::object>()) {
+    return common::Result<std::vector<domain::Notification>>::failure(
+        storage_data_corrupted("root must be object"));
+  }
+  const auto& root = root_value.get<picojson::object>();
+  const auto* version = field(root, "storage_version");
+  const auto* values = field(root, "notifications");
+  if (version == nullptr || !version->is<double>() ||
+      version->get<double>() != 1.0 || values == nullptr ||
+      !values->is<picojson::array>()) {
+    return common::Result<std::vector<domain::Notification>>::failure(
+        storage_data_corrupted("notification storage schema is invalid"));
+  }
+  std::vector<domain::Notification> notifications;
+  const auto& records = values->get<picojson::array>();
+  notifications.reserve(records.size());
+  for (std::size_t index = 0; index < records.size(); ++index) {
+    auto parsed = parse_notification(records[index], index);
+    if (!parsed.ok()) {
+      return common::Result<std::vector<domain::Notification>>::failure(
+          parsed.error());
+    }
+    notifications.push_back(std::move(parsed.value()));
+  }
+  return common::Result<std::vector<domain::Notification>>::success(
+      std::move(notifications));
+}
+
+picojson::value encode_legacy_notification_store(
+    const std::vector<domain::Notification>& notifications) {
+  picojson::array records;
+  records.reserve(notifications.size());
+  for (const auto& notification : notifications) {
+    records.push_back(to_json(notification));
+  }
+  picojson::object root;
+  root["storage_version"] = picojson::value(1.0);
+  root["notifications"] = picojson::value(std::move(records));
+  return picojson::value(std::move(root));
+}
+
 JsonNotificationRepository::JsonNotificationRepository(
     std::filesystem::path storage_directory,
     std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
@@ -222,40 +266,14 @@ JsonNotificationRepository::load_notifications_locked() {
   if (!loaded.value().has_value()) {
     return common::Result<std::vector<domain::Notification>>::success({});
   }
-  if (!loaded.value()->is<picojson::object>()) {
-    return common::Result<std::vector<domain::Notification>>::failure(
-        storage_data_corrupted("root must be object"));
-  }
-  const auto& root = loaded.value()->get<picojson::object>();
-  const auto* version = field(root, "storage_version");
-  const auto* values = field(root, "notifications");
-  if (version == nullptr || !version->is<double>() || version->get<double>() != 1.0 ||
-      values == nullptr || !values->is<picojson::array>()) {
-    return common::Result<std::vector<domain::Notification>>::failure(
-        storage_data_corrupted("notification storage schema is invalid"));
-  }
-  std::vector<domain::Notification> notifications;
-  const auto& array = values->get<picojson::array>();
-  notifications.reserve(array.size());
-  for (std::size_t index = 0; index < array.size(); ++index) {
-    auto parsed = parse_notification(array[index], index);
-    if (!parsed.ok()) {
-      return common::Result<std::vector<domain::Notification>>::failure(parsed.error());
-    }
-    notifications.push_back(std::move(parsed.value()));
-  }
-  return common::Result<std::vector<domain::Notification>>::success(std::move(notifications));
+  return decode_legacy_notification_store(*loaded.value());
 }
 
 common::Result<common::Unit> JsonNotificationRepository::save_notifications_locked(
     const std::vector<domain::Notification>& notifications) {
-  picojson::array array;
-  array.reserve(notifications.size());
-  for (const auto& notification : notifications) array.push_back(to_json(notification));
-  picojson::object root;
-  root["storage_version"] = picojson::value(1.0);
-  root["notifications"] = picojson::value(std::move(array));
-  return store_.write_json_file("notifications.json", picojson::value(std::move(root)));
+  return store_.write_json_file(
+      "notifications.json",
+      encode_legacy_notification_store(notifications));
 }
 
 }  // namespace excellent_calendar::storage::json

@@ -21,6 +21,18 @@ class EventDetailRouteData {
 class AppRouter {
   const AppRouter._();
 
+  /// Builds only the startup auth gate. Flutter's default initial-route
+  /// generator also creates `/` for a deep initial route such as
+  /// `/auth-check`, which would start the authenticated home underneath it.
+  static List<Route<dynamic>> initialAuthCheckRoutes({
+    required WidgetBuilder authCheckBuilder,
+  }) => <Route<dynamic>>[
+    MaterialPageRoute<void>(
+      settings: const RouteSettings(name: '/auth-check'),
+      builder: authCheckBuilder,
+    ),
+  ];
+
   static Route<dynamic> onGenerateRoute(
     RouteSettings settings, {
     required WidgetBuilder todayBuilder,

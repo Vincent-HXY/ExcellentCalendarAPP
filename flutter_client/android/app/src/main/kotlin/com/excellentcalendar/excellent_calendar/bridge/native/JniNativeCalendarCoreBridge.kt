@@ -393,6 +393,6 @@ class JniNativeCalendarCoreBridge(
 
     companion object {
         const val NativeLibraryName = "excellent_calendar_native"
-        private const val ExpectedStorageFormatVersion = 3
+        private const val ExpectedStorageFormatVersion = 4
     }
 }

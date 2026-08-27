@@ -17,12 +17,14 @@ class ProfilePage extends StatefulWidget {
     required this.authService,
     required this.session,
     required this.navigator,
+    this.showBack = true,
     super.key,
   });
 
   final AuthService authService;
   final AuthSessionController session;
   final AuthNavigator navigator;
+  final bool showBack;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -96,6 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return AuthPageScaffold(
       title: '个人信息',
+      showBack: widget.showBack,
       child: ListenableBuilder(
         listenable: controller,
         builder: (context, _) {

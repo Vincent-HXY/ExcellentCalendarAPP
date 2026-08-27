@@ -4,15 +4,15 @@
 
 ## R0｜本地核心闭环
 
-- 已打通 Flutter → Kotlin → JNI → C++ → JSON Storage → Android Alarm/Notification 主链路。
+- 已打通 Flutter → Kotlin → JNI → C++ → SQLite Storage v4 → Android Alarm/Notification 主链路。
 - Event 已支持定时/全天、创建、查询、详情、完成及重复 occurrence；Reminder、时区和通知调度已接入。
 - Anniversary 公历 V1 已支持 CRUD、年度重复与倒计时；Category list/create、Event 关联和真机全链验收已完成。
-- Calendar Core JSON Storage v3、Anniversary Reminder R1 与 date-only occurrence 查询均已完成生产接线并标记为 `integrated + active`。完整设备矩阵尚未通过；产品负责人已接受其作为本次发布残余风险。
+- Calendar Core SQLite Storage v4、Anniversary Reminder R1 与 date-only occurrence 查询均已完成生产接线并标记为 `integrated + active`。JSON v1/v2/v3 已有连续迁移或兼容保存路径；完整设备矩阵尚未通过，仍作为已接受的发布残余风险。
 - 当前仍属于本地开发版
 
 ## R1｜可发布的本地 V1 与账号基础（当前阶段）
 
-- 将核心实体从 JSON Repository 迁移到 SQLite，建立事务、Schema 版本、迁移回滚和 FTS 基础，确保旧数据可验证迁移。
+- 在已完成的 SQLite v4 迁移上补齐 FTS、备份/恢复演练和长期存储压力测试；继续验证 JSON v1/v2/v3 真机旧数据迁移。
 - 补齐普通日程编辑/删除/重开、全天提醒、响铃、通知历史、权限失败恢复及 API 24–25 兼容，完成多 ROM 真机回归。
 - 实现 Spring Boot + PostgreSQL 的注册、邮箱验证、登录、Token 刷新、登出和密码管理。
 - 完成 Flutter 登录、注册、个人资料、头像与账号安全页面；Refresh Token 使用 Android 安全存储。

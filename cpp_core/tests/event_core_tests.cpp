@@ -27,6 +27,7 @@
 #include "excellent_calendar/storage/json/json_event_reminder_transaction.hpp"
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
+#include "excellent_calendar/storage/sqlite/sqlite_repository_adapters.hpp"
 #include "support/event_repository_fakes.hpp"
 
 namespace {
@@ -428,7 +429,10 @@ void service_tests() {
 // 方法：在临时目录写入记录，构造新的 Repository 读取同一目录并比较字段。
 void repository_tests() {
   const auto dir = make_temp_dir("repository");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   excellent_calendar::storage::json::JsonEventRepository repository(dir);
   auto initialized = repository.initialize();
@@ -479,7 +483,10 @@ void repository_tests() {
 // 方法：从边界 API 发起请求，再直接读取两个 Repository 检查关联 ID 和初始状态。
 void embedded_reminder_boundary_tests() {
   const auto dir = make_temp_dir("embedded_reminder");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   expect_ok(excellent_calendar::boundary::api::initialize_storage(dir.string()));
   auto request = decode_object(
@@ -492,8 +499,14 @@ void embedded_reminder_boundary_tests() {
   require(bool_field(response, "ok"), "event with reminder should be created");
   const auto event_id = string_field(object_field(response, "data"), "id");
 
-  excellent_calendar::storage::json::JsonEventRepository event_repository(dir);
-  excellent_calendar::storage::json::JsonReminderRepository reminder_repository(dir);
+  {
+  auto database =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(dir);
+  require(database.ok(), "SQLite database should reopen");
+  excellent_calendar::storage::sqlite::SqliteEventRepository event_repository(
+      database.value());
+  excellent_calendar::storage::sqlite::SqliteReminderRepository
+      reminder_repository(database.value());
   require(event_repository.initialize().ok(), "event repository should initialize");
   require(reminder_repository.initialize().ok(), "reminder repository should initialize");
   const auto events = event_repository.find_all();
@@ -504,6 +517,7 @@ void embedded_reminder_boundary_tests() {
   require(reminders.value()[0].status == "pending", "embedded Reminder should start pending");
   require(!std::filesystem::exists(dir / "event_reminder_transaction.json"),
           "committed workflow should remove its transaction journal");
+  }
 
   cleanup();
 }
@@ -512,7 +526,10 @@ void embedded_reminder_boundary_tests() {
 // 方法：制造非法提醒时间，随后确认两个仓库和事务日志都已回滚/清理。
 void workflow_rollback_tests() {
   const auto dir = make_temp_dir("workflow_rollback");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   auto event_repository =
       std::make_shared<excellent_calendar::storage::json::JsonEventRepository>(dir);
@@ -576,7 +593,10 @@ void workflow_rollback_tests() {
 // 方法：让 Reminder update 失败，随后确认 Event 完成状态也被事务回滚。
 void lifecycle_workflow_rollback_tests() {
   const auto dir = make_temp_dir("lifecycle_workflow_rollback");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   auto event_repository =
       std::make_shared<excellent_calendar::storage::json::JsonEventRepository>(dir);
@@ -637,7 +657,10 @@ void lifecycle_workflow_rollback_tests() {
 // 方法：手工写入未提交日志和 Event，再重新初始化事务并检查残留文件被清理。
 void transaction_recovery_tests() {
   const auto dir = make_temp_dir("transaction_recovery");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   excellent_calendar::storage::json::AtomicJsonFileStore store(dir);
   require(store.initialize().ok(), "file store should initialize");
@@ -671,7 +694,10 @@ void transaction_recovery_tests() {
 // 方法：发送合法与非法 JSON，请求完成/重开 Event，并检查 NativeResult 和持久化结果。
 void boundary_and_search_tests() {
   const auto dir = make_temp_dir("boundary");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   expect_ok(excellent_calendar::boundary::api::initialize_storage(dir.string()));
   expect_ok(excellent_calendar::boundary::api::initialize_storage(dir.string()));
@@ -761,7 +787,12 @@ void boundary_and_search_tests() {
   require(bool_field(lifecycle_create, "ok"), "lifecycle event should be created");
   const auto lifecycle_id = string_field(object_field(lifecycle_create, "data"), "id");
 
-  excellent_calendar::storage::json::JsonReminderRepository lifecycle_reminder_repository(dir);
+  {
+  auto lifecycle_database =
+      excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(dir);
+  require(lifecycle_database.ok(), "lifecycle SQLite database should reopen");
+  excellent_calendar::storage::sqlite::SqliteReminderRepository
+      lifecycle_reminder_repository(lifecycle_database.value());
   require(lifecycle_reminder_repository.initialize().ok(), "lifecycle reminder repository should initialize");
   auto lifecycle_reminders = lifecycle_reminder_repository.find_all();
   require(lifecycle_reminders.ok(), "lifecycle reminders should load");
@@ -927,14 +958,18 @@ void boundary_and_search_tests() {
   expect_error(excellent_calendar::boundary::api::delete_event(encode(delete_request)),
                "CONTRACT_VALIDATION_FAILED");
 
+  }
   cleanup();
 }
 
-// 目的：验证软删除过滤，以及损坏的 JSON 不会被静默覆盖。
-// 方法：准备正常/已删除记录并主动写坏文件，再检查查询结果和错误码。
+// 目的：验证软删除过滤，以及迁移后的 guarded JSON 快照不再影响 SQLite 主存储。
+// 方法：准备正常/已删除记录并写坏保留文件，确认查询仍来自 SQLite 且快照未被覆盖。
 void soft_delete_and_corruption_tests() {
   const auto dir = make_temp_dir("corruption");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   {
     excellent_calendar::storage::json::JsonEventRepository repository(dir);
@@ -970,7 +1005,9 @@ void soft_delete_and_corruption_tests() {
     output << "{broken";
   }
   auto corrupted = excellent_calendar::boundary::api::search_events(search_request());
-  expect_error(corrupted, "STORAGE_DATA_CORRUPTED");
+  expect_ok(corrupted);
+  require(array_field(object_field(decode_object(corrupted), "data"), "items").size() == 1,
+          "legacy JSON damage must not affect migrated SQLite data");
   {
     std::ifstream input(events_path, std::ios::binary);
     std::string content((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
@@ -984,7 +1021,10 @@ void soft_delete_and_corruption_tests() {
 // 方法：启动 24 个线程同时调用公开 API，join 后查询并断言恰有 24 条数据。
 void concurrency_tests() {
   const auto dir = make_temp_dir("concurrency");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   expect_ok(excellent_calendar::boundary::api::initialize_storage(dir.string()));
 
@@ -1030,7 +1070,10 @@ void initialize_failure_tests() {
 // storage generation guard rather than unrelated command validation.
 void stale_v1_runtime_borrower_tests() {
   const auto dir = make_temp_dir("stale_v1_runtime");
-  auto cleanup = [&] { std::filesystem::remove_all(dir); };
+  auto cleanup = [&] {
+    (void)excellent_calendar::boundary::api::initialize_storage("");
+    std::filesystem::remove_all(dir);
+  };
 
   auto initialized = excellent_calendar::boundary::api::initialize_runtime(dir.string());
   require(initialized.ok(), "initial v1 runtime should initialize");
@@ -1098,12 +1141,26 @@ void stale_v1_runtime_borrower_tests() {
               stale_delivery_transaction.error().code == "STORAGE_NOT_INITIALIZED",
           "stale ReminderNotification transaction must reject before invoking its callback");
 
-  for (const auto* file : {"events.json", "reminders.json", "notifications.json",
-                           "event_reminder_transaction.json",
-                           "reminder_notification_transaction.json"}) {
-    require(!std::filesystem::exists(dir / file),
-            std::string("stale borrower must not create old v1 file: ") + file);
+  {
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(dir);
+    require(database.ok(), "stale writer SQLite database should reopen");
+    require(database.value()->load_legacy_events().ok() &&
+                database.value()->load_legacy_events().value().empty() &&
+                database.value()->load_legacy_reminders().ok() &&
+                database.value()->load_legacy_reminders().value().empty() &&
+                database.value()->load_legacy_notifications().ok() &&
+                database.value()->load_legacy_notifications().value().empty(),
+            "stale borrowers must not add rows to the old SQLite generation");
   }
+  require(!std::filesystem::exists(dir / "event_reminder_transaction.json") &&
+              !std::filesystem::exists(
+                  dir / "reminder_notification_transaction.json"),
+          "SQLite stale borrowers must not create legacy journals");
+  stale_event_service.reset();
+  stale_reminder_service.reset();
+  stale_create_workflow.reset();
+  stale_notification_service.reset();
   cleanup();
 }
 

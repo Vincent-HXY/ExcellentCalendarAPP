@@ -50,6 +50,7 @@ import 'presentation/auth/pages/login_page.dart';
 import 'presentation/auth/pages/register_page.dart';
 import 'presentation/auth/pages/reset_password_page.dart';
 import 'presentation/event_detail/pages/event_detail_flow_page.dart';
+import 'presentation/home/main_tab_page.dart';
 import 'presentation/inbox/inbox_page.dart';
 import 'presentation/ring/active_ring_session_page.dart';
 import 'presentation/ring/ring_session_host.dart';
@@ -252,19 +253,27 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   }
 
   Widget _buildToday(BuildContext context) {
-    return AppNotificationHost(
-      bootstrap: _notificationBootstrap,
-      child: InboxPage(
-        readEventsUseCase: ReadEventsUseCase(_eventGateway),
-        createEventUseCase: _createEventUseCase,
-        completeEventUseCase: _completeEventUseCase,
-        timezoneService: _timezoneService,
-        categoryRepository: _categoryRepository,
-        onOpenAnniversaries: () =>
-            Navigator.of(context).pushNamed('/anniversaries'),
-        onOpenRingSettings: () =>
-            Navigator.of(context).pushNamed('/settings/ring'),
-        ringGateway: _ringGateway,
+    return MainTabPage(
+      scheduleBuilder: (tabContext) => AppNotificationHost(
+        bootstrap: _notificationBootstrap,
+        child: InboxPage(
+          readEventsUseCase: ReadEventsUseCase(_eventGateway),
+          createEventUseCase: _createEventUseCase,
+          completeEventUseCase: _completeEventUseCase,
+          timezoneService: _timezoneService,
+          categoryRepository: _categoryRepository,
+          onOpenAnniversaries: () =>
+              Navigator.of(tabContext).pushNamed('/anniversaries'),
+          onOpenRingSettings: () =>
+              Navigator.of(tabContext).pushNamed('/settings/ring'),
+          ringGateway: _ringGateway,
+        ),
+      ),
+      profileBuilder: (_) => ProfilePage(
+        authService: _authDeps.authService,
+        session: _authDeps.session,
+        navigator: _authDeps.navigator,
+        showBack: false,
       ),
     );
   }
@@ -314,6 +323,12 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
           useMaterial3: true,
         ),
         initialRoute: '/auth-check',
+        onGenerateInitialRoutes: (_) => AppRouter.initialAuthCheckRoutes(
+          authCheckBuilder: (_) => AuthCheckPage(
+            startupCheck: _authDeps.startupCheck,
+            navigator: _authDeps.navigator,
+          ),
+        ),
         onGenerateRoute: (settings) => AppRouter.onGenerateRoute(
           settings,
           todayBuilder: _buildToday,

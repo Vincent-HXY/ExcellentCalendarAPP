@@ -39,7 +39,11 @@ class NavigatorAuthNavigator implements AuthNavigator {
 
   @override
   void goToProfile() {
-    _navigator?.popUntil((route) => route.settings.name == '/profile');
+    // Profile can either be an explicit route or the "My" tab hosted by the
+    // first route. Never pop the root route when the tab-shell owns profile.
+    _navigator?.popUntil(
+      (route) => route.settings.name == '/profile' || route.isFirst,
+    );
   }
 
   @override

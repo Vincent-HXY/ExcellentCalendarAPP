@@ -39,6 +39,29 @@ void main() {
   });
 
   group('LoginPage', () {
+    testWidgets('debug test credentials route home without backend', (
+      tester,
+    ) async {
+      var calls = 0;
+      gateway.onLogin = (_) {
+        calls += 1;
+        return authenticationDto();
+      };
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginPage(authService: service(), navigator: navigator),
+        ),
+      );
+      await tester.enterText(find.byType(TextField).at(0), 'admin@admin.com');
+      await tester.enterText(find.byType(TextField).at(1), 'admin');
+      await tester.tap(find.widgetWithText(FilledButton, '登录'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(navigator.goToHomeCalls, 1);
+      expect(calls, 0);
+    });
+
     testWidgets('successful login routes home', (tester) async {
       gateway.onLogin = (_) => authenticationDto();
       await tester.pumpWidget(
@@ -127,6 +150,36 @@ void main() {
         find.byType(TextField).at(1),
       );
       expect(passwordField.controller!.text, '');
+      expect(navigator.goToLoginCalls, 0);
+    });
+
+    testWidgets('invalid credentials stay on login and only clear password', (
+      tester,
+    ) async {
+      gateway.onLogin = (_) => throw BackendApiException(
+        error: apiErrorDto('AUTH_INVALID_CREDENTIALS'),
+        requestId: 'r-invalid-credentials',
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginPage(authService: service(), navigator: navigator),
+        ),
+      );
+      await tester.enterText(find.byType(TextField).at(0), 'user@example.com');
+      await tester.enterText(find.byType(TextField).at(1), 'wrong-password');
+
+      await tester.tap(find.widgetWithText(FilledButton, '登录'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('邮箱或密码不正确'), findsOneWidget);
+      final emailField = tester.widget<TextField>(find.byType(TextField).at(0));
+      expect(emailField.controller!.text, 'user@example.com');
+      final passwordField = tester.widget<TextField>(
+        find.byType(TextField).at(1),
+      );
+      expect(passwordField.controller!.text, isEmpty);
+      expect(navigator.goToLoginCalls, 0);
     });
   });
 
@@ -236,6 +289,33 @@ void main() {
         ),
       );
       expect(button.onPressed, isNull);
+    });
+
+    testWidgets('successful resend clears the code and confirms delivery', (
+      tester,
+    ) async {
+      gateway.onResendRegistration =
+          (request, {required String idempotencyKey}) async => challengeDto(
+            resendAvailableAt: DateTime.now()
+                .toUtc()
+                .add(const Duration(minutes: 1))
+                .toIso8601String(),
+          );
+      await _pumpVerificationPage(
+        tester,
+        service(),
+        navigator,
+        challenge: challengeDto(resendAvailableAt: '2020-08-01T01:01:00Z'),
+      );
+      await tester.enterText(find.byType(TextField), '123456');
+
+      await tester.tap(find.text('重新发送验证码'));
+      await tester.pump();
+      await tester.pump();
+
+      final codeField = tester.widget<TextField>(find.byType(TextField));
+      expect(codeField.controller!.text, isEmpty);
+      expect(find.text('新验证码已发送，请查收'), findsOneWidget);
     });
   });
 

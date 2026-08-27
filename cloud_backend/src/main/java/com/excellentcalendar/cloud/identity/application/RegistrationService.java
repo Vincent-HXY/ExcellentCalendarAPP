@@ -145,7 +145,7 @@ public class RegistrationService {
             // receive verification mail.
             throw new ApiException(ApiErrorCode.AUTH_ACCOUNT_DISABLED);
         }
-        rejectFinishedChallenge(challenge);
+        rejectUnavailableForResend(challenge);
         if (clock.instant().isBefore(challenge.getResendAvailableAt())) {
             long retryAfter = Math.max(1, java.time.Duration.between(
                     clock.instant(), challenge.getResendAvailableAt()).toSeconds() + 1);
@@ -200,14 +200,18 @@ public class RegistrationService {
     }
 
     private void rejectFinishedChallenge(EmailActionChallengeEntity challenge) {
+        rejectUnavailableForResend(challenge);
+        if (!challenge.getExpiresAt().isAfter(clock.instant())) {
+            throw new ApiException(ApiErrorCode.AUTH_VERIFICATION_EXPIRED);
+        }
+    }
+
+    private void rejectUnavailableForResend(EmailActionChallengeEntity challenge) {
         if (challenge.isConsumed()) {
             throw new ApiException(ApiErrorCode.AUTH_VERIFICATION_USED);
         }
         if (challenge.isInvalidated()) {
             throw new ApiException(ApiErrorCode.AUTH_VERIFICATION_INVALID);
-        }
-        if (!challenge.getExpiresAt().isAfter(clock.instant())) {
-            throw new ApiException(ApiErrorCode.AUTH_VERIFICATION_EXPIRED);
         }
     }
 

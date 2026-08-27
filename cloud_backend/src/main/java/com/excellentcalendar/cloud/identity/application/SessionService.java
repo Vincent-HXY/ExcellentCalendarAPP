@@ -26,6 +26,7 @@ import com.excellentcalendar.cloud.platform.api.ApiErrorCode;
 import com.excellentcalendar.cloud.platform.api.ApiErrorContextResponse;
 import com.excellentcalendar.cloud.platform.api.ApiException;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -181,10 +182,12 @@ public class SessionService {
     private ApiException throwUnverified(UserAccountEntity account) {
         List<EmailActionChallengeEntity> active = challengeRepository
                 .findActiveWithLockingByUserIdAndPurpose(account.getId(), EmailActionPurpose.registration_verification);
-        EmailActionChallengeEntity challenge = active.isEmpty()
-                ? challengeSupport.issue(
-                        account.getId(), EmailActionPurpose.registration_verification, account.getEmail()).entity()
-                : active.get(0);
+        Instant now = clock.instant();
+        EmailActionChallengeEntity challenge = active.stream()
+                .filter(candidate -> candidate.getExpiresAt().isAfter(now))
+                .findFirst()
+                .orElseGet(() -> challengeSupport.issue(
+                        account.getId(), EmailActionPurpose.registration_verification, account.getEmail()).entity());
         ApiErrorContextResponse.VerificationChallengeContextResponse context =
                 new ApiErrorContextResponse.VerificationChallengeContextResponse(
                         challenge.getId().toString(),

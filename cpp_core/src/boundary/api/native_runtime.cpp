@@ -19,35 +19,29 @@
 #include "excellent_calendar/application/recurring_reminder_query_service.hpp"
 #include "excellent_calendar/application/rolling_reminder_service.hpp"
 #include "excellent_calendar/infrastructure/time/tzdb_local_time_resolver.hpp"
-#include "excellent_calendar/storage/json/json_event_repository.hpp"
-#include "excellent_calendar/storage/json/json_event_reminder_transaction.hpp"
-#include "excellent_calendar/storage/json/json_reminder_repository.hpp"
-#include "excellent_calendar/storage/json/json_notification_repository.hpp"
-#include "excellent_calendar/storage/json/json_reminder_notification_transaction.hpp"
-#include "excellent_calendar/storage/json/json_recurring_event_transaction.hpp"
-#include "excellent_calendar/storage/json/json_anniversary_transaction.hpp"
-#include "excellent_calendar/storage/json/json_category_repository.hpp"
-#include "excellent_calendar/storage/json/calendar_core_v3_storage_bootstrap.hpp"
 #include "excellent_calendar/storage/runtime_storage_lease.hpp"
+#include "excellent_calendar/storage/sqlite/sqlite_calendar_database.hpp"
+#include "excellent_calendar/storage/sqlite/sqlite_repository_adapters.hpp"
 
 namespace excellent_calendar::boundary::api {
 namespace {
 
 struct RuntimeState {
-  std::shared_ptr<storage::json::JsonEventRepository> event_repository;
+  std::shared_ptr<storage::sqlite::SqliteCalendarDatabase> sqlite_database;
+  std::shared_ptr<storage::sqlite::SqliteEventRepository> event_repository;
   std::shared_ptr<application::EventService> event_service;
-  std::shared_ptr<storage::json::JsonEventReminderTransaction> event_reminder_transaction;
+  std::shared_ptr<storage::sqlite::SqliteEventReminderTransaction> event_reminder_transaction;
   std::shared_ptr<application::CreateEventWorkflowService> create_event_workflow_service;
   std::shared_ptr<application::EventLifecycleWorkflowService> event_lifecycle_workflow_service;
-  std::shared_ptr<storage::json::JsonReminderRepository> reminder_repository;
+  std::shared_ptr<storage::sqlite::SqliteReminderRepository> reminder_repository;
   std::shared_ptr<application::ReminderService> reminder_service;
-  std::shared_ptr<storage::json::JsonNotificationRepository> notification_repository;
-  std::shared_ptr<storage::json::JsonReminderNotificationTransaction> reminder_notification_transaction;
+  std::shared_ptr<storage::sqlite::SqliteNotificationRepository> notification_repository;
+  std::shared_ptr<storage::sqlite::SqliteReminderNotificationTransaction> reminder_notification_transaction;
   std::shared_ptr<application::NotificationService> notification_service;
   std::shared_ptr<infrastructure::time::TzdbLocalTimeResolver> local_time_resolver;
   std::shared_ptr<application::RecurrenceService> recurrence_service;
   std::shared_ptr<application::RollingReminderService> rolling_reminder_service;
-  std::shared_ptr<storage::json::JsonRecurringEventTransaction> recurring_event_transaction;
+  std::shared_ptr<storage::sqlite::SqliteRecurringEventTransaction> recurring_event_transaction;
   std::shared_ptr<application::RecurringEventQueryService> recurring_event_query_service;
   std::shared_ptr<application::RecurringEventWorkflowService> recurring_event_workflow_service;
   std::shared_ptr<application::RecurringReminderDeliveryWorkflowService>
@@ -59,10 +53,10 @@ struct RuntimeState {
   std::shared_ptr<application::RecurringReminderQueryService>
       recurring_reminder_query_service;
   std::shared_ptr<application::ReminderServiceV2> reminder_service_v2;
-  std::shared_ptr<storage::json::JsonAnniversaryTransaction> anniversary_transaction;
+  std::shared_ptr<storage::sqlite::SqliteAnniversaryTransaction> anniversary_transaction;
   std::shared_ptr<application::AnniversaryWorkflowService> anniversary_workflow_service;
   std::shared_ptr<application::AnniversaryQueryService> anniversary_query_service;
-  std::shared_ptr<storage::json::JsonCategoryRepository> category_repository;
+  std::shared_ptr<storage::sqlite::SqliteCategoryRepository> category_repository;
   std::shared_ptr<application::CategoryService> category_service;
   std::shared_ptr<storage::RuntimeStorageLease> writer_lease;
   std::string storage_directory;
@@ -94,12 +88,19 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
   clear_runtime_state();
   const auto directory = std::string(storage_directory);
   auto writer_lease = std::make_shared<storage::RuntimeStorageLease>();
+  auto opened_database = storage::sqlite::SqliteCalendarDatabase::open(
+      std::filesystem::path(directory));
+  if (!opened_database.ok()) {
+    return common::Result<common::Unit>::failure(opened_database.error());
+  }
+  auto database = opened_database.value();
 
-  auto event_repository = std::make_shared<storage::json::JsonEventRepository>(
-      std::filesystem::path(directory), writer_lease);
+  auto event_repository =
+      std::make_shared<storage::sqlite::SqliteEventRepository>(database,
+                                                               writer_lease);
   auto event_reminder_transaction =
-      std::make_shared<storage::json::JsonEventReminderTransaction>(
-          std::filesystem::path(directory), writer_lease);
+      std::make_shared<storage::sqlite::SqliteEventReminderTransaction>(
+          database, writer_lease);
   auto transaction_initialized = event_reminder_transaction->initialize();
   if (!transaction_initialized.ok()) {
     return common::Result<common::Unit>::failure(transaction_initialized.error());
@@ -109,11 +110,12 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
     return common::Result<common::Unit>::failure(event_initialized.error());
   }
 
-  auto reminder_repository = std::make_shared<storage::json::JsonReminderRepository>(
-      std::filesystem::path(directory), writer_lease);
+  auto reminder_repository =
+      std::make_shared<storage::sqlite::SqliteReminderRepository>(database,
+                                                                  writer_lease);
   auto reminder_notification_transaction =
-      std::make_shared<storage::json::JsonReminderNotificationTransaction>(
-          std::filesystem::path(directory), writer_lease);
+      std::make_shared<storage::sqlite::SqliteReminderNotificationTransaction>(
+          database, writer_lease);
   auto delivery_transaction_initialized = reminder_notification_transaction->initialize();
   if (!delivery_transaction_initialized.ok()) {
     return common::Result<common::Unit>::failure(delivery_transaction_initialized.error());
@@ -123,8 +125,9 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
     return common::Result<common::Unit>::failure(reminder_initialized.error());
   }
 
-  auto notification_repository = std::make_shared<storage::json::JsonNotificationRepository>(
-      std::filesystem::path(directory), writer_lease);
+  auto notification_repository =
+      std::make_shared<storage::sqlite::SqliteNotificationRepository>(
+          database, writer_lease);
   auto notification_initialized = notification_repository->initialize();
   if (!notification_initialized.ok()) {
     return common::Result<common::Unit>::failure(notification_initialized.error());
@@ -157,6 +160,7 @@ common::Result<common::Unit> initialize_runtime(std::string_view storage_directo
 
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
+    g_state.sqlite_database = std::move(database);
     g_state.event_repository = std::move(event_repository);
     g_state.event_service = std::move(event_service);
     g_state.event_reminder_transaction = std::move(event_reminder_transaction);
@@ -197,32 +201,32 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
   if (!resolver.ok()) {
     return common::Result<RecurringRuntimeInitializationResult>::failure(resolver.error());
   }
-  auto prepared_storage = storage::json::prepare_calendar_core_v3_storage(
+  auto opened_database = storage::sqlite::SqliteCalendarDatabase::open(
       std::filesystem::path(std::string(storage_directory)));
-  if (!prepared_storage.ok()) {
+  if (!opened_database.ok()) {
     return common::Result<RecurringRuntimeInitializationResult>::failure(
-        prepared_storage.error());
+        opened_database.error());
   }
+  auto database = opened_database.value();
   auto writer_lease = std::make_shared<storage::RuntimeStorageLease>();
-  auto transaction = std::make_shared<storage::json::JsonRecurringEventTransaction>(
-      std::filesystem::path(std::string(storage_directory)),
-      storage::json::JsonRecurringEventTransaction::FailureHook{}, writer_lease);
+  auto transaction =
+      std::make_shared<storage::sqlite::SqliteRecurringEventTransaction>(
+          database, writer_lease);
   auto initialized = transaction->initialize();
   if (!initialized.ok()) {
     return common::Result<RecurringRuntimeInitializationResult>::failure(initialized.error());
   }
   auto anniversary_transaction =
-      std::make_shared<storage::json::JsonAnniversaryTransaction>(
-          std::filesystem::path(std::string(storage_directory)),
-          storage::json::JsonAnniversaryTransaction::FailureHook{}, writer_lease);
+      std::make_shared<storage::sqlite::SqliteAnniversaryTransaction>(
+          database, writer_lease);
   auto anniversary_initialized = anniversary_transaction->initialize();
   if (!anniversary_initialized.ok()) {
     return common::Result<RecurringRuntimeInitializationResult>::failure(
         anniversary_initialized.error());
   }
-  auto category_repository = std::make_shared<storage::json::JsonCategoryRepository>(
-      std::filesystem::path(std::string(storage_directory)), writer_lease,
-      storage::json::JsonCategoryRepository::FailureHook{}, 3);
+  auto category_repository =
+      std::make_shared<storage::sqlite::SqliteCategoryRepository>(database,
+                                                                  writer_lease);
   auto category_initialized = category_repository->initialize();
   if (!category_initialized.ok()) {
     return common::Result<RecurringRuntimeInitializationResult>::failure(
@@ -258,6 +262,7 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
 
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
+    g_state.sqlite_database = std::move(database);
     g_state.local_time_resolver = resolver.value();
     g_state.recurrence_service = std::move(recurrence);
     g_state.rolling_reminder_service = std::move(rolling);
@@ -278,7 +283,9 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
     g_state.recurring_storage_directory = std::string(storage_directory);
   }
   return common::Result<RecurringRuntimeInitializationResult>::success(
-      RecurringRuntimeInitializationResult{true, 3, resolver.value()->tzdb_version()});
+      RecurringRuntimeInitializationResult{
+          true, storage::sqlite::kCalendarCoreSqliteStorageVersion,
+          resolver.value()->tzdb_version()});
 }
 
 std::shared_ptr<application::EventService> current_event_service() {

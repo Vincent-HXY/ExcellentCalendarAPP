@@ -4,11 +4,12 @@ import com.excellentcalendar.excellent_calendar.BuildConfig
 import java.io.File
 
 /**
- * Resolves the Android private directory used by Calendar Core JSON storage.
+ * Resolves the Android private directory used by Calendar Core SQLite storage.
  *
  * The historical "test_storage_json" directory is no longer a data source.
- * Storage v3 migrates the formal v2 directory in place and remains the only
- * writer of "calendar_core_storage_json".
+ * SQLite Storage v4 keeps the established directory name so the C++ migration
+ * can discover JSON v1/v2/v3 data in place. JSON files retained there become
+ * read-only migration snapshots after calendar_core.sqlite3 is committed.
  */
 internal object CalendarCoreStorageDirectoryResolver {
     fun resolve(

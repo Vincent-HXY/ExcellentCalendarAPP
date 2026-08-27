@@ -757,3 +757,120 @@
 - 任务结果：以 `HXY-study → HXY-backend → HXY-user` 的依赖顺序建立三个独立 merge commit。`docs/log.md` 的并行追加全部保留；`MainActivity`、`NativeMethodChannelHandler`、Dart MethodChannel 常量、`AppRouter`、`main.dart` 与 production composition test 的冲突按功能并集解决，同时注册 Ring runtime/handler 与 Auth Keystore/handler，同时保留响铃宿主/路由和认证启动/页面路由。`.agents/**` 与 `HXY-study` 完全一致。排除了 `HXY-user` 带回的 4 份已归档响铃 active 计划副本及 3 个评审明确要求提交前删除的构建输出。另识别到来源分支间既有语义漂移：当前 Contract/active plan 已声明第 17 个 `auth.registration.email.update`，但合入的后端与前端仍按旧 16 端点实现；未回退机器 Contract，也未在纯合并任务中擅自扩展该独立业务切片，需后续专项补齐。
 - 验证状态：Contract validator 通过（162 schemas、55 fixtures、16 identity vectors）；C++ 按规定重新配置并执行构建后 `excellent_calendar_check`，7/7 通过；Flutter 定向组合测试 26/26、全量 387/387、`flutter analyze` 与 Debug APK 构建通过；Android JVM 174 tests、0 failure、0 error、1 既有 skip，`lintDebug` 为 0 errors / 38 warnings；独立 Flutter Native smoke 的 test/analyze/Debug APK 通过。CloudBackend `mvnw verify` 在临时启动 Docker Desktop 后通过：91 项单元/架构测试与 56 项 PostgreSQL 17.11 Testcontainers 集成测试均 0 失败、0 跳过，Docker 随后恢复停止。RMX3687 真机在线，但隔离 smoke APK 安装被 ColorOS USB 安装确认阻塞后中止；已确认 smoke 包不存在，正式应用包路径前后不变，因此真机 UI/JNI 返回值本轮未验证，正式应用及数据未被操作。
 - 开发时间：2026-08-25 21:10 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 12:14 +08:00 HXY 合并回归与 Calendar Core SQLite Storage v4
+
+- 使用 Skill：`debug`、`calendar-data-contracts`、`cpp-core-feature`、`android-kotlin-native-feature`；`frontend-flutter-feature` 仅用于核对 Flutter 测试修改边界，未越界修改 `integration_test/**`。
+- 负责模块：HXY 合并后全仓库运行基线；`cpp_core/**` 的 Storage adapter、迁移与测试；`contracts/storage/**` 和 runtime version；`flutter_client/android/**` 的 Kotlin/JNI 版本映射与 Debug smoke；相关架构、领域、状态和存储文档。
+- 任务目标：先独立验证 HXY 在合入 HXY-user、HXY-backend、HXY-study 后仍可构建和运行，再将 Calendar Core 的正式 writer 从 JSON 升级为 SQLite，完整保留 JSON v1/v2/v3 已支持的数据、顺序、软删除、幂等、恢复、跨 Store 原子工作流和全部 C++ Repository/Transaction ports。
+- 任务结果：修改前工作树干净，无未解决 merge entry 或源码冲突标记；C++、Flutter、Android 和 CloudBackend 基线全部通过，未发现三分支合并造成的可复现运行回归。新增 Calendar Core SQLite Storage v4 与八组现有 port adapter，捆绑官方 SQLite 3.53.4；十个现代 Store、Category 和三张 v1 兼容表统一进入 `calendar_core.sqlite3`，使用 WAL、`synchronous=FULL`、`BEGIN IMMEDIATE`、主键/业务唯一约束、调度/排序索引、generation 与严格打开校验。v1 在 journal recovery 后无损导入隔离兼容表；v2 先连续恢复/迁移为 v3；v3 十 Store + Category 在单事务中逐字段导入候选库，经 metadata、required schema object、row identity、冻结 codec/聚合校验和 `quick_check` 后刷盘关闭并原子发布；Windows 使用 write-through rename，POSIX 同步父目录。JSON 记录不删除，迁移后只改 envelope 为 `storage_version=4` downgrade guard，不再双写。混合 v1/现代来源、未知版本、损坏 payload、缺表/缺索引均拒绝发布。`auth.registration.email.update` 经复核在机器 Contract 中明确为 `planned`，前后端未实现是已知非活动能力；CloudBackend 文档中“Contract 未声明”属于合并后的文字漂移，不影响当前 16 个 active 端点运行，本任务未越权实现第 17 个端点。
+- 验证状态：修改前基线：C++ build-after-test 7/7、Flutter 387/387 + analyze + Debug APK、Android unit/lint/Debug/androidTest APK、独立 Native smoke 1/1、CloudBackend 91 个 JVM 测试 + 56 个 PostgreSQL 17.11 Testcontainers 集成测试全部通过且 0 跳过。最终状态：Contract validator 通过 162 schemas / 56 fixtures / 16 identity vectors；规定的 C++ 重新配置和 `excellent_calendar_check` 7/7 通过，SQLite v4 定向覆盖精确迁移、v1 保留、重开隔离、全 Store 回滚/重试、约束、损坏/未知版本、缺 schema object 和混合来源拒绝；Flutter 387/387、analyze 零问题；Android `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` BUILD SUCCESS，arm64-v8a/armeabi-v7a/x86_64 均重编译；独立 Native smoke test/analyze/Debug APK 通过。realme RMX3687（Android 13/API 33，arm64-v8a）隔离 `.device_test` 上 Anniversary JNI SQLite v4 闭环与 Category 极值零写入 instrumentation 均 PASS，Flutter Anniversary 全链路 integration PASS，logcat 无 AndroidRuntime 崩溃；后续 Category Flutter integration 与 runtime timezone 用例因第二次 ColorOS USB 安装确认未操作而中止，不能计为本轮通过，但对应 Host 回归和原生 Category instrumentation 已通过。隔离目标由 Flutter 工具卸载，残留 test package 已清理，正式应用和正式数据未操作。`git diff --check` 无空白错误（仅仓库既有 LF/CRLF 提示）。
+- 开发时间：2026-08-27 12:14 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 12:30 +08:00 真机 Flutter 初始化画面卡住修复
+
+- 使用 Skill：`debug`。
+- 负责模块：`flutter_client/android/app/src/debug/AndroidManifest.xml`；realme RMX3687 上的正式包与隔离测试包启动验证。
+- 任务目标：复现并修复点击应用后长期停留在 Flutter 初始化画面、无法进入主界面的问题，同时保护正式应用数据。
+- 任务结果：分别冷启动同机上的正式包 `com.excellentcalendar.excellent_calendar` 与测试包 `com.excellentcalendar.excellent_calendar.device_test`，确认正式包约 2 秒进入日程主界面且 Native 查询成功；稳定卡住的是前一轮 Flutter integration test 遗留的测试目标 APK。该 APK 将 integration-test Dart 文件打包为入口，脱离 instrumentation 控制器从桌面启动时不会进入产品 UI，同时此前与正式包共用 `excellent_calendar` 桌面名称，造成误认。Debug manifest 现将隔离包明确标为 `Excellent Calendar (测试版)`。用正常 `lib/main.dart` Debug APK 覆盖后，测试包冷启动进入登录页，证明产品入口正常；随后卸载 `.device_test` 和对应 `.test` instrumentation 包，手机只保留正式包。正式包再次冷启动进入“日程”页，既有登录状态保留，未清除、卸载或改写正式包数据。
+- 验证状态：`flutter build apk --debug` 通过；APK badging 确认 application id 为 `.device_test`、label 为 `Excellent Calendar (测试版)`；`flutter analyze` 0 issue；`flutter test` 387/387 通过；Gradle `:app:testDebugUnitTest :app:lintDebug` BUILD SUCCESS；真机正常 Debug 入口与正式包冷启动均通过，最终设备包清单仅剩正式包；`git diff --check` 无空白错误（仅既有 LF/CRLF 提示）。
+- 开发时间：2026-08-27 12:30 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 12:44 +08:00 Flutter Debug 前端本地测试登录
+
+- 使用 Skill：`frontend-flutter-feature`。
+- 负责模块：`flutter_client/lib/application/auth/**` 登录流程与 `flutter_client/test/**` 登录测试。
+- 任务目标：提供 `admin@admin.com` / `admin` 前端测试账号，输入后无需后端验证即可进入首页，同时不影响普通账号的真实后端登录。
+- 任务结果：新增仅在 Flutter Debug 构建启用的本地测试账号；`LoginController` 命中指定凭证后建立包含测试用户资料的内存会话，跳过 `AuthGateway.login`，不写入 Refresh Token 或用户缓存。Profile/Release 构建中该凭证不匹配，其他凭证继续沿用既有后端认证与 Token 持久化流程。
+- 验证状态：定向登录控制器与认证页面测试 20/20 通过；`dart format --output=none --set-exit-if-changed lib test` 通过（356 files，0 changed）；`flutter analyze` 0 issue；`flutter test` 389/389 通过；`flutter build apk --debug` 成功并生成 `build/app/outputs/flutter-apk/app-debug.apk`；`git diff --check` 无空白错误（仅仓库既有 LF/CRLF 提示）。未执行真机手工登录，相关行为由 Controller 与 Widget 测试覆盖。
+- 开发时间：2026-08-27 12:44 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 13:28 +08:00 Calendar Core JSON → SQLite v4 独立迁移审查
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。
+- 负责模块：Calendar Core Storage v4 的架构边界、机器 Contract、Event/Recurrence/Reminder/Notification/Recovery/Anniversary/Category 领域一致性、JSON v1/v2/v3 迁移、SQLite 运行时与 Android 打包链路；本轮只读审查，除本日志外未修改业务代码。
+- 任务目标：确认 JSON → SQLite 迁移是否保持既有分层与 Repository/Transaction ports，是否符合当前 Contract 和领域不变量，能否等价承接原 JSON 功能，并独立检查崩溃一致性、迁移幂等、schema 漂移、来源追踪、约束、顺序、事务与打包等常见风险。
+- 任务结果：**CHANGES REQUIRED**。正常路径的分层、十个现代 Store + Category、冻结 codec、顺序/软删除、跨 Store 事务、v1/v2/v3 导入及 Android runtime version 基本一致，未发现 Domain/Application/Flutter/生产 Kotlin 直接依赖 SQLite；但独立进程终止测试复现了数据库原子发布后、JSON downgrade guard 安装前的崩溃窗口，旧 JSON writer 可继续成功写入而 SQLite 不变，形成双真相和静默数据丢失风险。另复现同名但错误定义的必需唯一索引可通过打开校验；确认 v1 与空库也被无条件记录为 `calendar_core_json_v3_to_sqlite_v4`，迁移来源审计失真。工作树同时混入独立的 Debug 本地登录与 Manifest 修复，应拆分提交；`contracts/README.md` 的 active/blocked 状态文字及一个 JSON 文件名注释存在陈旧漂移。
+- 验证状态：实测 C++ 规定的 build-after-test 7/7、Contract validator（162 schemas / 56 fixtures / 16 identity vectors）、Flutter 389/389 + analyze + Debug APK、Android JVM test 与 lint 全部通过；`git diff --check` 无空白错误（仅 LF/CRLF 提示）。独立黑盒覆盖数据库发布瞬间强杀及旧 JSON writer 续写、同名错误索引篡改、v1 migration history 查询，前两项分别确认崩溃切换缺陷与 schema 校验缺陷。未在本轮重新执行真机、磁盘耗尽或物理掉电测试；临时审查产物已清理，追加日志前工作树清单与初始审查边界一致。
+- 开发时间：2026-08-27 13:28 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 14:47 +08:00 SQLite v4 迁移审查缺陷修复
+
+- 使用 Skill：`debug`、`calendar-data-contracts`、`cpp-core-feature`。
+- 负责模块：`cpp_core/**` 的 SQLite cutover、Schema/迁移历史校验与 Storage 回归；`contracts/storage/calendar_core_storage.yaml`、Storage ADR、Contract README 和 Repository 接口注释。
+- 任务目标：逐项复核独立 review 报告；修复 JSON→SQLite 发布窗口中的双真相风险、同名错误 Schema 可通过校验、迁移历史失真和相关文档漂移，同时保护工作区已有认证、Debug Manifest 与其他 SQLite 增量。
+- 任务结果：确认 P0 与两个 P2 技术 finding 均真实。新增持久化 `calendar_core_sqlite_cutover.json` 前向状态机：候选库先完成完整校验、关闭和刷盘，再捕获全部旧 writer 根；所有现存根和必需入口在数据库发布前原子安装并复核 `storage_version=4`，任一根发生第三种变化即阻止发布；数据库或进程在任一阶段中断后按 journal 幂等续跑。对旧实现已发布但尚未 guard 的数据库，只有严格 JSON writer 仍能读取且内容与对应 SQLite Store 完全一致时才允许补 guard，差异按潜在双真相拒绝；严格 codec 本就拒绝的损坏诊断快照继续不阻塞 SQLite。Schema 打开校验升级为对 16 张表和 16 个索引的规范化完整 `CREATE` 定义比对。`create_schema()` 不再写来源历史，fresh、v1、v2→v3→v4、v3→v4 分别记录真实合法组合，并兼容修复旧实现精确的 v1+伪 v3 组合。同步修正 Storage cutover Contract/ADR、Anniversary active 状态漂移及 storage-neutral Transaction 注释。review 中认证与 Debug Manifest 混入属于提交组织 finding；本轮未回退、改写或提交这些用户已有改动，也未擅自拆 commit。
+- 验证状态：Storage 定向测试新增 21 个真实子进程强制终止边界（候选刷盘、journal prepare、每个 JSON guard、guards 状态、数据库发布、journal 清理）、发布后旧 JSON writer 拒写、全部必需表/索引同名错误定义负向测试，以及 fresh/v1/v2/v3 迁移历史组合；定向测试 17/17 通过。按规定重新配置并执行构建后 `excellent_calendar_check`，7/7 通过；Contract validator 通过 162 schemas / 56 fixtures / 16 identity vectors；Flutter Android Debug APK（含 Android/JNI/C++ 重新构建链路）构建成功；`git diff --check` 无空白错误，仅输出工作区既有 LF/CRLF 转换提示。未执行物理断电、磁盘耗尽或本轮真机迁移，不能将真实进程强杀等同于硬件掉电验证。
+- 开发时间：2026-08-27 14:47 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 19:32 +08:00 Flutter 注册成功响应纳秒时间解析修复
+
+- 使用 Skill：`debug`、`calendar-data-contracts`。
+- 负责模块：Flutter Backend API Contract DTO 时间解析、认证回归与真机 Debug APK。
+- 任务目标：定位并修复真实 SMTP 邮件已发送、注册成功后 Flutter 显示“服务器返回了无法识别的响应，请稍后重试”的问题。
+- 任务结果：确认后端请求 `ffadcf15-3578-436e-9e82-3e872b7d333a` 返回成功，`EmailChallenge` 中 Java `Instant` 被序列化为 9 位纳秒；该值符合现有 Contract，但 Dart `ContractValue` 只接受 1–6 位小数，首次错误边界位于 Flutter UTC 时间解析器。解析器现接受合法 RFC 3339 UTC 秒小数，并在超过 6 位时截断到 Dart 支持的微秒精度；新增基于真实 9 位响应形状的回归测试。未修改 Contract、后端、Kotlin/C++ 或存储代码。
+- 验证状态：新增测试在旧实现上按预期失败，修复后通过；认证定向测试 52/52 通过；`flutter analyze` 无问题；完整 `flutter test` 390/390 通过；Debug APK 使用 `BACKEND_BASE_URL=http://10.227.115.151:8080` 构建成功并覆盖安装到 RMX5100，启动后未发现 Flutter、`FormatException` 或致命崩溃；后端健康状态为 `UP`。真实验证码提交仍需用户在修复版界面完成，未记录或索取验证码。
+- 开发时间：2026-08-27 19:32 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 19:55 +08:00 过期注册验证码无法重发修复
+
+- 使用 Skill：`debug`、`cross-layer-feature`、`backend-api-development`、`frontend-flutter-feature`。
+- 负责模块：Cloud Backend 注册 Challenge 生命周期；Flutter 邮箱验证 Controller、页面反馈及认证回归；Docker API 与真机 Debug APK。
+- 任务目标：修复待验证邮箱因旧验证码过期后无法重新注册，登录进入验证页后点击重发又无法获取新验证码的死路。
+- 任务结果：确认账户仍为 `pending_verification`，唯一注册 Challenge 已过期但未消费、未作废；登录查询只过滤 consumed/invalidated，错误复用了过期 Challenge，而重发用例又把 expired 判为不可重发，真实请求因此返回 `AUTH_VERIFICATION_EXPIRED`，形成无法恢复闭环。后端现在只复用未过期 Challenge，登录遇到过期 Challenge 会签发并发送新码；重发允许过期但未消费、未作废的 Challenge 换发新码，同时继续拒绝已使用、已作废和禁用账号。Flutter 重发成功后同步清空旧输入、旧过期错误并显示“新验证码已发送，请查收”。Contract、Schema、Migration、Kotlin/C++ 和本地存储未修改。
+- 验证状态：四个新增回归场景在旧实现上分别因 HTTP 400、复用相同 Challenge、残留错误与残留输入失败，修复后通过；Cloud Backend `mvnw verify` 通过（91 个单元/上下文测试、58 个 PostgreSQL 集成测试）；Flutter 认证定向 21/21、完整 `flutter test` 392/392、`flutter analyze` 无问题；Docker API 重建后健康状态 `UP`，PostgreSQL 数据卷保留；使用真实过期 Challenge 重发得到 HTTP 200（request_id `681c84a4-5d18-4fd7-aabe-c0f341e18d7c`），旧 Challenge 已作废、新 Challenge 活跃，SMTP 日志确认邮件发送至 `v***y@outlook.com`。Debug APK 使用 `BACKEND_BASE_URL=http://10.227.115.151:8080` 构建并覆盖安装到 RMX5100，启动无 Flutter/Contract/FormatException 致命错误。真实验证码确认仍需用户在手机端完成，未记录或索取验证码。
+- 开发时间：2026-08-27 19:55 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 20:07 +08:00 Habit 模块需求发现与现状盘点
+
+- 使用 Skill：`calendar-data-contracts`、`cross-layer-feature`。
+- 负责模块：Habit/HabitCheckIn 领域、Contract 预留、Reminder 关联、SQLite/C++/Kotlin/Dart/Flutter 现状与未来开发拆分。
+- 任务目标：在不直接实施功能的前提下，结合仓库真实状态开展 Habit 产品需求访谈，识别现有模型可复用范围、必要协议缺口、提醒设计门禁、页面与统计方案，并为后续正式开发计划收集决策。
+- 任务结果：完成首轮只读盘点。确认 Habit 与 HabitCheckIn 的领域分离、目标数量/单位、起止日期、每日快照及四种打卡状态已有设计与 Schema；但当前只有 `habit.create`、`habit.check_in` 两个公开预留方法，没有 native call、C++ Domain/Repository、SQLite 表、Kotlin/Dart 实现或生产 UI。识别到 Habit 专属 recurrence 尚未冻结、现有 planned recurrence 输入与 date-only 语义需统一，以及普通一次性 Habit Reminder 预留不能直接满足每日重复提醒。任务进入产品决策阶段，尚未形成最终计划或修改功能代码。
+- 验证状态：仅执行 `git status`、定向文档/Contract/代码检索与调用链盘点；未修改功能代码，未运行构建或测试。工作区原有大量未提交的 SQLite、认证及文档改动均已保留；本次只追加本日志。
+- 开发时间：2026-08-27 20:07 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 20:22 +08:00 Flutter 四项底部主导航接入
+
+- 使用 Skill：`frontend-flutter-feature`。
+- 负责模块：`flutter_client/lib/presentation/home/`、Inbox 底部导航组件、个人信息页嵌入模式、`main.dart` 组合根及导航 Widget 测试。
+- 任务目标：确认个人信息页现状，并参照用户提供的 QQ 截图将主界面底部横栏调整为“日程 / 日历 / 搜索 / 我的”四项；接入已有个人信息页，未完成的日历与搜索页显示开发中占位。
+- 任务结果：确认现有个人信息页已实现并复用其真实 AuthService/ProfileController 数据链路；新增持久主 Tab 容器，底部栏采用图标在上、中文文字在下、选中项品牌色高亮的四等分布局。日程页保留既有功能；日历与搜索切换后显示明确的“板块正在开发中”；“我的”按需首次构建并展示个人信息页，避免进入首页即额外请求资料。直接 `/profile` 路由仍保留返回按钮，嵌入主 Tab 时隐藏返回按钮。未修改 Contract、Native、Backend、依赖或工具链，并保护了工作区已有认证等未提交修改。
+- 验证状态：新增主导航 Widget 测试 2/2 通过，主导航 + 个人页定向测试 9/9 通过；`dart format --output=none --set-exit-if-changed lib test` 通过（358 files，0 changed）；`flutter analyze` 无问题；完整 `flutter test` 394/394 通过；`flutter build apk --debug` 成功，产物为 `flutter_client/build/app/outputs/flutter-apk/app-debug.apk`；`git diff --check` 无本次空白错误，仅输出仓库既有 LF/CRLF 转换提示。未执行真机手工点击验收。
+- 开发时间：2026-08-27 20:22 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 20:23 +08:00 Habit 首轮产品决策冻结
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn 产品语义、每日规则、打卡与统计口径、提醒及页面入口规划。
+- 任务目标：记录用户对首轮 Habit 需求方案的选择，并继续收敛第二轮交互、提醒、生命周期和统计边界。
+- 任务结果：用户确认采用固定期限挑战、打卡型与数量型并存、时长换算结束日期、独立 HabitRecurrence、稀疏 CheckIn、有效期内可补签、严格达标统计、每日单提醒、无暂停但可提前结束、到期归档并可再来一轮，以及列表/详情/创建编辑/日期详情页面结构。Habit 不进入底部导航，从今日/日程页顶部进入；底部导航按并行落地后的“日程、日历、搜索、我的”四项作为受保护现状。最终开发计划仍待第二轮产品规则确认。
+- 验证状态：仅核对 Habit Schema、领域字段及日程页顶部入口和最新导航现状；未修改功能代码，未运行构建或测试。本次只追加需求发现日志。
+- 开发时间：2026-08-27 20:23 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 20:54 +08:00 Habit 第二轮交互与统计决策冻结
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Habit 卡片交互、数量录入、目标可变性、生命周期、统计公式、提醒恢复和通知快捷打卡规划。
+- 任务目标：吸收第二轮产品选择，识别卡片多进度语义、通知快捷完成及全局进度色偏好的剩余决策。
+- 任务结果：用户确认 Habit 通过日程页顶部更多菜单进入；首页采用进行中卡片与今日汇总；数量型支持 `+1`、直接输入、两位小数和自定义单位；开始记录后锁定目标与单位；同日撤销、历史编辑、skipped 桥接连续达标、严格统计、自然到期/提前结束区分及核心完整统计均按推荐方案执行。卡片新增左侧剩余数量快捷圆圈、右侧以连续天数为中心的百分比圆环、卡片背景进度填充和剩余挑战天数小字；通知采用同日未完成则补发及 V1 通知栏直接完成；图标使用标题 Emoji，不新增 Habit 图标字段。尚待确认卡片两种进度分别代表什么、数量型通知快捷完成语义、未答复的提醒默认权限策略，以及全局进度色的本地/账号归属。
+- 验证状态：仅核对现有用户偏好 Schema 和 Flutter Profile 入口；确认尚无可直接复用的本地 Habit 进度色设置。未修改功能代码，未运行构建或测试；本次只追加需求发现日志。
+- 开发时间：2026-08-27 20:54 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 21:09 +08:00 Habit V1 正式开发计划定稿
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn/HabitRecurrence/HabitReminderTemplate 领域与 Contract 规划、SQLite v5、C++ 统计与提醒工作流、Kotlin/JNI、Flutter 页面、本机外观偏好及端到端验收。
+- 任务目标：将三轮已确认产品需求整理为可执行、可拆分、可验证的 Habit V1 专业开发计划。
+- 任务结果：新增 active 主计划 `docs/plan/active/习惯-01-Habit与HabitCheckIn闭环开发计划.md`，冻结固定期限 daily challenge、打卡型/数量型、补签与目标锁定、严格 streak/rate、卡片时间进度/完成率圆环、同日提醒补发、通知栏快捷完成、本机进度色等语义；给出 HabitRecurrence 与 HabitReminderTemplate 的最小新增边界、必要 `ended_date`、Reminder occurrence identity、幂等事务、Storage v4→v5 migration、12 个公开能力、8 个实施阶段、黑盒矩阵和完成定义。`docs/index.md` 已增加当前 Habit 主计划入口。未修改领域/Contract/功能代码，实际实现必须从 Phase 0 开始按专项拆分。
+- 验证状态：计划文件共 626 行，章节结构和清单已检查；对计划、索引和日志执行 `git diff --check`，无空白错误，仅有工作区既有 LF/CRLF 转换提示。未运行代码构建或测试，因为本次交付仅为需求与开发计划；仓库其他未提交修改均保留。
+- 开发时间：2026-08-27 21:09 +08:00（Asia/Shanghai）。
+
+## 2026-08-27 20:59 +08:00 Flutter 账号与通知三项刷新回归修复
+
+- 使用 Skill：`debug`、`frontend-flutter-feature`。
+- 负责模块：Flutter Auth/Profile 路由、登录失败页面状态、通知启动 Host 与相关 Widget 回归测试。
+- 任务目标：修复修改登录邮箱验证成功后的黑屏、启动时通知权限说明框被自动跳转冲掉，以及错误邮箱或密码导致登录页整体重建的问题。
+- 任务结果：确认“我的”已改为 `/today` 内的 Tab，但邮箱修改成功仍一直弹栈查找独立 `/profile`，最终弹空根路由；现改为优先返回显式 `/profile`，不存在时安全停在承载“我的”的首路由。确认 Flutter 默认会为初始 `/auth-check` 同时生成底层 `/`，而 `/` 被项目映射为已认证首页，导致通知 Host 提前启动并在鉴权清栈时随弹窗一起移除；现启动只生成单一鉴权路由，并让重建后的通知 Host 主动恢复尚未处理的权限说明。确认 `LoginOutcome.failed` 与 `sessionEnded` 共用了 `goToLogin()`，错误地清栈重建登录页；现失败分支原地保留错误和邮箱、仅清空密码，只有会话结束才重新进入登录页。未修改 Backend、Contract、Kotlin/C++、数据库或依赖版本。
+- 验证状态：新增黑屏与登录失败测试在旧实现上分别复现为根页面消失、`goToLogin` 被错误调用，通知 Host 重建测试在旧实现上复现为待处理说明无法恢复；修复后认证导航、登录、通知及路由定向测试通过；`flutter analyze` 无问题；完整 `flutter test` 400/400 通过；`flutter build apk --debug` 成功并覆盖安装到 RMX5100。最终真机冷启动停留登录页，鉴权前未提前启动通知模块，未发现 Flutter/Fatal 异常；测试版当前 `POST_NOTIFICATIONS` 已为 granted。为避免再次修改真实邮箱，未重复执行真实邮箱变更提交，相关成功返回后的导航由真实 Navigator Widget 测试覆盖。
+- 开发时间：2026-08-27 20:59 +08:00（Asia/Shanghai）。

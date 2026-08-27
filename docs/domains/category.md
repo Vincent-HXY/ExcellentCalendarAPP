@@ -39,50 +39,34 @@
 - Category 归属于设备、本地资料还是具体云端用户，以及系统默认分类的初始化/隐藏/复制规则，
   仍待账号与同步架构冻结后另行设计；本轮不得据此新增字段或预设写入。
 
-### Category Storage v2 映射（已实现，尚未通过发布集成门禁）
+### Category Storage v4 映射（integrated / active）
 
-Category 使用 Calendar Core JSON v2 目录中的独立逻辑 Store：
+Category 使用 Calendar Core SQLite v4 的独立 `categories` 表。每行由 `record_key`、稳定且连续的
+`position` 与 `payload_json` 组成；`record_key` 是主键，完整业务字段仍由冻结的 Category v3
+storage codec 严格编解码。SQLite schema、迁移和索引的权威定义位于
+`contracts/storage/calendar_core_storage.yaml` 的 `calendar_core_v4`。
 
-```json
-{
-  "storage_version": 2,
-  "categories": []
-}
-```
-
-- 文件名固定为 `categories.json`，根对象只允许 `storage_version` 与 `categories`；严格格式由
-  `contracts/storage/category_store.schema.json` 定义。
 - `CategoryStorageRecord` 与 Create Request、Response DTO、领域对象分离，但使用同一组稳定事实字段：
   `id/name/description/color/icon/sort_order/created_at/updated_at/deleted_at`。所有 nullable 字段也必须
   显式保存，禁止依赖语言默认值补字段。
-- 正式本地 Store 比兼容性 Response reader 更严格：`color` 与 `sort_order` 在磁盘上必须非空；
-  request 的空顺序由 C++ 在持久化前物化。Response 保留这两项可空只用于既有草案/非 Store reader 兼容，
-  不能据此向新 `categories.json` 写入 null。
-- 存储快照按 `id` 升序序列化，使同一状态产生稳定文件；本地 Store 投影按
-  `sortOrder -> createdAt -> id` 排序，兼容性 Response comparator 仍把非 Store 来源的 null 放在最后；
-  任何情况下都不能把数组下标当作排序事实。
+- 正式本地记录比兼容性 Response reader 更严格：`color` 与 `sort_order` 必须非空；request 的空顺序由
+  C++ 在持久化前物化。Response 保留这两项可空只用于既有草案/非 Store reader 兼容。
+- 持久化位置按 `id` 升序稳定生成；本地业务投影按 `sortOrder -> createdAt -> id` 排序，兼容性 Response
+  comparator 仍把非 Store 来源的 null 放在最后。任何情况下都不能把数组下标或 SQLite rowid 当作排序事实。
 - Request、Response 与 Store 的 `sort_order` 都限制为 `0..9007199254740991`。请求直接超限返回
-  `CONTRACT_VALIDATION_FAILED`，磁盘记录超限返回 `STORAGE_DATA_CORRUPTED`；`category.create.sort_order = null`
-  时 C++ workflow 在目录级写锁内按活动记录的最大 `sort_order + 1` 生成持久化值，没有活动记录时从
-  `0` 开始，最大值已达上界时返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。显式重复顺序值合法，
+  `CONTRACT_VALIDATION_FAILED`，持久化记录超限返回 `STORAGE_DATA_CORRUPTED`；`category.create.sort_order = null`
+  时 C++ workflow 在同一数据库事务中按活动记录的最大 `sort_order + 1` 生成持久化值，没有活动记录时从
+  `0` 开始，最大值已达上界时返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且零写入。显式重复顺序值合法，
   由列表次级键稳定消歧。
-- 当前 create 只修改 `categories.json`，完整快照校验后使用同目录临时文件、flush/fsync、原子替换和目录同步，
-  成功完成目录同步才是 Contract 提交点；任何阶段返回失败都必须让旧快照继续权威。单文件原子替换就是事务
-  边界，不需要扩展现有 Event/Reminder 或 Anniversary journal。
-- 未来若一个 Category workflow 必须同时修改其他逻辑 Store，必须先定义独立的可恢复 journal；不得静默扩大
-  两个既有 journal 的精确 Store 集合。
-- 已有 Event/Habit/Anniversary 的 `categoryId` 是弱引用：Category Store 加载不扫描、不清空也不规范化其他
-  Store 的引用。缺失或软删除 Category 时保留原 ID，聚合投影可以返回空 Category。
-- 这是 Storage v2 的可加性独立文件，不改变现有 Store 的根包络、记录 codec 或 journal。合法旧 v2 目录在
-  Category Storage 正式激活后只创建空根；若已有 `categories.json`，必须完整校验并原样保留，损坏或未知版本
-  显式失败，禁止重置。
+- Category create 使用单个 SQLite 事务同时替换经校验的表状态并递增 generation；COMMIT 失败时旧状态继续
+  权威。未来跨 Store Category workflow 继续复用同一数据库事务和窄 Repository port，不向 Application
+  暴露 `sqlite3` handle 或大型可变 `CalendarTransaction`。
+- 已有 Event/Habit/Anniversary 的 `categoryId` 是弱引用：Category 加载不扫描、不清空也不规范化其他实体
+  的引用。缺失或软删除 Category 时保留原 ID，聚合投影可以返回空 Category；因此实体行之间不建立级联外键。
+- 历史 `categories.json` v2/v3 是迁移输入。v2 的缺失文件仍只可补精确空根，已有文件必须严格校验；v2→v3
+  与 v3→SQLite v4 逐字段保留记录。迁移完成后 JSON 集合保留且 envelope 标成 v4 guard，不再参与运行时读写。
 - 没有正式 Category v1 Store，也禁止把 Flutter Fake、“默认日程”fixture 或 owner 文案迁入正式存储。
-- 当前选择严格 JSON 完整快照，是因为 Category 属于低基数配置数据，公开操作只有 list/create，且可以直接复用
-  现有目录锁、原子替换和损坏检测。Repository 边界保持不变；以后出现账号分区同步、高频写入或明显规模压力时，
-  再用显式 migration 切换 SQLite，而不是让 UI/DTO 依赖文件格式。
 
-Category 的 C++ Domain/Repository/JSON codec、bootstrap、JNI export 与真实磁盘读写代码已经存在，故 Store
-和两条调用统一标记为 `implementation_status: implemented_unintegrated`；但 `release_status: blocked` 仍表示
-不能宣称产品闭环已完成。解除条件是 Event detail 聚合、Kotlin Event Category 校验、原子写 post-replace
-失败语义、跨层安全整数/规范化一致性、Flutter 生产 composition 与设备 smoke 全部通过。
+Category 的 C++ Domain/Repository/SQLite adapter、bootstrap、JNI export 与真实磁盘读写已经接入生产链，
+Store 和两条公开调用统一为 `implementation_status: integrated`、`release_status: active`。
 

@@ -40,11 +40,11 @@ class JniNativeCalendarCoreBridgeRuntimeTest {
     }
 
     @Test
-    fun storageV3RuntimeInitializationResponseIsAccepted() {
+    fun storageV4RuntimeInitializationResponseIsAccepted() {
         var initializationCalls = 0
         val bridge = bridge {
             initializationCalls += 1
-            successJson(storageFormatVersion = 3)
+            successJson(storageFormatVersion = 4)
         }
 
         try {

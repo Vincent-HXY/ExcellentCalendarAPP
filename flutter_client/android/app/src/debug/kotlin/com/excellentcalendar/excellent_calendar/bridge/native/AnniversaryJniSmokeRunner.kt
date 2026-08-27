@@ -1,6 +1,7 @@
 package com.excellentcalendar.excellent_calendar.bridge.native
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
 import java.io.File
@@ -221,23 +222,7 @@ internal object AnniversaryJniSmokeRunner {
         ) {
             "reminder.finalize_delivery timezone round-trip did not reach attempt lookup: $finalizeProbe"
         }
-        check(
-            listOf(
-                "anniversaries.json",
-                "anniversary_recurrences.json",
-                "anniversary_reminder_templates.json",
-                "calendar_workflow_transactions.json",
-                "storage_migrations.json",
-            ).all { fileName ->
-                File(storageDirectory, fileName).takeIf(File::isFile)?.let { file ->
-                    decode(file.readText())["storage_version"] == 3
-                } == true
-            } &&
-                !File(storageDirectory, "workflow_transactions.json").exists() &&
-                !File(storageDirectory, "anniversary_workflow_transactions.json").exists(),
-        ) {
-            "Calendar Core Storage v3 files or legacy-journal cleanup are invalid"
-        }
+        checkSqliteStorage(storageDirectory)
 
         val deleted = NativeContractJsonCodec.decodeObject(
             bridge.deleteAnniversary(
@@ -261,11 +246,7 @@ internal object AnniversaryJniSmokeRunner {
         bridge: NativeAnniversaryBridge,
         storageDirectory: File,
     ) {
-        val store = File(storageDirectory, "anniversaries.json")
-        if (!store.isFile) return
-        val records = decode(store.readText())["anniversaries"] as? List<*> ?: return
-        records.mapNotNull { item ->
-            val record = item as? Map<*, *> ?: return@mapNotNull null
+        sqliteRecords(storageDirectory, "anniversaries").mapNotNull { record ->
             val title = record["title"] as? String ?: return@mapNotNull null
             val id = record["id"] as? String ?: return@mapNotNull null
             id.takeIf { title.startsWith(SmokeTitlePrefix) && record["deleted_at"] == null }
@@ -273,6 +254,64 @@ internal object AnniversaryJniSmokeRunner {
             val deleted = decode(bridge.deleteAnniversary(encode(linkedMapOf("id" to id))))
             check(deleted["ok"] == true && deleted["error"] == null) {
                 "orphaned Anniversary smoke cleanup failed: $deleted"
+            }
+        }
+    }
+
+    private fun checkSqliteStorage(storageDirectory: File) {
+        val databaseFile = File(storageDirectory, "calendar_core.sqlite3")
+        check(databaseFile.isFile) { "Calendar Core SQLite Storage v4 is missing" }
+        SQLiteDatabase.openDatabase(
+            databaseFile.absolutePath,
+            null,
+            SQLiteDatabase.OPEN_READONLY,
+        ).use { database ->
+            database.rawQuery("PRAGMA user_version", null).use { cursor ->
+                check(cursor.moveToFirst() && cursor.getInt(0) == 4) {
+                    "Calendar Core SQLite user_version is not 4"
+                }
+            }
+            database.rawQuery("PRAGMA quick_check", null).use { cursor ->
+                check(cursor.moveToFirst() && cursor.getString(0) == "ok") {
+                    "Calendar Core SQLite quick_check failed"
+                }
+            }
+            database.rawQuery(
+                "SELECT COUNT(*) FROM schema_metadata " +
+                    "WHERE key='storage_format_version' AND value='4'",
+                null,
+            ).use { cursor ->
+                check(cursor.moveToFirst() && cursor.getInt(0) == 1) {
+                    "Calendar Core SQLite metadata is invalid"
+                }
+            }
+        }
+        check(
+            !File(storageDirectory, "workflow_transactions.json").exists() &&
+                !File(storageDirectory, "anniversary_workflow_transactions.json").exists(),
+        ) { "legacy workflow journals were not cleaned before SQLite migration" }
+    }
+
+    private fun sqliteRecords(
+        storageDirectory: File,
+        tableName: String,
+    ): List<Map<String, Any?>> {
+        val databaseFile = File(storageDirectory, "calendar_core.sqlite3")
+        if (!databaseFile.isFile) return emptyList()
+        return SQLiteDatabase.openDatabase(
+            databaseFile.absolutePath,
+            null,
+            SQLiteDatabase.OPEN_READONLY,
+        ).use { database ->
+            database.rawQuery(
+                "SELECT payload_json FROM $tableName ORDER BY position",
+                null,
+            ).use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) {
+                        add(decode(cursor.getString(0)))
+                    }
+                }
             }
         }
     }

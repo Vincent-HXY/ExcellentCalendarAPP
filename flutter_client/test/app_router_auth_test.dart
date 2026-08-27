@@ -29,6 +29,35 @@ void main() {
 
   MaterialApp app() => MaterialApp(onGenerateRoute: onGenerateRoute());
 
+  testWidgets('startup creates only auth check without hidden home route', (
+    tester,
+  ) async {
+    var todayBuildCount = 0;
+    Route<dynamic> routeFactory(RouteSettings settings) =>
+        AppRouter.onGenerateRoute(
+          settings,
+          todayBuilder: (_) {
+            todayBuildCount += 1;
+            return const Text('today');
+          },
+          authCheckBuilder: pageBuilder('auth-check'),
+        );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        initialRoute: '/auth-check',
+        onGenerateInitialRoutes: (_) => AppRouter.initialAuthCheckRoutes(
+          authCheckBuilder: pageBuilder('auth-check'),
+        ),
+        onGenerateRoute: routeFactory,
+      ),
+    );
+
+    expect(find.text('auth-check'), findsOneWidget);
+    expect(find.text('today'), findsNothing);
+    expect(todayBuildCount, 0);
+  });
+
   testWidgets('every auth route resolves to its builder', (tester) async {
     const names = <String, String>{
       '/auth-check': 'auth-check',

@@ -5,6 +5,7 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import android.os.SystemClock
 import com.excellentcalendar.excellent_calendar.android.alarm.ReminderCoordinatorFactory
@@ -242,23 +243,38 @@ internal object AnniversaryDeviceAcceptanceSmokeRunner {
     }
 
     private fun reminderRecords(storageDirectory: File): List<Map<String, Any?>> =
-        records(storageDirectory, "reminders.json", "reminders")
+        records(storageDirectory, "reminders")
 
     private fun notificationRecords(storageDirectory: File): List<Map<String, Any?>> =
-        records(storageDirectory, "notifications.json", "notifications")
+        records(storageDirectory, "notifications")
 
     private fun records(
         storageDirectory: File,
-        fileName: String,
-        collection: String,
+        tableName: String,
     ): List<Map<String, Any?>> {
-        val root = decode(File(storageDirectory, fileName).readText())
-        check((root["storage_version"] as Number).toInt() == 3) {
-            "$fileName is not strict Storage v3"
+        val databaseFile = File(storageDirectory, "calendar_core.sqlite3")
+        check(databaseFile.isFile) { "SQLite Storage v4 database is missing" }
+        return SQLiteDatabase.openDatabase(
+            databaseFile.absolutePath,
+            null,
+            SQLiteDatabase.OPEN_READONLY,
+        ).use { database ->
+            database.rawQuery("PRAGMA user_version", null).use { cursor ->
+                check(cursor.moveToFirst() && cursor.getInt(0) == 4) {
+                    "Calendar Core database is not SQLite Storage v4"
+                }
+            }
+            database.rawQuery(
+                "SELECT payload_json FROM $tableName ORDER BY position",
+                null,
+            ).use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) {
+                        add(objectMap(decode(cursor.getString(0)), "$tableName.payload_json"))
+                    }
+                }
+            }
         }
-        return (root[collection] as? List<*>)?.mapIndexed { index, value ->
-            objectMap(value, "$fileName.$collection[$index]")
-        } ?: error("$fileName has no $collection collection")
     }
 
     private fun successData(json: String, operation: String): Map<String, Any?> {

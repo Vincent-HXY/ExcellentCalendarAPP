@@ -69,7 +69,12 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   }
 
   Future<void> _resend() async {
-    await controller.resend();
+    final resent = await controller.resend();
+    if (!mounted || !resent) return;
+    _code.clear();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('新验证码已发送，请查收')));
   }
 
   @override

@@ -27,6 +27,7 @@
 #include "excellent_calendar/repository/category_repository.hpp"
 #include "excellent_calendar/storage/json/category_json_codec.hpp"
 #include "excellent_calendar/storage/json/json_category_repository.hpp"
+#include "excellent_calendar/storage/sqlite/sqlite_calendar_database.hpp"
 
 namespace {
 
@@ -926,11 +927,11 @@ void test_rollback_phase_failures_recover_across_read_and_runtime() {
       require(listed.at("items").get<picojson::array>().size() == 1U &&
                   migrated_category_root.get<picojson::object>()
                           .at("storage_version")
-                          .get<double>() == 3.0 &&
+                          .get<double>() == 4.0 &&
                   !recovery_artifact_exists(directory.path() /
                                             "categories.json"),
               phase +
-                  " runtime rebuild must recover v2 first and then migrate it to v3");
+                  " runtime rebuild must recover v2, migrate to SQLite v4, and guard the retained snapshot");
     }
   }
 }
@@ -1125,7 +1126,7 @@ void test_subprocess_restart_recovers_pending_rollback(
   }
 }
 
-void test_additive_runtime_initialization_preserves_existing_v2_data() {
+void test_sqlite_runtime_ignores_legacy_json_snapshot_changes() {
   using excellent_calendar::boundary::api::create_event_v2;
   using excellent_calendar::boundary::api::get_event_detail_v2;
   using excellent_calendar::boundary::api::initialize_runtime_v2_json;
@@ -1150,21 +1151,21 @@ void test_additive_runtime_initialization_preserves_existing_v2_data() {
 
   require(std::filesystem::remove(directory.path() / "categories.json"),
           "additive runtime fixture must remove only categories.json");
-  const auto missing_v3 = parse_native_result(
+  const auto missing_snapshot = parse_native_result(
       initialize_runtime_v2_json(picojson::value(initialize).serialize()),
-      "missing v3 Category runtime reinitialize");
-  require_failure(missing_v3, "STORAGE_DATA_CORRUPTED",
-                  "missing v3 Category runtime reinitialize");
+      "missing Category snapshot runtime reinitialize");
+  require_success(missing_snapshot,
+                  "missing Category snapshot runtime reinitialize");
   require(!std::filesystem::exists(directory.path() / "categories.json") &&
               read_file(directory.path() / "events.json") == events_before,
-          "a missing Store in a committed v3 directory must fail without rewriting data");
+          "SQLite reopen must not recreate or rewrite legacy JSON snapshots");
   write_file(directory.path() / "categories.json",
              R"({"categories":[],"storage_version":3})");
   require_success(
       parse_native_result(
           initialize_runtime_v2_json(picojson::value(initialize).serialize()),
-          "restored v3 Category runtime reinitialize"),
-      "restored v3 Category runtime reinitialize");
+      "restored Category snapshot runtime reinitialize"),
+      "restored Category snapshot runtime reinitialize");
   picojson::object detail_request;
   detail_request["id"] = picojson::value(event_id);
   const auto &detail = require_success(
@@ -1183,15 +1184,19 @@ void test_additive_runtime_initialization_preserves_existing_v2_data() {
   const std::string corrupted =
       R"({"categories":[],"storage_version":3,"unknown":true})";
   write_file(category_path, corrupted);
-  const auto failed = parse_native_result(
+  const auto reopened = parse_native_result(
       initialize_runtime_v2_json(picojson::value(initialize).serialize()),
-      "corrupted Category runtime initialize");
-  require_failure(failed, "STORAGE_DATA_CORRUPTED",
-                  "corrupted Category runtime initialize");
-  require(read_file(category_path) == corrupted &&
+      "corrupted Category snapshot runtime initialize");
+  require_success(reopened, "corrupted Category snapshot runtime initialize");
+  picojson::value guarded_category_root;
+  require(picojson::parse(guarded_category_root, read_file(category_path)).empty(),
+          "SQLite initialization must leave a parseable Category downgrade guard");
+  const auto& guarded_category = guarded_category_root.get<picojson::object>();
+  require(guarded_category.at("storage_version").get<double>() == 4.0 &&
+              guarded_category.at("categories").get<picojson::array>().empty() &&
+              guarded_category.at("unknown").get<bool>() &&
               read_file(directory.path() / "events.json") == events_before,
-          "corrupted Category initialization must preserve Category and Event "
-          "files");
+          "SQLite initialization must preserve retained Category payload fields and Event snapshots while guarding the envelope");
 }
 
 void test_boundary_storage_restart_and_event_category_id() {
@@ -1353,19 +1358,21 @@ void test_boundary_storage_restart_and_event_category_id() {
                   .is<picojson::null>(),
           "unclassified Event detail must preserve the null association");
 
-  const auto category_path = directory.path() / "categories.json";
-  picojson::value category_root;
-  require(picojson::parse(category_root, read_file(category_path)).empty() &&
-              category_root.is<picojson::object>(),
-          "soft-delete Category fixture must parse");
-  auto &category_records = category_root.get<picojson::object>()
-                               .at("categories")
-                               .get<picojson::array>();
-  require(category_records.size() == 1U,
-          "soft-delete Category fixture must contain one record");
-  auto &category_record = category_records.front().get<picojson::object>();
-  category_record["deleted_at"] = category_record.at("updated_at");
-  write_file(category_path, category_root.serialize());
+  {
+    auto database =
+        excellent_calendar::storage::sqlite::SqliteCalendarDatabase::open(
+            directory.path());
+    require(database.ok(), "soft-delete SQLite fixture must reopen");
+    auto before = database.value()->load_category_state();
+    require(before.ok() && before.value().categories.size() == 1U,
+            "soft-delete Category fixture must contain one record");
+    auto after = before.value();
+    after.categories.front().deleted_at = after.categories.front().updated_at;
+    require(database.value()
+                ->write_category_changes(before.value(), after)
+                .ok(),
+            "soft-delete Category fixture must commit through SQLite");
+  }
   require_success(
       parse_native_result(
           initialize_runtime_v2_json(picojson::value(initialize).serialize()),
@@ -1402,7 +1409,7 @@ int main(int argc, char **argv) {
     test_committed_marker_never_rolls_back_successful_write();
     test_default_atomic_store_policy_regression();
     test_subprocess_restart_recovers_pending_rollback(argv[0]);
-    test_additive_runtime_initialization_preserves_existing_v2_data();
+    test_sqlite_runtime_ignores_legacy_json_snapshot_changes();
     test_boundary_storage_restart_and_event_category_id();
     std::cout << "category core tests passed\n";
     return EXIT_SUCCESS;

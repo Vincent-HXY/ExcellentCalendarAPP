@@ -14,14 +14,17 @@ import 'fixtures/backend_api_fixtures.dart';
 void main() {
   late FakeAuthGateway gateway;
   late LoginController controller;
+  late FakeProfileCache profileCache;
+  late FakeRefreshTokenStore secureStore;
+  late AuthSessionController session;
   var loginCalls = 0;
 
   AuthService service() => AuthService(
     authGateway: gateway,
     userGateway: FakeUserGateway(),
-    secureStore: FakeRefreshTokenStore(),
-    session: AuthSessionController(),
-    profileCache: FakeProfileCache(),
+    secureStore: secureStore,
+    session: session,
+    profileCache: profileCache,
   );
 
   setUp(() {
@@ -31,8 +34,30 @@ void main() {
       loginCalls += 1;
       return authenticationDto();
     };
+    profileCache = FakeProfileCache();
+    secureStore = FakeRefreshTokenStore();
+    session = AuthSessionController();
     controller = LoginController(service());
   });
+
+  test(
+    'debug test credentials authenticate locally without backend or token storage',
+    () async {
+      controller.setEmail('admin@admin.com');
+      controller.setPassword('admin');
+
+      final outcome = await controller.submit();
+
+      expect(outcome, LoginOutcome.authenticated);
+      expect(loginCalls, 0);
+      expect(secureStore.storeCalls, 0);
+      expect(profileCache.writeCalls, 0);
+      expect(session.status, AuthStatus.authenticated);
+      expect(session.currentUser!.account.email, 'admin@admin.com');
+      expect(session.currentUser!.profile.username, 'admin');
+      expect(controller.password, '');
+    },
+  );
 
   test('successful login authenticates and returns authenticated', () async {
     controller.setEmail('user@example.com');

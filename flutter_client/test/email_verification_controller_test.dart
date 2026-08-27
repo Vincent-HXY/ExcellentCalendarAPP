@@ -162,6 +162,32 @@ void main() {
     },
   );
 
+  test('successful resend clears the expired code and stale errors', () async {
+    gateway.onVerifyRegistration = (_) async => throw BackendApiException(
+      error: apiErrorDto('AUTH_VERIFICATION_EXPIRED'),
+      requestId: 'r1',
+    );
+    gateway.onResendRegistration =
+        (request, {required String idempotencyKey}) async =>
+            challengeDto(resendAvailableAt: '2026-08-01T01:02:00Z');
+    final controller = EmailVerificationController(
+      service(),
+      mode: EmailVerificationMode.registration,
+      challenge: challengeDto(resendAvailableAt: '2026-08-01T00:59:00Z'),
+      now: () => DateTime.utc(2026, 8, 1, 1, 0),
+    )..start();
+    controller.setCode('123456');
+
+    expect(await controller.submit(), EmailVerificationOutcome.failed);
+    expect(controller.codeError, '验证码已过期，请重新获取');
+    expect(await controller.resend(), isTrue);
+
+    expect(controller.code, isEmpty);
+    expect(controller.codeError, isNull);
+    expect(controller.formError, isNull);
+    expect(controller.resendError, isNull);
+  });
+
   test('email change mode never allows resend', () async {
     final controller = EmailVerificationController(
       service(),

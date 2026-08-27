@@ -7,6 +7,7 @@ import '../../native_contract/common/api_error_codes.dart';
 import 'auth_messages.dart';
 import 'auth_service.dart';
 import 'auth_validators.dart';
+import 'local_test_account.dart';
 
 enum LoginPhase { editing, submitting }
 
@@ -67,6 +68,10 @@ class LoginController extends ChangeNotifier {
     _formError = null;
     _notify();
     try {
+      if (LocalTestAccount.matches(email: _email, password: _password)) {
+        _authService.establishLocalTestSession();
+        return LoginOutcome.authenticated;
+      }
       final response = await _authService.authGateway.login(
         LoginRequestDto(email: _email.trim(), password: _password),
       );

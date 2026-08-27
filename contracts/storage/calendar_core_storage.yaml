@@ -1,23 +1,32 @@
-version: 3
+version: 4
 release_status: active
 implementation_status: integrated
-format_name: excellent_calendar_core_json
-storage_format_version: 3
-active_format_contract: calendar_core_v3
-legacy_v2_sections_role: migration_source_and_downgrade_guard_only
+format_name: excellent_calendar_core_sqlite
+storage_format_version: 4
+active_format_contract: calendar_core_v4
+legacy_json_sections_role: migration_source_payload_codec_and_downgrade_guard_only
 
 directories:
   active_android: files/local_storage/calendar_core_storage_json
   legacy_ignored: files/local_storage/test_storage_json
   note: >-
-    V1 Calendar Core data is not preserved. The legacy test directory is ignored.
-    The active directory is a strict v3 writer; a complete v2 directory at this
-    path is accepted only as the source of the one-way v2-to-v3 migration.
+    The established active directory name is retained so SQLite v4 can discover
+    Calendar Core JSON v1, v2, or v3 in place. calendar_core.sqlite3 is the only
+    active writer. After a successful import, JSON roots retain every record but
+    carry storage_version 4 as a downgrade guard and are never read as live data.
+    The historical test_storage_json directory remains ignored.
 
 compatibility:
-  reads_v1: false
-  migrates_v1: false
+  reads_v1: migration_only
+  migrates_v1: true_into_isolated_compatibility_tables
+  reads_v2: migration_only_through_frozen_v2_to_v3_codec
+  reads_v3: migration_only
+  migrates_v2: true_via_v3_then_sqlite_v4
+  migrates_v3: true
   writes_v1: false
+  writes_v2: false
+  writes_v3: false
+  writes_v4: sqlite_only
   mixed_read: forbidden
   additive_v2_store_policy: >-
     A new independent file may join the v2 directory without changing
@@ -25,17 +34,210 @@ compatibility:
     existing store envelopes and codecs remain unchanged, and the new runtime
     validates rather than rewrites every pre-existing file.
   rollback: >-
-    V1 data is not archived or restored. A rollback to any pre-v3 runtime cannot
-    safely interpret the active v3 directory; the old app must refuse it without
-    deleting, downgrading, or partially reading v3 data.
+    A rollback to any JSON writer is unsafe. Before SQLite is published, every
+    retained JSON writer root is durably rewritten only at the envelope level
+    to storage_version 4 and verified against its captured pre-cutover image.
+    Older JSON runtimes must reject that guard and must not delete, downgrade,
+    or partially read the directory.
 
-v1_no_preservation:
-  - validate that the source is the confirmed v1 Calendar Core directory
-  - remove the confirmed v1 directory after validation; no archive is kept
-  - create and initialize an empty v2 directory
-  - stop initialization if validation or v2 initialization fails
-  - never remove an unconfirmed, corrupt, mixed-version, or v2 directory
+calendar_core_v4:
+  format_name: excellent_calendar_core_sqlite
+  storage_format_version: 4
+  implementation_status: integrated
+  release_status: active
+  directory: files/local_storage/calendar_core_storage_json
+  database_file: calendar_core.sqlite3
+  transient_files:
+    migration_candidate: calendar_core.sqlite3.migrating
+    cutover_journal: calendar_core_sqlite_cutover.json
+    wal: calendar_core.sqlite3-wal
+    shared_memory: calendar_core.sqlite3-shm
+  sqlite:
+    application_id: 0x4543414c
+    user_version: 4
+    journal_mode: WAL
+    transaction_begin: BEGIN IMMEDIATE
+    synchronous: FULL
+    foreign_keys: enabled
+    quick_check_on_open: required
+    schema_definition_validation: >-
+      Every required table and index must match the normalized canonical CREATE
+      definition, including columns, primary keys, uniqueness, CHECK clauses,
+      expression order, casts, and partial-index predicates. A matching object
+      name alone is never sufficient.
+    bundled_version: 3.53.4
+  metadata_tables:
+    - schema_metadata
+    - store_generations
+    - migration_history
+  modern_tables:
+    - events
+    - recurrence_versions
+    - event_occurrence_states
+    - anniversaries
+    - anniversary_recurrences
+    - anniversary_reminder_templates
+    - reminders
+    - notifications
+    - reminder_recovery_batches
+    - categories
+  legacy_v1_compatibility_tables:
+    - legacy_events
+    - legacy_reminders
+    - legacy_notifications
+  row_shape:
+    columns: [record_key, position, payload_json]
+    primary_key: record_key
+    ordering: position_is_unique_non_negative_and_contiguous
+    payload: >-
+      Modern rows preserve one strict JSON v3 record verbatim. Compatibility
+      rows preserve the frozen JSON v1 record shape. SQLite owns identity,
+      ordering, uniqueness, scheduling indexes, durability, and transactions;
+      the frozen codecs remain the only field decoder so no supported field is
+      dropped during migration.
+  native_constraints_and_indexes:
+    required_uniques:
+      - recurrence_id_and_revision
+      - event_id_revision_and_occurrence_key
+      - recurring_reminder_business_identity
+      - notification_delivery_attempt_id
+      - prepared_delivery_id
+      - sent_delivery_id
+      - recovery_request_id
+      - single_recovery_batch_in_progress
+      - anniversary_template_business_identity
+    query_indexes:
+      - reminders_is_enabled_deleted_at_status_remind_at_record_key
+      - legacy_reminders_is_enabled_deleted_at_status_remind_at_record_key
+      - events_deleted_at_status_start_at_start_date_record_key
+      - events_category_id_deleted_at
+      - notifications_reminder_id_position
+      - categories_deleted_at_sort_order_created_at_record_key
+  relationship_validation: >-
+    SQLite foreign keys remain intentionally absent from entity rows because
+    Event.category_id is a retained weak reference, target_id is polymorphic,
+    and Notification/Recovery audit rows may outlive active targets. The strict
+    v3 aggregate decoder validates every cross-store reference and lifecycle
+    invariant before a transaction commits and whenever the database opens.
+  repository_boundary: >-
+    Event, Reminder, Notification, RecurringEventTransaction,
+    AnniversaryTransaction, and CategoryRepository interfaces are unchanged.
+    Application services never receive sqlite3 handles or a mutable giant
+    Calendar state transaction.
+  migration:
+    migration_id_fresh: calendar_core_fresh_sqlite_v4
+    migration_id_v2: calendar_core_json_v2_to_v3_anniversary_reminder_r1
+    migration_id_v3: calendar_core_json_v3_to_sqlite_v4
+    migration_id_v1_compatibility: calendar_core_json_v1_compat_to_sqlite_v4
+    legal_history_combinations:
+      fresh: [calendar_core_fresh_sqlite_v4]
+      json_v1: [calendar_core_json_v1_compat_to_sqlite_v4]
+      json_v2:
+        - calendar_core_json_v2_to_v3_anniversary_reminder_r1
+        - calendar_core_json_v3_to_sqlite_v4
+      json_v3: [calendar_core_json_v3_to_sqlite_v4]
+    history_invariant: >-
+      Schema creation never writes migration history. The importer records only
+      the source path actually observed at this v4 initialization, rejects every
+      other combination, and repairs only the exact historical v1-plus-spurious-
+      v3 pair emitted by the pre-cutover-fix implementation.
+    json_v1: >-
+      Recover the two frozen v1 journals first, strictly decode Event, Reminder,
+      and Notification roots, and import them into isolated compatibility
+      tables without UUID or v3 lifecycle reinterpretation. Modern tables start
+      empty, matching the previous v1-to-v2 product boundary while preserving
+      every v1 record for the legacy APIs.
+    json_v2: >-
+      Complete or resume the accepted recoverable v2-to-v3 migration first,
+      then execute the v3-to-SQLite import.
+    json_v3: >-
+      Strictly validate all ten entity Stores and Category, import every record
+      in source order inside one SQLite transaction, validate metadata and
+      quick_check, flush and close the candidate, sync the database file, and
+      atomically rename it into place. Publication uses write-through rename on
+      Windows and a parent-directory fsync on POSIX systems.
+    idempotency: >-
+      If calendar_core.sqlite3 exists, JSON is never consulted as live data.
+      SQLite metadata, schema version, generations, row identities, strict
+      codecs, aggregate invariants, and quick_check must all validate before any
+      service is published.
+    cutover_state_machine:
+      journal_version: 1
+      states: [prepared, guards_installed]
+      prepared: >-
+        The closed and validated .migrating database has been fsynced. The
+        cutover journal then records the actual source kind and the exact root or
+        absence of every known JSON writer file and is itself atomically written
+        and fsynced.
+      guard_installation: >-
+        Under the Calendar Core directory lock, each current JSON root must still
+        equal either its captured source image or its deterministic v4 guarded
+        image. Every existing known v1/v2/v3 data or journal writer root is
+        atomically replaced with a storage_version 4 guard. Missing
+        storage_migrations plus the v1 Event, Reminder, and Notification roots
+        are created as global/runtime-entry guards. A fresh v4 initialization
+        also creates all ten empty modern entity guards to preserve the former
+        empty-bootstrap snapshot behavior; other absent entity or transaction
+        files stay absent. Any third value blocks publication as a possible
+        concurrent legacy write.
+      guards_installed: >-
+        The state is written and fsynced only after all writer roots have been
+        verified as v4. Only this state permits the atomic database publication.
+      recovery: >-
+        With no database, a valid journal resumes guard installation and
+        candidate publication. With a database, SQLite and every guard are
+        revalidated before journal cleanup and service publication. A missing or
+        invalid candidate/journal fails closed without selecting JSON or SQLite
+        by guesswork.
+    failure_recovery: >-
+      A stale .migrating database without a cutover journal is removed by exact
+      path and rebuilt from JSON. Before the journal is durable JSON remains the
+      only authority. After the journal is durable recovery proceeds through the
+      declared state machine; SQLite cannot be published until every JSON writer
+      is blocked. Failure never deletes source records. For databases produced by
+      the vulnerable pre-fix implementation, any still-writable v1/v3 root must
+      exactly equal the corresponding SQLite Store before it can be guarded;
+      divergence fails with STORAGE_DATA_CORRUPTED instead of hiding data.
+  downgrade_guard: >-
+    Before SQLite publication, all existing JSON data and transaction/migration
+    journal roots keep their complete content but declare storage_version 4.
+    Missing storage_migrations.json and the legacy Event, Reminder, and
+    Notification roots are created as deterministic empty v4 guards; other
+    absent entity and transaction files remain absent for migrated sources. A
+    fresh database creates all ten empty modern entity guards, preserving the
+    established empty-bootstrap diagnostic snapshots. Together these mandatory
+    runtime-entry guards prevent every supported pre-v4 runtime from publishing
+    a writer while preserving normal committed-journal cleanup semantics.
+  transaction_invariants:
+    - every modern and legacy write uses the same process-owned database connection
+    - nested Repository calls participate in the outer SQLite transaction
+    - callback failure rolls back entity rows and store_generations together
+    - a successful commit is acknowledged only after SQLite COMMIT succeeds
+    - WAL and SHM files are runtime artifacts and are never independent backup inputs
+  test_requirements:
+    - exact ten-Store and Category JSON v3 equivalence after migration
+    - JSON v1 compatibility import, journal recovery, Unicode, tombstone, and restart
+    - empty, populated, idempotent reopen, and retained-snapshot mutation
+    - all-Store rollback and successful retry
+    - primary, business-unique, scheduling-index, metadata, and schema-version checks
+    - valid-JSON identity corruption, unknown version, and quick_check rejection
+    - mixed JSON v1 and modern Store or journal rejection without publication or source rewrite
+    - missing required table or index rejection during every open
+    - same-name but wrong definition rejection for every required table and index
+    - exact fresh, v1, v2-to-v3-to-v4, and v3-to-v4 migration history combinations
+    - real child-process termination after candidate fsync, journal prepare, every JSON guard, guard-state fsync, database publication, and journal cleanup
+    - stale JSON writer rejection immediately after database publication
 
+legacy_v1_no_preservation_policy_before_v4:
+  role: historical_policy_superseded_by_calendar_core_v4_compatibility_import
+  steps:
+    - validate that the source is the confirmed v1 Calendar Core directory
+    - remove the confirmed v1 directory after validation; no archive is kept
+    - create and initialize an empty v2 directory
+    - stop initialization if validation or v2 initialization fails
+    - never remove an unconfirmed, corrupt, mixed-version, or v2 directory
+
+logical_stores_role: legacy_v2_migration_source_only
 logical_stores:
   events: events.json
   recurrence_versions: recurrence_versions.json
@@ -59,6 +261,7 @@ logical_store_implementation:
       Flutter composition, isolated max-sort JNI verification, and physical
       device Flutter-to-Storage restart smoke passed together on 2026-08-14.
 
+root_envelopes_role: legacy_v2_migration_source_only
 root_envelopes:
   events: {version_field: storage_version, version: 2, collection_field: events}
   recurrence_versions: {version_field: storage_version, version: 2, collection_field: recurrence_versions}
@@ -72,6 +275,7 @@ root_envelopes:
   anniversary_workflow_transactions: {version_field: storage_version, version: 2, collection_field: transactions}
   categories: {version_field: storage_version, version: 2, collection_field: categories}
 
+file_invariants_role: legacy_v2_migration_source_only
 file_invariants:
   - every store root declares storage_version equal to 2
   - every write validates the complete new snapshot before atomic replacement
@@ -150,6 +354,7 @@ lifecycle_invariants:
     - v2-only expired and occurrence_reopened values never qualify a directory for automatic v1 removal
 
 category_store:
+  runtime_role: legacy_v2_migration_source_only
   implementation_status: integrated
   release_status: active
   file: categories.json
@@ -159,7 +364,7 @@ category_store:
     rationale:
       - Category is low-cardinality configuration data and the current public operations are list and create
       - a complete snapshot is cheap to validate and reuses the existing directory lock, atomic file replacement, and corruption policy
-      - the Repository boundary keeps a future SQLite implementation from leaking into Domain or transport DTOs
+      - the Repository boundary allowed SQLite v4 to replace this writer without leaking into Domain or transport DTOs
     reconsider_when:
       - account-partitioned sync or independently versioned remote merges are introduced
       - write frequency or record volume makes full-snapshot replacement measurably unsuitable
@@ -345,7 +550,9 @@ calendar_core_v3:
   format_name: excellent_calendar_core_json
   storage_format_version: 3
   implementation_status: integrated
-  release_status: active
+  release_status: blocked
+  superseded_by: calendar_core_v4
+  runtime_role: migration_source_and_strict_row_payload_codec
   activation_evidence: >-
     The v2-to-v3 migration, shared coordinator, Anniversary Reminder/Occurrence
     readers and writers, Kotlin/JNI/Dart mappings, build-after-test, Flutter
