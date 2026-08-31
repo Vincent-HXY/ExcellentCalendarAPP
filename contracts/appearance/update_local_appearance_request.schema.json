@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/appearance/update_local_appearance_request.schema.json",
+  "title": "UpdateLocalAppearanceRequest",
+  "description": "Kotlin-local V1 appearance update. Only a preset token is accepted; arbitrary ARGB is forbidden.",
+  "x-contract-version": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["habit_progress_color"],
+  "properties": {"habit_progress_color": {"type": "string", "enum": ["teal", "blue", "indigo", "green", "orange", "rose", "purple"]}}
+}

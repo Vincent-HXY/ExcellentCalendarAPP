@@ -1,0 +1,11 @@
+{
+  "request_limit": 100,
+  "processed_count": 100,
+  "materialized_count": 75,
+  "expired_count": 20,
+  "cancelled_count": 5,
+  "unchanged_count": 0,
+  "schedule_reconciliation_required": true,
+  "has_more": true,
+  "next_cursor": "habit-r1:opaque-page-2"
+}

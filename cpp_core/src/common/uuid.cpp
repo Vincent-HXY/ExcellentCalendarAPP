@@ -147,6 +147,13 @@ bool is_uuid(std::string_view value) {
   return parse_uuid(value).ok();
 }
 
+bool is_canonical_uuid_v4(std::string_view value) {
+  auto parsed = parse_uuid(value);
+  return parsed.ok() && format_uuid(parsed.value()) == value &&
+         (parsed.value()[6] & 0xf0U) == 0x40U &&
+         (parsed.value()[8] & 0xc0U) == 0x80U;
+}
+
 Result<std::string> generate_uuid_v5(std::string_view namespace_uuid,
                                     std::string_view name) {
   auto parsed = parse_uuid(namespace_uuid);

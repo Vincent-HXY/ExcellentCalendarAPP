@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_recurrence_rule_input.schema.json",
+  "title": "HabitRecurrenceRuleInput",
+  "description": "Habit V1 recurrence intent. It is date-only, daily, interval one, follows the device timezone, and accepts no Event anchors or rrule.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["frequency", "interval", "timezone_mode"],
+  "properties": {"frequency": {"const": "daily"}, "interval": {"const": 1}, "timezone_mode": {"const": "follow_device"}}
+}

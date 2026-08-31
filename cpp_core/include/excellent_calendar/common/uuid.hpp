@@ -9,6 +9,9 @@ namespace excellent_calendar::common {
 
 bool is_uuid(std::string_view value);
 
+/** True only for the canonical lowercase textual form of an RFC 4122 UUIDv4. */
+bool is_canonical_uuid_v4(std::string_view value);
+
 /** Generate RFC 4122 UUIDv5 from a textual namespace UUID and UTF-8 name. */
 Result<std::string> generate_uuid_v5(std::string_view namespace_uuid,
                                     std::string_view name);

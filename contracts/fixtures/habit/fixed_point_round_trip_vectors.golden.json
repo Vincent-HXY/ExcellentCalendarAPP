@@ -1,0 +1,12 @@
+{
+  "scale": 2,
+  "wire_representation": "json_integer_hundredths",
+  "wire_field_suffix": "_hundredths",
+  "vectors": [
+    {"hundredths": 1, "canonical_decimal": "0.01"},
+    {"hundredths": 125, "canonical_decimal": "1.25"},
+    {"hundredths": 9007199254740990, "canonical_decimal": "90071992547409.90"},
+    {"hundredths": 9007199254740991, "canonical_decimal": "90071992547409.91"}
+  ],
+  "adjacent_maximum_hundredths": [9007199254740990, 9007199254740991]
+}

@@ -1,0 +1,12 @@
+{
+  "title": "最大精确目标",
+  "description": "固定点上界向量",
+  "category_id": "legacy-opaque-category",
+  "recurrence": {"frequency": "daily", "interval": 1, "timezone_mode": "follow_device"},
+  "target_count_hundredths": 9007199254740991,
+  "unit": "步",
+  "start_date": "2026-09-01",
+  "end_date": "2026-09-07",
+  "reminder": {"is_enabled": true, "local_time": "09:00", "timezone_mode": "follow_device", "method": "popup"},
+  "timezone": "Asia/Shanghai"
+}

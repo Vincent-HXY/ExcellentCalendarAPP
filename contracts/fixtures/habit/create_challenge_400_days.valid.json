@@ -1,0 +1,12 @@
+{
+  "title": "四百天挑战",
+  "description": null,
+  "category_id": null,
+  "recurrence": {"frequency": "daily", "interval": 1, "timezone_mode": "follow_device"},
+  "target_count_hundredths": null,
+  "unit": null,
+  "start_date": "2026-01-01",
+  "end_date": "2027-02-04",
+  "reminder": {"is_enabled": false, "local_time": null, "timezone_mode": "follow_device", "method": "popup"},
+  "timezone": "Asia/Shanghai"
+}

@@ -17,6 +17,7 @@ class ProfilePage extends StatefulWidget {
     required this.authService,
     required this.session,
     required this.navigator,
+    this.onOpenAppearance,
     this.showBack = true,
     super.key,
   });
@@ -24,6 +25,7 @@ class ProfilePage extends StatefulWidget {
   final AuthService authService;
   final AuthSessionController session;
   final AuthNavigator navigator;
+  final VoidCallback? onOpenAppearance;
   final bool showBack;
 
   @override
@@ -115,9 +117,21 @@ class _ProfilePageState extends State<ProfilePage> {
             );
           }
           if (viewData == null) {
-            return _ProfileErrorState(
-              message: controller.errorMessage ?? '加载失败',
-              onRetry: controller.load,
+            return Column(
+              children: [
+                _ProfileErrorState(
+                  message: controller.errorMessage ?? '加载失败',
+                  onRetry: controller.load,
+                ),
+                if (widget.onOpenAppearance != null) ...[
+                  const SizedBox(height: 16),
+                  _ProfileActionTile(
+                    icon: Icons.palette_outlined,
+                    label: '外观设置（保存在本机）',
+                    onTap: widget.onOpenAppearance!,
+                  ),
+                ],
+              ],
             );
           }
           return Column(
@@ -169,6 +183,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 label: '账号安全',
                 onTap: () => widget.navigator.push('/account-security'),
               ),
+              if (widget.onOpenAppearance != null) ...[
+                const SizedBox(height: 10),
+                _ProfileActionTile(
+                  icon: Icons.palette_outlined,
+                  label: '外观设置（保存在本机）',
+                  onTap: widget.onOpenAppearance!,
+                ),
+              ],
             ],
           );
         },

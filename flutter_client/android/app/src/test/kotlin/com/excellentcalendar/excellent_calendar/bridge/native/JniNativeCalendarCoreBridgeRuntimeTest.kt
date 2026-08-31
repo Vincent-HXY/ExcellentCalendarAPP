@@ -40,11 +40,11 @@ class JniNativeCalendarCoreBridgeRuntimeTest {
     }
 
     @Test
-    fun storageV4RuntimeInitializationResponseIsAccepted() {
+    fun storageV5RuntimeInitializationResponseIsAccepted() {
         var initializationCalls = 0
         val bridge = bridge {
             initializationCalls += 1
-            successJson(storageFormatVersion = 4)
+            successJson(storageFormatVersion = 5)
         }
 
         try {
@@ -57,9 +57,9 @@ class JniNativeCalendarCoreBridgeRuntimeTest {
     }
 
     @Test
-    fun obsoleteStorageV2RuntimeInitializationResponseIsRejected() {
+    fun obsoleteStorageV4RuntimeInitializationResponseIsRejected() {
         val result = NativeContractJsonCodec.decodeObject(
-            bridge { successJson(storageFormatVersion = 2) }.createEvent("{}"),
+            bridge { successJson(storageFormatVersion = 4) }.createEvent("{}"),
         )
 
         assertEquals(false, result["ok"])

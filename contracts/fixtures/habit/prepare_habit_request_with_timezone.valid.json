@@ -1,0 +1,9 @@
+{
+  "kind": "reminder",
+  "reminder_id": "7ba217aa-5b7a-5c96-ad04-edc464faf74a",
+  "recovery_batch_id": null,
+  "delivery_id": null,
+  "method": "popup",
+  "expected_remind_at": "2026-09-01T01:00:00Z",
+  "timezone": "Asia/Shanghai"
+}

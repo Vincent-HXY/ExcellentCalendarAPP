@@ -1,17 +1,18 @@
-version: 4
+version: 5
 release_status: active
 implementation_status: integrated
 format_name: excellent_calendar_core_sqlite
-storage_format_version: 4
-active_format_contract: calendar_core_v4
+storage_format_version: 5
+active_format_contract: calendar_core_v5
+latest_declared_format_version: 5
 legacy_json_sections_role: migration_source_payload_codec_and_downgrade_guard_only
 
 directories:
   active_android: files/local_storage/calendar_core_storage_json
   legacy_ignored: files/local_storage/test_storage_json
   note: >-
-    The established active directory name is retained so SQLite v4 can discover
-    Calendar Core JSON v1, v2, or v3 in place. calendar_core.sqlite3 is the only
+    The established active directory name is retained so the SQLite bootstrap can
+    discover Calendar Core JSON v1, v2, or v3 in place. calendar_core.sqlite3 is the only
     active writer. After a successful import, JSON roots retain every record but
     carry storage_version 4 as a downgrade guard and are never read as live data.
     The historical test_storage_json directory remains ignored.
@@ -21,12 +22,15 @@ compatibility:
   migrates_v1: true_into_isolated_compatibility_tables
   reads_v2: migration_only_through_frozen_v2_to_v3_codec
   reads_v3: migration_only
+  reads_v4: migration_only
   migrates_v2: true_via_v3_then_sqlite_v4
   migrates_v3: true
+  migrates_v4: true
   writes_v1: false
   writes_v2: false
   writes_v3: false
-  writes_v4: sqlite_only
+  writes_v4: false
+  writes_v5: sqlite_only
   mixed_read: forbidden
   additive_v2_store_policy: >-
     A new independent file may join the v2 directory without changing
@@ -39,6 +43,305 @@ compatibility:
     to storage_version 4 and verified against its captured pre-cutover image.
     Older JSON runtimes must reject that guard and must not delete, downgrade,
     or partially read the directory.
+
+calendar_core_v5:
+  format_name: excellent_calendar_core_sqlite
+  storage_format_version: 5
+  implementation_status: integrated
+  release_status: active
+  source_contract: calendar_core_v4
+  source_v4_contract_sha256: b6093231573d6b31eb245e227ff42ac92b34f7dc100903223968c1e8f2539837
+  activation_evidence: >-
+    Activated on 2026-08-31 after the C++ v4-to-v5 migration, Repository and
+    boundary implementations, Kotlin storage-version handshake, Flutter chain,
+    build-after-test, native smoke, production Habit JNI 11/11 export check,
+    and physical-device SQLite v5/create/check-in/clear/persistence paths passed.
+    The product owner explicitly accepted the remaining Android lifecycle,
+    permission-recovery, time-boundary, quantitative-action, detail-navigation,
+    and TalkBack device matrix as non-blocking release verification debt tracked
+    by docs/issues/open.md#open-hab-001; those scenarios are not recorded as passed.
+  directory: files/local_storage/calendar_core_storage_json
+  database_file: calendar_core.sqlite3
+  sqlite:
+    application_id: 0x4543414c
+    user_version: 5
+    journal_mode: WAL
+    transaction_begin: BEGIN IMMEDIATE
+    synchronous: FULL
+    foreign_keys: enabled
+    quick_check_on_open: required
+    bundled_version: 3.53.4
+    version_upgrade_forbidden: true
+  frozen_v4_input_gate:
+    requirement: >-
+      An existing user_version=4 database must first pass the exact frozen v4
+      runtime checker, including application_id, every canonical table/index,
+      metadata, legal migration history, generations, row codecs, aggregate
+      relationships, and quick_check. No v5 DDL or metadata write may occur
+      before that complete validation succeeds.
+    contract_hash_algorithm: sha256_of_sorted_compact_utf8_json_for_calendar_core_v4_yaml_node
+    input_contract_hash: b6093231573d6b31eb245e227ff42ac92b34f7dc100903223968c1e8f2539837
+    mutation_of_calendar_core_v4_node: forbidden
+  inherited_v4_objects:
+    tables: exact_all_16_v4_tables
+    indexes: exact_all_16_v4_indexes
+    rows: preserve_record_key_position_payload_json_byte_for_byte
+    store_generations: preserve_every_existing_value
+    migration_history: preserve_every_existing_row_and_ordering_semantics
+    legacy_compatibility_tables: preserve_exactly
+    schema_checker: >-
+      The v5 checker compares every inherited object against the same normalized
+      canonical CREATE definition used by the frozen v4 checker. Renaming,
+      recreate-and-copy, payload rewrite, collation drift, or a matching name
+      with different SQL is corruption.
+  new_store_tables:
+    habit_recurrences: >-
+      CREATE TABLE habit_recurrences(record_key TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE CHECK(position >= 0),payload_json TEXT NOT NULL CHECK(json_valid(payload_json))) WITHOUT ROWID
+    habits: >-
+      CREATE TABLE habits(record_key TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE CHECK(position >= 0),payload_json TEXT NOT NULL CHECK(json_valid(payload_json))) WITHOUT ROWID
+    habit_check_ins: >-
+      CREATE TABLE habit_check_ins(record_key TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE CHECK(position >= 0),payload_json TEXT NOT NULL CHECK(json_valid(payload_json))) WITHOUT ROWID
+    habit_reminder_templates: >-
+      CREATE TABLE habit_reminder_templates(record_key TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE CHECK(position >= 0),payload_json TEXT NOT NULL CHECK(json_valid(payload_json))) WITHOUT ROWID
+  new_indexes:
+    ux_habit_recurrence_owner: >-
+      CREATE UNIQUE INDEX ux_habit_recurrence_owner ON habits(json_extract(payload_json,'$.recurrence_id'))
+    ux_habit_check_in_identity: >-
+      CREATE UNIQUE INDEX ux_habit_check_in_identity ON habit_check_ins(json_extract(payload_json,'$.habit_id'),json_extract(payload_json,'$.check_date'))
+    ux_habit_active_template: >-
+      CREATE UNIQUE INDEX ux_habit_active_template ON habit_reminder_templates(json_extract(payload_json,'$.habit_id')) WHERE json_extract(payload_json,'$.deleted_at') IS NULL
+    ux_habit_reminder_identity: >-
+      CREATE UNIQUE INDEX ux_habit_reminder_identity ON reminders(json_extract(payload_json,'$.target_id'),json_extract(payload_json,'$.template_key'),json_extract(payload_json,'$.occurrence_date')) WHERE json_extract(payload_json,'$.target_type')='habit'
+    ux_habit_sent_display_per_day: >-
+      CREATE UNIQUE INDEX ux_habit_sent_display_per_day ON reminders(json_extract(payload_json,'$.target_id'),json_extract(payload_json,'$.occurrence_date')) WHERE json_extract(payload_json,'$.target_type')='habit' AND json_extract(payload_json,'$.status')='sent'
+    ix_habits_lifecycle: >-
+      CREATE INDEX ix_habits_lifecycle ON habits(json_extract(payload_json,'$.deleted_at'),CAST(json_extract(payload_json,'$.is_active') AS INTEGER),json_extract(payload_json,'$.start_date'),json_extract(payload_json,'$.end_date'),json_extract(payload_json,'$.ended_date'),record_key)
+    ix_habit_check_ins_range: >-
+      CREATE INDEX ix_habit_check_ins_range ON habit_check_ins(json_extract(payload_json,'$.habit_id'),json_extract(payload_json,'$.check_date'),json_extract(payload_json,'$.deleted_at'),record_key)
+    ix_habit_templates_by_habit: >-
+      CREATE INDEX ix_habit_templates_by_habit ON habit_reminder_templates(json_extract(payload_json,'$.habit_id'),json_extract(payload_json,'$.deleted_at'),record_key)
+  required_tables:
+    inherited_count: 16
+    new: [habit_recurrences, habits, habit_check_ins, habit_reminder_templates]
+    total_count: 20
+  required_indexes:
+    inherited_count: 16
+    new:
+      - ux_habit_recurrence_owner
+      - ux_habit_check_in_identity
+      - ux_habit_active_template
+      - ux_habit_reminder_identity
+      - ux_habit_sent_display_per_day
+      - ix_habits_lifecycle
+      - ix_habit_check_ins_range
+      - ix_habit_templates_by_habit
+    total_count: 24
+  per_store_payload_codec_versions:
+    events: 3
+    recurrence_versions: 3
+    event_occurrence_states: 3
+    anniversaries: 3
+    anniversary_recurrences: 3
+    anniversary_reminder_templates: 3
+    reminders: 4
+    notifications: 4
+    reminder_recovery_batches: 3
+    categories: 3
+    legacy_events: 1
+    legacy_reminders: 1
+    legacy_notifications: 1
+    habit_recurrences: 1
+    habits: 1
+    habit_check_ins: 1
+    habit_reminder_templates: 1
+  fixed_point:
+    scale: 2
+    stored_unit: hundredths
+    wire_representation: json_integer_hundredths
+    wire_field_suffix: _hundredths
+    non_zero_min_hundredths: 1
+    max_hundredths: 9007199254740991
+    display_max_decimal: '90071992547409.91'
+    json_decimal_number_wire: forbidden
+    average_rounding: decimal_round_half_up
+    accumulation: checked
+    overflow_error: HABIT_STATISTICS_OVERFLOW
+  schema_metadata:
+    required_exact:
+      format_name: excellent_calendar_core_sqlite
+      storage_format_version: '5'
+      record_payload_version: '3'
+    record_payload_version_compatibility_meaning: >-
+      The inherited record_payload_version=3 key is retained only as the legacy
+      global alias used by the v4 stores. It must never be used to decode a
+      Habit row or to claim that Reminder/Notification target semantics remain
+      v3. Every v5 store is decoded by the required per-store version map.
+    per_store_key_prefix: payload_codec_version.
+    required_per_store_keys: exact_map_from_per_store_payload_codec_versions
+    unknown_or_missing_key: STORAGE_DATA_CORRUPTED
+  payload_codecs:
+    habit_recurrence_v1:
+      store: habit_recurrences
+      exact_fields: [id, frequency, interval, timezone_mode, created_at, updated_at, deleted_at]
+      nullable_fields: [deleted_at]
+      invariants:
+        - record_key equals id and is a canonical lowercase UUIDv4
+        - frequency is daily, interval is 1, and timezone_mode is follow_device
+        - an active record is exclusively owned by exactly one non-deleted Habit
+    habit_v1:
+      store: habits
+      exact_fields:
+        - id
+        - title
+        - description
+        - category_id
+        - recurrence_id
+        - target_count_hundredths
+        - unit
+        - start_date
+        - end_date
+        - ended_date
+        - is_active
+        - first_check_in_at
+        - created_at
+        - updated_at
+        - deleted_at
+      nullable_fields: [description, category_id, target_count_hundredths, unit, ended_date, first_check_in_at, deleted_at]
+      invariants:
+        - record_key equals id and is a canonical lowercase UUIDv4
+        - title is canonical non-blank text of at most 80 Unicode code points; nullable description is at most 2000 Unicode code points; nullable unit is at most 32 Unicode code points
+        - start_date and end_date are canonical local dates, start_date is not after end_date, and the inclusive interval contains at most 400 natural days
+        - target_count_hundredths and unit are both null or both non-null
+        - non-null target_count_hundredths is an integer from 1 through 9007199254740991
+        - recurrence_id uniquely owns one HabitRecurrence record
+        - first_check_in_at is set once on the first successful CheckIn and is never cleared
+        - is_active false requires non-null ended_date unless the row is soft-deleted
+        - category_id is a weak opaque reference and has no foreign key
+    habit_check_in_v1:
+      store: habit_check_ins
+      exact_fields:
+        - id
+        - habit_id
+        - check_date
+        - status
+        - completed_count_hundredths
+        - target_count_snapshot_hundredths
+        - unit_snapshot
+        - completed_at
+        - note
+        - source
+        - created_at
+        - updated_at
+        - deleted_at
+      nullable_fields: [completed_count_hundredths, target_count_snapshot_hundredths, unit_snapshot, completed_at, note, deleted_at]
+      invariants:
+        - record_key equals id and is a canonical lowercase UUIDv4
+        - habit_id plus check_date is unique across active rows and tombstones
+        - status is one of done, partial, or skipped; missed is forbidden
+        - quantitative hundredths are integers from 1 through 9007199254740991
+        - nullable unit_snapshot is at most 32 Unicode code points and nullable note is at most 500 Unicode code points
+        - skipped has null quantities, snapshots, and completed_at
+        - clear sets deleted_at but never deletes or replaces the logical row; recreate reuses id and created_at
+    habit_reminder_template_v1:
+      store: habit_reminder_templates
+      exact_fields: [template_key, habit_id, local_time, timezone_mode, method, is_enabled, created_at, updated_at, deleted_at]
+      nullable_fields: [deleted_at]
+      invariants:
+        - record_key equals template_key and is a canonical lowercase UUIDv4
+        - local_time is exact HH:mm, timezone_mode is follow_device, and method is popup
+        - each Habit has at most one non-deleted template
+        - changing local_time soft-deletes this row and creates a new template_key
+    reminder_v4:
+      store: reminders
+      base_shape: exact_v3_fields_no_addition_or_removal
+      semantic_delta:
+        - Habit is a strict target-specific branch with non-null template_key, occurrence_key, occurrence_date, local_time, and follow_device
+        - Habit recurrence_revision, occurrence_start_at, advance_days, advance_minutes, and fulfillment_delivery_id are null
+        - habit cancellation and expiration values from contracts/enums.yaml are accepted
+        - the Habit business tuple is unique across active rows and history
+        - across every template_key, one habit target_id plus occurrence_date has at most one status sent Reminder audit row
+    notification_v4:
+      store: notifications
+      base_shape: exact_v3_fields_no_addition_or_removal
+      semantic_delta:
+        - a kind reminder Habit attempt has a non-null occurrence_key and popup method
+        - habit_occurrence_elapsed and habit_reminder_cancelled are valid abandoned reasons only for Habit attempts
+        - Habit abandonment keeps recovery_batch_id and resolved_by_recovery_batch_id null
+        - one Habit occurrence has at most one sent delivery identity
+    reminder_recovery_batch_v3:
+      store: reminder_recovery_batches
+      invariant: Habit Reminder and Notification identities are forbidden from all batch membership fields
+  relationship_validation:
+    - every non-deleted Habit owns one valid non-deleted HabitRecurrence and no two Habit rows share recurrence_id
+    - every HabitCheckIn, including an active row or tombstone, references an existing Habit audit row and its check_date is within that Habit historical effective challenge interval; soft-deleting a Habit does not erase CheckIn history
+    - every non-deleted HabitReminderTemplate references one non-deleted Habit
+    - every Habit Reminder tuple and UUIDv5 occurrence/reminder identity matches contracts/identity.yaml
+    - every Habit has at most one real display for a local occurrence_date across all historical template keys; a prepared attempt reserves that day during identity-bearing template changes until it is atomically abandoned
+    - every Habit Notification action identity is derived, not persisted as mutable domain data
+    - Reminder and Notification audit rows may outlive soft-deleted Habit targets; no SQLite foreign key is added
+  migration:
+    migration_id_fresh: calendar_core_fresh_sqlite_v5
+    migration_id_v4: calendar_core_sqlite_v4_to_v5_habit_v1
+    source_version: 4
+    target_version: 5
+    transaction: single_BEGIN_IMMEDIATE_transaction
+    ordered_steps:
+      - acquire the existing Calendar Core process lease and database recursive mutex
+      - run the complete frozen v4 checker before opening a write transaction
+      - begin immediate and re-check user_version plus schema_metadata under the writer lock
+      - create the four exact new tables and eight exact new indexes without IF NOT EXISTS
+      - insert zero generations for the four new stores and preserve every existing generation
+      - insert every required per-store payload codec metadata key
+      - update storage_format_version metadata and PRAGMA user_version to 5
+      - append exactly one v4-to-v5 migration_history row using the C++ Clock
+      - run the complete v5 schema, metadata, history, relation, row-codec, and quick_check gate before commit
+      - commit once; acknowledge initialization only after commit succeeds
+    v4_data_policy: >-
+      No inherited table is rebuilt and no inherited record_key, position,
+      payload_json, generation, legacy compatibility row, or existing migration
+      history row is changed. The four new stores are empty and no Habit data is
+      fabricated.
+    crash_recovery: >-
+      SQLite transaction atomicity is the only authority. A process kill before
+      COMMIT reopens as a complete valid v4 database and retries; a kill after
+      COMMIT reopens as complete valid v5. Mixed DDL/metadata/history is always
+      rejected. No external migration journal or second database file is added.
+    legacy_json_sources: >-
+      JSON v1/v2/v3 inputs continue through the frozen, already-supported v4
+      importer and checker before this adjacent v4-to-v5 transaction. Their
+      guarded JSON roots remain diagnostic migration evidence, not live data.
+    downgrade_guard: >-
+      user_version=5 plus storage_format_version=5 makes every v4 runtime reject
+      the existing database before publishing services. v4 JSON guard snapshots
+      are preserved byte-for-byte during the adjacent migration; rollback is
+      unsupported and must use an external pre-migration backup plus an explicit
+      user-authorized recovery flow.
+    legal_history_suffix: [calendar_core_sqlite_v4_to_v5_habit_v1]
+    legal_history_prefixes:
+      fresh_v5: []
+      fresh_v4: [calendar_core_fresh_sqlite_v4]
+      json_v1: [calendar_core_json_v1_compat_to_sqlite_v4]
+      json_v2:
+        - calendar_core_json_v2_to_v3_anniversary_reminder_r1
+        - calendar_core_json_v3_to_sqlite_v4
+      json_v3: [calendar_core_json_v3_to_sqlite_v4]
+    fresh_v5_history: [calendar_core_fresh_sqlite_v5]
+  transaction_invariants:
+    - Habit, recurrence, template, Reminder, Notification, and CheckIn mutations share the one SQLite connection and transaction
+    - idempotent replay with no state change advances no store generation
+    - create plus first Reminder, CheckIn plus cancellation, clear plus conditional restore, end or delete plus cancellation, action plus CheckIn, and finalize plus successor are atomic
+    - Application and Domain receive narrow Repository or transaction ports and never sqlite3 handles or payload_json
+  test_requirements:
+    - source_v4_contract_sha256 and complete frozen v4 checker pass before migration
+    - fresh v5 has four empty Habit stores, exact metadata, zero generations, and legal fresh history
+    - populated v4 to v5 preserves every inherited row byte-for-byte, position, generation, history row, compatibility table, and JSON guard
+    - v1, v2, and v3 JSON sources reach v5 only through the frozen v4 importer
+    - failure or process kill after every ordered migration step reopens as complete v4 or complete v5
+    - repeat initialization is idempotent and never appends a second migration row
+    - missing or same-name wrong-definition table/index and mixed metadata/history fail closed
+    - CheckIn identity includes tombstones, active template is partial-unique, recurrence ownership is unique, and Habit Reminder tuple is unique
+    - fixed-point min, max, third decimal, checked accumulation overflow, and codec corruption cases
+    - v4 runtime rejects v5 without modifying database or guarded JSON roots
 
 calendar_core_v4:
   format_name: excellent_calendar_core_sqlite

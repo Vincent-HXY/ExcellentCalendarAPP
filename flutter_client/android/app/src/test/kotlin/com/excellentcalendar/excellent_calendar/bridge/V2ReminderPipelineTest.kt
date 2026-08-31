@@ -116,6 +116,10 @@ class V2ReminderPipelineTest {
 
         assertEquals(listOf("delivery", "delivery"), display.deliveryIds)
         assertEquals(listOf("attempt", "attempt"), bridge.finalizedAttemptIds)
+        assertEquals(
+            listOf("Asia/Shanghai", "Asia/Shanghai"),
+            bridge.prepareRequests.map { it["timezone"] },
+        )
         assertEquals("delivery:delivery", com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationDisplayService.preparedNotificationIdentity("delivery").tag)
     }
 
@@ -539,11 +543,13 @@ class V2ReminderPipelineTest {
 
     private class DeliveryBridge : ReminderBridgeAdapter() {
         var finalizeCount = 0
+        val prepareRequests = mutableListOf<Map<String, Any?>>()
         val finalizedAttemptIds = mutableListOf<String>()
         val finalizeRequests = mutableListOf<Map<String, Any?>>()
 
-        override fun prepareReminderDelivery(requestJson: String): String = success(
-            linkedMapOf(
+        override fun prepareReminderDelivery(requestJson: String): String {
+            prepareRequests += NativeContractJsonCodec.decodeObject(requestJson)
+            return success(linkedMapOf(
                 "notification" to notification("prepared"),
                 "tap_payload" to linkedMapOf(
                     "notification_id" to "notification",
@@ -558,8 +564,8 @@ class V2ReminderPipelineTest {
                     "route" to "/event/detail",
                 ),
                 "idempotent_replay" to (finalizeCount > 0),
-            ),
-        )
+            ))
+        }
 
         override fun finalizeReminderDelivery(requestJson: String): String {
             val request = NativeContractJsonCodec.decodeObject(requestJson)

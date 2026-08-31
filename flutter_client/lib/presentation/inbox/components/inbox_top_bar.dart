@@ -4,16 +4,18 @@ import 'package:flutter/material.dart';
 
 import '../inbox_design_tokens.dart';
 
-enum _InboxTopBarAction { anniversaries, ringSettings }
+enum _InboxTopBarAction { habits, anniversaries, ringSettings }
 
 class InboxTopBar extends StatelessWidget {
   const InboxTopBar({
     this.onOpenAnniversaries,
+    this.onOpenHabits,
     this.onOpenRingSettings,
     super.key,
   });
 
   final VoidCallback? onOpenAnniversaries;
+  final VoidCallback? onOpenHabits;
   final VoidCallback? onOpenRingSettings;
 
   @override
@@ -51,13 +53,29 @@ class InboxTopBar extends StatelessWidget {
               icon: const Icon(Icons.more_vert_rounded),
               color: Colors.white,
               onSelected: (action) {
-                if (action == _InboxTopBarAction.anniversaries) {
+                if (action == _InboxTopBarAction.habits) {
+                  onOpenHabits?.call();
+                } else if (action == _InboxTopBarAction.anniversaries) {
                   onOpenAnniversaries?.call();
                 } else if (action == _InboxTopBarAction.ringSettings) {
                   onOpenRingSettings?.call();
                 }
               },
               itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: _InboxTopBarAction.habits,
+                  enabled: onOpenHabits != null,
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.track_changes_rounded,
+                        color: Color(0xFF38B9C5),
+                      ),
+                      SizedBox(width: 12),
+                      Text('习惯'),
+                    ],
+                  ),
+                ),
                 PopupMenuItem(
                   value: _InboxTopBarAction.anniversaries,
                   enabled: onOpenAnniversaries != null,

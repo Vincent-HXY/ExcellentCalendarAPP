@@ -713,8 +713,8 @@ void test_sqlite_runtime_preserves_confirmed_v1_in_compatibility_tables() {
                                       (initialized.error().details.count("reason")
                                            ? initialized.error().details.at("reason")
                                            : std::string{}));
-  require(initialized.value().storage_format_version == 4,
-          "runtime should report SQLite Storage v4");
+  require(initialized.value().storage_format_version == 5,
+          "runtime should report SQLite Storage v5");
   require(std::filesystem::is_directory(active) &&
               std::filesystem::exists(active / "calendar_core.sqlite3") &&
               std::filesystem::exists(active / "events.json") &&
@@ -795,7 +795,7 @@ void test_sqlite_v1_compatibility_preserves_newer_reminder_enums() {
 
     auto initialized = excellent_calendar::boundary::api::initialize_recurring_runtime(
         active.string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
-    require(initialized.ok() && initialized.value().storage_format_version == 4,
+    require(initialized.ok() && initialized.value().storage_format_version == 5,
             "lossless SQLite migration may preserve newer enum text in v1 compatibility data");
     const auto prefix = active.filename().generic_string() + ".v1.archived.";
     const bool discarded = std::any_of(
@@ -825,9 +825,9 @@ void test_recurring_runtime_initializes_pinned_tzdb_and_v2_services() {
   auto initialized = excellent_calendar::boundary::api::initialize_recurring_runtime(
       directory.path().string(), EXCELLENT_CALENDAR_TEST_TZDB_DIR);
   require(initialized.ok() && initialized.value().initialized &&
-              initialized.value().storage_format_version == 4 &&
+              initialized.value().storage_format_version == 5 &&
               initialized.value().tzdb_version == "2026c",
-          "recurring runtime must initialize SQLite storage v4 after validating pinned TZDB");
+          "recurring runtime must initialize SQLite storage v5 after validating pinned TZDB");
   require(excellent_calendar::boundary::api::current_recurring_event_workflow_service() !=
                   nullptr &&
               excellent_calendar::boundary::api::

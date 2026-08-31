@@ -10,7 +10,7 @@ namespace {
 // Contract v2 snapshot of contracts/error_codes.yaml. Keeping an explicit
 // allow-list is intentional: a newly added cross-layer error code must not be
 // accepted by an older Core until its retryability semantics are understood.
-constexpr std::array<std::pair<std::string_view, bool>, 90> kErrorCodeMetadata{{
+constexpr std::array<std::pair<std::string_view, bool>, 110> kErrorCodeMetadata{{
     {"NATIVE_INTERNAL_ERROR", false},
     {"CONTRACT_VALIDATION_FAILED", false},
     {"CONTRACT_VERSION_UNSUPPORTED", false},
@@ -43,7 +43,27 @@ constexpr std::array<std::pair<std::string_view, bool>, 90> kErrorCodeMetadata{{
     {"NOTIFICATION_INITIALIZATION_FAILED", true},
     {"HABIT_TITLE_EMPTY", false},
     {"HABIT_NOT_FOUND", false},
-    {"HABIT_CHECK_IN_DUPLICATED", false},
+    {"HABIT_TARGET_DELETED", false},
+    {"HABIT_UPDATE_CONFLICT", false},
+    {"HABIT_DATE_RANGE_INVALID", false},
+    {"HABIT_CHALLENGE_TOO_LONG", false},
+    {"HABIT_TARGET_INVALID", false},
+    {"HABIT_TARGET_LOCKED", false},
+    {"HABIT_START_DATE_LOCKED", false},
+    {"HABIT_ALREADY_ENDED", false},
+    {"HABIT_NOT_STARTED", false},
+    {"HABIT_END_NOT_EARLY", false},
+    {"HABIT_CHECK_IN_DATE_OUT_OF_RANGE", false},
+    {"HABIT_CHECK_IN_FUTURE_DATE", false},
+    {"HABIT_CHECK_IN_NOT_FOUND", false},
+    {"HABIT_DAILY_STATUS_RANGE_INVALID", false},
+    {"HABIT_DAILY_STATUS_RANGE_TOO_LARGE", false},
+    {"HABIT_REMINDER_CONFIG_INVALID", false},
+    {"HABIT_NOTIFICATION_ACTION_EXPIRED", false},
+    {"HABIT_NOTIFICATION_ACTION_IDENTITY_MISMATCH", false},
+    {"HABIT_RECONCILIATION_CURSOR_INVALID", false},
+    {"HABIT_RECONCILIATION_CONFLICT", true},
+    {"HABIT_STATISTICS_OVERFLOW", false},
     {"CATEGORY_NAME_EMPTY", false},
     {"CATEGORY_NOT_FOUND", false},
     {"CATEGORY_SORT_ORDER_EXHAUSTED", false},

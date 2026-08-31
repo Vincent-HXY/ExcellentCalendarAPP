@@ -2,7 +2,7 @@
 
 > 定位：这是项目的**当前架构地图**，用于快速判断系统如何分层、代码应放在哪里、哪些边界不能绕过，以及哪些能力已经真实落地。
 >
-> 基线：2026-08-27。实现状态以 `docs/status/current.md`、机器 Contract 和实际代码为准。Contract 或目录存在，不代表对应生产能力已经完成。
+> 基线：2026-08-31。项目已进入 R2 开发阶段；实现状态以 `docs/status/current.md`、机器 Contract 和实际代码为准。Contract 或目录存在，不代表对应生产能力已经完成。
 
 ## 1. Architecture at a Glance
 
@@ -23,8 +23,11 @@ C++ Application / Workflow / Domain
     ↓
 Repository
     ↓
-Calendar Core SQLite Storage v4
+Calendar Core SQLite Storage v4 (contract-active)
+    ↳ Storage v5 Habit integrated candidate (release blocked)
 ```
+
+Habit V1 的 SQLite Storage v5 runtime、v4→v5 migration、Repository 与真实 JNI/APK composition 已实现并通过主机测试；但 `contracts/storage/calendar_core_storage.yaml` 仍声明 v4 为 active、v5 为 planned，Habit capability 也保持 `planned + blocked`。因此当前应称为“v5 已实现的集成候选版本”，不能在真机与状态校准门禁完成前称为正式激活 writer。
 
 提醒投递是主链路的 Android 平台分支：
 
@@ -141,16 +144,16 @@ Kotlin bridge 按业务模块拆分窄接口；`NativeCalendarCoreBridge` 只做
 - Storage codec、原子写入、事务 journal、软删除、重启恢复和损坏数据显式失败。
 - 将领域/应用对象映射为持久化 Record。
 
-Engine 不得直接散落文件读写或 SQL。未来迁移 SQLite 后，SQL 也必须集中在 Storage Repository。
+Engine 不得直接散落文件读写或 SQL。SQLite SQL 必须集中在 Storage Repository。
 
 ### Optional Cloud Backend
 
 负责：
 
-- 未来的认证、设备、同步中枢、备份、服务器渠道提醒、AI Proxy 和媒体能力。
+- 当前已经承载认证、会话、个人资料和头像的服务端实现；后续继续承载设备、同步中枢、备份、服务器渠道提醒、AI Proxy 和媒体扩展。
 - 以 Spring Boot modular monolith 组织 API / Worker / Scheduler；业务模块内部按 `api → application → domain ← infrastructure` 分层。
 
-本地 C++ Core 继续负责离线领域语义，Android 继续负责本机 Alarm/Notification。后端不能成为绕过本地领域与 Contract 的第二套规则源。
+认证/资料代码已经实现，但 `contracts/backend_api.yaml` 仍为 `planned`，其正式发布状态必须单独校准。本地 C++ Core 继续负责离线领域语义，Android 继续负责本机 Alarm/Notification。后端不能成为绕过本地领域与 Contract 的第二套规则源。
 
 ## 3. Actual Source Map
 
@@ -174,9 +177,9 @@ ExcellentCalendarAPP/
 │  ├─ include/excellent_calendar/application/
 │  ├─ include/excellent_calendar/boundary/
 │  ├─ include/excellent_calendar/repository/
-│  ├─ src/storage/sqlite/             当前 SQLite v4 Repository/事务实现
+│  ├─ src/storage/sqlite/             SQLite v4/v5 Repository、迁移与事务实现
 │  └─ src/storage/json/               v1/v2/v3 迁移 codec 与旧格式兼容实现
-├─ cloud_backend/                     Spring Boot 可选云端模块
+├─ cloud_backend/                     Spring Boot 认证/资料实现；同步等仍待 R2+
 └─ test_environment/flutter_native_smoke/
                                        Flutter→Kotlin→JNI→C++ smoke
 ```
@@ -194,6 +197,8 @@ ExcellentCalendarAPP/
 3. 更新 `error_codes.yaml`、`enums.yaml`、版本、状态和示例。
 4. 同步 Dart DTO/Gateway、Kotlin Contract/JNI、C++ Boundary/Domain/Repository。
 5. 补齐跨层正例、边界、非法输入、兼容与 smoke 测试。
+
+Contract 冻结后，各实现层可以从同一基线在独立分支/worktree 并行开发。Flutter 通过 Gateway Fake、Kotlin 通过窄 Native Bridge Fake、C++ 通过 test-only repository/clock/platform-effect fake 独立运行；这些替身必须消费 Contract fixture、不得复制下层业务规则，也不得进入默认或 Release production composition。三层独立测试通过只表示 `Layer Complete / Awaiting Integration`；真实适配器、同一 APK、存储版本、Native smoke 和设备门禁通过后才能激活能力。最终集成只删除运行时预览 Fake/种子，测试专用 Fake 保留用于回归。
 
 强制约定：
 
@@ -214,10 +219,11 @@ ExcellentCalendarAPP/
 - [ADR-Recurrence-01：领域专属重复规则与 Occurrence 状态](./decisions/ADR-Recurrence-01-领域专属重复规则与Occurrence状态.md)
 - [ADR-Anniversary-01：Anniversary 使用独立实体](./decisions/ADR-Anniversary-01-Anniversary使用独立实体.md)
 - [ADR-Habit-01：Habit 与 HabitCheckIn 分离](./decisions/ADR-Habit-01-Habit与HabitCheckIn分离.md)
+- [ADR-Habit-02：每日挑战与 Reminder Occurrence 工作流](./decisions/ADR-Habit-02-每日挑战与Reminder-Occurrence工作流.md)
 - [ADR-Category-01：Category 弱引用与最小冻结语义](./decisions/ADR-Category-01-弱引用与最小冻结语义.md)
 - [ADR-Common-01：领域校验、派生状态与严格失败](./decisions/ADR-Common-01-领域校验与派生状态.md)
 
-ADR 记录已经接受的设计决定；实时完成度和开放风险仍分别查阅 `develop_record.md` 与 `problems.md`。
+ADR 记录已经接受的设计决定；实时完成度和开放风险分别查阅 `docs/status/current.md` 与 `docs/issues/open.md`。
 
 ## 6. Current Persistence and Runtime
 
@@ -229,14 +235,14 @@ files/local_storage/calendar_core_storage_json
 
 关键事实：
 
-- 当前唯一正式 writer 是 `calendar_core.sqlite3`（Storage v4）。C++ Repository 接口不变，实体写入、Store generation 与跨 Workflow 修改统一进入 SQLite 事务。
+- 机器 Contract 当前仍把 `calendar_core.sqlite3` Storage v4 标为 active；工作树中的 Storage v5 writer/migration 已实现并接入 Habit 集成候选版本，但发布状态仍 blocked。C++ Repository 接口不变，实体写入、Store generation 与跨 Workflow 修改统一进入 SQLite 事务。
 - Event/Reminder/Recurrence/Occurrence/Notification/Recovery、Anniversary 与 Category 共用一个进程级数据库连接；回调失败会同时回滚业务行和 generation。
 - SQLite 以主键、业务唯一索引和 Reminder 调度索引约束身份与查询；严格 v3 codec 仍负责完整字段及跨 Store 领域校验，避免迁移漏字段。
 - JSON v2 会先完成既有可恢复 v2→v3 迁移，再进入 SQLite；严格 JSON v3 逐记录无损导入。JSON v1 的 Event/Reminder/Notification 进入隔离兼容表，不被错误解释为 v3 数据。
 - SQLite 成功后，原 JSON 集合保留为诊断/恢复快照，并把根 `storage_version` 标为 4 作为降级 guard；运行时不再从这些文件读取业务数据。旧两类 journal 只在迁移前恢复。
 - Calendar Core runtime 是进程级 owner；Android 通过 `AndroidNativeBridgeFactory` 统一创建和初始化。进程内 JNI 测试必须复用正式 factory，隔离 Store 时使用独立测试进程。
 - 回滚到任何 JSON writer 都不安全；旧运行时必须因 v4 guard 拒绝目录，不能继续写快照形成双写分叉。
-- SQLite 已完成；FTS 仍是后续能力，当前搜索继续通过既有 Repository 语义实现。
+- SQLite v5 实现与主机回归已完成，正式激活和设备/故障矩阵仍待收口；FTS 仍是后续能力，当前搜索继续通过既有 Repository 语义实现。
 
 ## 7. Representative Flows
 
@@ -285,15 +291,15 @@ Reminder reconcile / recovery plan
 
 ## 9. Related Documentation
 
-- [项目 README](../../ExcellentCalendarAPP/README.md)：完整产品需求、原始架构论述和开发环境基线。
-- [项目 Agent 规则](../../ExcellentCalendarAPP/AGENTS.md)：强制阅读顺序、职责边界和验证要求。
-- [实时开发状态](../../ExcellentCalendarAPP/docs/develop_record.md)：**当前进度的权威文档**。
-- [已知问题与风险](../../ExcellentCalendarAPP/docs/problems.md)：开放风险、历史根因和规避要求。
-- [当前目标](../../ExcellentCalendarAPP/docs/target.md)：近期目标与未完成事项。
-- [领域数据模型](../../ExcellentCalendarAPP/docs/DATA_MODEL.md) 与 [拆分后的领域文档](../domains/)：实体、关系和领域不变量。
-- [Contract 总则](../../ExcellentCalendarAPP/contracts/README.md)、[MethodChannel](../../ExcellentCalendarAPP/contracts/method_channels.yaml)、[Native Calls](../../ExcellentCalendarAPP/contracts/native_calls.yaml)、[错误码](../../ExcellentCalendarAPP/contracts/error_codes.yaml)、[枚举](../../ExcellentCalendarAPP/contracts/enums.yaml)。
+- [项目 README](../../README.md)：完整产品需求、原始架构论述和开发环境基线。
+- [项目 Agent 规则](../../AGENTS.md)：强制阅读顺序、职责边界和验证要求。
+- [实时开发状态](../status/current.md)：**当前进度和 R2 入口基线**。
+- [已知问题与风险](../issues/open.md)：开放风险、历史根因和规避要求。
+- [当前 Active Plan](../plan/active/)：当前可执行任务与验收入口。
+- [领域文档](../domains/)：实体、关系和领域不变量。
+- [Contract 总则](../../contracts/README.md)、[MethodChannel](../../contracts/method_channels.yaml)、[Native Calls](../../contracts/native_calls.yaml)、[错误码](../../contracts/error_codes.yaml)、[枚举](../../contracts/enums.yaml)。
 - [架构决策](./decisions/)：后续 ADR 入口。
 - [产品路线图](../status/roadmap.md)：从本地核心到 SQLite、云同步和扩展能力的演进顺序。
 - [验证指南](../guides/verification.md)：各层测试、构建和真机验收入口。
 
-阅读顺序建议：先读本文定位层级，再按任务进入对应 Domain/Contract；只有需要历史原因、开放风险或实时进度时，再读 `problems.md`、`develop_record.md` 和具体任务记录。
+阅读顺序建议：先读本文定位层级，再按任务进入对应 Domain/Contract；只有需要阶段状态、开放风险或历史原因时，再读 `status/current.md`、`issues/open.md` 和具体任务记录。

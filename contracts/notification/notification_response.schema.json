@@ -2,9 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/notification/notification_response.schema.json",
   "title": "NotificationResponse",
-  "description": "One prepared or finalized delivery attempt. reminder is one Reminder delivery, recovery_summary is the unchanged ordinary recovery summary, and anniversary_catch_up is one real popup fulfilling a frozen set of Anniversary Reminders.",
+  "description": "One prepared or finalized delivery attempt. reminder is one Reminder delivery, recovery_summary is the unchanged ordinary recovery summary, and anniversary_catch_up is one real popup fulfilling a frozen set of Anniversary Reminders. Habit reconciliation may abandon an unshown prepared attempt without creating a RecoveryBatch.",
   "x-contract-version": 2,
   "x-anniversary-reminder-revision": 1,
+  "x-habit-revision": 1,
   "x-ring-sent-invariant": "kind=reminder and method=ring and status=sent is valid only after Kotlin observes control-notification visibility and sound_started || vibration_started.",
   "type": "object",
   "additionalProperties": false,
@@ -37,7 +38,7 @@
     "status": {"type": "string", "enum": ["prepared", "sent", "failed", "abandoned"]},
     "failure_class": {"type": ["string", "null"], "enum": ["retryable", "permanent", null]},
     "error_code": {"type": ["string", "null"], "minLength": 1},
-    "abandon_reason": {"type": ["string", "null"], "enum": ["recovery_window_elapsed", "recovery_summary_superseded", null]},
+    "abandon_reason": {"type": ["string", "null"], "enum": ["recovery_window_elapsed", "recovery_summary_superseded", "habit_occurrence_elapsed", "habit_reminder_cancelled", null]},
     "prepared_at": {"type": "string", "format": "date-time"},
     "finalized_at": {"type": ["string", "null"], "format": "date-time"},
     "sent_at": {"type": ["string", "null"], "format": "date-time"},
@@ -60,11 +61,21 @@
     },
     {
       "if": {"properties": {"status": {"const": "abandoned"}}, "required": ["status"]},
-      "then": {"properties": {"resolved_by_recovery_batch_id": {"type": "string", "format": "uuid"}, "failure_class": {"type": "null"}, "error_code": {"type": "null"}, "abandon_reason": {"type": "string", "enum": ["recovery_window_elapsed", "recovery_summary_superseded"]}, "finalized_at": {"type": "string", "format": "date-time"}, "sent_at": {"type": "null"}}}
+      "then": {
+        "properties": {"failure_class": {"type": "null"}, "error_code": {"type": "null"}, "abandon_reason": {"type": "string", "enum": ["recovery_window_elapsed", "recovery_summary_superseded", "habit_occurrence_elapsed", "habit_reminder_cancelled"]}, "finalized_at": {"type": "string", "format": "date-time"}, "sent_at": {"type": "null"}},
+        "oneOf": [
+          {"properties": {"abandon_reason": {"enum": ["recovery_window_elapsed", "recovery_summary_superseded"]}, "resolved_by_recovery_batch_id": {"type": "string", "format": "uuid"}}},
+          {"properties": {"abandon_reason": {"enum": ["habit_occurrence_elapsed", "habit_reminder_cancelled"]}, "kind": {"const": "reminder"}, "target_type": {"const": "habit"}, "reminder_id": {"type": "string", "format": "uuid"}, "recovery_batch_id": {"type": "null"}, "resolved_by_recovery_batch_id": {"type": "null"}, "occurrence_key": {"type": "string", "format": "uuid"}}}
+        ]
+      }
     },
     {
       "if": {"properties": {"method": {"const": "ring"}}, "required": ["method"]},
       "then": {"properties": {"kind": {"const": "reminder"}, "target_type": {"const": "event"}, "occurrence_key": {"type": "null"}, "covered_reminder_ids": {"maxItems": 0}}}
+    },
+    {
+      "if": {"properties": {"target_type": {"const": "habit"}}, "required": ["target_type"]},
+      "then": {"properties": {"recovery_batch_id": {"type": "null"}, "resolved_by_recovery_batch_id": {"type": "null"}, "kind": {"const": "reminder"}, "method": {"const": "popup"}, "occurrence_key": {"type": "string", "format": "uuid"}}}
     }
   ],
   "oneOf": [
@@ -77,7 +88,7 @@
       },
       "allOf": [
         {"if": {"properties": {"target_type": {"const": "anniversary"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "string", "format": "uuid"}, "method": {"const": "popup"}}}},
-        {"if": {"properties": {"target_type": {"const": "habit"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "null"}}}}
+        {"if": {"properties": {"target_type": {"const": "habit"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "string", "format": "uuid"}, "method": {"const": "popup"}}}}
       ]
     },
     {

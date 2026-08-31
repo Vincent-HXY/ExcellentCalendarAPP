@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_reminder_settings_response.schema.json",
+  "title": "HabitReminderSettingsResponse",
+  "description": "Domain-owned daily Reminder configuration and reconciliation hint. Platform permission and Alarm state are returned separately by Kotlin.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["is_enabled", "template", "active_reminder_count", "schedule_reconciliation_required"],
+  "properties": {
+    "is_enabled": {"type": "boolean"},
+    "template": {"oneOf": [{"$ref": "./habit_reminder_template_response.schema.json"}, {"type": "null"}]},
+    "active_reminder_count": {"type": "integer", "minimum": 0, "maximum": 1, "description": "Enabled templates may temporarily have zero open tasks after same-day completion, at challenge end, or while reconciliation is pending."},
+    "schedule_reconciliation_required": {"type": "boolean"}
+  },
+  "oneOf": [
+    {"properties": {"is_enabled": {"const": true}, "template": {"$ref": "./habit_reminder_template_response.schema.json", "properties": {"is_enabled": {"const": true}, "deleted_at": {"type": "null"}}}}},
+    {"properties": {"is_enabled": {"const": false}, "active_reminder_count": {"const": 0}}, "oneOf": [
+      {"properties": {"template": {"type": "null"}}},
+      {"properties": {"template": {"$ref": "./habit_reminder_template_response.schema.json", "properties": {"is_enabled": {"const": false}, "deleted_at": {"type": "null"}}}}}
+    ]}
+  ]
+}

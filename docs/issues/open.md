@@ -1,6 +1,6 @@
 # ExcellentCalendarAPP 开放问题登记册
 
-> 最近整理：2026-08-14  
+> 最近整理：2026-08-31
 > 来源：`A:\calendar\ExcellentCalendarAPP\docs\problems.md`  
 > 状态依据：同文件后续关闭记录、`docs/develop_record.md`（2026-08-14）以及关键 Contract/运行时代码的只读核对。
 
@@ -25,10 +25,10 @@
 - 关闭条件：改为持久化点击队列，使用稳定 `tap_id`，提供 peek/ack 语义，并在导航成功后确认消费；覆盖冷启动、热启动、崩溃重启和重复 ack。
 - 来源：`problems.md`“通知点击只读一次并立即清除，不够可靠”；`develop_record.md` 当前风险仍确认存在。
 
-### OPEN-NOT-002 exact / inexact Alarm 产品与降级策略未冻结
+### OPEN-NOT-002 通用 Reminder 的 exact / inexact Alarm 产品与降级策略未冻结
 
 - 类型：架构决策缺口
-- 现状：权限 Contract 能表达通知权限和精确闹钟权限，但 Reminder 没有声明“必须精确”还是“允许降级为近似提醒”。
+- 现状：权限 Contract 能表达通知权限和精确闹钟权限，但通用 Event/Reminder 仍没有声明“必须精确”还是“允许降级为近似提醒”。Habit V1 已单独冻结为 exact 优先、无 exact 权限时允许 approximate 并显式标注降级；该窄决策不自动覆盖其他 Reminder。
 - 影响：无精确闹钟权限时，各平台或 ROM 可能采取不同策略，用户无法预期提醒时效，错误与重试语义也不稳定。
 - 关闭条件：冻结调度策略、权限缺失时的降级/拒绝行为、UI 提示和稳定错误码，再完成 Android 版本与 ROM 回归。
 - 来源：`problems.md`“精确提醒还是近似提醒尚未明确”。
@@ -74,13 +74,14 @@
 - 关闭条件：若产品未来要求保留数据，必须设计、测试并发布显式迁移/备份方案；否则应在发布说明和回滚流程中持续标记为已接受风险。
 - 来源：`[P0] Native Contract v2` 关闭记录中的兼容性决策。
 
-### OPEN-DOM-001 Habit 重复语义缺少独立协议
+### OPEN-HAB-001 Habit V1 发布后真机系统行为矩阵仍需补齐
 
-- 类型：领域设计缺口
-- 现状：Habit/HabitCheckIn 尚未形成闭环，不能套用 Event occurrence 与滚动 Reminder 语义。
-- 影响：提前实现可能造成 occurrence 身份、打卡统计、提醒滚动和恢复语义漂移。
-- 关闭条件：先冻结 Habit recurrence、check-in 身份、Reminder 目标与幂等规则，再实施 Contract 和各层代码。
-- 来源：Native v2 剩余风险。
+- 类型：已接受的发布验证债 / Android 系统行为风险
+- 现状：2026-08-31 已在 realme RMX3687（Android 13）实机通过 production Habit JNI 11/11 导出与 SQLite v5、真实创建/打卡/撤销/持久化、通知权限关闭后的“等待系统恢复”提示、已过提醒时间的同日补发，以及系统通知“完成”按钮直接写回 Binary CheckIn。尚未验证：权限拒绝且存在待发送 occurrence 时重新授权并自动 reconcile；设备重启和系统杀进程后的通知动作；跨午夜；时区和系统时间变化；数量型通知完成、重复及陈旧 action；通知点击进入真实详情；TalkBack 完整操作。
+- 发布决定：产品负责人于 2026-08-31 明确接受上述项目作为 Habit V1 发布后的非阻断验证债，并批准在其尚未闭环时激活 Habit V1 与 Storage v5。该决定只解除本版本发布门禁，不得把未执行场景描述为已验证通过。
+- 影响：不同 Android 生命周期、时间边界、权限恢复和无障碍环境下仍可能暴露主机测试及本轮实机路径未覆盖的调度、幂等、导航或可访问性问题。
+- 关闭条件：在隔离测试 Store 中逐项完成上述真机矩阵，保存系统通知、SQLite、action 幂等、详情导航与 TalkBack 证据；发现缺陷时单独建项并完成回归。
+- 证据位置：`docs/plan/active/习惯-01-Habit与HabitCheckIn闭环开发计划.md` 的发布矩阵，以及 `contracts/storage/calendar_core_storage.yaml` 的 v5 激活证据与发布例外。
 
 ## P2：中优先级
 
@@ -92,12 +93,12 @@
 - 关闭条件：冻结批次级结果模型或持久化诊断模型，保持底层稳定错误码，并覆盖混合成功/失败场景。
 - 来源：`problems.md`“批量调度错误信息不足”；`develop_record.md` 仍列为正在完成。
 
-### OPEN-NOT-004 通知缺少直接完成 Reminder / Event 的操作入口
+### OPEN-NOT-004 通知缺少通用 Reminder / Event 直接完成入口
 
 - 类型：功能缺口
-- 现状：本地 popup 通知已经接入，但“在通知上点击完成”尚未形成 Contract、Android action、领域 workflow 与幂等闭环。
+- 现状：本地 popup 通知已经接入。Habit V1 的专属 set-to-done action 已完成 C++、Kotlin/JNI、非导出 Receiver/Worker 和真实 production composition，主机测试、APK/JNI 门禁及部分实机路径通过；其剩余真机矩阵已转入 `OPEN-HAB-001`，不影响 Habit V1 当前激活。通用 Event/Reminder 直接完成仍没有 action payload、状态规则或跨层闭环，不能套用 Habit 的 date-only identity。
 - 影响：用户必须打开应用后完成事项，且未来若直接在 Android 侧改状态容易绕过 Application/Contract 边界。
-- 关闭条件：冻结 action payload、鉴权/幂等/过期处理和 Event/Reminder 状态规则，再实现跨层链路。
+- 关闭条件：为 Event/Reminder 单独冻结 action payload、鉴权/幂等/过期处理和状态规则并实现跨层链路；Habit 的剩余设备验证债由 `OPEN-HAB-001` 跟踪，不再把 Habit 描述为“无生产实现”或“等待激活”。
 - 来源：`problems.md`“其他基础功能”第二项；其中“通知尚未接入”部分已经解决。
 
 ### OPEN-LOG-001 完成日志尚未正式实现
@@ -165,6 +166,15 @@
 - 来源：Category“验证结果与残余风险”。
 
 ## P3：低优先级
+
+### OPEN-HAB-002 Habit 计划与 ADR 状态尾项仍需统一校准
+
+- 类型：文档状态漂移 / 维护债
+- 现状：Habit 主计划中的真实设备 instrumentation 清单仍有局部未勾选项，两个 Habit ADR 仍标记 `Implementation Pending`；实际代码、主机验证、部分实机验证与 2026-08-31 发布决定已经前进到 `integrated + active`。这些旧标签不改变机器 Contract 和当前发布状态。
+- 发布决定：产品负责人于 2026-08-31 明确接受该状态清理作为非阻断尾债；本次只校准当前状态、机器 Contract 和发布结论，不伪造未执行的真机场景，也不借机改写 ADR 历史。
+- 影响：后续开发者若只读取旧复选框或 ADR 标题，可能误判 Habit 尚未实现，造成重复开发或状态再次漂移。
+- 关闭条件：统一复核并更新 Habit 主/分计划、active review 与两个 ADR 的实施状态；已执行项补齐证据，未执行项继续链接 `OPEN-HAB-001`，然后按项目规则归档完成记录。
+- 证据位置：`docs/status/current.md`、`docs/status/roadmap.md`、`docs/index.md` 和 Habit 机器 Contract。
 
 ### OPEN-CAT-004 真机 Debug Store 留有验收数据
 

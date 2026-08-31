@@ -11,6 +11,7 @@
 - [Kotlin 职责边界与工程命名](04-architecture-kotlin.md)
 - [Anniversary](05-anniversary.md)
 - [Category、Storage 与发布门禁](06-category-storage.md)
+- [Habit Contract](07-habit-contract.md)
 - [仍开放的问题](../open.md)
 
 ## 源问题覆盖表
@@ -19,7 +20,8 @@
 |---|---|
 | Contract 缺口 | RES-CTR-001 |
 | Anniversary 年度规则已设计但尚未落地 | RES-ANN-001；Reminder R1 发布门禁已归档为 RES-ANN-005 |
-| Native Contract v2 已定稿但运行时仍是 v1 | RES-CTR-002；兼容/验证残余为 OPEN-DATA-001、OPEN-VAL-002/003/004、OPEN-DOM-001 |
+| Native Contract v2 已定稿但运行时仍是 v1 | RES-CTR-002；兼容/验证残余为 OPEN-DATA-001、OPEN-VAL-002/003/004；Habit 协议缺口由 RES-HAB-001 关闭 |
+| Habit 重复、CheckIn 与 Reminder 幂等语义缺少独立协议 | RES-HAB-001；生产实现仍由 Habit 四份分层计划跟踪 |
 | 重复 Reminder v2 的五个冻结语义缺口 | RES-REM-001；异常恢复验证为 OPEN-VAL-003 |
 | adopted attempt finalize 被 Kotlin 误判 | RES-REM-002 |
 | `expired` Contract 不一致 | RES-REM-003 |

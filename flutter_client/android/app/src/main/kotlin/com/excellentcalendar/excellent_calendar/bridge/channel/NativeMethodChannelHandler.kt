@@ -4,9 +4,11 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.excellentcalendar.excellent_calendar.bridge.auth.RefreshTokenSecureStore
+import com.excellentcalendar.excellent_calendar.android.appearance.AppearancePreferencesStore
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeAnniversaryBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCategoryBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeHabitBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeContractProfile
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.android.ring.RingRuntime
@@ -57,6 +59,7 @@ class NativeMethodChannelHandler(
     private val nativeCalendarCoreBridge: NativeCalendarCoreBridge,
     private val nativeAnniversaryBridge: NativeAnniversaryBridge = nativeCalendarCoreBridge,
     private val nativeCategoryBridge: NativeCategoryBridge = nativeCalendarCoreBridge,
+    private val nativeHabitBridge: NativeHabitBridge = nativeCalendarCoreBridge,
     private val reminderOrchestrator: ReminderNativeOrchestrator? = null,
     private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
     private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
@@ -64,6 +67,7 @@ class NativeMethodChannelHandler(
     private val ringRuntime: RingRuntime? = null,
     private val ringOrchestrator: RingMethodOrchestrator? = null,
     private val authTokenStore: RefreshTokenSecureStore? = null,
+    private val appearanceStore: AppearancePreferencesStore? = null,
     private val contractProfile: NativeContractProfile = NativeContractProfile.V1,
     private val reconcileRetryEnqueuer: (() -> Unit)? = null,
     private val anniversaryCapabilityProvider: AnniversaryCapabilityProvider = AnniversaryCapabilityProvider {
@@ -91,6 +95,12 @@ class NativeMethodChannelHandler(
         reconcileRetryEnqueuer,
         logger,
     )
+    private val habitOrchestrator = HabitMutationOrchestrator(
+        reminderScheduleCoordinator,
+        anniversaryCapabilityProvider,
+        reconcileRetryEnqueuer,
+        logger,
+    )
     private val methodRegistry: Map<String, ChannelMethodHandler> = createMethodRegistry(
         listOf(
             RuntimeMethodHandler(
@@ -109,6 +119,12 @@ class NativeMethodChannelHandler(
                 nativeCategoryBridge,
                 contractProfile,
                 nativeCallExecutor,
+            ),
+            HabitMethodHandler(
+                nativeHabitBridge,
+                contractProfile,
+                nativeCallExecutor,
+                habitOrchestrator,
             ),
             AnniversaryMethodHandler(
                 nativeAnniversaryBridge,
@@ -132,6 +148,7 @@ class NativeMethodChannelHandler(
                 contractProfile,
                 nativeCallExecutor,
             ),
+            AppearanceMethodHandler(appearanceStore, nativeCallExecutor),
         ),
     )
 
@@ -190,6 +207,18 @@ class NativeMethodChannelHandler(
         const val MethodAnniversaryListOccurrences = "anniversary.list_occurrences"
         const val MethodCategoryList = "category.list"
         const val MethodCategoryCreate = "category.create"
+        const val MethodHabitCreate = "habit.create"
+        const val MethodHabitUpdate = "habit.update"
+        const val MethodHabitList = "habit.list"
+        const val MethodHabitDetail = "habit.detail"
+        const val MethodHabitEnd = "habit.end"
+        const val MethodHabitDelete = "habit.delete"
+        const val MethodHabitCheckIn = "habit.check_in"
+        const val MethodHabitClearCheckIn = "habit.clear_check_in"
+        const val MethodHabitListDailyStatuses = "habit.list_daily_statuses"
+        const val MethodHabitSetReminder = "habit.set_reminder"
+        const val MethodAppearanceGetLocal = "appearance.get_local"
+        const val MethodAppearanceUpdateLocal = "appearance.update_local"
         const val MethodReminderCreate = "reminder.create"
         const val MethodReminderUpdate = "reminder.update"
         const val MethodReminderCancel = "reminder.cancel"

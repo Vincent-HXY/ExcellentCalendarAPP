@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_summary_response.schema.json",
+  "title": "HabitSummaryResponse",
+  "description": "Card-ready C++ aggregate. Flutter groups and renders it but does not recalculate lifecycle, streak, rates, progress, remaining days, or reminder ordering keys.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["habit", "lifecycle_status", "today", "statistics", "reminder_settings", "challenge_time_progress", "remaining_days"],
+  "properties": {
+    "habit": {"$ref": "./habit_response.schema.json"},
+    "lifecycle_status": {"type": "string", "enum": ["upcoming", "active", "completed", "ended_early"]},
+    "today": {"oneOf": [{"$ref": "./habit_daily_status_response.schema.json"}, {"type": "null"}], "description": "Null when the current device-local date is outside the challenge interval."},
+    "statistics": {"$ref": "./habit_statistics_response.schema.json"},
+    "reminder_settings": {"$ref": "./habit_reminder_settings_response.schema.json"},
+    "challenge_time_progress": {"type": "number", "minimum": 0, "maximum": 1},
+    "remaining_days": {"type": "integer", "minimum": 0}
+  },
+  "allOf": [
+    {"if": {"properties": {"lifecycle_status": {"const": "upcoming"}}, "required": ["lifecycle_status"]}, "then": {"properties": {"today": {"type": "null"}}}},
+    {"if": {"properties": {"lifecycle_status": {"const": "active"}}, "required": ["lifecycle_status"]}, "then": {"properties": {"today": {"$ref": "./habit_daily_status_response.schema.json"}}}}
+  ]
+}

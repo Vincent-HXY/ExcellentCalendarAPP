@@ -93,6 +93,24 @@ common::Result<int> require_int(
   return common::Result<int>::success(static_cast<int>(value->get<double>()));
 }
 
+common::Result<std::int64_t> require_int64(
+    const picojson::object& object,
+    const std::string& key,
+    const std::string& parent) {
+  const auto* value = field(object, key);
+  constexpr double kJsonSafeInteger = 9007199254740991.0;
+  if (value == nullptr || !value->is<double>() ||
+      std::floor(value->get<double>()) != value->get<double>() ||
+      value->get<double>() < -kJsonSafeInteger ||
+      value->get<double>() > kJsonSafeInteger) {
+    return common::Result<std::int64_t>::failure(
+        contract_error(parent + "." + key,
+                       "safe integer field is missing or invalid"));
+  }
+  return common::Result<std::int64_t>::success(
+      static_cast<std::int64_t>(value->get<double>()));
+}
+
 common::Result<std::optional<std::string>> nullable_string(
     const picojson::object& object,
     const std::string& key,
@@ -140,6 +158,30 @@ common::Result<std::optional<int>> nullable_int(
   }
   return common::Result<std::optional<int>>::success(
       static_cast<int>(value->get<double>()));
+}
+
+common::Result<std::optional<std::int64_t>> nullable_int64(
+    const picojson::object& object,
+    const std::string& key,
+    const std::string& parent,
+    bool required) {
+  const auto* value = field(object, key);
+  if (value == nullptr) {
+    return required
+               ? common::Result<std::optional<std::int64_t>>::failure(
+                     contract_error(parent + "." + key,
+                                    "required nullable field is missing"))
+               : common::Result<std::optional<std::int64_t>>::success(
+                     std::nullopt);
+  }
+  if (value->is<picojson::null>())
+    return common::Result<std::optional<std::int64_t>>::success(std::nullopt);
+  auto parsed = require_int64(object, key, parent);
+  return parsed.ok()
+             ? common::Result<std::optional<std::int64_t>>::success(
+                   parsed.value())
+             : common::Result<std::optional<std::int64_t>>::failure(
+                   parsed.error());
 }
 
 common::Result<std::optional<bool>> nullable_bool(

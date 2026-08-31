@@ -36,7 +36,34 @@ class NativeErrorCodes {
       'NOTIFICATION_INITIALIZATION_FAILED';
   static const habitTitleEmpty = 'HABIT_TITLE_EMPTY';
   static const habitNotFound = 'HABIT_NOT_FOUND';
-  static const habitCheckInDuplicated = 'HABIT_CHECK_IN_DUPLICATED';
+  static const habitTargetDeleted = 'HABIT_TARGET_DELETED';
+  static const habitUpdateConflict = 'HABIT_UPDATE_CONFLICT';
+  static const habitDateRangeInvalid = 'HABIT_DATE_RANGE_INVALID';
+  static const habitChallengeTooLong = 'HABIT_CHALLENGE_TOO_LONG';
+  static const habitTargetInvalid = 'HABIT_TARGET_INVALID';
+  static const habitTargetLocked = 'HABIT_TARGET_LOCKED';
+  static const habitStartDateLocked = 'HABIT_START_DATE_LOCKED';
+  static const habitAlreadyEnded = 'HABIT_ALREADY_ENDED';
+  static const habitNotStarted = 'HABIT_NOT_STARTED';
+  static const habitEndNotEarly = 'HABIT_END_NOT_EARLY';
+  static const habitCheckInDateOutOfRange = 'HABIT_CHECK_IN_DATE_OUT_OF_RANGE';
+  static const habitCheckInFutureDate = 'HABIT_CHECK_IN_FUTURE_DATE';
+  static const habitCheckInNotFound = 'HABIT_CHECK_IN_NOT_FOUND';
+  static const habitDailyStatusRangeInvalid =
+      'HABIT_DAILY_STATUS_RANGE_INVALID';
+  static const habitDailyStatusRangeTooLarge =
+      'HABIT_DAILY_STATUS_RANGE_TOO_LARGE';
+  static const habitReminderConfigInvalid = 'HABIT_REMINDER_CONFIG_INVALID';
+  static const habitNotificationActionExpired =
+      'HABIT_NOTIFICATION_ACTION_EXPIRED';
+  static const habitNotificationActionIdentityMismatch =
+      'HABIT_NOTIFICATION_ACTION_IDENTITY_MISMATCH';
+  static const habitReconciliationCursorInvalid =
+      'HABIT_RECONCILIATION_CURSOR_INVALID';
+  static const habitReconciliationConflict = 'HABIT_RECONCILIATION_CONFLICT';
+  static const habitStatisticsOverflow = 'HABIT_STATISTICS_OVERFLOW';
+  static const appearanceColorTokenInvalid = 'APPEARANCE_COLOR_TOKEN_INVALID';
+  static const appearanceStorageFailed = 'APPEARANCE_STORAGE_FAILED';
   static const categoryNameEmpty = 'CATEGORY_NAME_EMPTY';
   static const categoryNotFound = 'CATEGORY_NOT_FOUND';
   static const categorySortOrderExhausted = 'CATEGORY_SORT_ORDER_EXHAUSTED';
@@ -135,7 +162,29 @@ class NativeErrorCodes {
     notificationInitializationFailed,
     habitTitleEmpty,
     habitNotFound,
-    habitCheckInDuplicated,
+    habitTargetDeleted,
+    habitUpdateConflict,
+    habitDateRangeInvalid,
+    habitChallengeTooLong,
+    habitTargetInvalid,
+    habitTargetLocked,
+    habitStartDateLocked,
+    habitAlreadyEnded,
+    habitNotStarted,
+    habitEndNotEarly,
+    habitCheckInDateOutOfRange,
+    habitCheckInFutureDate,
+    habitCheckInNotFound,
+    habitDailyStatusRangeInvalid,
+    habitDailyStatusRangeTooLarge,
+    habitReminderConfigInvalid,
+    habitNotificationActionExpired,
+    habitNotificationActionIdentityMismatch,
+    habitReconciliationCursorInvalid,
+    habitReconciliationConflict,
+    habitStatisticsOverflow,
+    appearanceColorTokenInvalid,
+    appearanceStorageFailed,
     categoryNameEmpty,
     categoryNotFound,
     categorySortOrderExhausted,

@@ -84,6 +84,7 @@ add_library(
     src/application/notification_service.cpp
     src/boundary/api/event_api.cpp
     src/boundary/api/anniversary_v2_endpoint.cpp
+    src/boundary/api/habit_v2_endpoint.cpp
     src/boundary/api/category_v2_endpoint.cpp
     src/boundary/api/event_v2_endpoint.cpp
     src/boundary/api/native_runtime.cpp
@@ -95,6 +96,7 @@ add_library(
     src/boundary/api/runtime_v2_endpoint.cpp
     src/boundary/contract/consume_reminder_after_delivery_response.cpp
     src/boundary/contract/anniversary_json.cpp
+    src/boundary/contract/habit_json.cpp
     src/boundary/contract/category_json.cpp
     src/boundary/contract/event_list_response.cpp
     src/boundary/contract/event_response.cpp
@@ -111,10 +113,12 @@ add_library(
     src/common/id_generator.cpp
     src/common/string_utils.cpp
     src/common/uuid.cpp
+    src/application/habit_service.cpp
     src/domain/data_source.cpp
     src/domain/anniversary.cpp
     src/domain/category.cpp
     src/domain/event_status.cpp
+    src/domain/habit.cpp
     src/domain/event_occurrence_state.cpp
     src/domain/importance.cpp
     src/domain/local_time_resolver.cpp
@@ -127,6 +131,8 @@ add_library(
     src/storage/json/atomic_json_file_store.cpp
     src/storage/json/anniversary_json_codec.cpp
     src/storage/json/category_json_codec.cpp
+    src/storage/json/habit_json_codec.cpp
+    src/storage/json/habit_state_validator.cpp
     src/storage/json/calendar_core_v2_storage_bootstrap.cpp
     src/storage/json/calendar_core_v3_storage_bootstrap.cpp
     src/storage/json/calendar_workflow_coordinator.cpp
@@ -294,6 +300,53 @@ if(EXCELLENT_CALENDAR_BUILD_TESTS)
         COMMAND excellent_calendar_storage_v3_tests
     )
 
+    add_executable(
+        excellent_calendar_storage_v5_tests
+        tests/storage_v5_tests.cpp
+    )
+    target_link_libraries(
+        excellent_calendar_storage_v5_tests
+        PRIVATE
+        excellent_calendar_core
+    )
+    add_test(
+        NAME excellent_calendar_storage_v5_tests
+        COMMAND excellent_calendar_storage_v5_tests
+    )
+
+    add_executable(
+        excellent_calendar_habit_tests
+        tests/habit_core_tests.cpp
+    )
+    target_link_libraries(
+        excellent_calendar_habit_tests
+        PRIVATE
+        excellent_calendar_core
+    )
+    target_compile_definitions(
+        excellent_calendar_habit_tests
+        PRIVATE
+        EXCELLENT_CALENDAR_TEST_TZDB_DIR="${CMAKE_CURRENT_SOURCE_DIR}/third_party/tzdata/2026c"
+    )
+    add_test(
+        NAME excellent_calendar_habit_tests
+        COMMAND excellent_calendar_habit_tests
+    )
+
+    add_executable(
+        excellent_calendar_habit_reminder_tests
+        tests/habit_reminder_tests.cpp
+    )
+    target_link_libraries(
+        excellent_calendar_habit_reminder_tests
+        PRIVATE
+        excellent_calendar_core
+    )
+    add_test(
+        NAME excellent_calendar_habit_reminder_tests
+        COMMAND excellent_calendar_habit_reminder_tests
+    )
+
     add_custom_target(
         excellent_calendar_check
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
@@ -305,6 +358,9 @@ if(EXCELLENT_CALENDAR_BUILD_TESTS)
         excellent_calendar_anniversary_tests
         excellent_calendar_category_tests
         excellent_calendar_storage_v3_tests
+        excellent_calendar_storage_v5_tests
+        excellent_calendar_habit_tests
+        excellent_calendar_habit_reminder_tests
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         USES_TERMINAL
     )

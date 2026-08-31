@@ -1,0 +1,21 @@
+{
+  "date": "2026-08-31",
+  "status": "done",
+  "is_final": true,
+  "check_in": {
+    "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "habit_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "check_date": "2026-08-31",
+    "status": "done",
+    "completed_count_hundredths": null,
+    "target_count_snapshot_hundredths": null,
+    "unit_snapshot": null,
+    "completed_at": "2026-08-31T01:00:00Z",
+    "note": null,
+    "source": "manual",
+    "created_at": "2026-08-31T01:00:00Z",
+    "updated_at": "2026-09-01T01:00:00Z",
+    "deleted_at": "2026-09-01T01:00:00Z"
+  },
+  "completion_ratio": 1
+}

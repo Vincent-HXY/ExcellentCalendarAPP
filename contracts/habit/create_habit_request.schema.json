@@ -2,74 +2,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/habit/create_habit_request.schema.json",
   "title": "CreateHabitRequest",
-  "description": "Request payload for creating a habit definition. Check-in records are handled by HabitCheckIn contracts.",
+  "description": "Complete Habit V1 create plan. Dates are inclusive user-local challenge dates with a maximum of 400 natural days. Quantities are transported as exact JSON integer hundredths. C++ owns IDs, timestamps, recurrence materialization, text normalization, Reminder identity, and the logical transaction.",
   "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "title",
-    "start_date",
-    "recurrence",
-    "source"
-  ],
+  "x-inclusive-max-days": 400,
+  "required": ["title", "description", "category_id", "recurrence", "target_count_hundredths", "unit", "start_date", "end_date", "reminder", "timezone"],
   "properties": {
-    "title": {
-      "type": "string",
-      "minLength": 1
-    },
-    "description": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "category_id": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "recurrence": {
-      "$ref": "../recurrence/recurrence_rule.schema.json"
-    },
-    "target_count": {
-      "type": [
-        "number",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "unit": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "minLength": 1
-    },
-    "start_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "end_date": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date"
-    },
-    "is_active": {
-      "type": "boolean",
-      "default": true
-    },
-    "source": {
-      "type": "string",
-      "enum": [
-        "manual",
-        "ai_extraction",
-        "sync",
-        "import",
-        "wechat"
-      ]
-    }
-  }
+    "title": {"type": "string", "minLength": 1, "maxLength": 80, "description": "At most 80 Unicode code points on the wire; C++ trims Unicode boundary whitespace and rejects a blank canonical title."},
+    "description": {"type": ["string", "null"], "maxLength": 2000},
+    "category_id": {"type": ["string", "null"]},
+    "recurrence": {"$ref": "./habit_recurrence_rule_input.schema.json"},
+    "target_count_hundredths": {"type": ["integer", "null"], "minimum": 1, "maximum": 9007199254740991, "description": "Exact hundredths. For example 1.25 is transported as 125. JSON decimal quantities are forbidden."},
+    "unit": {"type": ["string", "null"], "minLength": 1, "maxLength": 32},
+    "start_date": {"type": "string", "format": "date"},
+    "end_date": {"type": "string", "format": "date"},
+    "reminder": {"$ref": "./habit_reminder_plan_input.schema.json"},
+    "timezone": {"type": "string", "minLength": 1, "x-format": "iana-timezone", "description": "Current device IANA timezone. It never participates in identity."}
+  },
+  "oneOf": [
+    {"title": "BinaryHabit", "properties": {"target_count_hundredths": {"type": "null"}, "unit": {"type": "null"}}},
+    {"title": "QuantitativeHabit", "properties": {"target_count_hundredths": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}, "unit": {"type": "string", "minLength": 1, "maxLength": 32}}}
+  ]
 }

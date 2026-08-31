@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/reconcile_habit_reminders_response.schema.json",
+  "title": "ReconcileHabitRemindersResponse",
+  "description": "Internal bounded reconciliation result. Eligible same-day occurrences remain separate actionable popup reminders; next-day occurrences expire instead of entering a summary. request_limit echoes the request limit; processed_count equals all four outcome counts and never exceeds it. A continuation must make progress.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request_limit", "processed_count", "materialized_count", "expired_count", "cancelled_count", "unchanged_count", "schedule_reconciliation_required", "has_more", "next_cursor"],
+  "properties": {
+    "request_limit": {"type": "integer", "minimum": 1, "maximum": 100, "description": "Must equal the request limit for this page."},
+    "processed_count": {"type": "integer", "minimum": 0, "maximum": 100},
+    "materialized_count": {"type": "integer", "minimum": 0, "maximum": 100},
+    "expired_count": {"type": "integer", "minimum": 0, "maximum": 100},
+    "cancelled_count": {"type": "integer", "minimum": 0, "maximum": 100},
+    "unchanged_count": {"type": "integer", "minimum": 0, "maximum": 100},
+    "schedule_reconciliation_required": {"type": "boolean"},
+    "has_more": {"type": "boolean"},
+    "next_cursor": {"type": ["string", "null"], "minLength": 1, "maxLength": 512}
+  },
+  "oneOf": [
+    {"properties": {"has_more": {"const": true}, "processed_count": {"type": "integer", "minimum": 1}, "next_cursor": {"type": "string", "minLength": 1, "maxLength": 512}}},
+    {"properties": {"has_more": {"const": false}, "next_cursor": {"type": "null"}}}
+  ]
+}

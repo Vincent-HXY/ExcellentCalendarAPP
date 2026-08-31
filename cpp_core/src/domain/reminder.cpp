@@ -9,7 +9,8 @@ bool is_valid_reminder_target_type(std::string_view value) {
 }
 
 bool is_supported_reminder_target_type(std::string_view value) {
-  return value == kReminderTargetEvent || value == kReminderTargetAnniversary;
+  return value == kReminderTargetEvent || value == kReminderTargetHabit ||
+         value == kReminderTargetAnniversary;
 }
 
 bool is_valid_reminder_method(std::string_view value) {
@@ -27,6 +28,12 @@ bool is_valid_reminder_status(std::string_view value) {
          value == kReminderStatusExpired;
 }
 
+bool is_open_reminder(const Reminder& reminder) {
+  return !reminder.deleted_at.has_value() && reminder.is_enabled &&
+         (reminder.status == kReminderStatusPending ||
+          reminder.status == kReminderStatusScheduled);
+}
+
 bool is_valid_reminder_cancellation_reason(std::string_view value) {
   return value == kReminderCancellationReasonUserCancelled ||
          value == kReminderCancellationReasonEventCompleted ||
@@ -42,7 +49,13 @@ bool is_valid_reminder_cancellation_reason(std::string_view value) {
          value == kReminderCancellationReasonAnniversaryTemplateDisabled ||
          value == kReminderCancellationReasonAnniversaryUpdated ||
          value == kReminderCancellationReasonAnniversaryTemplateReplaced ||
-         value == kReminderCancellationReasonAnniversaryDeleted;
+         value == kReminderCancellationReasonAnniversaryDeleted ||
+         value == kReminderCancellationReasonHabitCompleted ||
+         value == kReminderCancellationReasonHabitSkipped ||
+         value == kReminderCancellationReasonHabitEnded ||
+         value == kReminderCancellationReasonHabitDeleted ||
+         value == kReminderCancellationReasonHabitTemplateDisabled ||
+         value == kReminderCancellationReasonHabitTemplateReplaced;
 }
 
 bool is_valid_reminder_source(std::string_view value) {

@@ -1,8 +1,12 @@
 # 习惯-01：Habit 与 HabitCheckIn 本地闭环开发计划
 
-Status: Active / Requirements Frozen / Ready for Specialist Split
+Status: Released / Implementation Integrated / Capability Active / Accepted Device Verification Debt
 
 确认日期：2026-08-27
+
+分层计划建立：2026-08-28
+
+状态同步：2026-08-31
 
 ## 1. 计划定位
 
@@ -19,31 +23,43 @@ Status: Active / Requirements Frozen / Ready for Specialist Split
 
 本计划是多阶段主计划，不按一次小型全栈任务实施。各阶段必须由对应专项负责人完成并通过阶段闸门后，再进入下游阶段。
 
+四份分层计划与当前门禁：
+
+| 层 | 计划 | 当前状态 | 进入下一层条件 |
+| --- | --- | --- | --- |
+| Contracts | `docs/plan/completed/习惯-02-Contracts层开发计划.md` | Completed；Wire/identity/Storage v5 已验证并激活 | 已满足 |
+| C++ | `docs/plan/active/习惯-03-CPP层开发计划.md` | Implemented and integrated；build-after-test 10/10；capability active | 文档归档尾项见 `OPEN-HAB-002` |
+| Kotlin | `docs/plan/active/习惯-04-Kotlin层开发计划.md` | Implemented and integrated；unit/lint/APK/JNI host gates 与已执行实机路径通过 | 剩余设备验证债见 `OPEN-HAB-001` |
+| Flutter | `docs/plan/active/习惯-05-Flutter层开发计划.md` | Implemented and integrated；全量 test、analyze 与 APK 门禁通过 | 文档归档尾项见 `OPEN-HAB-002` |
+
+总工程已按 `Contracts → C++ → Kotlin → Flutter → 跨层 smoke` 完成同一工作树真实接线；并行期运行时 preview/Fake composition 已删除，测试专用 Fake 保留。2026-08-31 已关闭黑盒确认的卡片进度、101+ 列表分页、数量型圆圈剩余量、occurrence 技术文本以及新建默认期限错误。产品负责人同日明确接受剩余真机系统行为矩阵作为非阻断发布验证债，Habit/Appearance capability 与 Storage v5 已统一切换为 `integrated + active`；未执行场景继续保持未验证并由 `OPEN-HAB-001` 跟踪。
+
 ## 2. 当前仓库基线
 
 ### 2.1 已有依据
 
 - `Habit` 与 `HabitCheckIn` 已在领域文档中分离。
-- 已有 `create_habit_request`、`habit_response`、`habit_check_in_request`、`habit_check_in_response` 预留 Schema。
-- `method_channels.yaml` 仅预留 `habit.create`、`habit.check_in`。
+- Habit/Appearance V1 的完整 Schema、10 个公开 Habit 方法、2 个本机 Appearance 方法和 11 个 internal call 已冻结。
+- Habit occurrence、Reminder、notification action identity 与 SQLite v5 target Contract 已通过专项 validator。
 - Reminder/Notification、Android 调度、恢复、投递与通知点击已有生产基础。
-- Calendar Core 正式 writer 已是 SQLite Storage v4。
+- Calendar Core 正式 writer 已是 SQLite Storage v5。
 - 当前底部主导航已是“日程 / 日历 / 搜索 / 我的”。
 
-### 2.2 尚未实现
+### 2.2 当前实现与剩余门禁
 
-- 没有 Habit/HabitCheckIn/HabitRecurrence 的 C++ Domain、Application、Repository 或 SQLite 表。
-- 没有 Habit native calls、JNI bridge、Kotlin handler、Dart DTO/Gateway/Application。
-- 没有生产 Habit 页面；通知点击 Habit 仍进入“内容不存在或已删除”占位页。
-- 现有 planned Habit recurrence Schema 尚未冻结生产语义。
-- 普通一次性 Habit Reminder 预留不能表达每日 occurrence、同日补发和幂等快捷完成。
-- “我的”页面没有本机 Habit 进度色设置。
+- C++ Domain/Application/Repository、SQLite v5 四表八索引、v4→v5 migration、Reminder/Notification workflow 和 11 个 Boundary endpoint 已实现。
+- Kotlin MethodChannel/JNI、调度/reconciliation、非导出通知 action Receiver/Worker 与本机 Appearance 已接入正式生产组合；三种 ABI 均有 11/11 Habit JNI 导出。
+- Flutter DTO/Gateway/Application、Habit 首页/表单/详情/日期页、通知详情路由、“我的”外观入口和真实 MethodChannel production composition 已实现；运行时 preview/Fake 已删除。
+- Contract、C++、Flutter、Android、APK 与 Native smoke 主机门禁通过；部分真实创建/提醒和页面展示已在 realme RMX5100 / Android 16 验证。
+- 2026-08-31 已关闭：卡片背景错误使用时间进度、超过 100 条列表不可访问、数量型圆圈未显示剩余量、详情暴露 occurrence 技术文本。
+- 仍未关闭但已明确接受为发布后验证债：权限拒绝且有待发送 occurrence 时重新授权并自动 reconcile、跨午夜、杀进程/设备重启、时区/系统时间变化、数量型/重复/陈旧通知 action、通知点击真实详情和完整 TalkBack；见 `OPEN-HAB-001`。
+- 机器 Contract 已统一为 `integrated + active`，Storage Contract 声明 v5 active。计划/ADR 的局部历史状态清理由 `OPEN-HAB-002` 跟踪，不影响当前机器状态。
 
 ### 2.3 可行性判定
 
-判定：`SPECIALIST_SPLIT`
+判定：`RELEASED / INTEGRATED_ACTIVE`
 
-原因：功能同时包含领域模型、Storage v4→v5 migration、跨层 Contract、C++ 统计与工作流、Android Reminder/Notification、Flutter 多页面和本机偏好设置，不能用一次独立端到端修改安全覆盖。
+原因：分层实现、真实集成、用户可见反馈返修、默认 30 天回归、主机门禁与本轮实机主链路均已完成；当前没有已知阻断级功能缺陷。产品负责人已明确接受剩余设备矩阵和局部文档状态清理为非阻断尾债。
 
 ## 3. 已冻结的产品范围
 
@@ -120,8 +136,8 @@ Status: Active / Requirements Frozen / Ready for Specialist Split
 └──────────────────────────────────────────┘
 ```
 
-- 卡片背景从左向右的淡色填充表示“挑战时间进度”，不是今日数量进度。
-- 时间进度：即将开始为 0%；进行中按当前是第几个计划日计算；自然到期为 100%；提前结束冻结在 `ended_date` 相对原计划区间的真实比例。
+- 卡片背景从左向右的淡色填充表示“全周期完成率”，不表示挑战时间进度或今日数量进度。
+- 时间进度不再单独绘制，只用“剩余 X 天”小字表达；即将开始、自然到期和提前结束继续消费 C++ 的权威生命周期与剩余天数投影。
 - 右侧圆环弧度表示截至今天的挑战完成率。
 - 圆环中心显示当前连续达标天数，例如 `12天`。
 - 剩余挑战天数使用单独一行小字，例如“挑战还剩 18 天”。
@@ -205,7 +221,7 @@ V1 新增轻量独立实体：
 - 普通打卡来源为 `manual`；通知快捷完成新增稳定来源 `notification_action`。
 - 打卡型：done 时 `completed_count`、目标快照和单位快照均为 null。
 - 数量型：partial/done 必须保存 `completed_count`、`target_count_snapshot` 和 `unit_snapshot`。
-- 所有数量在 Contract 上仍表现为最多两位小数的 number；C++/Storage 使用百分位 fixed-point 整数归一化，避免浮点比较使 `2.50` 的达标判断漂移。
+- 所有数量在 Contract、Dart、Kotlin、JNI 与 C++ Boundary 上统一使用 `_hundredths` JSON integer；例如 `1.25` 传输为 `125`，最大值为 `9007199254740991`。decimal JSON number 非法，用户输入和展示才使用最多两位小数的十进制文本；禁止 binary floating-point 参与传输、比较、累计和达标判断，相邻上界整数必须保持可区分，统计累计超界返回 `HABIT_STATISTICS_OVERFLOW`。
 - skipped 的数量、目标快照、单位快照和 `completed_at` 均为 null。
 - missed 默认是查询时对缺失历史日期的派生状态，不主动写入 CheckIn。
 - clear 操作保持幂等；重复通知 action 也必须返回同一最终 done 状态。
@@ -291,61 +307,65 @@ V1 新增轻量独立实体：
 
 ### 8.1 调整现有 Schema
 
-- [ ] 将 Habit `end_date` 收紧为 V1 必填非 null。
-- [ ] 为 Habit 增加可空 `ended_date`，保留原计划结束日并区分提前结束。
-- [ ] 用 Habit 专属 daily recurrence input 替换 planned 通用 shape，移除 `start_at/end_at/rrule` 的混淆。
-- [ ] 收紧 `target_count/unit` 成对约束与两位小数规则。
-- [ ] 将 `habit.check_in` 冻结为按 `(habit_id, check_date)` 幂等 set/upsert，而不是 duplicated failure。
-- [ ] 增加 `notification_action` CheckIn source。
-- [ ] 为 response 明确所有 date、UTC instant、nullable、派生状态和未知枚举失败行为。
+- [x] 将 Habit `end_date` 收紧为 V1 必填非 null。
+- [x] 为 Habit 增加可空 `ended_date`，保留原计划结束日并区分提前结束。
+- [x] 用 Habit 专属 daily recurrence input 替换 planned 通用 shape，移除 `start_at/end_at/rrule` 的混淆。
+- [x] 收紧 `target_count/unit` 成对约束、两位小数和跨语言精确上界。
+- [x] 将 `habit.check_in` 冻结为按 `(habit_id, check_date)` 幂等 set/upsert，而不是 duplicated failure。
+- [x] 增加 `notification_action` CheckIn source。
+- [x] 为 response 明确所有 date、UTC instant、nullable、派生状态和未知枚举失败行为。
 
 ### 8.2 新增公开 MethodChannel 能力
 
-- [ ] `habit.create`
-- [ ] `habit.update`
-- [ ] `habit.list`
-- [ ] `habit.detail`
-- [ ] `habit.end`
-- [ ] `habit.delete`
-- [ ] `habit.check_in`
-- [ ] `habit.clear_check_in`
-- [ ] `habit.list_daily_statuses`
-- [ ] `habit.set_reminder`
-- [ ] `appearance.get_local`
-- [ ] `appearance.update_local`
+- [x] `habit.create`
+- [x] `habit.update`
+- [x] `habit.list`
+- [x] `habit.detail`
+- [x] `habit.end`
+- [x] `habit.delete`
+- [x] `habit.check_in`
+- [x] `habit.clear_check_in`
+- [x] `habit.list_daily_statuses`
+- [x] `habit.set_reminder`
+- [x] `appearance.get_local`
+- [x] `appearance.update_local`
 
-`habit.list` 返回卡片所需组合投影；`habit.detail` 返回 Habit、recurrence、reminder、核心统计和首屏历史；`habit.list_daily_statuses` 按日期区间返回热力图/历史投影。不得把统计缓存字段加入 HabitResponse。
+`habit.list` 返回卡片所需组合投影；`habit.detail` 返回 Habit、recurrence、reminder、核心统计、首屏历史和永久锁定投影，当前日期在挑战区间外时 `today=null`；`habit.list_daily_statuses` 按日期区间返回热力图/历史投影。不得把统计缓存字段加入 HabitResponse。
 
 ### 8.3 新增 Native calls
 
-除 Kotlin 本地处理的 `appearance.*` 外，为上述 Habit 能力声明对应窄 JNI/native calls。后台通知 action 必须能够直接调用 `habit.check_in`，不得要求启动 Flutter Engine 才能完成。
+除 Kotlin 本地处理的 `appearance.*` 外，为上述 Habit 能力声明对应窄 JNI/native calls。公开 `habit.check_in` 只接受 manual request；Kotlin 转成内部 command，后台通知 action 也只能通过非导出 Receiver 构造该 command，不得要求启动 Flutter Engine 才能完成。
+
+已冻结结果：10 个公开 Habit 方法均有同名窄 C++ call，另有内部 `habit.reconcile_reminders`；Appearance 不进入 JNI。所有条目已随真实实现和同一 APK 门禁于 2026-08-31 切换为 `integrated + active`。
 
 ### 8.4 错误码
 
 至少冻结并覆盖：
 
-- [ ] 标题为空；
-- [ ] Habit 不存在/已删除；
-- [ ] 非法期限或结束日期；
-- [ ] 非法目标/单位组合；
-- [ ] 目标已锁定；
-- [ ] 打卡日期在有效期外；
-- [ ] 未来日期打卡；
-- [ ] Habit 已结束；
-- [ ] CheckIn 不存在；
-- [ ] Reminder 时间/模板非法；
-- [ ] 通知 action 已过期或 identity 不匹配；
-- [ ] 外观颜色 token 非法；
-- [ ] Storage/transaction/scheduling 真实失败。
+- [x] 标题为空；
+- [x] Habit 不存在/已删除；
+- [x] 非法期限或结束日期；
+- [x] 非法目标/单位组合；
+- [x] 目标/开始日期已锁定；
+- [x] 打卡日期在有效期外；
+- [x] 未来日期打卡；
+- [x] Habit 已结束；
+- [x] CheckIn 不存在；
+- [x] Reminder 时间/模板非法；
+- [x] 通知 action 已过期或 identity 不匹配；
+- [x] 外观颜色 token 非法或本机保存失败；
+- [x] reconciliation、统计溢出与 Storage/transaction/scheduling 真实失败。
 
 ## 9. Storage v4 → v5 迁移
 
 ### 9.1 新增表
 
-- [ ] `habit_recurrences`
-- [ ] `habits`
-- [ ] `habit_check_ins`
-- [ ] `habit_reminder_templates`
+Contract 状态：四表、八索引、per-store payload codec 和 v4→v5 transaction 已在 `calendar_core_v5` 冻结；以下复选框表示当前发布运行时的实际实现状态，已由 Storage v5 测试、`excellent_calendar_check`、production JNI 与实机 SQLite v5 路径验证。机器 Storage Contract 已以 v5 为 active。
+
+- [x] `habit_recurrences`
+- [x] `habits`
+- [x] `habit_check_ins`
+- [x] `habit_reminder_templates`
 
 复用：
 
@@ -355,24 +375,24 @@ V1 新增轻量独立实体：
 
 ### 9.2 关键约束和索引
 
-- [ ] Habit PK、recurrence 引用和 `recurrence_id` 唯一所有权。
-- [ ] `habit_check_ins(habit_id, check_date)` 业务唯一。
-- [ ] `habit_reminder_templates(habit_id)` 最多一个未删除模板。
-- [ ] Habit Reminder `(target_id, template_key, occurrence_date)` 唯一。
-- [ ] active Habit 按 `start_date/end_date/ended_date/is_active/deleted_at` 过滤索引。
-- [ ] CheckIn 按 Habit + 日期范围查询索引。
-- [ ] Reminder 按 status/remind_at 的既有调度索引继续有效。
-- [ ] Category 保持弱引用，不增加会破坏历史可读性的强外键。
+- [x] Habit PK、recurrence 引用和 `recurrence_id` 唯一所有权。
+- [x] `habit_check_ins(habit_id, check_date)` 业务唯一。
+- [x] `habit_reminder_templates(habit_id)` 最多一个未删除模板。
+- [x] Habit Reminder `(target_id, template_key, occurrence_date)` 唯一。
+- [x] active Habit 按 `start_date/end_date/ended_date/is_active/deleted_at` 过滤索引。
+- [x] CheckIn 按 Habit + 日期范围查询索引。
+- [x] Reminder 按 status/remind_at 的既有调度索引继续有效。
+- [x] Category 保持弱引用，不增加会破坏历史可读性的强外键。
 
 ### 9.3 迁移要求
 
-- [ ] 不修改已经生效的 v4 schema 定义。
-- [ ] 实现显式、可重复验证的 `v4 → v5` migration。
-- [ ] v4 所有业务行、migration history、generation 和诊断快照原样保留。
-- [ ] 新表初始为空；不得伪造 Habit 数据。
-- [ ] schema definition checker 覆盖新表、索引、约束和错误同名对象。
-- [ ] v5 downgrade guard 使旧 runtime 拒绝继续写。
-- [ ] migration 中断、重启、重复初始化和损坏 schema 必须严格失败或幂等恢复。
+- [x] 不修改已经生效的 v4 schema 定义。
+- [x] 实现显式、可重复验证的 `v4 → v5` migration。
+- [x] v4 所有业务行、migration history、generation 和诊断快照原样保留。
+- [x] 新表初始为空；不得伪造 Habit 数据。
+- [x] schema definition checker 覆盖新表、索引、约束和错误同名对象。
+- [x] v5 downgrade guard 使旧 runtime 拒绝继续写。
+- [x] migration 中断、重启、重复初始化和损坏 schema 必须严格失败或幂等恢复。
 
 ## 10. 分阶段实施清单
 
@@ -382,15 +402,18 @@ V1 新增轻量独立实体：
 
 输入：本计划、Habit ADR、Recurrence ADR、Reminder/Notification ADR、现有 v2 Contract。
 
-- [ ] 更新 `docs/domains/habit.md`、`habit_check_in.md`。
-- [ ] 新增 HabitRecurrence、HabitReminderTemplate 的领域说明或 Accepted ADR。
-- [ ] 记录统计公式、生命周期、日期边界、目标锁定和补签规则。
-- [ ] 更新 Habit Schema、method/native capability maps、errors、enums、identity。
-- [ ] 定义 request/response/aggregate DTO，不暴露数据库行。
-- [ ] 增加合法、非法、边界和 identity fixtures。
-- [ ] 更新 `docs/index.md`、status、roadmap/open issue 的对应状态。
+- [x] 更新 `docs/domains/habit.md`、`habit_check_in.md`。
+- [x] 新增 HabitRecurrence、HabitReminderTemplate 的领域说明和 Accepted ADR。
+- [x] 记录统计公式、生命周期、日期边界、目标锁定和补签规则。
+- [x] 更新 Habit Schema、method/native capability maps、errors、enums、identity。
+- [x] 定义 request/response/aggregate DTO，不暴露数据库行。
+- [x] 增加合法、非法、边界、兼容和 identity fixtures。
+- [x] 冻结 SQLite v5 target Contract，保持 v4 active 定义不变。
+- [x] 更新 `docs/index.md`、status、roadmap/open issue 的对应状态。
 
 验收：Contract validator 全通过；每个公开方法都有一条明确实现路径；`OPEN-DOM-001` 的 recurrence、check-in identity 和 reminder 幂等关闭条件全部满足。
+
+完成证据：Habit validator 通过 193 个 Schema、28 个专项 fixture、4 个 Habit identity vector、12 个公开方法和 11 个 native call；Anniversary/Reminder 56 个共享回归 fixture 同时通过。Phase 0 详细结果见 `docs/plan/completed/习惯-02-Contracts层开发计划.md`。
 
 阻塞：若无法冻结 Reminder occurrence identity、日期闭区间或通知 action 幂等，不得进入 Phase 1。
 
@@ -398,13 +421,13 @@ V1 新增轻量独立实体：
 
 负责人：C++ Core / Storage 专项
 
-- [ ] 实现四个 Domain/Storage 模型和 Repository ports。
-- [ ] 实现 v4→v5 migration、schema checker、索引和 transaction。
-- [ ] 实现 Habit create/update/list/detail/end/delete。
-- [ ] 实现 CheckIn set/clear、补签、目标锁定与严格校验。
-- [ ] 实现 lifecycle、daily status projection 和统计服务。
-- [ ] 使用固定 clock 和明确设备 timezone 测试。
-- [ ] 禁止 Application/Domain 直接出现 SQLite、Flutter 或 Android 类型。
+- [x] 实现四个 Domain/Storage 模型和 Repository ports。
+- [x] 实现 v4→v5 migration、schema checker、索引和 transaction。
+- [x] 实现 Habit create/update/list/detail/end/delete。
+- [x] 实现 CheckIn set/clear、补签、目标锁定与严格校验。
+- [x] 实现 lifecycle、daily status projection 和统计服务。
+- [x] 使用固定 clock 和明确设备 timezone 测试。
+- [x] 禁止 Application/Domain 直接出现 SQLite、Flutter 或 Android 类型。
 
 验收：Repository round-trip、事务回滚、软删除、统计和迁移测试通过；构建后 `excellent_calendar_check` 通过。
 
@@ -412,12 +435,12 @@ V1 新增轻量独立实体：
 
 负责人：C++ Core / Reminder Workflow 专项
 
-- [ ] 实现 template create/update/disable/delete。
-- [ ] 实现确定性 occurrence identity、滚动 successor 和唯一约束。
-- [ ] CheckIn done/skipped、提前结束和删除时原子取消 Reminder。
-- [ ] 实现同日 recovery、跨日 expiry、时区重算和幂等 replay。
-- [ ] 实现通知快捷完成事务入口。
-- [ ] 保证 Notification 只由真实投递产生。
+- [x] 实现 template create/update/disable/delete。
+- [x] 实现确定性 occurrence identity、滚动 successor 和唯一约束。
+- [x] CheckIn done/skipped、提前结束和删除时原子取消 Reminder。
+- [x] 实现同日 recovery、跨日 expiry、时区重算和幂等 replay。
+- [x] 实现通知快捷完成事务入口。
+- [x] 保证 Notification 只由真实投递产生。
 
 验收：重复扫描、重启、陈旧 Reminder、重复 action、权限恢复和时区切换均不会重复提醒或重复 CheckIn。
 
@@ -425,13 +448,13 @@ V1 新增轻量独立实体：
 
 负责人：Android/Kotlin Native 专项
 
-- [ ] 新增窄 Habit native bridge、JNI exports 和 handler。
-- [ ] 严格映射 snake_case、date、UTC、nullable、enum、NativeResult。
-- [ ] 接入现有 Scheduler/Reconciler，不创建第二份 Android 真相源。
-- [ ] 新增 Habit notification deep link 和 action receiver。
-- [ ] action receiver 在 Flutter 未启动时也能初始化正式 Calendar Core runtime。
-- [ ] 权限拒绝、调度失败和恢复使用稳定错误/状态，不吞异常。
-- [ ] 使用 SharedPreferences 实现 `appearance.get_local/update_local`。
+- [x] 新增窄 Habit native bridge、JNI exports 和 handler。
+- [x] 严格映射 snake_case、date、UTC、nullable、enum、NativeResult。
+- [x] 接入现有 Scheduler/Reconciler，不创建第二份 Android 真相源。
+- [x] 新增 Habit notification deep link 和 action receiver。
+- [x] action receiver 在 Flutter 未启动时也能初始化正式 Calendar Core runtime。
+- [x] 权限拒绝、调度失败和恢复使用稳定错误/状态，不吞异常。
+- [x] 使用 SharedPreferences 实现 `appearance.get_local/update_local`。
 
 验收：Kotlin contract tests、JNI instrumentation、后台 action、进程重启和 Debug APK 构建通过。
 
@@ -439,12 +462,12 @@ V1 新增轻量独立实体：
 
 负责人：Flutter Application / Boundary 专项
 
-- [ ] 建立 Habit、CheckIn、DailyStatus、Statistics、ReminderSettings DTO。
-- [ ] 建立类型化 HabitGateway 和 AppearancePreferencesGateway。
-- [ ] 实现首页、详情、表单、日期详情 Controller/UseCase。
-- [ ] 防止重复提交、过期异步结果覆盖新状态和页面销毁后更新。
-- [ ] 只消费 C++ 统计投影，不在多个 Controller 重复实现公式。
-- [ ] “再来一轮”只预填新建请求，不复用旧 ID、CheckIn 或 Reminder identity。
+- [x] 建立 Habit、CheckIn、DailyStatus、Statistics、ReminderSettings DTO。
+- [x] 建立类型化 HabitGateway 和 AppearancePreferencesGateway。
+- [x] 实现首页、详情、表单、日期详情 Controller/UseCase。
+- [x] 防止重复提交、过期异步结果覆盖新状态和页面销毁后更新。
+- [x] 只消费 C++ 统计投影，不在多个 Controller 重复实现公式。
+- [x] “再来一轮”只预填新建请求，不复用旧 ID、CheckIn 或 Reminder identity。
 
 验收：DTO round-trip、malformed payload、controller 正常/失败/并发测试通过。
 
@@ -452,14 +475,14 @@ V1 新增轻量独立实体：
 
 负责人：Flutter Presentation 专项
 
-- [ ] 日程页顶部更多菜单增加“习惯”。
-- [ ] 实现 Habit 首页、卡片、分组、排序和完成后动画。
-- [ ] 实现创建/编辑页、期限快捷项和结束日期预览。
-- [ ] 实现详情统计、圆环、时间进度背景、热力图和历史列表。
-- [ ] 实现数量精确输入、日期详情、补签、skipped、撤销确认。
-- [ ] 实现自然到期、提前结束、删除和“再来一轮”流程。
-- [ ] 替换 Habit 通知占位页为真实详情路由。
-- [ ] 覆盖小屏、文字缩放、深浅色、触控尺寸、Semantics 和无颜色状态表达。
+- [x] 日程页顶部更多菜单增加“习惯”。
+- [x] 实现 Habit 首页、卡片、分组、排序和完成后动画。
+- [x] 实现创建/编辑页、期限快捷项和结束日期预览。
+- [x] 实现详情统计、圆环、完成率背景、热力图和历史列表。
+- [x] 实现数量精确输入、日期详情、补签、skipped、撤销确认。
+- [x] 实现自然到期、提前结束、删除和“再来一轮”流程。
+- [x] 替换 Habit 通知占位页为真实详情路由。
+- [x] 实现小屏、文字缩放、深浅色、触控尺寸、Semantics 和无颜色状态表达；真实 TalkBack 操作保留在设备门禁中。
 
 验收：Widget/golden（若仓库已有基线）/navigation/controller tests 通过；页面无溢出，TalkBack 可识别关键状态。
 
@@ -467,11 +490,11 @@ V1 新增轻量独立实体：
 
 负责人：Flutter Presentation + Kotlin Local Settings
 
-- [ ] 在“我的”增加外观设置入口。
-- [ ] 展示经过对比度验证的预设色。
-- [ ] 修改后 Habit 页面实时响应。
-- [ ] App 重启后保持；损坏或未知 token 严格回退默认 teal，并记录诊断。
-- [ ] 明确标注“保存在本机”，不伪装云同步。
+- [x] 在“我的”增加外观设置入口。
+- [x] 展示经过对比度验证的预设色。
+- [x] 修改后 Habit 页面实时响应。
+- [x] App 重启后保持；损坏或未知 token 严格回退默认 teal，并记录诊断。
+- [x] 明确标注“保存在本机”，不伪装云同步。
 
 验收：get/update/重启持久化/非法 token/默认值测试通过。
 
@@ -479,54 +502,57 @@ V1 新增轻量独立实体：
 
 负责人：跨层整合与独立 Review
 
-- [ ] Contract validator、identity fixtures、storage migration tests。
-- [ ] C++ 构建后全量检查。
-- [ ] Flutter format/analyze/test。
-- [ ] Kotlin unit/instrumentation tests。
-- [ ] Android Debug APK 和 Native smoke。
+- [x] Contract validator、identity fixtures、storage migration tests。
+- [x] C++ 构建后全量检查。
+- [x] Flutter format/analyze/test。
+- [x] Kotlin unit tests、lint、Debug APK 与 androidTest APK 构建。
+- [ ] 真实设备 instrumentation 执行。
+- [x] Android Debug APK 和 Native smoke。
 - [ ] 真机通知权限、重启、杀进程、时区变化、日期跨越、快捷完成。
-- [ ] 审查 dirty worktree，确认无无关重构、依赖升级或用户改动覆盖。
-- [ ] 更新 current status、roadmap、open issue、索引和开发日志。
+- [x] 审查 dirty worktree，确认无无关重构、依赖升级或用户改动覆盖。
+- [x] 更新 current status、roadmap、open issue、索引和开发日志。
 
-验收：第 11 节所有黑盒场景有真实证据；未执行的设备矩阵必须明确标记未验证，不得报告完整完成。
+验收：第 11 节已执行场景必须有真实证据；未执行设备矩阵必须明确标记未验证并进入开放问题。2026-08-31 产品负责人通过 `OPEN-HAB-001` 接受本轮剩余场景为非阻断发布债，该例外不等于测试通过。
 
 ## 11. 黑盒验收矩阵
 
+勾选口径：`[x]` 表示已有当前生产链的自动化、边界/异常数据或已记录真机证据；必须依赖真实 Android 系统行为的场景，即使主机测试已覆盖业务规则，也继续保持 `[ ]`，直到设备矩阵实际执行。
+
 ### 11.1 创建和生命周期
 
-- [ ] 创建默认 30 天打卡型 Habit，开始/结束日和总天数正确。
-- [ ] 创建 1 个月、跨月末、跨闰年和未来开始 Habit。
-- [ ] 创建数量型目标 2.50 公里并正确 round-trip。
-- [ ] 非法空标题、0 目标、目标无单位、结束早于开始严格失败。
-- [ ] upcoming 到开始日自动 active；结束日次日自动 completed。
-- [ ] 提前结束保留原计划结束日、写实际 `ended_date`、冻结真实时间进度、取消未来提醒且不可恢复。
-- [ ] 再来一轮创建全新 ID 和 identity，不复制 CheckIn。
+- [x] 创建默认 30 天打卡型 Habit，开始/结束日和总天数正确。
+- [x] 创建 1 个月、跨月末、跨闰年和未来开始 Habit。
+- [x] 创建数量型目标 2.50 公里并正确 round-trip。
+- [x] 非法空标题、0 目标、目标无单位、结束早于开始严格失败。
+- [x] upcoming 到开始日自动 active；结束日次日自动 completed。
+- [x] 提前结束保留原计划结束日、写实际 `ended_date`、冻结真实时间进度、取消未来提醒且不可恢复。
+- [x] 再来一轮创建全新 ID 和 identity，不复制 CheckIn。
 
 ### 11.2 CheckIn
 
-- [ ] Binary 快捷完成、撤销、重复提交幂等。
-- [ ] Quantitative +1、精确输入、partial、done、超额和清零。
-- [ ] 补签有效期内过去日期；拒绝未来和有效期外日期。
-- [ ] skipped 无数量、可备注并桥接 streak。
-- [ ] 首次 CheckIn 后目标和单位锁定。
-- [ ] 软删除 CheckIn 后重建仍满足每日唯一。
+- [x] Binary 快捷完成、撤销、重复提交幂等。
+- [x] Quantitative +1、精确输入、partial、done、超额和清零。
+- [x] 补签有效期内过去日期；拒绝未来和有效期外日期。
+- [x] skipped 无数量、可备注并桥接 streak。
+- [x] 首次 CheckIn 后目标和单位锁定。
+- [x] 软删除 CheckIn 后重建仍满足每日唯一。
 
 ### 11.3 统计
 
-- [ ] absent past day 动态 missed，数据库不产生空 CheckIn。
-- [ ] 今天 absent/partial 在午夜前不提前打断 streak。
-- [ ] done-skipped-done 的 streak 为 2。
-- [ ] partial 在结算后打断 streak。
-- [ ] 7/30/all rate、最长 streak、累计量和日均量正确。
-- [ ] 每日数量比例封顶 100%，超额只进入累计量。
-- [ ] 卡片背景时间进度、圆环完成率、中心 streak 和剩余天数分别正确。
+- [x] absent past day 动态 missed，数据库不产生空 CheckIn。
+- [x] 今天 absent/partial 在午夜前不提前打断 streak。
+- [x] done-skipped-done 的 streak 为 2。
+- [x] partial 在结算后打断 streak。
+- [x] 7/30/all rate、最长 streak、累计量和日均量正确。
+- [x] 每日数量比例封顶 100%，超额只进入累计量。
+- [x] 卡片背景与圆环弧度表达完成率、圆环中心表达 current streak，时间进度只以剩余天数文字表达。
 
 ### 11.4 Reminder 与 Notification
 
-- [ ] 默认关闭提醒时不请求权限、不创建 Alarm。
-- [ ] 开启提醒并授权后按当地时间调度。
+- [x] 默认关闭提醒时不请求权限、不创建 Alarm。
+- [x] 开启提醒并授权后按当地时间调度。
 - [ ] 拒绝权限时 Habit 创建成功，UI 显示待授权，授权后 reconcile。
-- [ ] 提醒前 done/skipped 时不通知；partial 时显示剩余数量。
+- [x] 提醒前 done/skipped 时不通知；partial 时显示剩余数量。
 - [ ] 设备当天晚些时候恢复且未达标时补发；跨日后不补发旧 occurrence。
 - [ ] 进程重启、重复恢复和时区切换不重复通知。
 - [ ] Binary 通知 action 直接 done。
@@ -536,28 +562,34 @@ V1 新增轻量独立实体：
 
 ### 11.5 外观和页面
 
-- [ ] 日程页更多菜单进入 Habit，不改变四项底部导航。
-- [ ] 未完成、skipped、done 分组顺序正确并平滑移动。
-- [ ] Emoji 标题原样显示。
-- [ ] 修改预设进度色立即生效并在重启后保留。
-- [ ] 未知颜色 token 回退默认值。
-- [ ] loading、empty、error、retry、permission denied 和 deleted deep link 页面正确。
-- [ ] 200% 文字缩放、小屏和 TalkBack 下仍可完成核心操作。
+- [x] 日程页更多菜单进入 Habit，不改变四项底部导航。
+- [x] 未完成、skipped、done 分组顺序正确并平滑移动，101+ 条目可按 cursor 继续加载。
+- [x] Emoji 标题原样显示。
+- [x] 修改预设进度色立即生效并在重启后保留。
+- [x] 未知颜色 token 回退默认值。
+- [x] loading、empty、error、retry、permission denied 和 deleted deep link 页面正确；occurrence identity 不向普通用户显示。
+- [x] 200% 文字缩放和小屏 Widget 验证无核心操作溢出。
+- [ ] 真实设备 TalkBack 下仍可完成核心操作。
 
 ### 11.6 Storage 与迁移
 
-- [ ] fresh v5 初始化创建精确表和索引。
-- [ ] v4→v5 保留所有 Event/Reminder/Anniversary/Category/Notification 数据。
-- [ ] migration 中断和重复初始化安全恢复。
-- [ ] 同名错误表/索引被 schema checker 拒绝。
-- [ ] 事务失败不留下 Habit、recurrence、template、Reminder 或 CheckIn 半状态。
-- [ ] 旧 runtime 因 v5 guard 拒写，不形成双真相。
+- [x] fresh v5 初始化创建精确表和索引。
+- [x] v4→v5 保留所有 Event/Reminder/Anniversary/Category/Notification 数据。
+- [x] migration 中断和重复初始化安全恢复。
+- [x] 同名错误表/索引被 schema checker 拒绝。
+- [x] 事务失败不留下 Habit、recurrence、template、Reminder 或 CheckIn 半状态。
+- [x] 旧 runtime 因 v5 guard 拒写，不形成双真相。
 
 ## 12. 必须执行的验证命令
 
 ### Contract
 
-- 仓库现有 Contract validator 和全部 Habit/Reminder/identity fixtures。
+```powershell
+python contracts/run_habit_v1_validation.py
+python contracts/run_anniversary_r1_validation.py
+```
+
+两者必须同时通过，分别覆盖 Habit/Storage v5 active Contract 和既有 Reminder/Anniversary 共享回归。
 
 ### C++
 
@@ -610,6 +642,15 @@ flutter build apk --debug
 11. 跨层回归、文档状态和发布验收。
 
 每个单元必须附带自己的定向测试；最终阶段再执行全量构建和真机矩阵。不得把“Schema 已存在”“页面能展示”或“Mock 通过”分别称为 Habit 闭环完成。
+
+总工程合并采用逐层 gate，不进行四层一次性无验证拼接：
+
+1. Contract revision 作为唯一字段/identity/Storage target 基线；
+2. 合入 C++ 后先跑 migration、Boundary 与 `excellent_calendar_check`；
+3. 再合 Kotlin/JNI，核对 Storage 5 handshake、JNI symbol、scheduler/action 和 APK；
+4. 再合 Flutter，禁止生产 composition 回退 Fake；
+5. 在合并后的同一工作树重跑两套 Contract validator、C++ build-after-test、Kotlin/Flutter 检查、Native smoke 和真机矩阵；
+6. 常规情况下只有全部通过才统一修改 capability 为 `integrated + active`，否则保持 blocked 并记录精确失败层；本轮未执行设备场景已由产品负责人于 2026-08-31 明确接受为 `OPEN-HAB-001` 非阻断发布债，机器状态据此激活。
 
 ## 14. 完成定义
 

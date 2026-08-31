@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_detail_response.schema.json",
+  "title": "HabitDetailResponse",
+  "description": "C++ aggregate containing facts, immutable recurrence, reminder configuration, statistics, today, and descending first-page history. Platform scheduling capability is added only to mutation responses by Kotlin.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["habit", "recurrence", "lifecycle_status", "statistics", "reminder_settings", "today", "history", "history_start_date", "history_end_date", "has_earlier_history", "has_ever_checked_in", "latest_check_in_date", "challenge_time_progress", "remaining_days"],
+  "properties": {
+    "habit": {"$ref": "./habit_response.schema.json"},
+    "recurrence": {"$ref": "./habit_recurrence_response.schema.json"},
+    "lifecycle_status": {"type": "string", "enum": ["upcoming", "active", "completed", "ended_early"]},
+    "statistics": {"$ref": "./habit_statistics_response.schema.json"},
+    "reminder_settings": {"$ref": "./habit_reminder_settings_response.schema.json"},
+    "today": {"oneOf": [{"$ref": "./habit_daily_status_response.schema.json"}, {"type": "null"}], "description": "Null when the current device-local date is outside the challenge interval."},
+    "history": {"type": "array", "maxItems": 120, "items": {"$ref": "./habit_daily_status_response.schema.json"}, "x-order": "date descending"},
+    "history_start_date": {"type": ["string", "null"], "format": "date"},
+    "history_end_date": {"type": ["string", "null"], "format": "date"},
+    "has_earlier_history": {"type": "boolean"},
+    "has_ever_checked_in": {"type": "boolean", "description": "True forever after the first successful CheckIn, including after every CheckIn is cleared; locks target, unit, and start_date."},
+    "latest_check_in_date": {"type": ["string", "null"], "format": "date", "description": "Latest historical logical CheckIn date, including a tombstone, used to constrain end_date editing."},
+    "challenge_time_progress": {"type": "number", "minimum": 0, "maximum": 1},
+    "remaining_days": {"type": "integer", "minimum": 0}
+  },
+  "allOf": [
+    {"if": {"properties": {"lifecycle_status": {"const": "upcoming"}}, "required": ["lifecycle_status"]}, "then": {"properties": {"today": {"type": "null"}}}},
+    {"if": {"properties": {"lifecycle_status": {"const": "active"}}, "required": ["lifecycle_status"]}, "then": {"properties": {"today": {"$ref": "./habit_daily_status_response.schema.json"}}}},
+    {"if": {"properties": {"has_ever_checked_in": {"const": false}}, "required": ["has_ever_checked_in"]}, "then": {"properties": {"latest_check_in_date": {"type": "null"}}}},
+    {"if": {"properties": {"has_ever_checked_in": {"const": true}}, "required": ["has_ever_checked_in"]}, "then": {"properties": {"latest_check_in_date": {"type": "string", "format": "date"}}}},
+    {"if": {"properties": {"history": {"maxItems": 0}}, "required": ["history"]}, "then": {"properties": {"history_start_date": {"type": "null"}, "history_end_date": {"type": "null"}, "has_earlier_history": {"const": false}}}},
+    {"if": {"properties": {"history": {"minItems": 1}}, "required": ["history"]}, "then": {"properties": {"history_start_date": {"type": "string", "format": "date"}, "history_end_date": {"type": "string", "format": "date"}}}}
+  ]
+}

@@ -14,13 +14,14 @@
 #include "excellent_calendar/domain/reminder.hpp"
 #include "excellent_calendar/repository/anniversary_transaction.hpp"
 #include "excellent_calendar/repository/category_repository.hpp"
+#include "excellent_calendar/repository/habit_transaction.hpp"
 #include "excellent_calendar/repository/recurring_event_transaction.hpp"
 
 struct sqlite3;
 
 namespace excellent_calendar::storage::sqlite {
 
-inline constexpr int kCalendarCoreSqliteStorageVersion = 4;
+inline constexpr int kCalendarCoreSqliteStorageVersion = 5;
 inline constexpr const char* kCalendarCoreSqliteFileName =
     "calendar_core.sqlite3";
 
@@ -54,6 +55,7 @@ class SqliteCalendarDatabase final {
   common::Result<repository::AnniversaryOccurrenceSnapshot>
   load_anniversary_occurrence_snapshot();
   common::Result<repository::CategoryState> load_category_state();
+  common::Result<repository::HabitState> load_habit_state();
 
   common::Result<std::vector<domain::Event>> load_legacy_events();
   common::Result<std::vector<domain::Reminder>> load_legacy_reminders();
@@ -68,6 +70,9 @@ class SqliteCalendarDatabase final {
   common::Result<common::Unit> write_category_changes(
       const repository::CategoryState& before,
       const repository::CategoryState& after);
+  common::Result<common::Unit> write_habit_changes(
+      const repository::HabitState& before,
+      const repository::HabitState& after);
   common::Result<common::Unit> write_legacy_events(
       const std::vector<domain::Event>& events);
   common::Result<common::Unit> write_legacy_reminders(
@@ -87,10 +92,15 @@ class SqliteCalendarDatabase final {
 
   common::Result<common::Unit> configure_connection(bool enable_wal);
   common::Result<common::Unit> create_schema();
+  common::Result<common::Unit> upgrade_v4_to_v5(
+      bool fresh_database,
+      const MigrationFailureHook& migration_failure_hook);
+  common::Result<common::Unit> validate_v4_locked();
   common::Result<common::Unit> validate_locked();
   common::Result<repository::RecurringEventState> load_recurring_state_locked();
   common::Result<repository::AnniversaryState> load_anniversary_state_locked();
   common::Result<repository::CategoryState> load_category_state_locked();
+  common::Result<repository::HabitState> load_habit_state_locked();
   common::Result<std::vector<domain::Event>> load_legacy_events_locked();
   common::Result<std::vector<domain::Reminder>> load_legacy_reminders_locked();
   common::Result<std::vector<domain::Notification>>
@@ -104,6 +114,9 @@ class SqliteCalendarDatabase final {
   common::Result<common::Unit> write_category_changes_locked(
       const repository::CategoryState& before,
       const repository::CategoryState& after);
+  common::Result<common::Unit> write_habit_changes_locked(
+      const repository::HabitState& before,
+      const repository::HabitState& after);
   common::Result<common::Unit> write_legacy_events_locked(
       const std::vector<domain::Event>& events);
   common::Result<common::Unit> write_legacy_reminders_locked(

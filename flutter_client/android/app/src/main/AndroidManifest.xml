@@ -38,6 +38,9 @@
         <receiver
             android:name=".android.ring.RingActionReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".android.habit.HabitNotificationActionReceiver"
+            android:exported="false" />
         <service
             android:name=".android.ring.ReminderRingService"
             android:exported="false"

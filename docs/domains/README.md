@@ -15,7 +15,7 @@
 
 ## 当前阶段约定
 
-- 当前唯一正式本地 writer 是 Calendar Core SQLite Storage v4；所有 C++ Repository 共享同一数据库连接和事务，JSON 不再作为可写真相源。
+- 机器 Contract 当前仍把 Calendar Core SQLite Storage v4 标为正式 active writer；Storage v5 与 Habit Store 已在集成候选代码中实现并接入同一数据库事务，但发布状态仍为 planned/blocked。JSON 不再作为可写真相源。
 - JSON v1/v2/v3 只保留为冻结迁移输入：v1 Event/Reminder/Notification 进入隔离兼容表，v2 先完成 journal recovery 与 v2→v3 转换，v3 严格记录再事务导入 SQLite。迁移成功后原集合保留，但根版本改为 `storage_version=4`，阻止旧 JSON App 静默分叉数据。
 - Native Contract v2 是一次协调发布的 breaking change，已于 2026-08-08 作为同一发行版本激活。Dart DTO/Gateway、Kotlin validator/bridge、JNI、Android 调度与 SQLite Storage v4 当前保持同一发行链路。
 - 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
@@ -23,7 +23,7 @@
 - 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
 - `Reminder` 作为独立实体保存，不嵌入 `Event`、`Habit`、`Anniversary`。
 - 一个 `Event`、`Habit` 或 `Anniversary` 可以关联多条 `Reminder`。业务上可以理解为“提醒时间列表”，存储上是多条提醒记录。
-- Event occurrence 状态和滚动 Reminder 使用 Event 闭环。Anniversary V1 使用本文件独立定义的 `AnniversaryRecurrence` 年度规则，不能复用 Event v2 的 revision/UTC 锚点语义；Anniversary Reminder 已接入当前链路，Habit 重复规则仍为计划态。
+- Event occurrence 状态和滚动 Reminder 使用 Event 闭环。Anniversary 使用独立年度规则；Habit V1 使用独立的 date-only `HabitRecurrence`、每日 Reminder occurrence 和通知 action identity。Habit Contract、C++/SQLite v5、Kotlin/JNI、Flutter 和生产 composition 已实现并完成主机集成，本轮 UI/分页反馈已关闭，当前等待真机矩阵与 capability 激活。
 
 ## 时区解析与运行时门禁
 
@@ -46,6 +46,8 @@
 | `EventOccurrenceState` | 保存重复日程某一次 occurrence 的完成、跳过、取消或重开状态 | 稀疏状态记录 | 是 |
 | `Habit` | 保存习惯定义，例如每天阅读、每周运动 | 主业务数据 | 是 |
 | `HabitCheckIn` | 保存习惯每天是否完成、完成次数和打卡时间 | 行为记录 | 是 |
+| `HabitRecurrence` | 保存 Habit V1 独占的每日计划规则 | 规则数据 | 是 |
+| `HabitReminderTemplate` | 保存每个 Habit 最多一个的每日 popup 配置 | 配置数据 | 是 |
 | `Reminder` | 保存未来需要触发的提醒任务 | 调度任务 | 是 |
 | `Notification` | 保存提醒触发后的投递结果 | 投递日志 | 是 |
 | `Category` | 保存分类、颜色和排序 | 配置数据 | 是 |
@@ -78,6 +80,8 @@
 | `EventOccurrenceState` | [event_occurrence_state.md](event_occurrence_state.md) |
 | `Habit` | [habit.md](habit.md) |
 | `HabitCheckIn` | [habit_check_in.md](habit_check_in.md) |
+| `HabitRecurrence` | [habit_recurrence.md](habit_recurrence.md) |
+| `HabitReminderTemplate` | [habit_reminder_template.md](habit_reminder_template.md) |
 | `Reminder` | [reminder.md](reminder.md) |
 | `Category` | [category.md](category.md) |
 | `Recurrence` | [recurrence.md](recurrence.md) |
@@ -108,8 +112,9 @@
 | `(Event.recurrenceId, Event.recurrenceRevision) -> (Recurrence.recurrenceId, Recurrence.revision)` | 循环日程指向当前不可变规则 revision |
 | `EventOccurrenceState.eventId -> Event.id` | 重复日程某一次 occurrence 的状态归属某个 Event |
 | `Habit.categoryId -> Category.id` | 习惯可归属一个分类 |
-| `Habit.recurrenceId -> planned Habit recurrence model` | 非 Event 重复语义尚待独立设计，不指向 Event v2 Recurrence |
+| `Habit.recurrenceId -> HabitRecurrence.id` | 一对一独占的 `daily + interval=1 + follow_device` 规则，不指向 Event Recurrence |
 | `HabitCheckIn.habitId -> Habit.id` | 习惯打卡记录归属某个习惯 |
+| `HabitReminderTemplate.habitId -> Habit.id` | 每个 Habit 最多一个未删除 template；identity-bearing 修改创建新 key |
 | `Anniversary.recurrenceId -> AnniversaryRecurrence.recurrenceId` | 一次性纪念日为空；年度重复纪念日独占引用一条有效的 `yearly + interval=1` 规则 |
 | `Anniversary.categoryId -> Category.id` | 纪念日可归属一个分类 |
 | `Reminder.targetId -> Event/Habit/Anniversary.id` | 提醒可以绑定到不同业务对象；一个业务对象可以有多条提醒 |
@@ -134,7 +139,7 @@
 ## 未来待确认问题
 
 - Event v3 是否需要支持 `interval > 1`、有界 `endAt/count`、Yearly/Custom 或 iCalendar RRULE；这些能力不得静默塞入 v2。
-- Habit 的重复规则仍需独立设计；Anniversary V1 的年度规则和日期锚点已冻结，但 Anniversary Reminder 的 occurrence 身份与生成语义仍需单独设计，不能照搬 Event v2。
+- Habit V1 的 recurrence、CheckIn、Reminder occurrence、同日 reconciliation 和通知 action 已由领域文档与机器 Contract 冻结，并已在 Flutter、Kotlin/JNI、C++ 与 SQLite v5 集成候选中实现；当前仍待设备验证和正式激活。
 - Category 的用户归属范围、名称唯一性、系统默认分类及预设生命周期仍待账号/同步架构确认；当前 Flutter Fake 默认项不构成领域决策。
 - `DatedMessage` 未来是只做本地投送，还是也需要云端运营投放能力。
 - `AIExtraction.extractedData` 未来是否需要拆成强类型表，还是先以 JSON 保存。
@@ -154,10 +159,12 @@
 - 恢复窗口固定为 72 小时、明细全局上限 20 条；更早 occurrence 只计数，不批量生成 Reminder。
 - 严格早于恢复窗口的已物化 open Reminder 进入 `expired`；prepared attempt 由 `planRecovery` 原子接管或废弃，投递 payload 保持冻结。
 - `Habit` 的坚持日期、完成次数、连续天数统计来源于 `HabitCheckIn`，不直接塞进 `Habit` 本体。
+- Habit `missed` 只在查询时派生；`habit.check_in` 是按 `(habitId, checkDate)` 的幂等 set/upsert，clear 后复活同一逻辑 ID。
+- Habit Reminder 使用独立 date-only occurrence identity，只在同一当地日期补发；不进入普通 72 小时恢复摘要。occurrence 虽包含 templateKey，但 `(habitId, occurrenceDate)` 跨 template 最多一次 sent 展示，prepared 在配置切换时保守占用当天展示槽。
 - 新的正式 Category writer 使用 UUIDv4；已激活 Event v2 的 `categoryId` 仍按稳定不透明字符串读取，兼容早期 Flutter 已写入的非 UUID 引用。无法解析到活动 Category 时保留原始 ID，并在聚合投影中返回空分类。
 - Category 创建要求名称与颜色，`description/icon/sortOrder` 可空；列表只返回活动记录并使用 `sortOrder(null last) -> createdAt -> id` 的稳定顺序。
-- Category JSON Storage v2 已冻结为独立 `categories.json` 与严格 `CategoryStorageRecord`，当前代码状态为 `implemented_unintegrated`、发布状态为 `blocked`；没有历史正式 Store 或 Fake migration，已有磁盘实现不能在门禁完成前被视为正式产品闭环。
-- 当前阶段先不上 SQL，优先保证项目整体可运行。
+- Category 已随 Calendar Core 迁入 SQLite Storage v4 的独立 `categories` 表，生产入口与机器 Contract 为 `integrated + active`；历史 JSON v2/v3 仅参与迁移和诊断快照，不再是正式 writer。
+- 当前机器 Contract 的正式持久化状态仍是 SQLite v4；Habit 已通过受控 v4→v5 migration 接入同一 SQLite writer 的集成候选，不存在旁路第二 writer。v5 在状态校准前不得描述为 active。
 - 当前先做好本地能力，AI 和云端同步暂缓，但保留相关接口和数据模型。
 - 旧 `UserData` 草案拆分为 `UserAccount`、`UserProfile`、`UserPreferences` 和 `UserSyncState`；认证安全状态使用独立 Backend-only 模型。
 - 登录标识只允许邮箱；用户名只作为大小写不敏感唯一的公开资料标识。
@@ -180,7 +187,7 @@
 | `object` | AI 结果、同步 payload、用户设置等暂未稳定结构 | 当前可预留，核心本地模型尽量少依赖 |
 | `string[]` / `number[]` | 多选提醒方式、周几重复 | 上 SQL 时可能需要拆表或用 JSON |
 
-需要补充的主要结构是 `HabitCheckIn`。没有它，`Habit` 只能表达“我要养成什么习惯”，无法可靠表达“哪些日期坚持了、坚持了多少天、哪天漏了”。
+Habit V1 所需的 `Habit`、`HabitRecurrence`、`HabitCheckIn` 与 `HabitReminderTemplate` 语义及三语言/SQLite v5 生产实现已经落地；本轮黑盒 UI/分页反馈已经关闭，当前缺口是真实设备系统行为矩阵和发布状态校准，而不是继续用通用 Recurrence 或页面状态代替领域模型。
 
 ## Reminder 与 Notification 的区别
 

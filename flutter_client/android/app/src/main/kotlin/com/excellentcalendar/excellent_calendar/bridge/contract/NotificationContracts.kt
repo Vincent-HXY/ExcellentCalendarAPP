@@ -248,9 +248,11 @@ object NotificationTapPayloadContract {
                 throw NativeContractViolation("$parent contains an unsupported kind or target_type.", parent)
             }
             val identityIsValid = when (kind) {
-                "reminder" -> map["reminder_id"] is String &&
-                    (targetType != "anniversary" ||
-                        (map["occurrence_key"] is String && map["route"] == "anniversary.detail"))
+                "reminder" -> map["reminder_id"] is String && when (targetType) {
+                    "anniversary" -> map["occurrence_key"] is String && map["route"] == "anniversary.detail"
+                    "habit" -> map["occurrence_key"] is String && map["route"] == "habit.detail" && map["recovery_batch_id"] == null
+                    else -> true
+                }
                 "recovery_summary" -> map["reminder_id"] == null && map["recovery_batch_id"] is String &&
                     targetType == "reminder_recovery_batch" && map["occurrence_key"] == null
                 "anniversary_catch_up" -> map["reminder_id"] == null && map["recovery_batch_id"] is String &&

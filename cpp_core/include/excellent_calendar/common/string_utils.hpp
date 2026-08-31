@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -13,5 +14,8 @@ std::string lowercase_ascii(std::string_view value);
 
 /** ASCII 范围内的大小写不敏感包含判断，用于当前简单搜索。 */
 bool contains_case_insensitive_ascii(std::string_view text, std::string_view keyword);
+
+/** 精确格式化百分位整数；移除无意义的末尾 0，且不经过浮点数。 */
+std::string format_hundredths(std::int64_t value);
 
 }  // namespace excellent_calendar::common

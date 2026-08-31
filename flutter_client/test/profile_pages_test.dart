@@ -140,6 +140,29 @@ void main() {
       await tester.pump();
       expect(find.text('Calendar User'), findsOneWidget);
     });
+
+    testWidgets(
+      'local appearance remains reachable when remote profile fails',
+      (tester) async {
+        var opened = false;
+        userGateway.onGetCurrentUser = () =>
+            throw const BackendTransportException(BackendTransportKind.network);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ProfilePage(
+              authService: authService,
+              session: session,
+              navigator: navigator,
+              onOpenAppearance: () => opened = true,
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+        await tester.tap(find.text('外观设置（保存在本机）'));
+        expect(opened, isTrue);
+      },
+    );
   });
 
   group('EditProfilePage', () {

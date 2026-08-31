@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_notification_action_payload.schema.json",
+  "title": "HabitNotificationActionPayload",
+  "description": "Immutable C++-generated Android notification action. action_id is deterministic; the Receiver echoes it to habit.check_in without starting Flutter. Acceptance requires the same active Habit/date/occurrence identity and the same current local date.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action_id", "action_type", "habit_id", "check_date", "occurrence_key", "reminder_id", "delivery_id"],
+  "properties": {
+    "action_id": {"type": "string", "format": "uuid"},
+    "action_type": {"const": "complete"},
+    "habit_id": {"type": "string", "format": "uuid"},
+    "check_date": {"type": "string", "format": "date"},
+    "occurrence_key": {"type": "string", "format": "uuid"},
+    "reminder_id": {"type": "string", "format": "uuid"},
+    "delivery_id": {"type": "string", "format": "uuid"}
+  }
+}

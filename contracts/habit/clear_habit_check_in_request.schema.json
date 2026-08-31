@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/clear_habit_check_in_request.schema.json",
+  "title": "ClearHabitCheckInRequest",
+  "description": "Idempotently clears the active logical row for one valid past-or-today date. Recreate restores the same logical row and ID. A sent or prepared display reservation is never shown again for the same (habit_id, check_date), including across template changes.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["habit_id", "check_date", "timezone"],
+  "properties": {
+    "habit_id": {"type": "string", "format": "uuid"},
+    "check_date": {"type": "string", "format": "date"},
+    "timezone": {"type": "string", "minLength": 1, "x-format": "iana-timezone"}
+  }
+}

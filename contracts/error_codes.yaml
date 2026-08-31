@@ -160,16 +160,176 @@ errors:
     module: habit
     message: "Habit title cannot be empty"
     retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
 
   HABIT_NOT_FOUND:
     module: habit
     message: "Habit not found"
     retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
 
-  HABIT_CHECK_IN_DUPLICATED:
+  HABIT_TARGET_DELETED:
     module: habit
-    message: "Habit check-in already exists for this date"
+    message: "Habit target is deleted"
     retryable: false
+    boundaries: [native, notification_tap, notification_action]
+    data_saved_allowed: false
+
+  HABIT_UPDATE_CONFLICT:
+    module: habit
+    message: "Habit changed after the caller loaded it"
+    retryable: false
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  HABIT_DATE_RANGE_INVALID:
+    module: habit
+    message: "Habit challenge dates or requested end date are invalid"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_CHALLENGE_TOO_LONG:
+    module: habit
+    message: "Habit challenge exceeds 400 inclusive natural days"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_TARGET_INVALID:
+    module: habit
+    message: "Habit target count and unit are invalid"
+    retryable: false
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  HABIT_TARGET_LOCKED:
+    module: habit
+    message: "Habit target and unit are locked after the first check-in"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_START_DATE_LOCKED:
+    module: habit
+    message: "Habit start date is locked after the first check-in"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_ALREADY_ENDED:
+    module: habit
+    message: "Habit is ended and its history is read-only"
+    retryable: false
+    boundaries: [native, domain, notification_action]
+    data_saved_allowed: false
+
+  HABIT_NOT_STARTED:
+    module: habit
+    message: "Habit cannot be ended before its first challenge date"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_END_NOT_EARLY:
+    module: habit
+    message: "Habit cannot be ended early on its natural final challenge date"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_CHECK_IN_DATE_OUT_OF_RANGE:
+    module: habit
+    message: "Habit check-in date is outside the effective challenge interval"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_CHECK_IN_FUTURE_DATE:
+    module: habit
+    message: "Habit check-in date is in the future for the current device timezone"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_CHECK_IN_NOT_FOUND:
+    module: habit
+    message: "Habit check-in does not exist"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_DAILY_STATUS_RANGE_INVALID:
+    module: habit
+    message: "Habit daily-status range is empty, reversed, or outside the challenge"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_DAILY_STATUS_RANGE_TOO_LARGE:
+    module: habit
+    message: "Habit daily-status range exceeds 400 natural days"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_REMINDER_CONFIG_INVALID:
+    module: habit
+    message: "Habit reminder configuration is invalid"
+    retryable: false
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  HABIT_NOTIFICATION_ACTION_EXPIRED:
+    module: habit
+    message: "Habit notification action is outside its local occurrence date"
+    retryable: false
+    boundaries: [native, domain, notification_action]
+    data_saved_allowed: false
+
+  HABIT_NOTIFICATION_ACTION_IDENTITY_MISMATCH:
+    module: habit
+    message: "Habit notification action identity does not match the active occurrence"
+    retryable: false
+    boundaries: [native, domain, notification_action]
+    data_saved_allowed: false
+
+  HABIT_RECONCILIATION_CURSOR_INVALID:
+    module: habit
+    message: "Habit reminder reconciliation cursor is invalid or stale"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  HABIT_RECONCILIATION_CONFLICT:
+    module: habit
+    message: "Habit reminder reconciliation conflicted with a concurrent mutation"
+    retryable: true
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  HABIT_STATISTICS_OVERFLOW:
+    module: habit
+    message: "Habit quantity statistics exceed the exact cross-language fixed-point range"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  APPEARANCE_COLOR_TOKEN_INVALID:
+    module: appearance
+    message: "Habit progress color token is invalid"
+    retryable: false
+    boundaries: [method_channel, kotlin_local]
+    data_saved_allowed: false
+
+  APPEARANCE_STORAGE_FAILED:
+    module: appearance
+    message: "Local appearance preferences could not be persisted"
+    retryable: true
+    boundaries: [method_channel, kotlin_local]
+    data_saved_allowed: false
 
   CATEGORY_NAME_EMPTY:
     module: category

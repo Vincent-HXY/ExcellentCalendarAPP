@@ -144,9 +144,16 @@
   Desktop 无法启动，56 个 Testcontainers 集成测试**全部跳过**——数据库行为与真实 SMTP 投递
   均未在本轮验证（未用真实邮箱账号实测投递，见"未验证"清单）。
 
+## 2026-08-27 开发联调补充
+
+- Cloud Backend `.\mvnw.cmd verify` 再次通过：91 个 JVM/上下文测试、58 个 PostgreSQL 集成测试；
+- Docker API 健康状态为 `UP`，开发环境 SMTP 日志确认向真实邮箱投递注册验证码；
+- Flutter 使用局域网 Backend 完成注册、过期 Challenge 自动换发与重发联调，Debug APK 构建安装成功；
+- 尚未验证正式生产部署、生产 SMTP 运维、JWT 密钥轮换和多实例限流；机器 `contracts/backend_api.yaml` 仍为 `planned`，上述结果只说明实现和开发联调通过。
+
 ## 当前不实现
 
-- `auth.registration.email.update`（Contract 未声明，经用户确认推迟，见 ADR-0004 §1）；
+- `auth.registration.email.update`（Contract 为 `planned`，当前实现未接入，经用户确认推迟）；
 - 任何同步公开 API、冲突策略或 change feed；
 - 日历业务表和服务端重复规则实现；
 - Outbox Publisher、MQ Consumer、提醒扫描和渠道投递；

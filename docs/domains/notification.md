@@ -33,7 +33,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | `status` | `NotificationStatus` | 是 | 通知状态 |
 | `failureClass` | `NotificationFailureClass` | 否 | 失败是否可重试；非失败状态为空 |
 | `errorCode` | `string` | 否 | 失败的稳定 Contract 错误码；非失败状态为空 |
-| `abandonReason` | `DeliveryAbandonReason` | 否 | `abandoned` 时说明由窗口过期或恢复摘要替代；其他状态为空 |
+| `abandonReason` | `DeliveryAbandonReason` | 否 | `abandoned` 时说明普通 Recovery 或 Habit 专属终结原因；其他状态为空 |
 | `createdAt` | `datetime` | 是 | 创建时间 |
 | `updatedAt` | `datetime` | 是 | 更新时间 |
 
@@ -44,6 +44,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 - 同一 `deliveryId` 同时最多一个 `prepared` attempt，历史上最多一个 `sent` attempt。相同 attempt 的相同 finalize 幂等返回，冲突 finalize 返回 `DELIVERY_ATTEMPT_INVALID`。
 - `prepared` attempt 的 Notification 内容、delivery identity 和 PendingIntent payload 一经返回即冻结。Recovery detail 接管时只写 `resolvedByRecoveryBatchId` 并复用原 attempt；不得改写原 `recoveryBatchId` 或展示 payload。
 - Recovery 把既有 attempt 归入摘要或窗口外时，必须在同一事务写为 `abandoned`、记录 `abandonReason/resolvedByRecoveryBatchId/finalizedAt`。Kotlin 取消旧 `deliveryId` 的 Android notification tag，且旧 attempt 的任何 finalize 都返回 `DELIVERY_ATTEMPT_INVALID` 而不修改状态。
+- Habit prepared attempt 在未真实展示前跨日或被业务取消时，也必须由 Habit reconciliation/workflow 原子写为 `abandoned`；原因分别是 `habit_occurrence_elapsed` / `habit_reminder_cancelled`，且 `recoveryBatchId/resolvedByRecoveryBatchId` 都为空。
 - `deliveryId` 按 `contracts/identity.yaml` 使用 UUIDv5；`notificationId` 与新建的 `deliveryAttemptId` 由 C++ 使用 UUIDv4 生成，幂等复用 prepared attempt 时必须返回原值。
 - `sent` 要求 `finalizedAt/sentAt` 非空且失败字段为空；`failed` 要求 `finalizedAt/failureClass/errorCode` 非空且 `sentAt` 为空。
 - 普通 Reminder 的单一渠道 attempt 成功后 Reminder 进入 `sent`；可重试失败使 Reminder 保持 `pending`，永久失败使 Reminder 进入 `failed`。重复 Reminder 仅允许 popup，因此 successor 生成没有多渠道歧义。
@@ -54,6 +55,9 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 - Anniversary catch-up 的 `deliveryId` 由 target、occurrence、冻结且排序后的 covered IDs 和 `popup` 计算。prepare 后 membership、title/body、tap payload 和 attempt identity 全部冻结；后来到期的 Reminder 必须进入另一个合法 recovery 计划，不能加入既有 attempt。
 - finalize `sent` 在同一 logical commit 中把唯一 Notification 标为 sent、全部 covered Reminder 标为 sent 并写入同一 `fulfillmentDeliveryId`、分别创建年度 successor、更新 RecoveryBatch。retryable 失败保留全部成员为 pending；permanent/expired 分别终结成员并滚动年度 successor。
 - Anniversary 正常与聚合 tap payload 都携带真实 `targetId + occurrenceKey` 并路由 Anniversary detail。目标已软删除时消费者得到稳定 `ANNIVERSARY_TARGET_DELETED`；通知内容和 payload 不包含 note。
+- Habit 单条 popup 的 Notification 必须携带非空 occurrenceKey、`habit.detail` route，以及 C++ 生成的 `HabitNotificationActionPayload`。action 包含 `actionId/habitId/checkDate/occurrenceKey/reminderId/deliveryId`，不包含任意 `completedCountHundredths`；C++ 根据当前 Habit 类型执行 set-to-done。
+- Habit action 在 Flutter Engine 未启动时由 Kotlin Receiver → JNI → C++ 执行。相同 action 重放返回同一最终 CheckIn；跨日、错误 tuple、已结束或已删除目标严格失败且零写入。
+- 同一 Habit occurrence 最多一个 sent delivery。done/skipped 后 clear 不允许重新展示已 sent 的 occurrence；未 sent 的确定性 Reminder 才可恢复或进入同日补发。
 
 ## 枚举定义
 
@@ -76,7 +80,7 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | `prepared` | 已由 C++ 创建投递 attempt，等待 Kotlin 调用系统投递 |
 | `sent` | 已投递 |
 | `failed` | 本次 attempt 已失败；是否重试由 `failureClass` 决定 |
-| `abandoned` | Recovery 已原子废弃该 attempt；Android 必须取消旧 delivery tag，旧 attempt 不再允许 finalize |
+| `abandoned` | Recovery 或 Habit 专属 workflow 已原子废弃该 attempt；Android 必须取消旧 delivery tag，旧 attempt 不再允许 finalize |
 
 ### NotificationKind
 
@@ -99,4 +103,6 @@ Notification 是某个逻辑 delivery 的一次实际 attempt 记录。它采用
 | --- | --- |
 | `recovery_window_elapsed` | attempt 对应 Reminder 已严格落到 72 小时窗口外并进入 `expired` |
 | `recovery_summary_superseded` | attempt 对应 Reminder 改由当前恢复摘要覆盖 |
+| `habit_occurrence_elapsed` | Habit attempt 未展示且已跨过当地 occurrence 日期；不创建 RecoveryBatch |
+| `habit_reminder_cancelled` | Habit attempt 展示前因 done/skipped、提前结束、删除、禁用或模板替换而终结 |
 

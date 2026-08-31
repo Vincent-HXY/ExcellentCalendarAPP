@@ -55,7 +55,9 @@ picojson::value prepared_tap_payload(const domain::Notification& notification) {
   object["occurrence_key"] = optional_string(notification.occurrence_key);
   object["route"] = notification.target_type == "anniversary"
                         ? picojson::value("anniversary.detail")
-                        : picojson::value();
+                        : notification.target_type == "habit"
+                              ? picojson::value("habit.detail")
+                              : picojson::value();
   return picojson::value(std::move(object));
 }
 
@@ -308,6 +310,20 @@ picojson::value prepare_delivery_response_v2_to_json(
   object["notification"] = notification_response_v2_to_json(result.notification);
   object["tap_payload"] = prepared_tap_payload(result.notification);
   object["idempotent_replay"] = picojson::value(result.idempotent_replay);
+  if (result.habit_action_payload.has_value()) {
+    const auto& value = *result.habit_action_payload;
+    picojson::object action;
+    action["action_id"] = picojson::value(value.action_id);
+    action["action_type"] = picojson::value(value.action_type);
+    action["habit_id"] = picojson::value(value.habit_id);
+    action["check_date"] = picojson::value(value.check_date);
+    action["occurrence_key"] = picojson::value(value.occurrence_key);
+    action["reminder_id"] = picojson::value(value.reminder_id);
+    action["delivery_id"] = picojson::value(value.delivery_id);
+    object["habit_action_payload"] = picojson::value(std::move(action));
+  } else {
+    object["habit_action_payload"] = picojson::value();
+  }
   return picojson::value(std::move(object));
 }
 

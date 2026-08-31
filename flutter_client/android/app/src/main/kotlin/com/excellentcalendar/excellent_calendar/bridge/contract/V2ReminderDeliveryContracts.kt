@@ -56,6 +56,7 @@ data class V2PreparedDelivery(
     val notification: Map<String, Any?>,
     val tapPayload: Map<String, Any?>,
     val idempotentReplay: Boolean,
+    val habitActionPayload: Map<String, Any?>? = null,
 ) {
     val deliveryId: String get() = requiredString(notification, "delivery_id", "NotificationResponse")
     val attemptId: String get() = requiredString(notification, "delivery_attempt_id", "NotificationResponse")
@@ -71,15 +72,29 @@ data class V2PreparedDelivery(
     companion object {
         fun fromData(data: Any?): V2PreparedDelivery {
             val map = objectMap(data, "PrepareDeliveryResponse")
-            requireExactFields(map, setOf("notification", "tap_payload", "idempotent_replay"), "PrepareDeliveryResponse")
+            ContractValidators.rejectUnknownFields(map, setOf("notification", "tap_payload", "habit_action_payload", "idempotent_replay"), "PrepareDeliveryResponse")
+            V2ContractPrimitives.requireFields(map, setOf("notification", "tap_payload", "idempotent_replay"), "PrepareDeliveryResponse")
             val notification = notificationMap(map["notification"])
             val payload = preparedPayloadMap(map["tap_payload"])
+            val actionPayload = map["habit_action_payload"]?.let(HabitContracts::actionPayload)
             val replay = map["idempotent_replay"] as? Boolean
                 ?: throw NativeContractViolation("idempotent_replay must be boolean.", "data.idempotent_replay")
             if (payload["delivery_id"] != notification["delivery_id"] || payload["delivery_attempt_id"] != notification["delivery_attempt_id"]) {
                 throw NativeContractViolation("Prepared payload identity does not match Notification.", "data.tap_payload.delivery_id")
             }
-            return V2PreparedDelivery(notification, payload, replay)
+            val isHabit = notification["target_type"] == "habit"
+            if (isHabit != (actionPayload != null)) {
+                throw NativeContractViolation("Habit delivery action payload is inconsistent.", "data.habit_action_payload")
+            }
+            if (actionPayload != null &&
+                (actionPayload["delivery_id"] != notification["delivery_id"] ||
+                    actionPayload["reminder_id"] != notification["reminder_id"] ||
+                    actionPayload["occurrence_key"] != notification["occurrence_key"] ||
+                    actionPayload["habit_id"] != notification["target_id"])
+            ) {
+                throw NativeContractViolation("Habit action identity does not match Notification.", "data.habit_action_payload")
+            }
+            return V2PreparedDelivery(notification, payload, replay, actionPayload)
         }
     }
 }
@@ -259,6 +274,12 @@ private fun notificationMap(value: Any?): Map<String, Any?> {
     if (kind == "reminder" && map["target_type"] == "anniversary" && map["occurrence_key"] !is String) {
         throw NativeContractViolation("Anniversary reminder occurrence_key is required.", "NotificationResponse.occurrence_key")
     }
+    if (kind == "reminder" && map["target_type"] == "habit" &&
+        (map["occurrence_key"] !is String || map["method"] != "popup" ||
+            map["recovery_batch_id"] != null || map["resolved_by_recovery_batch_id"] != null)
+    ) {
+        throw NativeContractViolation("Habit reminder Notification identity is invalid.", "NotificationResponse.target_type")
+    }
     if (!identityIsValid) {
         throw NativeContractViolation("Notification kind identity is invalid.", "NotificationResponse.kind")
     }
@@ -346,9 +367,11 @@ private fun preparedPayloadMap(value: Any?): Map<String, Any?> {
         throw NativeContractViolation("Prepared payload enum value is invalid.", "PreparedNotificationPayload")
     }
     val identityIsValid = when (kind) {
-        "reminder" -> map["reminder_id"] is String &&
-            (map["target_type"] != "anniversary" ||
-                (map["occurrence_key"] is String && map["route"] == "anniversary.detail"))
+        "reminder" -> map["reminder_id"] is String && when (map["target_type"]) {
+            "anniversary" -> map["occurrence_key"] is String && map["route"] == "anniversary.detail"
+            "habit" -> map["occurrence_key"] is String && map["route"] == "habit.detail" && map["recovery_batch_id"] == null
+            else -> true
+        }
         "recovery_summary" -> map["reminder_id"] == null && map["recovery_batch_id"] is String
         "anniversary_catch_up" -> map["reminder_id"] == null && map["recovery_batch_id"] is String &&
             map["target_type"] == "anniversary" && map["occurrence_key"] is String && map["route"] == "anniversary.detail"
@@ -370,7 +393,14 @@ private fun validateNotificationStatus(map: Map<String, Any?>, status: String) {
         "prepared" -> failureClass == null && errorCode == null && abandonReason == null && finalizedAt == null && sentAt == null
         "sent" -> failureClass == null && errorCode == null && abandonReason == null && finalizedAt is String && sentAt is String
         "failed" -> failureClass in setOf("retryable", "permanent") && errorCode is String && errorCode.isNotBlank() && abandonReason == null && finalizedAt is String && sentAt == null
-        "abandoned" -> map["resolved_by_recovery_batch_id"] is String && failureClass == null && errorCode == null && abandonReason in setOf("recovery_window_elapsed", "recovery_summary_superseded") && finalizedAt is String && sentAt == null
+        "abandoned" -> failureClass == null && errorCode == null && finalizedAt is String && sentAt == null &&
+            if (map["target_type"] == "habit") {
+                map["resolved_by_recovery_batch_id"] == null && map["recovery_batch_id"] == null &&
+                    abandonReason in setOf("habit_occurrence_elapsed", "habit_reminder_cancelled")
+            } else {
+                map["resolved_by_recovery_batch_id"] is String &&
+                    abandonReason in setOf("recovery_window_elapsed", "recovery_summary_superseded")
+            }
         else -> false
     }
     if (!valid) throw NativeContractViolation("Notification status fields are inconsistent.", "NotificationResponse.status")

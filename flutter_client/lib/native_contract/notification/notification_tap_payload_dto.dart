@@ -107,9 +107,12 @@ class NotificationTapPayloadDto {
           'Anniversary reminder taps require occurrence_key and anniversary.detail route.',
         );
       }
-      if (targetType == NotificationTargetType.habit && occurrenceKey != null) {
+      if (targetType == NotificationTargetType.habit &&
+          (occurrenceKey == null ||
+              route != 'habit.detail' ||
+              recoveryBatchId != null)) {
         throw const FormatException(
-          'Habit reminder taps cannot contain occurrence_key.',
+          'Habit reminder taps require occurrence_key and habit.detail route.',
         );
       }
     } else if (kind == NotificationKind.recoverySummary &&

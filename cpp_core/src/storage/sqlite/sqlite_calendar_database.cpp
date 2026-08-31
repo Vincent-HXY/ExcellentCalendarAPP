@@ -32,6 +32,8 @@
 #include "excellent_calendar/storage/json/atomic_json_file_store.hpp"
 #include "excellent_calendar/storage/json/calendar_core_v3_storage_bootstrap.hpp"
 #include "excellent_calendar/storage/json/category_json_codec.hpp"
+#include "excellent_calendar/storage/json/habit_json_codec.hpp"
+#include "excellent_calendar/storage/json/habit_state_validator.hpp"
 #include "excellent_calendar/storage/json/json_category_repository.hpp"
 #include "excellent_calendar/storage/json/json_event_reminder_transaction.hpp"
 #include "excellent_calendar/storage/json/json_event_repository.hpp"
@@ -41,6 +43,7 @@
 #include "excellent_calendar/storage/json/json_reminder_repository.hpp"
 #include "excellent_calendar/storage/json/legacy_json_codec.hpp"
 #include "excellent_calendar/storage/json/recurring_event_json_codec.hpp"
+#include "excellent_calendar/common/clock.hpp"
 
 namespace excellent_calendar::storage::sqlite {
 namespace {
@@ -64,7 +67,7 @@ struct StoreSpec {
   int payload_version = 3;
 };
 
-constexpr std::array<StoreSpec, 10> kStoreSpecs{{
+constexpr std::array<StoreSpec, 10> kV4StoreSpecs{{
     {"events", "events.json", "events", "events"},
     {"recurrence_versions", "recurrence_versions.json", "recurrence_versions",
      "recurrence_versions"},
@@ -82,6 +85,16 @@ constexpr std::array<StoreSpec, 10> kStoreSpecs{{
     {"categories", "categories.json", "categories", "categories"},
 }};
 
+constexpr std::array<StoreSpec, 4> kHabitStoreSpecs{{
+    {"habit_recurrences", "habit_recurrences.json", "habit_recurrences",
+     "habit_recurrences", 1},
+    {"habits", "habits.json", "habits", "habits", 1},
+    {"habit_check_ins", "habit_check_ins.json", "habit_check_ins",
+     "habit_check_ins", 1},
+    {"habit_reminder_templates", "habit_reminder_templates.json",
+     "habit_reminder_templates", "habit_reminder_templates", 1},
+}};
+
 constexpr std::array<StoreSpec, 3> kLegacyStoreSpecs{{
     {"legacy_events", "events.json", "legacy_events", "events", 1},
     {"legacy_reminders", "reminders.json", "legacy_reminders", "reminders", 1},
@@ -89,7 +102,7 @@ constexpr std::array<StoreSpec, 3> kLegacyStoreSpecs{{
      "notifications", 1},
 }};
 
-constexpr std::array<const char*, 16> kRequiredTables{{
+constexpr std::array<const char*, 16> kV4RequiredTables{{
     "schema_metadata",
     "store_generations",
     "migration_history",
@@ -108,12 +121,17 @@ constexpr std::array<const char*, 16> kRequiredTables{{
     "legacy_notifications",
 }};
 
+constexpr std::array<const char*, 4> kHabitRequiredTables{{
+    "habit_recurrences", "habits", "habit_check_ins",
+    "habit_reminder_templates",
+}};
+
 struct NamedSchema {
   const char* name;
   const char* sql;
 };
 
-constexpr std::array<NamedSchema, 16> kRequiredIndexes{{
+constexpr std::array<NamedSchema, 16> kV4RequiredIndexes{{
     {"ux_recurrence_identity",
      "CREATE UNIQUE INDEX ux_recurrence_identity ON recurrence_versions("
      "json_extract(payload_json,'$.recurrence_id'),"
@@ -194,6 +212,48 @@ constexpr std::array<NamedSchema, 16> kRequiredIndexes{{
      "position)"},
 }};
 
+constexpr std::array<NamedSchema, 8> kHabitRequiredIndexes{{
+    {"ux_habit_recurrence_owner",
+     "CREATE UNIQUE INDEX ux_habit_recurrence_owner ON habits("
+     "json_extract(payload_json,'$.recurrence_id'))"},
+    {"ux_habit_check_in_identity",
+     "CREATE UNIQUE INDEX ux_habit_check_in_identity ON habit_check_ins("
+     "json_extract(payload_json,'$.habit_id'),"
+     "json_extract(payload_json,'$.check_date'))"},
+    {"ux_habit_active_template",
+     "CREATE UNIQUE INDEX ux_habit_active_template ON habit_reminder_templates("
+     "json_extract(payload_json,'$.habit_id')) WHERE "
+     "json_extract(payload_json,'$.deleted_at') IS NULL"},
+    {"ux_habit_reminder_identity",
+     "CREATE UNIQUE INDEX ux_habit_reminder_identity ON reminders("
+     "json_extract(payload_json,'$.target_id'),"
+     "json_extract(payload_json,'$.template_key'),"
+     "json_extract(payload_json,'$.occurrence_date')) WHERE "
+     "json_extract(payload_json,'$.target_type')='habit'"},
+    {"ux_habit_sent_display_per_day",
+     "CREATE UNIQUE INDEX ux_habit_sent_display_per_day ON reminders("
+     "json_extract(payload_json,'$.target_id'),"
+     "json_extract(payload_json,'$.occurrence_date')) WHERE "
+     "json_extract(payload_json,'$.target_type')='habit' AND "
+     "json_extract(payload_json,'$.status')='sent'"},
+    {"ix_habits_lifecycle",
+     "CREATE INDEX ix_habits_lifecycle ON habits("
+     "json_extract(payload_json,'$.deleted_at'),"
+     "CAST(json_extract(payload_json,'$.is_active') AS INTEGER),"
+     "json_extract(payload_json,'$.start_date'),"
+     "json_extract(payload_json,'$.end_date'),"
+     "json_extract(payload_json,'$.ended_date'),record_key)"},
+    {"ix_habit_check_ins_range",
+     "CREATE INDEX ix_habit_check_ins_range ON habit_check_ins("
+     "json_extract(payload_json,'$.habit_id'),"
+     "json_extract(payload_json,'$.check_date'),"
+     "json_extract(payload_json,'$.deleted_at'),record_key)"},
+    {"ix_habit_templates_by_habit",
+     "CREATE INDEX ix_habit_templates_by_habit ON habit_reminder_templates("
+     "json_extract(payload_json,'$.habit_id'),"
+     "json_extract(payload_json,'$.deleted_at'),record_key)"},
+}};
+
 struct JsonGuardSpec {
   const char* file_name;
   const char* collection_field;
@@ -249,7 +309,10 @@ constexpr std::array<const char*, 4> kAnniversaryStoreFiles{{
 }};
 
 const StoreSpec* find_store(std::string_view file_name) {
-  for (const auto& spec : kStoreSpecs) {
+  for (const auto& spec : kV4StoreSpecs) {
+    if (file_name == spec.file_name) return &spec;
+  }
+  for (const auto& spec : kHabitStoreSpecs) {
     if (file_name == spec.file_name) return &spec;
   }
   return nullptr;
@@ -642,6 +705,15 @@ common::Result<std::string> record_key(const StoreSpec& spec,
       "anniversary_reminder_templates.json") {
     return required_string(object, "template_key", spec.logical_name);
   }
+  if (std::string_view(spec.file_name) == "habit_recurrences.json" ||
+      std::string_view(spec.file_name) == "habits.json" ||
+      std::string_view(spec.file_name) == "habit_check_ins.json") {
+    return required_string(object, "id", spec.logical_name);
+  }
+  if (std::string_view(spec.file_name) ==
+      "habit_reminder_templates.json") {
+    return required_string(object, "template_key", spec.logical_name);
+  }
   if (std::string_view(spec.file_name) == "reminders.json") {
     return required_string(object, "reminder_id", spec.logical_name);
   }
@@ -860,7 +932,7 @@ common::Result<bool> has_legacy_v1_source(
   }
   bool has_v1 = false;
   bool has_modern = false;
-  for (const auto& spec : kStoreSpecs) {
+  for (const auto& spec : kV4StoreSpecs) {
     auto root = store.read_json_file(spec.file_name);
     if (!root.ok()) return common::Result<bool>::failure(root.error());
     if (!root.value().has_value()) continue;
@@ -992,8 +1064,10 @@ common::Result<picojson::value> guarded_json_root(
           picojson::value(picojson::array{});
     }
   }
-  guarded.get<picojson::object>()["storage_version"] = picojson::value(
-      static_cast<double>(kCalendarCoreSqliteStorageVersion));
+  // The cutover journal and JSON writer guards belong to the frozen v4
+  // JSON-to-SQLite publication protocol.  The in-place v4-to-v5 migration must
+  // not rewrite those compatibility roots.
+  guarded.get<picojson::object>()["storage_version"] = picojson::value(4.0);
   return common::Result<picojson::value>::success(std::move(guarded));
 }
 
@@ -1007,8 +1081,7 @@ picojson::value encode_cutover_journal(const CutoverJournal& journal) {
             : picojson::value();
   }
   picojson::object root;
-  root["storage_version"] = picojson::value(
-      static_cast<double>(kCalendarCoreSqliteStorageVersion));
+  root["storage_version"] = picojson::value(4.0);
   root["journal_version"] = picojson::value(1.0);
   root["migration_id"] = picojson::value(kCutoverMigrationId);
   root["state"] = picojson::value(journal.state);
@@ -1221,7 +1294,7 @@ common::Result<MigrationSourceKind> inspect_migration_source(
   bool has_known_source = false;
   bool has_v2 = false;
   bool has_v3 = false;
-  for (const auto& spec : kStoreSpecs) {
+  for (const auto& spec : kV4StoreSpecs) {
     auto root = store.read_json_file(spec.file_name);
     if (!root.ok()) {
       return common::Result<MigrationSourceKind>::failure(root.error());
@@ -1310,7 +1383,7 @@ bool retained_root_is_readable_by_json_writer(const StoreSpec& spec,
 common::Result<common::Unit> install_legacy_json_downgrade_guard(
     const std::filesystem::path& storage_directory, ::sqlite3* database) {
   auto store = cutover_json_store(storage_directory);
-  for (const auto& spec : kStoreSpecs) {
+  for (const auto& spec : kV4StoreSpecs) {
     auto root = store.read_json_file(spec.file_name);
     if (!root.ok()) {
       // A malformed retained root already blocks every supported JSON reader.
@@ -1524,6 +1597,11 @@ SqliteCalendarDatabase::open(
       return common::Result<std::shared_ptr<SqliteCalendarDatabase>>::failure(
           configured.error());
     }
+    auto upgraded = database->upgrade_v4_to_v5(false, migration_failure_hook);
+    if (!upgraded.ok()) {
+      return common::Result<std::shared_ptr<SqliteCalendarDatabase>>::failure(
+          upgraded.error());
+    }
     auto valid = database->validate();
     if (!valid.ok()) {
       return common::Result<std::shared_ptr<SqliteCalendarDatabase>>::failure(
@@ -1600,6 +1678,11 @@ SqliteCalendarDatabase::open(
     if (!configured.ok()) {
       return common::Result<std::shared_ptr<SqliteCalendarDatabase>>::failure(
           configured.error());
+    }
+    auto upgraded = candidate->upgrade_v4_to_v5(false, migration_failure_hook);
+    if (!upgraded.ok()) {
+      return common::Result<std::shared_ptr<SqliteCalendarDatabase>>::failure(
+          upgraded.error());
     }
     auto valid = candidate->validate();
     if (!valid.ok()) {
@@ -1806,6 +1889,15 @@ SqliteCalendarDatabase::open(
     return common::Result<std::shared_ptr<SqliteCalendarDatabase>>::failure(
         imported.error());
   }
+  auto upgraded = candidate->upgrade_v4_to_v5(
+      source_kind.value() == MigrationSourceKind::kFresh,
+      migration_failure_hook);
+  if (!upgraded.ok()) {
+    candidate.reset();
+    remove_stale_database_files(migrating_path);
+    return common::Result<std::shared_ptr<SqliteCalendarDatabase>>::failure(
+        upgraded.error());
+  }
   auto candidate_valid = candidate->validate();
   if (!candidate_valid.ok()) {
     candidate.reset();
@@ -1963,7 +2055,7 @@ common::Result<common::Unit> SqliteCalendarDatabase::create_schema() {
       "create_schema_metadata");
   if (!common_schema.ok()) return common_schema;
 
-  for (const auto& spec : kStoreSpecs) {
+  for (const auto& spec : kV4StoreSpecs) {
     auto created = execute_sql(
         database_,
         "CREATE TABLE " + std::string(spec.table_name) +
@@ -2069,7 +2161,7 @@ common::Result<common::Unit> SqliteCalendarDatabase::create_schema() {
   if (!generation.ok()) {
     return common::Result<common::Unit>::failure(generation.error());
   }
-  for (const auto& spec : kStoreSpecs) {
+  for (const auto& spec : kV4StoreSpecs) {
     ::sqlite3_reset(generation.value().get());
     ::sqlite3_clear_bindings(generation.value().get());
     int code = ::sqlite3_bind_text(generation.value().get(), 1,
@@ -2103,7 +2195,41 @@ common::Result<common::Unit> SqliteCalendarDatabase::validate() {
   return validate_locked();
 }
 
-common::Result<common::Unit> SqliteCalendarDatabase::validate_locked() {
+namespace {
+
+common::Result<common::Unit> require_exact_schema_shape(
+    ::sqlite3* database, int expected_tables, int expected_indexes,
+    std::string_view version) {
+  auto table_count = query_single_int(
+      database,
+      "SELECT COUNT(*) FROM sqlite_schema WHERE type='table' "
+      "AND name NOT LIKE 'sqlite_%'",
+      "count_schema_tables");
+  if (!table_count.ok())
+    return common::Result<common::Unit>::failure(table_count.error());
+  auto index_count = query_single_int(
+      database,
+      "SELECT COUNT(*) FROM sqlite_schema WHERE type='index' AND sql IS NOT NULL",
+      "count_schema_indexes");
+  if (!index_count.ok())
+    return common::Result<common::Unit>::failure(index_count.error());
+  auto trigger_count = query_single_int(
+      database, "SELECT COUNT(*) FROM sqlite_schema WHERE type='trigger'",
+      "count_schema_triggers");
+  if (!trigger_count.ok())
+    return common::Result<common::Unit>::failure(trigger_count.error());
+  if (table_count.value() != expected_tables ||
+      index_count.value() != expected_indexes || trigger_count.value() != 0) {
+    return common::Result<common::Unit>::failure(corrupted(
+        "SQLite " + std::string(version) +
+        " schema contains missing or unknown tables, indexes, or triggers"));
+  }
+  return common::Result<common::Unit>::success(common::Unit{});
+}
+
+}  // namespace
+
+common::Result<common::Unit> SqliteCalendarDatabase::validate_v4_locked() {
   auto application_id = query_single_int(database_, "PRAGMA application_id",
                                          "read_application_id");
   if (!application_id.ok()) {
@@ -2114,23 +2240,32 @@ common::Result<common::Unit> SqliteCalendarDatabase::validate_locked() {
   if (!user_version.ok()) {
     return common::Result<common::Unit>::failure(user_version.error());
   }
-  if (application_id.value() != kApplicationId ||
-      user_version.value() != kCalendarCoreSqliteStorageVersion) {
+  if (application_id.value() != kApplicationId || user_version.value() != 4) {
     return common::Result<common::Unit>::failure(
         corrupted("SQLite application id or schema version is unsupported",
                   "user_version"));
   }
-  for (const auto* table : kRequiredTables) {
+  for (const auto* table : kV4RequiredTables) {
     const auto expected = expected_table_schema(table);
     auto present =
         require_schema_object(database_, "table", table, expected);
     if (!present.ok()) return present;
   }
-  for (const auto& index : kRequiredIndexes) {
+  for (const auto& index : kV4RequiredIndexes) {
     auto present =
         require_schema_object(database_, "index", index.name, index.sql);
     if (!present.ok()) return present;
   }
+  auto exact_schema = require_exact_schema_shape(database_, 16, 16, "v4");
+  if (!exact_schema.ok()) return exact_schema;
+  auto metadata_count = query_single_int(
+      database_, "SELECT COUNT(*) FROM schema_metadata",
+      "count_v4_metadata");
+  if (!metadata_count.ok())
+    return common::Result<common::Unit>::failure(metadata_count.error());
+  if (metadata_count.value() != 3)
+    return common::Result<common::Unit>::failure(
+        corrupted("SQLite v4 schema metadata keys are missing or unknown"));
   auto format = query_single_text(
       database_, "SELECT value FROM schema_metadata WHERE key='format_name'",
       "read_format_name");
@@ -2155,32 +2290,6 @@ common::Result<common::Unit> SqliteCalendarDatabase::validate_locked() {
     return common::Result<common::Unit>::failure(
         corrupted("SQLite schema metadata is unsupported"));
   }
-  // Repair only the exact history pair emitted by the pre-fix v1 importer. It
-  // always wrote the v3 row from create_schema() and then the real v1 row.
-  auto legacy_history = query_single_int(
-      database_,
-      "SELECT CASE WHEN (SELECT COUNT(*) FROM migration_history)=2 "
-      "AND EXISTS(SELECT 1 FROM migration_history WHERE "
-      "migration_id='calendar_core_json_v1_compat_to_sqlite_v4' AND "
-      "source_format='excellent_calendar_core_json' AND source_version=1 "
-      "AND target_version=4) "
-      "AND EXISTS(SELECT 1 FROM migration_history WHERE "
-      "migration_id='calendar_core_json_v3_to_sqlite_v4' AND "
-      "source_format='excellent_calendar_core_json' AND source_version=3 "
-      "AND target_version=4) THEN 1 ELSE 0 END",
-      "detect_legacy_migration_history");
-  if (!legacy_history.ok()) {
-    return common::Result<common::Unit>::failure(legacy_history.error());
-  }
-  if (legacy_history.value() == 1) {
-    auto repaired = execute_sql(
-        database_,
-        "DELETE FROM migration_history WHERE "
-        "migration_id='calendar_core_json_v3_to_sqlite_v4'",
-        "repair_legacy_migration_history");
-    if (!repaired.ok()) return repaired;
-  }
-
   auto legal_history = query_single_int(
       database_,
       "SELECT CASE WHEN "
@@ -2222,7 +2331,15 @@ common::Result<common::Unit> SqliteCalendarDatabase::validate_locked() {
     return common::Result<common::Unit>::failure(
         corrupted("SQLite quick_check failed: " + quick_check.value()));
   }
-  for (const auto& spec : kStoreSpecs) {
+  auto generation_count = query_single_int(
+      database_, "SELECT COUNT(*) FROM store_generations",
+      "count_v4_store_generations");
+  if (!generation_count.ok())
+    return common::Result<common::Unit>::failure(generation_count.error());
+  if (generation_count.value() != 13)
+    return common::Result<common::Unit>::failure(
+        corrupted("SQLite v4 Store generation set is incomplete or unknown"));
+  for (const auto& spec : kV4StoreSpecs) {
     auto generation = generation_for(database_, spec.logical_name);
     if (!generation.ok()) {
       return common::Result<common::Unit>::failure(generation.error());
@@ -2255,6 +2372,268 @@ common::Result<common::Unit> SqliteCalendarDatabase::validate_locked() {
              ? common::Result<common::Unit>::success(common::Unit{})
              : common::Result<common::Unit>::failure(
                    legacy_notifications.error());
+}
+
+common::Result<common::Unit> SqliteCalendarDatabase::upgrade_v4_to_v5(
+    bool fresh_database,
+    const MigrationFailureHook& migration_failure_hook) {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  auto version = query_single_int(database_, "PRAGMA user_version",
+                                  "read_upgrade_source_version");
+  if (!version.ok()) return common::Result<common::Unit>::failure(version.error());
+  if (version.value() == 5) return validate_locked();
+  if (version.value() != 4) {
+    return common::Result<common::Unit>::failure(corrupted(
+        "SQLite application id or schema version is unsupported",
+        "user_version"));
+  }
+  auto source_valid = validate_v4_locked();
+  if (!source_valid.ok()) return source_valid;
+
+  return transaction([&]() {
+    auto locked_source_valid = validate_v4_locked();
+    if (!locked_source_valid.ok()) return locked_source_valid;
+    auto hooked = call_migration_hook(migration_failure_hook,
+                                      "v5_after_source_validation");
+    if (!hooked.ok()) return hooked;
+
+    for (const auto& spec : kHabitStoreSpecs) {
+      auto created = execute_sql(database_, expected_table_schema(spec.table_name),
+                                 std::string("create_") + spec.logical_name);
+      if (!created.ok()) return created;
+    }
+    hooked = call_migration_hook(migration_failure_hook, "v5_after_tables");
+    if (!hooked.ok()) return hooked;
+    for (const auto& index : kHabitRequiredIndexes) {
+      auto created = execute_sql(database_, index.sql,
+                                 std::string("create_") + index.name);
+      if (!created.ok()) return created;
+    }
+    hooked = call_migration_hook(migration_failure_hook, "v5_after_indexes");
+    if (!hooked.ok()) return hooked;
+
+    auto generation = prepare(
+        database_,
+        "INSERT INTO store_generations(store_name,generation) VALUES(?1,0)",
+        "initialize_habit_store_generations");
+    if (!generation.ok())
+      return common::Result<common::Unit>::failure(generation.error());
+    for (const auto& spec : kHabitStoreSpecs) {
+      ::sqlite3_reset(generation.value().get());
+      ::sqlite3_clear_bindings(generation.value().get());
+      int code = ::sqlite3_bind_text(generation.value().get(), 1,
+                                     spec.logical_name, -1, SQLITE_STATIC);
+      if (code != SQLITE_OK ||
+          ::sqlite3_step(generation.value().get()) != SQLITE_DONE) {
+        return common::Result<common::Unit>::failure(sqlite_error(
+            database_, "initialize_habit_store_generations",
+            code == SQLITE_OK ? ::sqlite3_errcode(database_) : code));
+      }
+    }
+
+    auto metadata = execute_sql(
+        database_,
+        "UPDATE schema_metadata SET value='5' WHERE key='storage_format_version';"
+        "INSERT INTO schema_metadata(key,value) VALUES"
+        "('payload_codec_version.events','3'),"
+        "('payload_codec_version.recurrence_versions','3'),"
+        "('payload_codec_version.event_occurrence_states','3'),"
+        "('payload_codec_version.anniversaries','3'),"
+        "('payload_codec_version.anniversary_recurrences','3'),"
+        "('payload_codec_version.anniversary_reminder_templates','3'),"
+        "('payload_codec_version.reminders','4'),"
+        "('payload_codec_version.notifications','4'),"
+        "('payload_codec_version.reminder_recovery_batches','3'),"
+        "('payload_codec_version.categories','3'),"
+        "('payload_codec_version.legacy_events','1'),"
+        "('payload_codec_version.legacy_reminders','1'),"
+        "('payload_codec_version.legacy_notifications','1'),"
+        "('payload_codec_version.habit_recurrences','1'),"
+        "('payload_codec_version.habits','1'),"
+        "('payload_codec_version.habit_check_ins','1'),"
+        "('payload_codec_version.habit_reminder_templates','1');",
+        "write_v5_schema_metadata");
+    if (!metadata.ok()) return metadata;
+    hooked = call_migration_hook(migration_failure_hook, "v5_after_metadata");
+    if (!hooked.ok()) return hooked;
+
+    const auto now = common::utc_now_iso8601();
+    common::Result<common::Unit> history =
+        common::Result<common::Unit>::success(common::Unit{});
+    if (fresh_database) {
+      history = execute_sql(
+          database_,
+          "DELETE FROM migration_history WHERE "
+          "migration_id='calendar_core_fresh_sqlite_v4';"
+          "INSERT INTO migration_history(migration_id,source_format,source_version,"
+          "target_version,completed_at) VALUES('calendar_core_fresh_sqlite_v5',"
+          "'none',0,5,'" + now + "');",
+          "write_fresh_v5_history");
+    } else {
+      history = execute_sql(
+          database_,
+          "INSERT INTO migration_history(migration_id,source_format,source_version,"
+          "target_version,completed_at) VALUES("
+          "'calendar_core_sqlite_v4_to_v5_habit_v1',"
+          "'excellent_calendar_core_sqlite',4,5,'" + now + "');",
+          "write_v4_to_v5_history");
+    }
+    if (!history.ok()) return history;
+    auto version_written = execute_sql(database_, "PRAGMA user_version=5",
+                                       "write_v5_sqlite_version");
+    if (!version_written.ok()) return version_written;
+    hooked = call_migration_hook(migration_failure_hook, "v5_before_validation");
+    if (!hooked.ok()) return hooked;
+    return validate_locked();
+  });
+}
+
+common::Result<common::Unit> SqliteCalendarDatabase::validate_locked() {
+  auto application_id = query_single_int(database_, "PRAGMA application_id",
+                                         "read_application_id");
+  auto user_version = query_single_int(database_, "PRAGMA user_version",
+                                       "read_user_version");
+  if (!application_id.ok())
+    return common::Result<common::Unit>::failure(application_id.error());
+  if (!user_version.ok())
+    return common::Result<common::Unit>::failure(user_version.error());
+  if (application_id.value() != kApplicationId || user_version.value() != 5) {
+    return common::Result<common::Unit>::failure(corrupted(
+        "SQLite application id or schema version is unsupported",
+        "user_version"));
+  }
+  for (const auto* table : kV4RequiredTables) {
+    auto present = require_schema_object(database_, "table", table,
+                                         expected_table_schema(table));
+    if (!present.ok()) return present;
+  }
+  for (const auto* table : kHabitRequiredTables) {
+    auto present = require_schema_object(database_, "table", table,
+                                         expected_table_schema(table));
+    if (!present.ok()) return present;
+  }
+  for (const auto& index : kV4RequiredIndexes) {
+    auto present = require_schema_object(database_, "index", index.name,
+                                         index.sql);
+    if (!present.ok()) return present;
+  }
+  for (const auto& index : kHabitRequiredIndexes) {
+    auto present = require_schema_object(database_, "index", index.name,
+                                         index.sql);
+    if (!present.ok()) return present;
+  }
+  auto exact_schema = require_exact_schema_shape(database_, 20, 24, "v5");
+  if (!exact_schema.ok()) return exact_schema;
+
+  const std::vector<std::pair<std::string, std::string>> metadata{
+      {"format_name", kFormatName}, {"storage_format_version", "5"},
+      {"record_payload_version", "3"},
+      {"payload_codec_version.events", "3"},
+      {"payload_codec_version.recurrence_versions", "3"},
+      {"payload_codec_version.event_occurrence_states", "3"},
+      {"payload_codec_version.anniversaries", "3"},
+      {"payload_codec_version.anniversary_recurrences", "3"},
+      {"payload_codec_version.anniversary_reminder_templates", "3"},
+      {"payload_codec_version.reminders", "4"},
+      {"payload_codec_version.notifications", "4"},
+      {"payload_codec_version.reminder_recovery_batches", "3"},
+      {"payload_codec_version.categories", "3"},
+      {"payload_codec_version.legacy_events", "1"},
+      {"payload_codec_version.legacy_reminders", "1"},
+      {"payload_codec_version.legacy_notifications", "1"},
+      {"payload_codec_version.habit_recurrences", "1"},
+      {"payload_codec_version.habits", "1"},
+      {"payload_codec_version.habit_check_ins", "1"},
+      {"payload_codec_version.habit_reminder_templates", "1"}};
+  auto metadata_count = query_single_int(
+      database_, "SELECT COUNT(*) FROM schema_metadata", "count_v5_metadata");
+  if (!metadata_count.ok())
+    return common::Result<common::Unit>::failure(metadata_count.error());
+  if (metadata_count.value() != static_cast<int>(metadata.size()))
+    return common::Result<common::Unit>::failure(
+        corrupted("SQLite schema metadata keys are missing or unknown"));
+  for (const auto& [key, expected] : metadata) {
+    auto actual = query_single_text(
+        database_, "SELECT value FROM schema_metadata WHERE key='" + key + "'",
+        "read_v5_metadata");
+    if (!actual.ok()) return common::Result<common::Unit>::failure(actual.error());
+    if (actual.value() != expected)
+      return common::Result<common::Unit>::failure(
+          corrupted("SQLite schema metadata is unsupported", key));
+  }
+
+  auto legal_history = query_single_int(
+      database_,
+      "SELECT CASE WHEN "
+      "((SELECT COUNT(*) FROM migration_history)=1 AND EXISTS(SELECT 1 FROM "
+      "migration_history WHERE migration_id='calendar_core_fresh_sqlite_v5' AND "
+      "source_format='none' AND source_version=0 AND target_version=5)) OR "
+      "((SELECT COUNT(*) FROM migration_history)=2 AND "
+      "EXISTS(SELECT 1 FROM migration_history WHERE "
+      "migration_id='calendar_core_sqlite_v4_to_v5_habit_v1' AND "
+      "source_format='excellent_calendar_core_sqlite' AND source_version=4 AND "
+      "target_version=5) AND ("
+      "EXISTS(SELECT 1 FROM migration_history WHERE migration_id='calendar_core_fresh_sqlite_v4' "
+      "AND source_format='none' AND source_version=0 AND target_version=4) OR "
+      "EXISTS(SELECT 1 FROM migration_history WHERE migration_id='calendar_core_json_v1_compat_to_sqlite_v4' "
+      "AND source_format='excellent_calendar_core_json' AND source_version=1 AND target_version=4) OR "
+      "EXISTS(SELECT 1 FROM migration_history WHERE migration_id='calendar_core_json_v3_to_sqlite_v4' "
+      "AND source_format='excellent_calendar_core_json' AND source_version=3 AND target_version=4))) OR "
+      "((SELECT COUNT(*) FROM migration_history)=3 AND "
+      "EXISTS(SELECT 1 FROM migration_history WHERE migration_id='calendar_core_sqlite_v4_to_v5_habit_v1' "
+      "AND source_format='excellent_calendar_core_sqlite' AND source_version=4 AND target_version=5) AND "
+      "EXISTS(SELECT 1 FROM migration_history WHERE "
+      "migration_id='calendar_core_json_v2_to_v3_anniversary_reminder_r1' AND source_version=2 AND target_version=3) "
+      "AND EXISTS(SELECT 1 FROM migration_history WHERE migration_id='calendar_core_json_v3_to_sqlite_v4' "
+      "AND source_version=3 AND target_version=4)) THEN 1 ELSE 0 END",
+      "validate_v5_migration_history");
+  if (!legal_history.ok())
+    return common::Result<common::Unit>::failure(legal_history.error());
+  if (legal_history.value() != 1)
+    return common::Result<common::Unit>::failure(
+        corrupted("SQLite migration history combination is invalid"));
+
+  auto quick_check = query_single_text(database_, "PRAGMA quick_check",
+                                       "sqlite_quick_check");
+  if (!quick_check.ok())
+    return common::Result<common::Unit>::failure(quick_check.error());
+  if (quick_check.value() != "ok")
+    return common::Result<common::Unit>::failure(
+        corrupted("SQLite quick_check failed: " + quick_check.value()));
+  auto generation_count = query_single_int(
+      database_, "SELECT COUNT(*) FROM store_generations",
+      "count_v5_store_generations");
+  if (!generation_count.ok())
+    return common::Result<common::Unit>::failure(generation_count.error());
+  if (generation_count.value() != 17)
+    return common::Result<common::Unit>::failure(
+        corrupted("SQLite Store generation set is incomplete or unknown"));
+  for (const auto& spec : kV4StoreSpecs) {
+    auto generation = generation_for(database_, spec.logical_name);
+    if (!generation.ok()) return common::Result<common::Unit>::failure(generation.error());
+  }
+  for (const auto& spec : kLegacyStoreSpecs) {
+    auto generation = generation_for(database_, spec.logical_name);
+    if (!generation.ok()) return common::Result<common::Unit>::failure(generation.error());
+  }
+  for (const auto& spec : kHabitStoreSpecs) {
+    auto generation = generation_for(database_, spec.logical_name);
+    if (!generation.ok()) return common::Result<common::Unit>::failure(generation.error());
+  }
+  auto recurring = load_recurring_state_locked();
+  if (!recurring.ok()) return common::Result<common::Unit>::failure(recurring.error());
+  auto categories = load_category_state_locked();
+  if (!categories.ok()) return common::Result<common::Unit>::failure(categories.error());
+  auto legacy_events = load_legacy_events_locked();
+  if (!legacy_events.ok()) return common::Result<common::Unit>::failure(legacy_events.error());
+  auto legacy_reminders = load_legacy_reminders_locked();
+  if (!legacy_reminders.ok()) return common::Result<common::Unit>::failure(legacy_reminders.error());
+  auto legacy_notifications = load_legacy_notifications_locked();
+  if (!legacy_notifications.ok())
+    return common::Result<common::Unit>::failure(legacy_notifications.error());
+  auto habits = load_habit_state_locked();
+  return habits.ok() ? common::Result<common::Unit>::success(common::Unit{})
+                     : common::Result<common::Unit>::failure(habits.error());
 }
 
 common::Result<common::Unit> SqliteCalendarDatabase::transaction(
@@ -2315,7 +2694,45 @@ SqliteCalendarDatabase::load_recurring_state_locked() {
           decoded.error());
     }
   }
+  repository::HabitState habit_state;
+  auto habit_table_count = query_single_int(
+      database_,
+      "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN "
+      "('habit_recurrences','habits','habit_check_ins','habit_reminder_templates')",
+      "count_habit_tables_for_shared_state");
+  if (!habit_table_count.ok())
+    return common::Result<repository::RecurringEventState>::failure(
+        habit_table_count.error());
+  if (habit_table_count.value() != 0 && habit_table_count.value() != 4)
+    return common::Result<repository::RecurringEventState>::failure(
+        corrupted("SQLite Habit table set is incomplete"));
+  if (habit_table_count.value() == 4) {
+    for (const auto& spec : kHabitStoreSpecs) {
+      auto root = read_store_root(database_, spec);
+      if (!root.ok())
+        return common::Result<repository::RecurringEventState>::failure(
+            root.error());
+      auto decoded = storage::json::decode_habit_store(
+          spec.file_name, root.value(), habit_state);
+      if (!decoded.ok())
+        return common::Result<repository::RecurringEventState>::failure(
+            decoded.error());
+    }
+  }
+  state.habits = std::move(habit_state.habits);
+  state.habit_recurrences = std::move(habit_state.recurrences);
+  state.habit_check_ins = std::move(habit_state.check_ins);
+  state.habit_reminder_templates = std::move(habit_state.reminder_templates);
   auto valid = storage::json::validate_recurring_event_state(state);
+  if (valid.ok()) {
+    habit_state.habits = state.habits;
+    habit_state.recurrences = state.habit_recurrences;
+    habit_state.check_ins = state.habit_check_ins;
+    habit_state.reminder_templates = state.habit_reminder_templates;
+    habit_state.reminders = state.reminders;
+    habit_state.notifications = state.notifications;
+    valid = storage::json::validate_habit_state(habit_state);
+  }
   return valid.ok() ? common::Result<repository::RecurringEventState>::success(
                           std::move(state))
                     : common::Result<repository::RecurringEventState>::failure(
@@ -2410,6 +2827,31 @@ SqliteCalendarDatabase::load_category_state_locked() {
                             records.value())
                       : common::Result<repository::CategoryState>::failure(
                             records.error());
+}
+
+common::Result<repository::HabitState>
+SqliteCalendarDatabase::load_habit_state() {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  return load_habit_state_locked();
+}
+
+common::Result<repository::HabitState>
+SqliteCalendarDatabase::load_habit_state_locked() {
+  auto shared = load_recurring_state_locked();
+  if (!shared.ok())
+    return common::Result<repository::HabitState>::failure(shared.error());
+  repository::HabitState state;
+  state.habits = std::move(shared.value().habits);
+  state.recurrences = std::move(shared.value().habit_recurrences);
+  state.check_ins = std::move(shared.value().habit_check_ins);
+  state.reminder_templates =
+      std::move(shared.value().habit_reminder_templates);
+  state.reminders = std::move(shared.value().reminders);
+  state.notifications = std::move(shared.value().notifications);
+  auto valid = storage::json::validate_habit_state(state);
+  return valid.ok()
+             ? common::Result<repository::HabitState>::success(std::move(state))
+             : common::Result<repository::HabitState>::failure(valid.error());
 }
 
 common::Result<std::vector<domain::Event>>
@@ -2552,6 +2994,33 @@ SqliteCalendarDatabase::write_recurring_changes_locked(
     auto replaced = replace_store_root(database_, *spec, next.value());
     if (!replaced.ok()) return replaced;
   }
+  repository::HabitState habit_before;
+  habit_before.habits = before.habits;
+  habit_before.recurrences = before.habit_recurrences;
+  habit_before.check_ins = before.habit_check_ins;
+  habit_before.reminder_templates = before.habit_reminder_templates;
+  habit_before.reminders = before.reminders;
+  habit_before.notifications = before.notifications;
+  repository::HabitState habit_after;
+  habit_after.habits = after.habits;
+  habit_after.recurrences = after.habit_recurrences;
+  habit_after.check_ins = after.habit_check_ins;
+  habit_after.reminder_templates = after.habit_reminder_templates;
+  habit_after.reminders = after.reminders;
+  habit_after.notifications = after.notifications;
+  auto habit_valid = storage::json::validate_habit_state(habit_after);
+  if (!habit_valid.ok()) return habit_valid;
+  for (const auto& spec : kHabitStoreSpecs) {
+    auto previous = storage::json::encode_habit_store(spec.file_name,
+                                                       habit_before);
+    if (!previous.ok())
+      return common::Result<common::Unit>::failure(previous.error());
+    auto next = storage::json::encode_habit_store(spec.file_name, habit_after);
+    if (!next.ok()) return common::Result<common::Unit>::failure(next.error());
+    if (previous.value().serialize() == next.value().serialize()) continue;
+    auto replaced = replace_store_root(database_, spec, next.value());
+    if (!replaced.ok()) return replaced;
+  }
   return common::Result<common::Unit>::success(common::Unit{});
 }
 
@@ -2621,6 +3090,34 @@ SqliteCalendarDatabase::write_category_changes_locked(
         corrupted("SQLite Category Store mapping is missing"));
   }
   return replace_store_root(database_, *spec, next.value());
+}
+
+common::Result<common::Unit> SqliteCalendarDatabase::write_habit_changes(
+    const repository::HabitState& before,
+    const repository::HabitState& after) {
+  return transaction([&]() { return write_habit_changes_locked(before, after); });
+}
+
+common::Result<common::Unit>
+SqliteCalendarDatabase::write_habit_changes_locked(
+    const repository::HabitState& before,
+    const repository::HabitState& after) {
+  auto valid = storage::json::validate_habit_state(after);
+  if (!valid.ok()) return valid;
+  auto shared_before = load_recurring_state_locked();
+  if (!shared_before.ok())
+    return common::Result<common::Unit>::failure(shared_before.error());
+  auto shared_after = shared_before.value();
+  shared_after.reminders = after.reminders;
+  shared_after.notifications = after.notifications;
+  shared_after.habits = after.habits;
+  shared_after.habit_recurrences = after.recurrences;
+  shared_after.habit_check_ins = after.check_ins;
+  shared_after.habit_reminder_templates = after.reminder_templates;
+  auto written = write_recurring_changes_locked(shared_before.value(),
+                                                 shared_after);
+  if (!written.ok()) return written;
+  return common::Result<common::Unit>::success(common::Unit{});
 }
 
 }  // namespace excellent_calendar::storage::sqlite

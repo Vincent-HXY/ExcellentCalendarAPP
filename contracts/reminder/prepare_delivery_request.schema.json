@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/prepare_delivery_request.schema.json",
   "title": "PrepareDeliveryRequest",
-  "description": "Starts or idempotently reuses one prepared delivery attempt. C++ remains the identity and membership authority. For anniversary_catch_up, Kotlin echoes only the delivery_id exposed by the frozen RecoveryBatch group; C++ reloads and verifies the group before returning immutable content. prepare_delivery does not accept timezone: it consumes the batch/group membership already frozen by plan_recovery, while successor projection is deferred to finalize_delivery with the then-current device timezone.",
+  "description": "Starts or idempotently reuses one prepared delivery attempt. C++ remains the identity and membership authority. For ordinary Reminder delivery, Kotlin may supply the current device IANA timezone; C++ requires it when the resolved target is Habit so an elapsed local-date occurrence is atomically expired before display. Existing Event/Anniversary callers may omit it. For anniversary_catch_up, Kotlin echoes only the delivery_id exposed by the frozen RecoveryBatch group; C++ reloads and verifies the group before returning immutable content. Successor projection remains deferred to finalize_delivery with the then-current device timezone.",
   "x-contract-version": 2,
-  "x-timezone-policy": "No timezone field. Recovery membership is already frozen; Anniversary successor projection occurs only during finalize_delivery.",
+  "x-timezone-policy": "timezone is an optional compatibility extension on the shared request and is required by C++ only after kind=reminder resolves to target_type=habit. Recovery membership is already frozen; Anniversary successor projection occurs only during finalize_delivery.",
   "type": "object",
   "additionalProperties": false,
   "required": ["kind", "reminder_id", "recovery_batch_id", "delivery_id", "method", "expected_remind_at"],
@@ -14,7 +14,8 @@
     "recovery_batch_id": {"type": ["string", "null"], "format": "uuid"},
     "delivery_id": {"type": ["string", "null"], "format": "uuid"},
     "method": {"type": "string", "enum": ["ring", "popup"]},
-    "expected_remind_at": {"type": ["string", "null"], "format": "date-time"}
+    "expected_remind_at": {"type": ["string", "null"], "format": "date-time"},
+    "timezone": {"type": "string", "minLength": 1, "x-format": "iana-timezone", "description": "Current device timezone. Optional for backward-compatible Event/Anniversary delivery; required by C++ when reminder_id resolves to a Habit Reminder."}
   },
   "oneOf": [
     {

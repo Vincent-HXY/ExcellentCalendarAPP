@@ -534,4 +534,49 @@ common::Result<common::Unit> SqliteCategoryRepository::execute(
   });
 }
 
+SqliteHabitTransaction::SqliteHabitTransaction(
+    std::shared_ptr<SqliteCalendarDatabase> database,
+    std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
+    : database_(std::move(database)),
+      runtime_lease_(std::move(runtime_lease)) {}
+
+common::Result<common::Unit> SqliteHabitTransaction::initialize() {
+  auto access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  return runtime_lease_ && !access.has_value()
+             ? common::Result<common::Unit>::failure(
+                   revoked("habit_transaction.initialize"))
+             : database_->validate();
+}
+
+common::Result<repository::HabitState> SqliteHabitTransaction::load() {
+  auto access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  return runtime_lease_ && !access.has_value()
+             ? common::Result<repository::HabitState>::failure(
+                   revoked("habit_transaction.load"))
+             : database_->load_habit_state();
+}
+
+common::Result<common::Unit> SqliteHabitTransaction::execute(
+    std::string_view operation, const Operation& action) {
+  auto access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  if (runtime_lease_ && !access.has_value()) {
+    return common::Result<common::Unit>::failure(
+        revoked(std::string(operation)));
+  }
+  if (operation.rfind("habit.", 0) != 0 || !action) {
+    return common::Result<common::Unit>::failure(common::make_error(
+        "NATIVE_INTERNAL_ERROR", "Native internal error",
+        {{"reason", "Habit transaction operation is invalid"}}));
+  }
+  return database_->transaction([&]() {
+    auto loaded = database_->load_habit_state();
+    if (!loaded.ok())
+      return common::Result<common::Unit>::failure(loaded.error());
+    auto after = loaded.value();
+    auto applied = action(after);
+    return applied.ok() ? database_->write_habit_changes(loaded.value(), after)
+                        : applied;
+  });
+}
+
 }  // namespace excellent_calendar::storage::sqlite

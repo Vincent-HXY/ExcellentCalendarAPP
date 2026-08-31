@@ -544,7 +544,9 @@ common::Result<PlanReminderRecoveryResult> ReminderRecoveryWorkflowService::plan
 
         for (const auto& reminder : state.reminders) {
           if (!is_open(reminder)) continue;
-          if (reminder.target_type == domain::kReminderTargetAnniversary) continue;
+          if (reminder.target_type == domain::kReminderTargetAnniversary ||
+              reminder.target_type == domain::kReminderTargetHabit)
+            continue;
           const auto remind_at = common::parse_iso8601_utc_epoch_seconds(reminder.remind_at);
           if (!remind_at.has_value()) {
             return common::Result<common::Unit>::failure(

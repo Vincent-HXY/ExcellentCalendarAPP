@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_daily_status_response.schema.json",
+  "title": "HabitDailyStatusResponse",
+  "description": "One planned date projection. upcoming/absent/missed have no CheckIn row; partial/done/skipped point to the single active logical row.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["date", "status", "is_final", "check_in", "completion_ratio"],
+  "properties": {
+    "date": {"type": "string", "format": "date"},
+    "status": {"type": "string", "enum": ["upcoming", "absent", "partial", "done", "skipped", "missed"]},
+    "is_final": {"type": "boolean"},
+    "check_in": {"oneOf": [{"$ref": "./habit_check_in_response.schema.json"}, {"type": "null"}]},
+    "completion_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+  },
+  "oneOf": [
+    {"properties": {"status": {"const": "upcoming"}, "check_in": {"type": "null"}, "completion_ratio": {"type": "null"}, "is_final": {"const": false}}},
+    {"properties": {"status": {"const": "absent"}, "check_in": {"type": "null"}, "completion_ratio": {"type": "null"}, "is_final": {"const": false}}},
+    {"properties": {"status": {"const": "missed"}, "check_in": {"type": "null"}, "completion_ratio": {"type": "null"}, "is_final": {"const": true}}},
+    {"properties": {"status": {"const": "skipped"}, "check_in": {"$ref": "./habit_check_in_response.schema.json", "properties": {"status": {"const": "skipped"}, "deleted_at": {"type": "null"}}}, "completion_ratio": {"type": "null"}, "is_final": {"const": true}}},
+    {"properties": {"status": {"const": "partial"}, "check_in": {"$ref": "./habit_check_in_response.schema.json", "properties": {"status": {"const": "partial"}, "deleted_at": {"type": "null"}}}, "completion_ratio": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}}},
+    {"properties": {"status": {"const": "done"}, "check_in": {"$ref": "./habit_check_in_response.schema.json", "properties": {"status": {"const": "done"}, "deleted_at": {"type": "null"}}}, "completion_ratio": {"const": 1}, "is_final": {"const": true}}}
+  ]
+}

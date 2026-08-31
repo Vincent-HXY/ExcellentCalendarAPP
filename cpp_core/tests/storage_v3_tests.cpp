@@ -1266,16 +1266,20 @@ void test_sqlite_v4_migrates_v3_exactly_and_ignores_snapshot_after_commit() {
 
   {
     RawSqlite raw(opened.value()->database_path());
-    require(raw.scalar_int("PRAGMA user_version") == 4,
-            "SQLite user_version must be 4");
+    require(raw.scalar_int("PRAGMA user_version") == 5,
+            "SQLite user_version must be 5");
     require(raw.scalar_int(
                 "SELECT COUNT(*) FROM schema_metadata WHERE "
-                "key='storage_format_version' AND value='4'") == 1,
-            "SQLite schema metadata must advertise v4");
+                "key='storage_format_version' AND value='5'") == 1,
+            "SQLite schema metadata must advertise v5");
     require(raw.scalar_int(
                 "SELECT COUNT(*) FROM migration_history WHERE "
                 "migration_id='calendar_core_json_v3_to_sqlite_v4'") == 1,
             "SQLite migration history must be durable");
+    require(raw.scalar_int(
+                "SELECT COUNT(*) FROM migration_history WHERE "
+                "migration_id='calendar_core_sqlite_v4_to_v5_habit_v1'") == 1,
+            "SQLite v5 suffix migration history must be durable");
     require(raw.scalar_int(
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND "
                 "name IN ('events','recurrence_versions',"
@@ -1531,9 +1535,9 @@ void test_sqlite_v4_records_only_the_migrations_that_occurred() {
     require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 1 &&
                 raw.scalar_int(
                     "SELECT COUNT(*) FROM migration_history WHERE "
-                    "migration_id='calendar_core_fresh_sqlite_v4' AND "
+                    "migration_id='calendar_core_fresh_sqlite_v5' AND "
                     "source_format='none' AND source_version=0 AND "
-                    "target_version=4") == 1 &&
+                    "target_version=5") == 1 &&
                 raw.scalar_int(
                     "SELECT COUNT(*) FROM migration_history WHERE "
                     "migration_id='calendar_core_json_v3_to_sqlite_v4'") == 0,
@@ -1554,7 +1558,7 @@ void test_sqlite_v4_records_only_the_migrations_that_occurred() {
     const auto path = database.value()->database_path();
     database.value().reset();
     RawSqlite raw(path);
-    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 1 &&
+    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 2 &&
                 raw.scalar_int(
                     "SELECT COUNT(*) FROM migration_history WHERE "
                     "migration_id='calendar_core_json_v1_compat_to_sqlite_v4' "
@@ -1563,6 +1567,10 @@ void test_sqlite_v4_records_only_the_migrations_that_occurred() {
                     "SELECT COUNT(*) FROM migration_history WHERE "
                     "migration_id='calendar_core_json_v3_to_sqlite_v4'") == 0,
             "v1 import must not claim a v3 import");
+    require(raw.scalar_int(
+                "SELECT COUNT(*) FROM migration_history WHERE "
+                "migration_id='calendar_core_sqlite_v4_to_v5_habit_v1'") == 1,
+            "v1 import must append the v4-to-v5 suffix");
   }
 
   {
@@ -1575,7 +1583,7 @@ void test_sqlite_v4_records_only_the_migrations_that_occurred() {
     const auto path = database.value()->database_path();
     database.value().reset();
     RawSqlite raw(path);
-    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 2 &&
+    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 3 &&
                 raw.scalar_int(
                     "SELECT COUNT(*) FROM migration_history WHERE "
                     "migration_id='calendar_core_json_v2_to_v3_anniversary_"
@@ -1584,7 +1592,10 @@ void test_sqlite_v4_records_only_the_migrations_that_occurred() {
                 raw.scalar_int(
                     "SELECT COUNT(*) FROM migration_history WHERE "
                     "migration_id='calendar_core_json_v3_to_sqlite_v4' AND "
-                    "source_version=3 AND target_version=4") == 1,
+                    "source_version=3 AND target_version=4") == 1 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_sqlite_v4_to_v5_habit_v1'") == 1,
             "v2 source must record its adjacent v2-to-v3-to-v4 path");
   }
 
@@ -1601,11 +1612,14 @@ void test_sqlite_v4_records_only_the_migrations_that_occurred() {
     const auto path = database.value()->database_path();
     database.value().reset();
     RawSqlite raw(path);
-    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 1 &&
+    require(raw.scalar_int("SELECT COUNT(*) FROM migration_history") == 2 &&
                 raw.scalar_int(
                     "SELECT COUNT(*) FROM migration_history WHERE "
                     "migration_id='calendar_core_json_v3_to_sqlite_v4' AND "
-                    "source_version=3 AND target_version=4") == 1,
+                    "source_version=3 AND target_version=4") == 1 &&
+                raw.scalar_int(
+                    "SELECT COUNT(*) FROM migration_history WHERE "
+                    "migration_id='calendar_core_sqlite_v4_to_v5_habit_v1'") == 1,
             "an already-v3 source must record only v3-to-v4");
   }
 }

@@ -46,11 +46,25 @@ inline constexpr std::string_view kReminderCancellationReasonAnniversaryTemplate
     "anniversary_template_replaced";
 inline constexpr std::string_view kReminderCancellationReasonAnniversaryDeleted =
     "anniversary_deleted";
+inline constexpr std::string_view kReminderCancellationReasonHabitCompleted =
+    "habit_completed";
+inline constexpr std::string_view kReminderCancellationReasonHabitSkipped =
+    "habit_skipped";
+inline constexpr std::string_view kReminderCancellationReasonHabitEnded =
+    "habit_ended";
+inline constexpr std::string_view kReminderCancellationReasonHabitDeleted =
+    "habit_deleted";
+inline constexpr std::string_view kReminderCancellationReasonHabitTemplateDisabled =
+    "habit_template_disabled";
+inline constexpr std::string_view kReminderCancellationReasonHabitTemplateReplaced =
+    "habit_template_replaced";
 
 inline constexpr std::string_view kReminderExpirationReasonRecoveryWindowElapsed =
     "recovery_window_elapsed";
 inline constexpr std::string_view kReminderExpirationReasonAnniversaryOccurrenceElapsed =
     "anniversary_occurrence_elapsed";
+inline constexpr std::string_view kReminderExpirationReasonHabitOccurrenceElapsed =
+    "habit_occurrence_elapsed";
 
 struct RecurringReminderDraft {
   int advance_minutes = 0;
@@ -102,6 +116,8 @@ bool is_supported_reminder_target_type(std::string_view value);
 bool is_valid_reminder_method(std::string_view value);
 
 bool is_valid_reminder_status(std::string_view value);
+
+bool is_open_reminder(const Reminder& reminder);
 
 bool is_valid_reminder_cancellation_reason(std::string_view value);
 

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_mutation_commit_response.schema.json",
+  "title": "HabitMutationCommitResponse",
+  "description": "Internal C++ commit result before Kotlin attempts Android scheduling.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["data_saved", "detail", "schedule_reconciliation_required"],
+  "properties": {
+    "data_saved": {"const": true},
+    "detail": {"$ref": "./habit_detail_response.schema.json"},
+    "schedule_reconciliation_required": {"type": "boolean"}
+  }
+}

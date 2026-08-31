@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/set_habit_reminder_request.schema.json",
+  "title": "SetHabitReminderRequest",
+  "description": "Replaces the complete reminder plan with optimistic concurrency. Changing local_time soft-deletes the old template/chain and creates a new UUIDv4 template_key. A sent or prepared attempt reserves today's cross-template display slot, so the new plan starts on the next eligible date; without an attempt it may replace today's Reminder atomically.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["habit_id", "expected_updated_at", "reminder", "timezone"],
+  "properties": {
+    "habit_id": {"type": "string", "format": "uuid"},
+    "expected_updated_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "reminder": {"$ref": "./habit_reminder_plan_input.schema.json"},
+    "timezone": {"type": "string", "minLength": 1, "x-format": "iana-timezone"}
+  }
+}

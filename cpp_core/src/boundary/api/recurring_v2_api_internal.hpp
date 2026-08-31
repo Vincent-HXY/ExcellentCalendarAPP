@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <cstdint>
 #include <optional>
 #include <set>
 #include <string>
@@ -44,6 +45,11 @@ common::Result<int> require_int(
     const std::string& key,
     const std::string& parent);
 
+common::Result<std::int64_t> require_int64(
+    const picojson::object& object,
+    const std::string& key,
+    const std::string& parent);
+
 common::Result<std::optional<std::string>> nullable_string(
     const picojson::object& object,
     const std::string& key,
@@ -51,6 +57,12 @@ common::Result<std::optional<std::string>> nullable_string(
     bool required);
 
 common::Result<std::optional<int>> nullable_int(
+    const picojson::object& object,
+    const std::string& key,
+    const std::string& parent,
+    bool required);
+
+common::Result<std::optional<std::int64_t>> nullable_int64(
     const picojson::object& object,
     const std::string& key,
     const std::string& parent,

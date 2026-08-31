@@ -170,6 +170,7 @@ private fun ReminderScheduleTrigger.toRecoveryTrigger(): String? = when (this) {
     ReminderScheduleTrigger.Mutation -> null
     ReminderScheduleTrigger.AppResume,
     ReminderScheduleTrigger.PackageReplaced,
+    ReminderScheduleTrigger.DateChanged,
     ReminderScheduleTrigger.TimeChanged,
     ReminderScheduleTrigger.TimezoneChanged,
     ReminderScheduleTrigger.PeriodicWorker,

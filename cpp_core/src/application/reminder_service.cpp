@@ -166,7 +166,11 @@ common::Result<domain::Reminder> ReminderService::create_reminder(const CreateRe
     return common::Result<domain::Reminder>::failure(
         contract_validation_failed("target_type", "CreateReminderRequest.target_type has an unsupported enum value."));
   }
-  if (!domain::is_supported_reminder_target_type(command.target_type)) {
+  // Habit reminders are owned by HabitService so callers cannot bypass the
+  // template, deterministic identity, and daily-display invariants through
+  // the generic Reminder API.
+  if (!domain::is_supported_reminder_target_type(command.target_type) ||
+      command.target_type == domain::kReminderTargetHabit) {
     return common::Result<domain::Reminder>::failure(
         feature_not_implemented("reminder.target_type." + command.target_type));
   }

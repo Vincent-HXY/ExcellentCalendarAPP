@@ -1,0 +1,11 @@
+{
+  "habit_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "check_date": "2026-09-01",
+  "status": "partial",
+  "completed_count_hundredths": null,
+  "note": null,
+  "source": "notification_action",
+  "occurrence_key": "4c75dd26-d1f8-5d5b-bf0c-34329c9e5705",
+  "action_id": "c50c46ef-5339-5758-9ec6-08b54f2a75f5",
+  "timezone": "Asia/Shanghai"
+}

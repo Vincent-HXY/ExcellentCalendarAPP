@@ -1,0 +1,12 @@
+{
+  "title": "百分位必须是整数",
+  "description": null,
+  "category_id": null,
+  "recurrence": {"frequency": "daily", "interval": 1, "timezone_mode": "follow_device"},
+  "target_count_hundredths": 250.1,
+  "unit": "公里",
+  "start_date": "2026-09-01",
+  "end_date": "2026-09-30",
+  "reminder": {"is_enabled": false, "local_time": null, "timezone_mode": "follow_device", "method": "popup"},
+  "timezone": "Asia/Shanghai"
+}

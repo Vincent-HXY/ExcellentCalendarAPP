@@ -1,6 +1,6 @@
 # 用户认证与个人信息模块 — 后端 AI 任务清单（cloud_backend）
 
-> 状态：待审阅。
+> 状态：主体实现完成，2026-08-28 归档。该状态表示本计划代码与开发验证已完成；`contracts/backend_api.yaml` 仍为 `planned`，不代表后端 API 已正式激活或生产发布。
 >
 > 面向：负责 `cloud_backend/` 开发的后端 AI。
 >

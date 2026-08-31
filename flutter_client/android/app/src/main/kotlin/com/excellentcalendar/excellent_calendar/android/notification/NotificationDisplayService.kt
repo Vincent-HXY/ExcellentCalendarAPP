@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import com.excellentcalendar.excellent_calendar.MainActivity
+import com.excellentcalendar.excellent_calendar.android.habit.HabitNotificationActionReceiver
 import com.excellentcalendar.excellent_calendar.bridge.codec.NativeContractJsonCodec
 import com.excellentcalendar.excellent_calendar.bridge.contract.NativeErrorCodes
 
@@ -27,6 +28,7 @@ data class PreparedNotificationContent(
     val title: String,
     val body: String?,
     val tapPayload: Map<String, Any?>,
+    val habitActionPayload: Map<String, Any?>? = null,
 )
 
 data class AndroidNotificationIdentity(
@@ -195,13 +197,31 @@ class AndroidNotificationDisplayService(
         } else {
             Notification.Builder(appContext)
         }
-        return builder
+        val notificationBuilder = builder
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(content.title)
             .setContentText(content.body ?: "")
             .setContentIntent(contentIntent)
             .setAutoCancel(true)
-            .build()
+        content.habitActionPayload?.let { payload ->
+            val actionId = payload["action_id"] as String
+            val actionIntent = Intent(appContext, HabitNotificationActionReceiver::class.java)
+                .setAction(HabitNotificationActionReceiver.ActionComplete)
+                .setPackage(appContext.packageName)
+                .setData(Uri.parse("excellentcalendar://habit/action/${Uri.encode(actionId)}"))
+                .putExtra(
+                    HabitNotificationActionReceiver.ExtraPayloadJson,
+                    NativeContractJsonCodec.encodeObject(payload),
+                )
+            val pendingAction = PendingIntent.getBroadcast(
+                appContext,
+                actionId.hashCode(),
+                actionIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            notificationBuilder.addAction(android.R.drawable.checkbox_on_background, "完成", pendingAction)
+        }
+        return notificationBuilder.build()
     }
 
     private fun routeFor(targetType: String): String? = when (targetType) {

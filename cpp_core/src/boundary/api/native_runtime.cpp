@@ -58,6 +58,8 @@ struct RuntimeState {
   std::shared_ptr<application::AnniversaryQueryService> anniversary_query_service;
   std::shared_ptr<storage::sqlite::SqliteCategoryRepository> category_repository;
   std::shared_ptr<application::CategoryService> category_service;
+  std::shared_ptr<storage::sqlite::SqliteHabitTransaction> habit_transaction;
+  std::shared_ptr<application::HabitService> habit_service;
   std::shared_ptr<storage::RuntimeStorageLease> writer_lease;
   std::string storage_directory;
   std::string recurring_storage_directory;
@@ -259,6 +261,17 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
       anniversary_transaction, resolver.value(), common::utc_now_iso8601);
   auto category_service = std::make_shared<application::CategoryService>(
       category_repository, common::utc_now_iso8601, common::generate_uuid_v4);
+  auto habit_transaction =
+      std::make_shared<storage::sqlite::SqliteHabitTransaction>(database,
+                                                                writer_lease);
+  auto habit_initialized = habit_transaction->initialize();
+  if (!habit_initialized.ok()) {
+    return common::Result<RecurringRuntimeInitializationResult>::failure(
+        habit_initialized.error());
+  }
+  auto habit_service = std::make_shared<application::HabitService>(
+      habit_transaction, resolver.value(), common::utc_now_iso8601,
+      common::generate_uuid_v4);
 
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -279,6 +292,8 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
     g_state.anniversary_query_service = std::move(anniversary_query);
     g_state.category_repository = std::move(category_repository);
     g_state.category_service = std::move(category_service);
+    g_state.habit_transaction = std::move(habit_transaction);
+    g_state.habit_service = std::move(habit_service);
     g_state.writer_lease = std::move(writer_lease);
     g_state.recurring_storage_directory = std::string(storage_directory);
   }
@@ -369,6 +384,11 @@ current_anniversary_query_service() {
 std::shared_ptr<application::CategoryService> current_category_service() {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   return g_state.category_service;
+}
+
+std::shared_ptr<application::HabitService> current_habit_service() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.habit_service;
 }
 
 std::shared_ptr<domain::LocalTimeResolver> current_local_time_resolver() {

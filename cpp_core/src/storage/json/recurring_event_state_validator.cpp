@@ -165,6 +165,7 @@ void validate_reminders(
   std::set<std::string> reminder_business_keys;
   for (const auto& reminder : state.reminders) {
     const bool anniversary = reminder.target_type == domain::kReminderTargetAnniversary;
+    const bool habit = reminder.target_type == domain::kReminderTargetHabit;
     const bool recurring = reminder.recurrence_revision.has_value();
     if (!common::is_uuid(reminder.id) || !domain::is_valid_reminder_target_type(reminder.target_type) ||
         !domain::is_valid_reminder_status(reminder.status) || reminder.methods.empty() ||
@@ -180,7 +181,8 @@ void validate_reminders(
          !valid_optional_instant(reminder.reactivated_at) ||
         !valid_optional_instant(reminder.deleted_at) ||
         reminder.reactivation_count < 0 ||
-        (!anniversary && recurring != reminder.occurrence_key.has_value()) ||
+        (!anniversary && !habit &&
+         recurring != reminder.occurrence_key.has_value()) ||
         recurring != reminder.occurrence_start_at.has_value()) {
       throw DecodeFailure("Reminder invariant is invalid");
     }
@@ -198,7 +200,9 @@ void validate_reminders(
            (reminder.expiration_reason != std::optional<std::string>(
                 domain::kReminderExpirationReasonRecoveryWindowElapsed) &&
             reminder.expiration_reason != std::optional<std::string>(
-                domain::kReminderExpirationReasonAnniversaryOccurrenceElapsed)) ||
+                domain::kReminderExpirationReasonAnniversaryOccurrenceElapsed) &&
+            reminder.expiration_reason != std::optional<std::string>(
+                domain::kReminderExpirationReasonHabitOccurrenceElapsed)) ||
            !reminder.expired_at.has_value())) ||
          (reminder.status != domain::kReminderStatusExpired &&
           (reminder.expiration_reason.has_value() || reminder.expired_at.has_value()))) {
@@ -263,6 +267,25 @@ void validate_reminders(
                                 *reminder.template_key;
       if (!insert_unique(reminder_business_keys, business_key)) {
         throw DecodeFailure("Anniversary Reminder business identity is duplicated");
+      }
+    } else if (habit) {
+      auto occurrence_date = reminder.occurrence_date.has_value()
+                                 ? domain::parse_local_date(*reminder.occurrence_date)
+                                 : common::Result<domain::LocalDate>::failure(
+                                       common::make_error("invalid", "invalid"));
+      if (recurring || !reminder.occurrence_key.has_value() ||
+          !common::is_uuid(*reminder.occurrence_key) ||
+          reminder.occurrence_start_at.has_value() ||
+          !reminder.template_key.has_value() ||
+          !common::is_uuid(*reminder.template_key) || !occurrence_date.ok() ||
+          reminder.advance_days.has_value() ||
+          !reminder.local_time.has_value() || reminder.local_time->size() != 5U ||
+          reminder.timezone_mode != std::optional<std::string>("follow_device") ||
+          reminder.advance_minutes.has_value() ||
+          reminder.methods != std::vector<std::string>{"popup"} ||
+          reminder.fulfillment_delivery_id.has_value() ||
+          reminder.recovery_batch_id.has_value()) {
+        throw DecodeFailure("Habit Reminder invariant is invalid");
       }
     } else if (reminder.template_key.has_value() || reminder.occurrence_date.has_value() ||
                reminder.advance_days.has_value() || reminder.local_time.has_value() ||
@@ -355,6 +378,14 @@ void validate_notifications(
       if (reminder->methods.size() != 1U ||
           reminder->methods.front() != notification.method) {
         throw DecodeFailure("Reminder Notification method is invalid");
+      }
+      if (reminder->target_type == domain::kReminderTargetHabit &&
+          (notification.target_type != domain::kReminderTargetHabit ||
+           notification.target_id != reminder->target_id ||
+           notification.occurrence_key != reminder->occurrence_key ||
+           notification.recovery_batch_id.has_value() ||
+           notification.resolved_by_recovery_batch_id.has_value())) {
+        throw DecodeFailure("Habit Notification identity is invalid");
       }
       if (notification.method == domain::kReminderMethodRing &&
           (notification.target_type != domain::kReminderTargetEvent ||
@@ -452,6 +483,18 @@ void validate_notifications(
           !common::is_iso8601_utc_datetime(*notification.finalized_at) ||
           notification.sent_at.has_value()) {
         throw DecodeFailure("Failed Notification finalization fields are invalid");
+      }
+    } else if (notification.target_type == domain::kReminderTargetHabit) {
+      if (notification.resolved_by_recovery_batch_id.has_value() ||
+          notification.recovery_batch_id.has_value() ||
+          notification.failure_class.has_value() ||
+          notification.error_code.has_value() ||
+          (notification.abandon_reason != "habit_occurrence_elapsed" &&
+           notification.abandon_reason != "habit_reminder_cancelled") ||
+          !notification.finalized_at.has_value() ||
+          !common::is_iso8601_utc_datetime(*notification.finalized_at) ||
+          notification.sent_at.has_value()) {
+        throw DecodeFailure("Abandoned Habit Notification invariant is invalid");
       }
     } else if (!notification.resolved_by_recovery_batch_id.has_value() ||
                notification.failure_class.has_value() ||

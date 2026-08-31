@@ -205,9 +205,27 @@ rg -n -i "<keyword>" <file>
 
 除非实际数据关系、调用链或测试影响证明相关，不加载 Habit、Search、Sync 等其他模块的全部资料。
 
-## 9. 开发前的停止条件
+## 9. R2 当前入口与开发前停止条件
 
-当前 Habit 主计划：`docs/plan/active/习惯-01-Habit与HabitCheckIn闭环开发计划.md`。开发 Habit、HabitCheckIn、Habit recurrence、统计、每日提醒或 Habit 页面时，应先读取该计划，再按其中阶段进入对应 Domain、Contract 和代码入口。
+项目当前处于 R2 开发阶段，阶段基线见 `docs/status/current.md`，路线与并行维护债务见 `docs/status/roadmap.md`。
+
+当前 active 计划入口包括 `docs/plan/active/习惯-01-Habit与HabitCheckIn闭环开发计划.md`、`docs/plan/active/日历-01-月周分类视图与三类数据聚合开发计划.md` 和 `docs/plan/active/搜索-01-三类聚合搜索与本地历史开发计划.md`。Habit 的 Contract、C++/SQLite v5、Kotlin/JNI/Android、Flutter/Appearance 和真实 production composition 已实现、验证并于 2026-08-31 激活；当前执行拓扑已转入“已发布能力维护 + 开放验证债收口”：
+
+1. 已完成的 Contract 基线：`docs/plan/completed/习惯-02-Contracts层开发计划.md`；
+2. C++ 交付记录：`docs/plan/active/习惯-03-CPP层开发计划.md`，Core/SQLite v5/Boundary 已完成并接入真实 JNI；
+3. Kotlin 交付记录：`docs/plan/active/习惯-04-Kotlin层开发计划.md`，MethodChannel/JNI/调度/通知动作/Appearance 已完成并接入生产组合；
+4. Flutter 交付记录：`docs/plan/active/习惯-05-Flutter层开发计划.md`，Application/UI/真实 MethodChannel composition 已完成，运行时 preview/Fake 已删除；
+5. 2026-08-31 已关闭黑盒确认的卡片完成率背景、101+ 列表分页、数量型圆圈剩余量、occurrence 技术文本和默认 30 天问题；Habit/Appearance 与 Storage v5 已为 `integrated + active`，剩余真机矩阵由 `OPEN-HAB-001` 跟踪，测试专用 Fake 保留为回归资产；
+6. 领域与决策真相源：`docs/domains/habit.md`、`docs/domains/habit_check_in.md`、`docs/domains/habit_recurrence.md`、`docs/domains/habit_reminder_template.md`、`docs/architecture/decisions/ADR-Habit-01-Habit与HabitCheckIn分离.md`、`docs/architecture/decisions/ADR-Habit-02-每日挑战与Reminder-Occurrence工作流.md`；
+7. 生命周期机器矩阵：`contracts/habit/habit_lifecycle_operation_matrix.yaml`；
+8. 机器验证入口：`contracts/run_habit_v1_validation.py` 与 `contracts/fixtures/habit/manifest.json`。
+9. 发布版本的白盒审阅记录：`docs/reviews/active/习惯-01-Habit与HabitCheckIn闭环-review计划.md`；白盒阻断项和本轮黑盒 UI/分页项已返修并完成复核，Review/ADR/计划的局部状态与归档清理由 `OPEN-HAB-002` 跟踪，不影响机器发布态。
+
+日历月/周分类视图的正式实现尚未开始，提前审查规范位于 `docs/reviews/active/日历-01-月周分类视图-review计划.md`。该文档当前仅冻结未来 Review 的高风险项、独立测试 oracle、证据与放行门槛，不代表已经审查或通过；开发 Calendar Contract、跨日/重复投影、cursor/snapshot、Flutter 手势和最终真实集成时均应以此做 readiness 自检，完工后再执行独立正式 Review。
+
+Habit 当前可以描述为正式能力已激活，但必须同时保留边界：`OPEN-HAB-001` 中未执行的设备场景仍是未验证发布债，不能由主机结果替代；`习惯-03/04/05` 暂留 active 仅是 `OPEN-HAB-002` 记录的文档归档尾项，不表示 capability 仍被阻断。
+
+开发 Habit、HabitCheckIn、Habit recurrence、统计、每日提醒或 Habit 页面时，应先读取 Habit 主计划，再按所属层读取对应分计划和最小相关真相源。开发月/周分类日历和 Event occurrence、Anniversary occurrence、Habit 日状态聚合时，先读取日历主计划，并按其中 `SPECIALIST_SPLIT` 建立 Contract/数据、C++/SQLite、Kotlin/JNI、Flutter 和最终 Review 子计划；当前不得绕过 Calendar Contract 由 Flutter 临时拼装。开发独立搜索、SearchIndex、中文匹配、搜索历史、三类筛选或 FTS 时，先读取搜索主计划；搜索同样判定为 `SPECIALIST_SPLIT / Contract Pending`，必须先冻结统一 Search Contract 和 date/datetime/occurrence 语义，不得由 Flutter 分别查询三类后临时拼装，也不得在性能门禁前擅自迁移 FTS。四象限与 Local-first 同步仍没有 active 实施计划。
 
 开始修改代码前，Codex 应能够明确回答：
 

@@ -99,6 +99,17 @@
 | `series_cancelled` | 否 | 整个重复系列取消 |
 | `series_deleted` | 否 | 整个重复系列软删除 |
 | `series_updated` | 否 | 新 revision 替换旧 revision |
+| `anniversary_paused` | 有条件 | Anniversary 总开关关闭 |
+| `anniversary_template_disabled` | 有条件 | Anniversary 模板关闭 |
+| `anniversary_updated` | 否 | Anniversary 日期/规则变化 |
+| `anniversary_template_replaced` | 否 | Anniversary 模板 identity 变化 |
+| `anniversary_deleted` | 否 | Anniversary 软删除 |
+| `habit_completed` | 有条件 | 当天 done；clear 且未 sent 时恢复 |
+| `habit_skipped` | 有条件 | 当天 skipped；clear 且未 sent 时恢复 |
+| `habit_ended` | 否 | Habit 提前结束 |
+| `habit_deleted` | 否 | Habit 软删除 |
+| `habit_template_disabled` | 有条件 | Habit reminder 关闭 |
+| `habit_template_replaced` | 否 | Habit localTime 变化导致新 template |
 
 恢复仅适用于 `remindAt > reopenedAt` 的同一条 Reminder；不得生成新 ID，也不执行 72 小时补发。
 
@@ -109,6 +120,8 @@
 | 值 | 说明 |
 | --- | --- |
 | `recovery_window_elapsed` | `planRecovery` 判定已物化 Reminder 严格早于 72 小时恢复窗口 |
+| `anniversary_occurrence_elapsed` | Anniversary occurrence 已越过当地次日 00:00 |
+| `habit_occurrence_elapsed` | Habit occurrence 已越过当地次日 00:00 |
 
 ### RingSessionPhase
 
@@ -203,6 +216,8 @@
 | --- | --- |
 | `recovery_window_elapsed` | attempt 对应 Reminder 已严格落到 72 小时窗口外并进入 `expired` |
 | `recovery_summary_superseded` | attempt 对应 Reminder 改由当前恢复摘要覆盖 |
+| `habit_occurrence_elapsed` | Habit prepared attempt 未展示且已跨过当地 occurrence 日期；由 Habit reconciliation 终结，不创建 RecoveryBatch |
+| `habit_reminder_cancelled` | Habit prepared attempt 在展示前因 done/skipped、提前结束、删除、禁用或模板替换而终结 |
 
 ### PreparedAttemptRecoveryResolution
 
@@ -221,14 +236,29 @@
 
 ### HabitCheckInStatus
 
-习惯打卡状态。
+可持久化的习惯事实状态。
 
 | 值 | 说明 |
 | --- | --- |
 | `done` | 已完成 |
 | `partial` | 部分完成 |
-| `missed` | 未完成 |
 | `skipped` | 跳过，不计入失败 |
+
+### HabitDailyStatus
+
+查询投影状态：`upcoming`、`absent`、`partial`、`done`、`skipped`、`missed`。其中 `upcoming/absent/missed` 不对应 CheckIn 行。
+
+### HabitLifecycleStatus
+
+非删除 Habit 的查询生命周期：`upcoming`、`active`、`completed`、`ended_early`。
+
+### HabitCheckInSource
+
+`manual` 表示页面操作；`notification_action` 表示由稳定通知 action 在后台执行的 set-to-done。
+
+### HabitProgressColor
+
+本机预设 token：`teal`、`blue`、`indigo`、`green`、`orange`、`rose`、`purple`。不接受任意 ARGB。
 
 ### SyncOperationType
 

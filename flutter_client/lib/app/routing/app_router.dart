@@ -7,6 +7,14 @@ typedef EventDetailRouteBuilder =
     Widget Function(BuildContext context, EventDetailRouteData routeData);
 typedef AnniversaryDetailRouteBuilder =
     Widget Function(BuildContext context, String anniversaryId);
+typedef HabitDetailRouteBuilder =
+    Widget Function(BuildContext context, HabitDetailRouteData routeData);
+
+class HabitDetailRouteData {
+  const HabitDetailRouteData({required this.habitId, this.occurrenceKey});
+  final String habitId;
+  final String? occurrenceKey;
+}
 
 class EventDetailRouteData {
   const EventDetailRouteData({
@@ -39,6 +47,10 @@ class AppRouter {
     EventDetailRouteBuilder? eventDetailBuilder,
     WidgetBuilder? anniversaryListBuilder,
     AnniversaryDetailRouteBuilder? anniversaryDetailBuilder,
+    WidgetBuilder? habitListBuilder,
+    WidgetBuilder? habitCreateBuilder,
+    HabitDetailRouteBuilder? habitDetailBuilder,
+    WidgetBuilder? appearanceBuilder,
     WidgetBuilder? ringSettingsBuilder,
     WidgetBuilder? activeRingBuilder,
     WidgetBuilder? authCheckBuilder,
@@ -64,6 +76,24 @@ class AppRouter {
       return MaterialPageRoute<void>(
         settings: const RouteSettings(name: '/anniversaries'),
         builder: anniversaryListBuilder,
+      );
+    }
+    if (name == '/habits' && habitListBuilder != null) {
+      return MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/habits'),
+        builder: habitListBuilder,
+      );
+    }
+    if (name == '/habit/create' && habitCreateBuilder != null) {
+      return MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/habit/create'),
+        builder: habitCreateBuilder,
+      );
+    }
+    if (name == '/settings/appearance' && appearanceBuilder != null) {
+      return MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/settings/appearance'),
+        builder: appearanceBuilder,
       );
     }
     if (name == '/settings/ring' && ringSettingsBuilder != null) {
@@ -167,6 +197,24 @@ class AppRouter {
           return MaterialPageRoute<void>(
             settings: settings,
             builder: (context) => anniversaryDetailBuilder(context, id),
+          );
+        }
+        if (type == 'habit' && habitDetailBuilder != null) {
+          final occurrenceValues = uri.queryParametersAll['occurrence_key'];
+          if (occurrenceValues != null &&
+              (occurrenceValues.length != 1 ||
+                  occurrenceValues.single.trim().isEmpty)) {
+            return _todayRoute(todayBuilder);
+          }
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (context) => habitDetailBuilder(
+              context,
+              HabitDetailRouteData(
+                habitId: id,
+                occurrenceKey: occurrenceValues?.single,
+              ),
+            ),
           );
         }
         return MaterialPageRoute<void>(

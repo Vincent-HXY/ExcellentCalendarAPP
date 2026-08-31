@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "excellent_calendar/application/event_service.hpp"
+#include "excellent_calendar/application/habit_service.hpp"
 #include "excellent_calendar/application/anniversary_query_service.hpp"
 #include "excellent_calendar/application/anniversary_workflow_service.hpp"
 #include "excellent_calendar/application/category_service.hpp"
@@ -75,6 +76,8 @@ std::shared_ptr<application::AnniversaryQueryService>
 current_anniversary_query_service();
 
 std::shared_ptr<application::CategoryService> current_category_service();
+
+std::shared_ptr<application::HabitService> current_habit_service();
 
 std::shared_ptr<domain::LocalTimeResolver> current_local_time_resolver();
 

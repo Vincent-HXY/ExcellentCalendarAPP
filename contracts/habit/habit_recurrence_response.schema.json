@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_recurrence_response.schema.json",
+  "title": "HabitRecurrenceResponse",
+  "description": "Exclusively owned immutable Habit V1 rule. Challenge dates remain Habit fields and are not duplicated.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "frequency", "interval", "timezone_mode", "created_at", "updated_at", "deleted_at"],
+  "properties": {
+    "id": {"type": "string", "format": "uuid"},
+    "frequency": {"const": "daily"},
+    "interval": {"const": 1},
+    "timezone_mode": {"const": "follow_device"},
+    "created_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "updated_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "deleted_at": {"type": "null"}
+  }
+}

@@ -7,6 +7,7 @@
 
 #include "excellent_calendar/repository/anniversary_transaction.hpp"
 #include "excellent_calendar/repository/category_repository.hpp"
+#include "excellent_calendar/repository/habit_transaction.hpp"
 #include "excellent_calendar/repository/event_reminder_transaction.hpp"
 #include "excellent_calendar/repository/event_repository.hpp"
 #include "excellent_calendar/repository/notification_repository.hpp"
@@ -157,6 +158,22 @@ class SqliteCategoryRepository final : public repository::CategoryRepository {
 
   common::Result<common::Unit> initialize() override;
   common::Result<repository::CategoryState> load() override;
+  common::Result<common::Unit> execute(std::string_view operation,
+                                       const Operation& action) override;
+
+ private:
+  std::shared_ptr<SqliteCalendarDatabase> database_;
+  std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
+};
+
+class SqliteHabitTransaction final : public repository::HabitTransaction {
+ public:
+  explicit SqliteHabitTransaction(
+      std::shared_ptr<SqliteCalendarDatabase> database,
+      std::shared_ptr<storage::RuntimeStorageLease> runtime_lease = {});
+
+  common::Result<common::Unit> initialize() override;
+  common::Result<repository::HabitState> load() override;
   common::Result<common::Unit> execute(std::string_view operation,
                                        const Operation& action) override;
 

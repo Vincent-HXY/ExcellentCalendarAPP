@@ -14,11 +14,17 @@ import com.excellentcalendar.excellent_calendar.bridge.reminder.ReminderSchedule
 import com.excellentcalendar.excellent_calendar.bridge.reminder.SharedPreferencesRecoveryRequestStore
 import com.excellentcalendar.excellent_calendar.bridge.reminder.V2ReminderDeliveryService
 import com.excellentcalendar.excellent_calendar.bridge.reminder.V2ReminderScheduleCoordinator
+import com.excellentcalendar.excellent_calendar.bridge.reminder.HabitAwareReminderScheduleReconciler
+import com.excellentcalendar.excellent_calendar.bridge.reminder.HabitReconcileContinuation
+import com.excellentcalendar.excellent_calendar.bridge.reminder.HabitReminderReconciler
 import com.excellentcalendar.excellent_calendar.bridge.runtime.AndroidDeviceTimezoneProvider
 import com.excellentcalendar.excellent_calendar.android.ring.RingRuntimeProvider
 
 object ReminderCoordinatorFactory {
-    fun create(context: Context): ReminderScheduleReconciler {
+    fun create(
+        context: Context,
+        initialHabitCursor: String? = null,
+    ): ReminderScheduleReconciler {
         val appContext = context.applicationContext
         val bridge = AndroidNativeBridgeFactory.create(appContext)
         val logger = { operation: String, reminderId: String?, message: String ->
@@ -43,13 +49,25 @@ object ReminderCoordinatorFactory {
                 logger = logger,
                 timezoneProvider = AndroidDeviceTimezoneProvider,
             )
-            return V2ReminderScheduleCoordinator(
+            val shared = V2ReminderScheduleCoordinator(
                 nativeBridge = bridge,
                 alarmScheduler = ReminderDispatchAlarmScheduler(appContext),
                 deliveryService = delivery,
                 recoveryCoordinator = recovery,
-                continuationEnqueuer = { ReminderWorkScheduler.enqueueContinuation(appContext) },
+                continuationEnqueuer = { enqueueConfirmedContinuation(appContext) },
                 logger = logger,
+            )
+            return HabitAwareReminderScheduleReconciler(
+                habit = HabitReminderReconciler(
+                    bridge = bridge,
+                    timezoneProvider = AndroidDeviceTimezoneProvider,
+                    continuationEnqueuer = {
+                        enqueueConfirmedHabitContinuation(appContext, it)
+                    },
+                    logger = logger,
+                ),
+                shared = shared,
+                initialHabitCursor = initialHabitCursor,
             )
         }
         LegacyReminderAlarmMigration.runIfNeeded(appContext, bridge)
@@ -63,9 +81,29 @@ object ReminderCoordinatorFactory {
                 eventHub = AndroidNotificationRuntime.eventHub,
                 logger = logger,
             ),
-            continuationEnqueuer = { ReminderWorkScheduler.enqueueContinuation(appContext) },
+            continuationEnqueuer = { enqueueConfirmedContinuation(appContext) },
             logger = logger,
         )
+    }
+
+    private fun enqueueConfirmedContinuation(context: Context) {
+        check(ReminderWorkScheduler.enqueueConfirmedContinuation(context)) {
+            "Reminder continuation could not be persisted"
+        }
+    }
+
+    private fun enqueueConfirmedHabitContinuation(
+        context: Context,
+        continuation: HabitReconcileContinuation,
+    ) {
+        check(
+            ReminderWorkScheduler.enqueueConfirmedHabitContinuation(
+                context,
+                continuation,
+            ),
+        ) {
+            "Habit reminder continuation could not be persisted"
+        }
     }
 
     private const val LogTag = "ExcellentCalendarQueue"

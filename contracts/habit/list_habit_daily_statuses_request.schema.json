@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/list_habit_daily_statuses_request.schema.json",
+  "title": "ListHabitDailyStatusesRequest",
+  "description": "Inclusive bounded date query. Dates must be within the Habit challenge interval and the range may contain at most 400 natural days.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["habit_id", "start_date", "end_date", "timezone"],
+  "properties": {
+    "habit_id": {"type": "string", "format": "uuid"},
+    "start_date": {"type": "string", "format": "date"},
+    "end_date": {"type": "string", "format": "date"},
+    "timezone": {"type": "string", "minLength": 1, "x-format": "iana-timezone"}
+  }
+}

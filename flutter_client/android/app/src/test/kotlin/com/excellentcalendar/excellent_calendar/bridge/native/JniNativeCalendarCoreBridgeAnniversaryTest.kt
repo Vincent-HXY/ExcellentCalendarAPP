@@ -44,7 +44,7 @@ class JniNativeCalendarCoreBridgeAnniversaryTest {
                     "ok" to true,
                     "data" to linkedMapOf(
                         "initialized" to true,
-                        "storage_format_version" to 4,
+                        "storage_format_version" to 5,
                         "tzdb_version" to BundledTzdbExtractor.Version,
                     ),
                     "error" to null,

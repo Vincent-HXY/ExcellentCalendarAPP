@@ -2,8 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/plan_recovery_request.schema.json",
   "title": "PlanRecoveryRequest",
-  "description": "Idempotent recovery request. Current time is supplied by the C++ Clock. timezone is the required current device IANA timezone that owns Anniversary occurrence-day end boundaries, yearly successor projection for expired Anniversary Reminders, and Anniversary Reminder rematerialization during Recovery. Ordinary 72-hour and Ring rules remain UTC-instant based.",
+  "description": "Idempotent recovery request. Current time is supplied by the C++ Clock. timezone is the required current device IANA timezone that owns Anniversary occurrence-day end boundaries, yearly successor projection for expired Anniversary Reminders, and Anniversary Reminder rematerialization during Recovery. Ordinary 72-hour and Ring rules remain UTC-instant based. Habit is excluded and uses habit.reconcile_reminders.",
   "x-contract-version": 2,
+  "x-excluded-target-types": ["habit"],
   "x-timezone-responsibilities": [
     "Evaluate the Anniversary occurrence next-day 00:00 cutoff.",
     "Project the yearly successor for an expired Anniversary Reminder.",

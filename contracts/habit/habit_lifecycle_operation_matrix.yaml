@@ -1,0 +1,70 @@
+contract_version: 2
+habit_revision: 1
+implementation_status: integrated
+release_status: active
+clock_owner: cpp
+today_source: validated_request_iana_timezone
+
+rules:
+  natural_completion_boundary: >-
+    A Habit remains active through end_date. It becomes completed only when the
+    next device-local date is strictly later than end_date.
+  final_day_end: >-
+    habit.end is not an early end when today equals end_date and fails with
+    HABIT_END_NOT_EARLY. The final plan day remains writable until local midnight.
+  completed_reopen: forbidden
+  completed_end_date_extension: forbidden
+  ended_history_mutation: forbidden
+  delete_policy: >-
+    habit.delete is allowed for every non-deleted lifecycle and is the only
+    mutation allowed after completed or ended_early. A deleted target rejects
+    every mutation with HABIT_TARGET_DELETED.
+  restart_policy: >-
+    Restart is not a mutation of the existing Habit. Flutter may prefill a new
+    habit.create request, and C++ creates all-new Habit, Recurrence, template,
+    occurrence, Reminder, and CheckIn identities.
+
+operations:
+  - habit.update
+  - habit.end
+  - habit.delete
+  - habit.check_in
+  - habit.clear_check_in
+  - habit.set_reminder
+
+matrix:
+  upcoming:
+    habit.update: {decision: allowed, constraints: [optimistic_token, max_400_inclusive_days, target_and_unit_pair]}
+    habit.end: {decision: rejected, error: HABIT_NOT_STARTED}
+    habit.delete: {decision: allowed, constraints: [optimistic_token]}
+    habit.check_in: {decision: rejected_by_date, errors: [HABIT_CHECK_IN_FUTURE_DATE, HABIT_CHECK_IN_DATE_OUT_OF_RANGE]}
+    habit.clear_check_in: {decision: rejected_by_date, errors: [HABIT_CHECK_IN_FUTURE_DATE, HABIT_CHECK_IN_DATE_OUT_OF_RANGE]}
+    habit.set_reminder: {decision: allowed, constraints: [optimistic_token]}
+  active:
+    habit.update: {decision: allowed, constraints: [optimistic_token, field_locks, max_400_inclusive_days, end_date_not_before_today_or_latest_check_in]}
+    habit.end: {decision: conditionally_allowed, allowed_when: today_before_end_date, rejected_when: today_equals_end_date, error: HABIT_END_NOT_EARLY}
+    habit.delete: {decision: allowed, constraints: [optimistic_token]}
+    habit.check_in: {decision: allowed, constraints: [today_or_past, effective_interval]}
+    habit.clear_check_in: {decision: allowed, constraints: [today_or_past, effective_interval]}
+    habit.set_reminder: {decision: allowed, constraints: [optimistic_token, daily_display_guard]}
+  completed:
+    habit.update: {decision: rejected, error: HABIT_ALREADY_ENDED}
+    habit.end: {decision: rejected, error: HABIT_ALREADY_ENDED}
+    habit.delete: {decision: allowed, constraints: [optimistic_token]}
+    habit.check_in: {decision: rejected, error: HABIT_ALREADY_ENDED}
+    habit.clear_check_in: {decision: rejected, error: HABIT_ALREADY_ENDED}
+    habit.set_reminder: {decision: rejected, error: HABIT_ALREADY_ENDED}
+  ended_early:
+    habit.update: {decision: rejected, error: HABIT_ALREADY_ENDED}
+    habit.end: {decision: rejected, error: HABIT_ALREADY_ENDED}
+    habit.delete: {decision: allowed, constraints: [optimistic_token]}
+    habit.check_in: {decision: rejected, error: HABIT_ALREADY_ENDED}
+    habit.clear_check_in: {decision: rejected, error: HABIT_ALREADY_ENDED}
+    habit.set_reminder: {decision: rejected, error: HABIT_ALREADY_ENDED}
+  deleted:
+    habit.update: {decision: rejected, error: HABIT_TARGET_DELETED}
+    habit.end: {decision: rejected, error: HABIT_TARGET_DELETED}
+    habit.delete: {decision: rejected, error: HABIT_TARGET_DELETED}
+    habit.check_in: {decision: rejected, error: HABIT_TARGET_DELETED}
+    habit.clear_check_in: {decision: rejected, error: HABIT_TARGET_DELETED}
+    habit.set_reminder: {decision: rejected, error: HABIT_TARGET_DELETED}

@@ -1,0 +1,42 @@
+{
+  "daily_display_key": ["habit_id", "occurrence_date"],
+  "prepared_reserves_display_slot": true,
+  "cases": [
+    {
+      "name": "pending_then_time_change",
+      "prior_state": "pending",
+      "operation": "change_local_time",
+      "same_day_result": "replace_with_new_template_reminder",
+      "new_template_first_date": "2026-09-01"
+    },
+    {
+      "name": "prepared_then_time_change",
+      "prior_state": "prepared",
+      "operation": "change_local_time",
+      "same_day_result": "no_new_display",
+      "old_attempt_terminal_reason": "habit_reminder_cancelled",
+      "new_template_first_date": "2026-09-02"
+    },
+    {
+      "name": "sent_then_time_change",
+      "prior_state": "sent",
+      "operation": "change_local_time",
+      "same_day_result": "no_new_display",
+      "new_template_first_date": "2026-09-02"
+    },
+    {
+      "name": "disabled_then_reenabled_before_attempt",
+      "prior_state": "pending",
+      "operation": "disable_then_reenable",
+      "same_day_result": "replace_with_new_template_reminder",
+      "new_template_first_date": "2026-09-01"
+    },
+    {
+      "name": "disabled_then_reenabled_after_sent",
+      "prior_state": "sent",
+      "operation": "disable_then_reenable",
+      "same_day_result": "no_new_display",
+      "new_template_first_date": "2026-09-02"
+    }
+  ]
+}

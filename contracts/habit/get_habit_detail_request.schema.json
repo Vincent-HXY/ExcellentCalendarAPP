@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/get_habit_detail_request.schema.json",
+  "title": "GetHabitDetailRequest",
+  "description": "Loads one non-deleted Habit aggregate and a bounded first history page.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "timezone", "history_page_size"],
+  "properties": {
+    "id": {"type": "string", "format": "uuid"},
+    "timezone": {"type": "string", "minLength": 1, "x-format": "iana-timezone"},
+    "history_page_size": {"type": "integer", "minimum": 1, "maximum": 120}
+  }
+}

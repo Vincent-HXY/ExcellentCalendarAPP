@@ -147,6 +147,27 @@ void main() {
     expect(find.text('today'), findsNothing);
   });
 
+  testWidgets('Habit detail route passes target and occurrence identity', (
+    tester,
+  ) async {
+    HabitDetailRouteData? received;
+    final route = AppRouter.onGenerateRoute(
+      const RouteSettings(
+        name: '/habit/detail/habit-1?occurrence_key=occurrence-1',
+      ),
+      todayBuilder: (_) => const Text('today'),
+      habitDetailBuilder: (context, routeData) {
+        received = routeData;
+        return const Scaffold(body: Text('habit detail loaded'));
+      },
+    );
+
+    await _pushRoute(tester, route);
+    expect(find.text('habit detail loaded'), findsOneWidget);
+    expect(received?.habitId, 'habit-1');
+    expect(received?.occurrenceKey, 'occurrence-1');
+  });
+
   testWidgets('anniversary detail route passes the decoded id', (tester) async {
     String? receivedId;
     final route = AppRouter.onGenerateRoute(

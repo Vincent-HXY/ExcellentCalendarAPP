@@ -34,4 +34,19 @@ bool contains_case_insensitive_ascii(std::string_view text, std::string_view key
   return lower_text.find(lower_keyword) != std::string::npos;
 }
 
+std::string format_hundredths(std::int64_t value) {
+  const auto whole = value / 100;
+  auto fraction = value % 100;
+  if (fraction < 0) fraction = -fraction;
+  const auto whole_text = value < 0 && whole == 0
+                              ? std::string("-0")
+                              : std::to_string(whole);
+  if (fraction == 0) return whole_text;
+  if (fraction % 10 == 0) {
+    return whole_text + "." + std::to_string(fraction / 10);
+  }
+  return whole_text + "." +
+         (fraction < 10 ? "0" : "") + std::to_string(fraction);
+}
+
 }  // namespace excellent_calendar::common

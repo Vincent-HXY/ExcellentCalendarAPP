@@ -63,6 +63,28 @@ class NativeAnniversaryMethods {
   static const listOccurrences = 'anniversary.list_occurrences';
 }
 
+class NativeHabitMethods {
+  const NativeHabitMethods._();
+
+  static const create = 'habit.create';
+  static const update = 'habit.update';
+  static const list = 'habit.list';
+  static const detail = 'habit.detail';
+  static const end = 'habit.end';
+  static const delete = 'habit.delete';
+  static const checkIn = 'habit.check_in';
+  static const clearCheckIn = 'habit.clear_check_in';
+  static const listDailyStatuses = 'habit.list_daily_statuses';
+  static const setReminder = 'habit.set_reminder';
+}
+
+class NativeAppearanceMethods {
+  const NativeAppearanceMethods._();
+
+  static const getLocal = 'appearance.get_local';
+  static const updateLocal = 'appearance.update_local';
+}
+
 class NativeCategoryMethods {
   const NativeCategoryMethods._();
 

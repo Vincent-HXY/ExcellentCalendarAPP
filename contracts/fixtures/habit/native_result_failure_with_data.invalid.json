@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "data": {"unexpected": "must be null on failure"},
+  "error": {
+    "code": "HABIT_NOT_FOUND",
+    "message": "Habit not found",
+    "retryable": false
+  },
+  "contract_version": 2,
+  "request_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+}

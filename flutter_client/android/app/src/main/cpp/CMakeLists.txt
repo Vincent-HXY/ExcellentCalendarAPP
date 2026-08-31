@@ -23,6 +23,7 @@ add_library(
     excellent_calendar_native
     SHARED
     boundary/adapter/jni/event_jni.cpp
+    boundary/adapter/jni/habit_jni.cpp
 )
 
 target_compile_features(excellent_calendar_native PRIVATE cxx_std_17)

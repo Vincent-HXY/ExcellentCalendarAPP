@@ -2,14 +2,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/prepare_delivery_response.schema.json",
   "title": "PrepareDeliveryResponse",
-  "description": "Prepared Notification attempt and the exact tap payload Kotlin must attach to the system notification.",
+  "description": "Prepared Notification attempt, exact tap payload, and—only for a Habit reminder—the immutable direct-complete action payload Kotlin must attach.",
   "x-contract-version": 2,
+  "x-habit-revision": 1,
   "type": "object",
   "additionalProperties": false,
   "required": ["notification", "tap_payload", "idempotent_replay"],
   "properties": {
     "notification": {"$ref": "../notification/notification_response.schema.json"},
     "tap_payload": {"$ref": "../notification/prepared_notification_payload.schema.json"},
-    "idempotent_replay": {"type": "boolean"}
-  }
+    "idempotent_replay": {"type": "boolean"},
+    "habit_action_payload": {
+      "oneOf": [
+        {"$ref": "../habit/habit_notification_action_payload.schema.json"},
+        {"type": "null"}
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"notification": {"properties": {"target_type": {"const": "habit"}}, "required": ["target_type"]}}, "required": ["notification"]},
+      "then": {"required": ["habit_action_payload"], "properties": {"habit_action_payload": {"$ref": "../habit/habit_notification_action_payload.schema.json"}}},
+      "else": {"properties": {"habit_action_payload": {"type": "null"}}}
+    }
+  ]
 }

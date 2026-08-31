@@ -6,6 +6,7 @@ enum class ReminderScheduleTrigger(val wireValue: String) {
     Mutation("mutation"),
     BootCompleted("boot_completed"),
     PackageReplaced("package_replaced"),
+    DateChanged("date_changed"),
     TimeChanged("time_changed"),
     TimezoneChanged("timezone_changed"),
     PeriodicWorker("periodic_worker"),

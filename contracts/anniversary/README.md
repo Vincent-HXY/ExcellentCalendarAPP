@@ -58,7 +58,7 @@ Calendar Core SQLite: v4 (`integrated`, `active`)
 - `finalize_delivery.timezone` 是共享请求中的可选 additive 字段；Kotlin 新实现统一传当前设备 IANA timezone。C++ 加载 prepared attempt 后，仅当目标是 Anniversary Reminder 或 kind 为 `anniversary_catch_up` 时把它视为语义必填：缺失返回 `CONTRACT_VALIDATION_FAILED`，非法 ID 返回 `TIMEZONE_ID_INVALID`。Event、Ring、普通 Recovery 的旧 payload 仍合法。
 - 第一次成功 Anniversary finalize 使用本次 timezone 生成并持久化 successor；transaction/journal 已提交后的重放必须直接返回原 successor，即使重放传入不同 timezone。timezone 不进入 Reminder、delivery 或 attempt identity；retryable failure 不生成 successor。
 - `plan_recovery.timezone` 继续全局必填，负责 Anniversary occurrence 日末边界、expired Anniversary Reminder 的年度 successor，以及 Recovery 中重新物化的 Anniversary Reminder。
-- `prepare_delivery` 不新增 timezone。它只消费 `plan_recovery` 已冻结的 batch/group membership；真正生成 successor 的 finalize 使用当时的当前时区。
+- `prepare_delivery.timezone` 是共享请求中的可选 additive 字段，用于普通 Habit Reminder 展示前的当地日期终检；Event/Anniversary 旧调用方可以继续省略。Anniversary catch-up 仍只消费 `plan_recovery` 已冻结的 batch/group membership，真正生成 successor 的 finalize 使用当时的当前时区。
 
 ## Identity and time
 

@@ -93,6 +93,31 @@ void main() {
     expect(payload.occurrenceKey, '66666666-6666-5666-8666-666666666666');
   });
 
+  test('Habit reminder tap requires occurrence identity and typed route', () {
+    final payload = NotificationTapPayloadDto.fromJson({
+      'notification_id': '11111111-1111-4111-8111-111111111111',
+      'delivery_id': '22222222-2222-5222-8222-222222222222',
+      'delivery_attempt_id': '33333333-3333-4333-8333-333333333333',
+      'kind': 'reminder',
+      'reminder_id': '44444444-4444-4444-8444-444444444444',
+      'recovery_batch_id': null,
+      'target_type': 'habit',
+      'target_id': '55555555-5555-4555-8555-555555555555',
+      'occurrence_key': '66666666-6666-5666-8666-666666666666',
+      'route': 'habit.detail',
+      'opened_at': '2026-08-28T02:05:00Z',
+    });
+    expect(payload.targetType, NotificationTargetType.habit);
+    expect(payload.occurrenceKey, isNotNull);
+    expect(
+      () => NotificationTapPayloadDto.fromJson({
+        ...payload.toJson(),
+        'occurrence_key': null,
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('Anniversary tap rejects missing occurrence and unknown kind', () {
     final base = <String, dynamic>{
       'notification_id': '11111111-1111-4111-8111-111111111111',

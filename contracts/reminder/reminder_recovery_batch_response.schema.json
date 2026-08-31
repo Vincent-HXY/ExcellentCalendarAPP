@@ -2,7 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/reminder_recovery_batch_response.schema.json",
   "title": "ReminderRecoveryBatchResponse",
-  "description": "Persisted idempotent recovery batch. Ordinary Event/Ring candidates retain the fixed 72-hour window, inclusive 5-minute ring grace rule, and global 20-detail limit. Anniversary candidates use separate occurrence-day catch-up groups and never enter ordinary detail/summary counts.",
+  "description": "Persisted idempotent recovery batch. Ordinary Event/Ring candidates retain the fixed 72-hour window, inclusive 5-minute ring grace rule, and global 20-detail limit. Anniversary candidates use separate occurrence-day catch-up groups and never enter ordinary detail/summary counts. Habit uses an independent bounded reconciliation and never becomes a batch member.",
+  "x-excluded-target-types": ["habit"],
   "x-recovery-count-invariants": [
     "window_start_at equals started_at minus 72 hours; the ring grace boundary is derived as started_at minus 5 minutes and is not persisted separately.",
     "A ring Reminder with remind_at exactly equal to started_at minus 5 minutes remains detail-eligible; one earlier by any positive duration is forced to summary.",

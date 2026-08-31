@@ -1,6 +1,6 @@
 ## Reminder：提醒
 
-提醒是独立实体，也是未来调度任务的唯一领域真相源。普通单次 Reminder 与重复 Event 的滚动 Reminder 共用实体，但身份和生成规则不同。
+提醒是独立实体，也是未来调度任务的唯一领域真相源。普通单次 Event、重复 Event、Anniversary 与 Habit 共用实体，但各 target-specific 分支的身份和生成规则不同。
 
 职责边界：
 
@@ -20,11 +20,11 @@
 | `recurrenceRevision` | `integer` | 否 | 重复 Event 当前 Reminder 所属 revision；普通 Reminder 为空 |
 | `occurrenceKey` | `string` | 否 | 重复 Event occurrence 的稳定 UUIDv5；普通 Reminder 为空 |
 | `occurrenceStartAt` | `datetime` | 否 | 重复定时 occurrence 的 UTC 开始 Instant；普通 Reminder 为空 |
-| `templateKey` | `string` | 否 | Anniversary 分支必填的稳定模板 UUIDv5；Event/Habit 分支为空 |
-| `occurrenceDate` | `date` | 否 | Anniversary 分支必填的当地 occurrence 日期；Event/Habit 分支为空 |
+| `templateKey` | `string` | 否 | Anniversary/Habit 分支必填；Habit 使用 C++ 生成的 template UUIDv4 |
+| `occurrenceDate` | `date` | 否 | Anniversary/Habit 分支必填的当地 occurrence 日期；Event 分支为空 |
 | `advanceDays` | `integer` | 否 | Anniversary 分支必填，范围 `0..365` |
-| `localTime` | `string` | 否 | Anniversary 分支必填，格式 `HH:mm` |
-| `timezoneMode` | `string` | 否 | Anniversary 分支固定 `follow_device` |
+| `localTime` | `string` | 否 | Anniversary/Habit 分支必填，格式 `HH:mm` |
+| `timezoneMode` | `string` | 否 | Anniversary/Habit 分支固定 `follow_device` |
 | `fulfillmentDeliveryId` | `string` | 否 | Anniversary `sent` 时必填；证明提醒义务由哪个真实 delivery 履约 |
 | `remindAt` | `datetime` | 是 | 提醒触发时间 |
 | `methods` | `ReminderMethod[]` | 是 | 成功持久化时恰好一个值：普通 Reminder 为 `[popup]` 或 `[ring]`，重复 Reminder 固定为 `[popup]` |
@@ -37,8 +37,8 @@
 | `failureReason` | `string` | 否 | 调度或发送失败原因 |
 | `lastCancellationReason` | `ReminderCancellationReason` | 否 | 最近一次机器可读取消原因 |
 | `lastCancelledAt` | `datetime` | 否 | 最近一次取消时间 |
-| `expirationReason` | `ReminderExpirationReason` | 否 | `expired` 时固定为 `recovery_window_elapsed`，其他状态为空 |
-| `expiredAt` | `datetime` | 否 | Recovery 把已物化 Reminder 终结为 `expired` 的 C++ Clock 时间 |
+| `expirationReason` | `ReminderExpirationReason` | 否 | `expired` 时按 target workflow 为普通、Anniversary 或 Habit 专属值；其他状态为空 |
+| `expiredAt` | `datetime` | 否 | 对应 C++ recovery/reconciliation 把已物化 Reminder 终结为 `expired` 的 Clock 时间 |
 | `reactivatedAt` | `datetime` | 否 | 最近一次恢复为 `pending` 的时间 |
 | `reactivationCount` | `integer` | 是 | 恢复次数，初始为 `0` |
 | `createdAt` | `datetime` | 是 | 创建时间 |
@@ -53,19 +53,23 @@
 - 重复 Reminder draft 只提交 `advanceMinutes`，不得提交绝对 `remindAt`；`advanceMinutes = 0` 合法。
 - v2 重复 Reminder 的 `methods` 必须规范化为 `['popup']`。同一 revision 中 `(advanceMinutes, canonicalMethods)` 模板唯一，`message` 不参与身份计算。
 - 重复 Reminder 唯一键为 `(targetId, recurrenceRevision, occurrenceKey, advanceMinutes, canonicalMethods)`；`reminderId` 的 UUIDv5 输入与固定测试向量见 `contracts/identity.yaml`。
-- 除 `planRecovery` 外，首次创建、revision 更新、投递终结和 occurrence/series 状态变化只能选择 `remindAt > workflow Clock` 的最早合法 occurrence；不得为了补历史而在普通 workflow 中创建过去 Reminder。
+- 除 `planRecovery` 与窄的 `habit.reconcileReminders` 外，首次创建、revision 更新、投递终结和 occurrence/series 状态变化只能选择 `remindAt > workflow Clock` 的最早合法 occurrence；不得为了补历史而在普通 workflow 中创建过去 Reminder。
 - 重试遇到相同 ID 且业务内容一致时幂等返回原记录；内容冲突返回 `REMINDER_IDEMPOTENCY_CONFLICT`。
 - `series_updated`、`series_cancelled`、`series_deleted` 和 `user_cancelled` 不可恢复；其他可逆原因仅能恢复同一条仍在未来的 Reminder。
 - 取消时写入/覆盖 `lastCancellationReason` 与 `lastCancelledAt`；恢复时把同一记录改回 `pending`、重新启用、写入 `reactivatedAt` 并递增 `reactivationCount`，但不清空最近取消审计字段。
 - occurrence reopen 恢复较早 Reminder 前，必须把同 event/revision/模板且时间更晚的 open successor 以 `occurrence_reopened` 暂存；滚动链随后只恢复仍在未来的确定性 successor，同模板任何时刻最多一条 open Reminder。
-- `expired` 是仅由 `planRecovery` 写入的终结状态：严格满足 `remindAt < windowStartAt` 的 open `pending/scheduled` Reminder 被禁用、清空 `scheduledAt` 并保留原 `remindAt` 与审计历史；普通 Reminder 不生成 successor，重复 Reminder 在同一事务确保首个未来 successor。
+- 普通/Anniversary `expired` 仅由 `planRecovery` 写入；Habit `expired` 由 `habit.reconcileReminders`，或由携带当前设备 IANA timezone 的 `prepareDelivery` 最终投递防线，在 occurrence 已跨过当地次日 00:00 后写入。两者都原子禁用、清空 `scheduledAt` 并保留原 `remindAt` 与审计历史，但 Habit 明确不进入 72 小时窗口或摘要。
 - 可重试投递失败只追加 `Notification` attempt，Reminder 保持 `pending`。永久失败把当前 Reminder 标记 `failed`，并在同一事务创建 successor，避免无限系列中断。
-- Anniversary Reminder 必须满足：`targetType=anniversary`、`occurrenceKey/templateKey/occurrenceDate/advanceDays/localTime/timezoneMode` 全部存在，`timezoneMode=follow_device`、`methods=[popup]`，而 `recurrenceRevision/occurrenceStartAt/advanceMinutes` 全部为空。Event/Habit 分支必须把这些 Anniversary 专用字段全部写成 `null`。
+- Anniversary Reminder 必须满足：`targetType=anniversary`、`occurrenceKey/templateKey/occurrenceDate/advanceDays/localTime/timezoneMode` 全部存在，`timezoneMode=follow_device`、`methods=[popup]`，而 `recurrenceRevision/occurrenceStartAt/advanceMinutes` 全部为空。Event 分支必须把这些字段写成 `null`。
 - Anniversary Reminder ID 按 `contracts/identity.yaml` 由 target、occurrence 和 template 生成。同一模板链任何时刻最多一条 open Reminder；相同 ID 与相同业务内容重放幂等，内容冲突返回 `REMINDER_IDEMPOTENCY_CONFLICT`。
 - Anniversary 的 `sent` 表示该 Reminder 的义务已被一个真实成功的 Notification 履行。正常单条投递和 catch-up 聚合都必须写非空 `fulfillmentDeliveryId`；聚合时多个 Reminder 可以共享该值，但不能为未展示的成员伪造独立 Notification attempt。
 - Anniversary 可重试失败保持 `pending` 且不创建 successor；永久失败或 occurrence 日末过期进入终态，并为年度模板分别创建首个未来 successor。日末过期使用 `anniversary_occurrence_elapsed`，不改变普通 Event/Ring 的 `recovery_window_elapsed` 语义。
 - Anniversary 单条或聚合 attempt 的 `finalizeDelivery` 在加载 prepared attempt 后要求非空、有效的当前设备 IANA timezone；共享 Wire 字段保持可选以兼容 Event、Ring 和普通 Recovery。第一次成功 finalize 使用该时区计算并持久化年度 successor；journal/transaction 已提交后的重放只返回原 successor，不使用后来传入的时区重新计算。timezone 不参与 Reminder、delivery 或 attempt identity。
 - `anniversary_paused` 与 `anniversary_template_disabled` 只允许 workflow 在仍有意义时恢复确定性任务；`anniversary_updated`、`anniversary_template_replaced` 与 `anniversary_deleted` 不可恢复。所有原因都保留取消审计。
+- Habit Reminder 必须满足：`targetType=habit`、`occurrenceKey/templateKey/occurrenceDate/localTime/timezoneMode` 全部存在，`timezoneMode=follow_device`、`methods=[popup]`；`recurrenceRevision/occurrenceStartAt/advanceDays/advanceMinutes/fulfillmentDeliveryId` 全部为空。
+- Habit occurrence、Reminder 和 action identity 由 `contracts/identity.yaml` 冻结。timezone、localTime、remindAt、标题、目标和调度状态不参与 identity；同 tuple 的重放幂等，内容冲突严格失败。另以 `(habitId, occurrenceDate)` 跨 templateKey 保证最多一条 sent Reminder。
+- Habit 不进入普通 72 小时 RecoveryBatch、20 条明细上限或 recovery summary。独立 reconciliation 仅在同一当地日期逐条补发，次日 00:00 写 `habit_occurrence_elapsed`，并以有界 cursor 分块续跑；续页必须有正进展，结果计数和不得超过 request limit。Android dispatcher 必须先完成该 reconciliation；`prepareDelivery` 还必须使用统一设备时区在 C++ 再校验 `occurrenceDate == 当地今天`，防止调用顺序或跨午夜竞态导致旧 occurrence 展示。
+- Habit done/skipped 以 `habit_completed/habit_skipped` 取消当天 open Reminder；clear 只在当天尚无 sent/prepared 展示占用时恢复任务。`habit_ended/habit_deleted/habit_template_replaced` 不可恢复；`habit_template_disabled` 重新开启时，如果当天已 sent/prepared 则从下一合法日期物化，否则可以替换当天任务。
 
 ## Ring 与稍后提醒
 
@@ -101,7 +105,7 @@
 | `cancelled` | 已取消 |
 | `expired` | 已物化 Reminder 严格早于恢复窗口，未补发并保留为终结历史 |
 
-`failed` 只表示不可重试的永久失败。可重试投递失败只写入 `Notification` attempt，当前 `Reminder` 保持 `pending`。`expired` 只能由 `planRecovery` 在同一恢复事务中写入：对象必须启用、未删除、处于 `pending/scheduled`，且 `remindAt < windowStartAt`；恰好位于 72 小时边界仍属于恢复窗口。
+`failed` 只表示不可重试的永久失败。可重试投递失败只写入 `Notification` attempt，当前 `Reminder` 保持 `pending`。普通 `recovery_window_elapsed` 只能由 `planRecovery` 在同一恢复事务中写入：对象必须启用、未删除、处于 `pending/scheduled`，且 `remindAt < windowStartAt`；恰好位于 72 小时边界仍属于恢复窗口。Habit 的 `habit_occurrence_elapsed` 只由独立 reconciliation 按当地日期写入。
 
 ### ReminderCancellationReason
 
@@ -122,6 +126,12 @@
 | `anniversary_updated` | 否 | 日期或一次性/年度规则变化终结旧链 |
 | `anniversary_template_replaced` | 否 | 模板删除或 identity 字段变化终结旧链 |
 | `anniversary_deleted` | 否 | Anniversary 已软删除 |
+| `habit_completed` | 有条件 | 当天 done；clear 且该日期跨 template 未 sent/prepared 时可恢复任务 |
+| `habit_skipped` | 有条件 | 当天 skipped；clear 且该日期跨 template 未 sent/prepared 时可恢复任务 |
+| `habit_ended` | 否 | Habit 提前结束 |
+| `habit_deleted` | 否 | Habit 软删除 |
+| `habit_template_disabled` | 有条件 | 关闭提醒；重新开启时遵守该日期跨 template 的 sent/prepared 展示槽 |
+| `habit_template_replaced` | 否 | localTime 变化后由新 template identity 替代 |
 
 恢复仅适用于 `remindAt > reopenedAt` 的同一条 Reminder；不得生成新 ID，也不执行 72 小时补发。
 
@@ -133,4 +143,5 @@
 | --- | --- |
 | `recovery_window_elapsed` | `planRecovery` 判定已物化 Reminder 严格早于 72 小时恢复窗口 |
 | `anniversary_occurrence_elapsed` | 当前设备时区已到 occurrence 次日 00:00，Anniversary 本次任务不再补发 |
+| `habit_occurrence_elapsed` | 当前设备时区已到 occurrence 次日 00:00，Habit 本次任务不再补发 |
 

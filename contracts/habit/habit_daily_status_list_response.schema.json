@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_daily_status_list_response.schema.json",
+  "title": "HabitDailyStatusListResponse",
+  "description": "One item for every inclusive requested date, ordered ascending with no gaps or duplicates.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["habit_id", "start_date", "end_date", "items"],
+  "properties": {
+    "habit_id": {"type": "string", "format": "uuid"},
+    "start_date": {"type": "string", "format": "date"},
+    "end_date": {"type": "string", "format": "date"},
+    "items": {"type": "array", "minItems": 1, "maxItems": 400, "items": {"$ref": "./habit_daily_status_response.schema.json"}, "x-order": "date ascending, exactly one item per natural day"}
+  }
+}

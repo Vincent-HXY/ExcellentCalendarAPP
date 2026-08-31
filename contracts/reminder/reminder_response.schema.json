@@ -2,9 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/reminder/reminder_response.schema.json",
   "title": "ReminderResponse",
-  "description": "Contract v2 Reminder task with strict target-specific branches. Ordinary Event/Habit, recurring Event, and Anniversary payloads cannot mix nullable identity fields. Anniversary sent means one real delivery fulfilled the obligation and therefore requires fulfillment_delivery_id.",
+  "description": "Contract v2 Reminder task with strict target-specific branches. Ordinary Event, recurring Event, Anniversary, and Habit payloads cannot mix identity fields. Habit reminders are daily actionable occurrences and never use ordinary 72-hour recovery-summary semantics.",
   "x-contract-version": 2,
   "x-anniversary-reminder-revision": 1,
+  "x-habit-revision": 1,
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -42,11 +43,13 @@
         "user_cancelled", "event_completed", "occurrence_completed", "occurrence_skipped", "occurrence_cancelled",
         "occurrence_reopened", "series_completed", "series_cancelled", "series_deleted", "series_updated",
         "anniversary_paused", "anniversary_template_disabled", "anniversary_updated",
-        "anniversary_template_replaced", "anniversary_deleted", null
+        "anniversary_template_replaced", "anniversary_deleted",
+        "habit_completed", "habit_skipped", "habit_ended", "habit_deleted",
+        "habit_template_disabled", "habit_template_replaced", null
       ]
     },
     "last_cancelled_at": {"type": ["string", "null"], "format": "date-time"},
-    "expiration_reason": {"type": ["string", "null"], "enum": ["recovery_window_elapsed", "anniversary_occurrence_elapsed", null]},
+    "expiration_reason": {"type": ["string", "null"], "enum": ["recovery_window_elapsed", "anniversary_occurrence_elapsed", "habit_occurrence_elapsed", null]},
     "expired_at": {"type": ["string", "null"], "format": "date-time"},
     "reactivated_at": {"type": ["string", "null"], "format": "date-time"},
     "reactivation_count": {"type": "integer", "minimum": 0},
@@ -60,7 +63,7 @@
       "then": {
         "properties": {
           "is_enabled": {"const": false}, "scheduled_at": {"type": "null"},
-          "expiration_reason": {"type": "string", "enum": ["recovery_window_elapsed", "anniversary_occurrence_elapsed"]},
+          "expiration_reason": {"type": "string", "enum": ["recovery_window_elapsed", "anniversary_occurrence_elapsed", "habit_occurrence_elapsed"]},
           "expired_at": {"type": "string", "format": "date-time"}
         }
       },
@@ -81,9 +84,9 @@
   ],
   "oneOf": [
     {
-      "title": "OrdinaryEventOrHabitReminder",
+      "title": "OrdinaryEventReminder",
       "properties": {
-        "target_type": {"enum": ["event", "habit"]},
+        "target_type": {"const": "event"},
         "recurrence_revision": {"type": "null"}, "occurrence_key": {"type": "null"}, "occurrence_start_at": {"type": "null"},
         "template_key": {"type": "null"}, "occurrence_date": {"type": "null"}, "advance_days": {"type": "null"},
         "local_time": {"type": "null"}, "timezone_mode": {"type": "null"}, "fulfillment_delivery_id": {"type": "null"},
@@ -118,6 +121,24 @@
         "advance_minutes": {"type": "null"},
         "methods": {"const": ["popup"]},
         "expiration_reason": {"enum": ["anniversary_occurrence_elapsed", null]}
+      }
+    },
+    {
+      "title": "HabitReminder",
+      "properties": {
+        "target_type": {"const": "habit"},
+        "recurrence_revision": {"type": "null"},
+        "occurrence_key": {"type": "string", "format": "uuid"},
+        "occurrence_start_at": {"type": "null"},
+        "template_key": {"type": "string", "format": "uuid"},
+        "occurrence_date": {"type": "string", "format": "date"},
+        "advance_days": {"type": "null"},
+        "local_time": {"type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"},
+        "timezone_mode": {"const": "follow_device"},
+        "fulfillment_delivery_id": {"type": "null"},
+        "advance_minutes": {"type": "null"},
+        "methods": {"const": ["popup"]},
+        "expiration_reason": {"enum": ["habit_occurrence_elapsed", null]}
       }
     }
   ]

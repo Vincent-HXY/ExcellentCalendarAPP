@@ -2,86 +2,36 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/habit/habit_response.schema.json",
   "title": "HabitResponse",
-  "description": "Transport representation of a habit definition. Derived statistics are intentionally excluded.",
+  "description": "Persisted Habit definition only. Lifecycle, progress, statistics, daily state, reminder settings, and scheduling capability are separate projections.",
   "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "id",
-    "title",
-    "recurrence_id",
-    "start_date",
-    "is_active",
-    "created_at",
-    "updated_at"
-  ],
+  "x-inclusive-max-days": 400,
+  "required": ["id", "title", "description", "category_id", "recurrence_id", "target_count_hundredths", "unit", "start_date", "end_date", "ended_date", "is_active", "created_at", "updated_at", "deleted_at"],
   "properties": {
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "title": {
-      "type": "string",
-      "minLength": 1
-    },
-    "description": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "category_id": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "recurrence_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "target_count": {
-      "type": [
-        "number",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "unit": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "minLength": 1
-    },
-    "start_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "end_date": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date"
-    },
-    "is_active": {
-      "type": "boolean"
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "updated_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "deleted_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    }
-  }
+    "id": {"type": "string", "format": "uuid"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 80},
+    "description": {"type": ["string", "null"], "maxLength": 2000},
+    "category_id": {"type": ["string", "null"]},
+    "recurrence_id": {"type": "string", "format": "uuid"},
+    "target_count_hundredths": {"type": ["integer", "null"], "minimum": 1, "maximum": 9007199254740991},
+    "unit": {"type": ["string", "null"], "minLength": 1, "maxLength": 32},
+    "start_date": {"type": "string", "format": "date"},
+    "end_date": {"type": "string", "format": "date"},
+    "ended_date": {"type": ["string", "null"], "format": "date"},
+    "is_active": {"type": "boolean"},
+    "created_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "updated_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "deleted_at": {"type": ["string", "null"], "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"}
+  },
+  "oneOf": [
+    {"properties": {"target_count_hundredths": {"type": "null"}, "unit": {"type": "null"}}},
+    {"properties": {"target_count_hundredths": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}, "unit": {"type": "string", "minLength": 1, "maxLength": 32}}}
+  ],
+  "allOf": [
+    {"if": {"properties": {"is_active": {"const": true}}, "required": ["is_active"]}, "then": {"properties": {"ended_date": {"type": "null"}}}},
+    {"if": {"properties": {"is_active": {"const": false}, "deleted_at": {"type": "null"}}, "required": ["is_active", "deleted_at"]}, "then": {"properties": {"ended_date": {"type": "string", "format": "date"}}}}
+  ]
 }

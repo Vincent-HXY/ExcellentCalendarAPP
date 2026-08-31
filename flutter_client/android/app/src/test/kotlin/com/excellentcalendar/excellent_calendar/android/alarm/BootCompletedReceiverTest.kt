@@ -12,7 +12,7 @@ class BootCompletedReceiverTest {
             "android.intent.action.BOOT_COMPLETED" to ReminderScheduleTrigger.BootCompleted,
             "android.intent.action.MY_PACKAGE_REPLACED" to ReminderScheduleTrigger.PackageReplaced,
             "android.intent.action.TIME_SET" to ReminderScheduleTrigger.TimeChanged,
-            "android.intent.action.DATE_CHANGED" to ReminderScheduleTrigger.TimeChanged,
+            "android.intent.action.DATE_CHANGED" to ReminderScheduleTrigger.DateChanged,
             "android.intent.action.TIMEZONE_CHANGED" to ReminderScheduleTrigger.TimezoneChanged,
             "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" to
                 ReminderScheduleTrigger.ManualRetry,

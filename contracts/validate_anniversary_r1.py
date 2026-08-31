@@ -273,6 +273,10 @@ def validate_identity_vectors(identity: dict[str, Any]) -> None:
         "anniversary_reminder_second_template": "anniversary_reminder",
         "anniversary_catch_up_single": "anniversary_catch_up_delivery",
         "anniversary_catch_up_multi_sorted": "anniversary_catch_up_delivery",
+        "habit_occurrence": "habit_occurrence",
+        "habit_occurrence_next_date": "habit_occurrence",
+        "habit_reminder": "habit_reminder",
+        "habit_notification_action": "habit_notification_action",
     }
     vectors = identity["test_vectors"]
     if set(vectors) != set(namespace_for_vector):
@@ -368,8 +372,12 @@ def validate_finalize_timezone_shape(schemas: dict[str, Any]) -> None:
     prepare = schemas[
         "https://excellent-calendar.local/contracts/reminder/prepare_delivery_request.schema.json"
     ]
-    if "timezone" in prepare.get("properties", {}):
-        fail("prepare_delivery must not accept timezone")
+    if "timezone" not in prepare.get("properties", {}):
+        fail("prepare_delivery.timezone compatibility extension is missing")
+    if "timezone" in prepare.get("required", []):
+        fail("prepare_delivery.timezone must remain optional for Event/Anniversary compatibility")
+    if prepare["properties"]["timezone"].get("type") != "string":
+        fail("prepare_delivery.timezone must remain a non-null string when supplied")
 
 
 def validate_update_concurrency_shape(schemas: dict[str, Any]) -> None:

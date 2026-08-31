@@ -38,7 +38,29 @@ object NativeErrorCodes {
     const val NotificationDeliveryFailed = "NOTIFICATION_DELIVERY_FAILED"
     const val HabitTitleEmpty = "HABIT_TITLE_EMPTY"
     const val HabitNotFound = "HABIT_NOT_FOUND"
-    const val HabitCheckInDuplicated = "HABIT_CHECK_IN_DUPLICATED"
+    const val HabitTargetDeleted = "HABIT_TARGET_DELETED"
+    const val HabitUpdateConflict = "HABIT_UPDATE_CONFLICT"
+    const val HabitDateRangeInvalid = "HABIT_DATE_RANGE_INVALID"
+    const val HabitChallengeTooLong = "HABIT_CHALLENGE_TOO_LONG"
+    const val HabitTargetInvalid = "HABIT_TARGET_INVALID"
+    const val HabitTargetLocked = "HABIT_TARGET_LOCKED"
+    const val HabitStartDateLocked = "HABIT_START_DATE_LOCKED"
+    const val HabitAlreadyEnded = "HABIT_ALREADY_ENDED"
+    const val HabitNotStarted = "HABIT_NOT_STARTED"
+    const val HabitEndNotEarly = "HABIT_END_NOT_EARLY"
+    const val HabitCheckInDateOutOfRange = "HABIT_CHECK_IN_DATE_OUT_OF_RANGE"
+    const val HabitCheckInFutureDate = "HABIT_CHECK_IN_FUTURE_DATE"
+    const val HabitCheckInNotFound = "HABIT_CHECK_IN_NOT_FOUND"
+    const val HabitDailyStatusRangeInvalid = "HABIT_DAILY_STATUS_RANGE_INVALID"
+    const val HabitDailyStatusRangeTooLarge = "HABIT_DAILY_STATUS_RANGE_TOO_LARGE"
+    const val HabitReminderConfigInvalid = "HABIT_REMINDER_CONFIG_INVALID"
+    const val HabitNotificationActionExpired = "HABIT_NOTIFICATION_ACTION_EXPIRED"
+    const val HabitNotificationActionIdentityMismatch = "HABIT_NOTIFICATION_ACTION_IDENTITY_MISMATCH"
+    const val HabitReconciliationCursorInvalid = "HABIT_RECONCILIATION_CURSOR_INVALID"
+    const val HabitReconciliationConflict = "HABIT_RECONCILIATION_CONFLICT"
+    const val HabitStatisticsOverflow = "HABIT_STATISTICS_OVERFLOW"
+    const val AppearanceColorTokenInvalid = "APPEARANCE_COLOR_TOKEN_INVALID"
+    const val AppearanceStorageFailed = "APPEARANCE_STORAGE_FAILED"
     const val CategoryNameEmpty = "CATEGORY_NAME_EMPTY"
     const val CategoryNotFound = "CATEGORY_NOT_FOUND"
     const val CategorySortOrderExhausted = "CATEGORY_SORT_ORDER_EXHAUSTED"
@@ -122,7 +144,29 @@ object NativeErrorCodes {
         NotificationDeliveryFailed,
         HabitTitleEmpty,
         HabitNotFound,
-        HabitCheckInDuplicated,
+        HabitTargetDeleted,
+        HabitUpdateConflict,
+        HabitDateRangeInvalid,
+        HabitChallengeTooLong,
+        HabitTargetInvalid,
+        HabitTargetLocked,
+        HabitStartDateLocked,
+        HabitAlreadyEnded,
+        HabitNotStarted,
+        HabitEndNotEarly,
+        HabitCheckInDateOutOfRange,
+        HabitCheckInFutureDate,
+        HabitCheckInNotFound,
+        HabitDailyStatusRangeInvalid,
+        HabitDailyStatusRangeTooLarge,
+        HabitReminderConfigInvalid,
+        HabitNotificationActionExpired,
+        HabitNotificationActionIdentityMismatch,
+        HabitReconciliationCursorInvalid,
+        HabitReconciliationConflict,
+        HabitStatisticsOverflow,
+        AppearanceColorTokenInvalid,
+        AppearanceStorageFailed,
         CategoryNameEmpty,
         CategoryNotFound,
         CategorySortOrderExhausted,

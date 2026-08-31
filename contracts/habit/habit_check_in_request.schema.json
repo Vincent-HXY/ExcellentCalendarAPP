@@ -2,64 +2,23 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/habit/habit_check_in_request.schema.json",
   "title": "HabitCheckInRequest",
-  "description": "Request payload for recording one local-date habit completion state.",
+  "description": "Flutter-visible manual set/upsert for one (habit_id, check_date). Kotlin adds source=manual before calling the internal command. Notification action identity is intentionally forbidden on this public boundary. C++ derives completed_at and snapshots; manual zero input is routed to clear.",
   "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "habit_id",
-    "check_date",
-    "status",
-    "source"
-  ],
+  "required": ["habit_id", "check_date", "status", "completed_count_hundredths", "note", "timezone"],
   "properties": {
-    "habit_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "check_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "done",
-        "partial",
-        "missed",
-        "skipped"
-      ]
-    },
-    "completed_count": {
-      "type": [
-        "number",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "completed_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "note": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "source": {
-      "type": "string",
-      "enum": [
-        "manual",
-        "auto",
-        "ai_extraction",
-        "sync",
-        "import",
-        "wechat"
-      ]
-    }
-  }
+    "habit_id": {"type": "string", "format": "uuid"},
+    "check_date": {"type": "string", "format": "date"},
+    "status": {"type": "string", "enum": ["done", "partial", "skipped"]},
+    "completed_count_hundredths": {"type": ["integer", "null"], "minimum": 1, "maximum": 9007199254740991, "description": "Exact hundredths; 1.25 is transported as 125."},
+    "note": {"type": ["string", "null"], "maxLength": 500},
+    "timezone": {"type": "string", "minLength": 1, "x-format": "iana-timezone"}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "partial"}}, "required": ["status"]}, "then": {"properties": {"completed_count_hundredths": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}}}},
+    {"if": {"properties": {"status": {"const": "skipped"}}, "required": ["status"]}, "then": {"properties": {"completed_count_hundredths": {"type": "null"}}}}
+  ]
 }

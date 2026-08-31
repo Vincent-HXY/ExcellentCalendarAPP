@@ -40,6 +40,7 @@ class NotificationTapRouter {
       NotificationTargetType.habit => _detailRoute(
         targetType: 'habit',
         targetId: payload.targetId,
+        occurrenceKey: payload.occurrenceKey,
       ),
       NotificationTargetType.anniversary => _detailRoute(
         targetType: 'anniversary',

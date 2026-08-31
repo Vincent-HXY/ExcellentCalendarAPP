@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_today_progress_response.schema.json",
+  "title": "HabitTodayProgressResponse",
+  "description": "Global home progress for the C++ Clock-derived device-local date. It ignores list filters and pagination. Upcoming, completed, and ended_early Habits are excluded. done enters numerator and denominator; partial and absent enter only the denominator; skipped is excluded from the denominator and reported separately.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["as_of_date", "active_count", "done_count", "eligible_count", "skipped_count", "partial_count", "absent_count"],
+  "properties": {
+    "as_of_date": {"type": "string", "format": "date"},
+    "active_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "description": "eligible_count + skipped_count."},
+    "done_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "description": "The X in today's X/Y."},
+    "eligible_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "description": "The Y in today's X/Y; done + partial + absent, excluding skipped."},
+    "skipped_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "partial_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "absent_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}
+  }
+}

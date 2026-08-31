@@ -69,9 +69,8 @@ class BootCompletedReceiver : BroadcastReceiver() {
 internal fun reminderScheduleTriggerForAction(action: String?): ReminderScheduleTrigger? = when (action) {
     Intent.ACTION_BOOT_COMPLETED -> ReminderScheduleTrigger.BootCompleted
     Intent.ACTION_MY_PACKAGE_REPLACED -> ReminderScheduleTrigger.PackageReplaced
-    Intent.ACTION_TIME_CHANGED,
-    Intent.ACTION_DATE_CHANGED,
-    -> ReminderScheduleTrigger.TimeChanged
+    Intent.ACTION_TIME_CHANGED -> ReminderScheduleTrigger.TimeChanged
+    Intent.ACTION_DATE_CHANGED -> ReminderScheduleTrigger.DateChanged
     Intent.ACTION_TIMEZONE_CHANGED -> ReminderScheduleTrigger.TimezoneChanged
     AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED ->
         ReminderScheduleTrigger.ManualRetry

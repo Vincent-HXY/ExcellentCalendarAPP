@@ -1,0 +1,10 @@
+{
+  "timezone": "Asia/Shanghai",
+  "pagination": {
+    "page": 1,
+    "page_size": 101,
+    "cursor": null,
+    "sort_by": null,
+    "sort_direction": null
+  }
+}

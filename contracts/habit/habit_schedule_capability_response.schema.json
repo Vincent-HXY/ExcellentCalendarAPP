@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_schedule_capability_response.schema.json",
+  "title": "HabitScheduleCapabilityResponse",
+  "description": "Kotlin-owned post-commit scheduling result. Pending permission or reconciliation is successful saved data, not a NativeResult failure.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schedule_status", "schedule_reconciliation_required", "notification_permission_status", "exact_alarm_permission_status", "degradation_reasons"],
+  "properties": {
+    "schedule_status": {"type": "string", "enum": ["not_required", "scheduled_exact", "scheduled_approximate", "pending_permission", "pending_reconciliation"]},
+    "schedule_reconciliation_required": {"type": "boolean"},
+    "notification_permission_status": {"type": "string", "enum": ["granted", "denied", "not_required", "permanently_denied", "unknown"]},
+    "exact_alarm_permission_status": {"type": "string", "enum": ["granted", "denied", "not_required", "unknown"]},
+    "degradation_reasons": {"type": "array", "uniqueItems": true, "items": {"type": "string", "enum": ["notification_permission_unavailable", "exact_alarm_permission_unavailable", "scheduler_retry_required"]}}
+  },
+  "allOf": [
+    {"if": {"properties": {"schedule_status": {"enum": ["pending_permission", "pending_reconciliation"]}}, "required": ["schedule_status"]}, "then": {"properties": {"schedule_reconciliation_required": {"const": true}}}},
+    {"if": {"properties": {"schedule_status": {"enum": ["not_required", "scheduled_exact", "scheduled_approximate"]}}, "required": ["schedule_status"]}, "then": {"properties": {"schedule_reconciliation_required": {"const": false}}}}
+  ]
+}

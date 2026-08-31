@@ -28,6 +28,7 @@ class JniNativeCalendarCoreBridge(
     @Volatile private var loadFailure: Throwable? = null
     @Volatile private var runtimeInitAttempted = false
     @Volatile private var runtimeInitFailureJson: String? = null
+    private val habitBridge = JniHabitBridge(::invokeHabitNative)
 
     override fun initializeRuntime(requestJson: String): String {
         ensureLibraryLoaded()
@@ -148,6 +149,18 @@ class JniNativeCalendarCoreBridge(
         nativeCreateCategoryV2(requestJson)
     }
 
+    override fun createHabit(requestJson: String) = habitBridge.createHabit(requestJson)
+    override fun updateHabit(requestJson: String) = habitBridge.updateHabit(requestJson)
+    override fun listHabits(requestJson: String) = habitBridge.listHabits(requestJson)
+    override fun getHabitDetail(requestJson: String) = habitBridge.getHabitDetail(requestJson)
+    override fun endHabit(requestJson: String) = habitBridge.endHabit(requestJson)
+    override fun deleteHabit(requestJson: String) = habitBridge.deleteHabit(requestJson)
+    override fun checkInHabit(requestJson: String) = habitBridge.checkInHabit(requestJson)
+    override fun clearHabitCheckIn(requestJson: String) = habitBridge.clearHabitCheckIn(requestJson)
+    override fun listHabitDailyStatuses(requestJson: String) = habitBridge.listHabitDailyStatuses(requestJson)
+    override fun setHabitReminder(requestJson: String) = habitBridge.setHabitReminder(requestJson)
+    override fun reconcileHabitReminders(requestJson: String) = habitBridge.reconcileHabitReminders(requestJson)
+
     override fun createReminder(requestJson: String) = callWithRuntime("nativeCreateReminder") {
         if (profile == NativeContractProfile.V2) nativeCreateReminderV2(requestJson) else nativeCreateReminder(requestJson)
     }
@@ -221,6 +234,23 @@ class JniNativeCalendarCoreBridge(
     private inline fun v2Only(symbol: String, call: () -> String): String {
         if (profile != NativeContractProfile.V2) return unsupported(symbol)
         return callWithRuntime(symbol, call)
+    }
+
+    private fun invokeHabitNative(symbol: String, requestJson: String): String = v2Only(symbol) {
+        when (symbol) {
+            "nativeCreateHabitV2" -> nativeCreateHabitV2(requestJson)
+            "nativeUpdateHabitV2" -> nativeUpdateHabitV2(requestJson)
+            "nativeListHabitsV2" -> nativeListHabitsV2(requestJson)
+            "nativeGetHabitDetailV2" -> nativeGetHabitDetailV2(requestJson)
+            "nativeEndHabitV2" -> nativeEndHabitV2(requestJson)
+            "nativeDeleteHabitV2" -> nativeDeleteHabitV2(requestJson)
+            "nativeCheckInHabitV2" -> nativeCheckInHabitV2(requestJson)
+            "nativeClearHabitCheckInV2" -> nativeClearHabitCheckInV2(requestJson)
+            "nativeListHabitDailyStatusesV2" -> nativeListHabitDailyStatusesV2(requestJson)
+            "nativeSetHabitReminderV2" -> nativeSetHabitReminderV2(requestJson)
+            "nativeReconcileHabitRemindersV2" -> nativeReconcileHabitRemindersV2(requestJson)
+            else -> throw NativeBridgeUnavailableException("Unknown Habit JNI symbol.")
+        }
     }
 
     private inline fun callWithRuntime(symbol: String, call: () -> String): String {
@@ -364,6 +394,17 @@ class JniNativeCalendarCoreBridge(
     external fun nativeListAnniversaryOccurrencesV2(requestJson: String): String
     external fun nativeListCategoriesV2(requestJson: String): String
     external fun nativeCreateCategoryV2(requestJson: String): String
+    external fun nativeCreateHabitV2(requestJson: String): String
+    external fun nativeUpdateHabitV2(requestJson: String): String
+    external fun nativeListHabitsV2(requestJson: String): String
+    external fun nativeGetHabitDetailV2(requestJson: String): String
+    external fun nativeEndHabitV2(requestJson: String): String
+    external fun nativeDeleteHabitV2(requestJson: String): String
+    external fun nativeCheckInHabitV2(requestJson: String): String
+    external fun nativeClearHabitCheckInV2(requestJson: String): String
+    external fun nativeListHabitDailyStatusesV2(requestJson: String): String
+    external fun nativeSetHabitReminderV2(requestJson: String): String
+    external fun nativeReconcileHabitRemindersV2(requestJson: String): String
     external fun nativeCreateReminder(requestJson: String): String
     external fun nativeCreateReminderV2(requestJson: String): String
     external fun nativeUpdateReminder(requestJson: String): String
@@ -393,6 +434,6 @@ class JniNativeCalendarCoreBridge(
 
     companion object {
         const val NativeLibraryName = "excellent_calendar_native"
-        private const val ExpectedStorageFormatVersion = 4
+        private const val ExpectedStorageFormatVersion = 5
     }
 }

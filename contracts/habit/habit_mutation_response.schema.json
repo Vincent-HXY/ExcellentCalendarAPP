@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_mutation_response.schema.json",
+  "title": "HabitMutationResponse",
+  "description": "Public create/update/end/set-reminder result after C++ commit and Kotlin scheduling attempt.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["data_saved", "detail", "capability"],
+  "properties": {
+    "data_saved": {"const": true},
+    "detail": {"$ref": "./habit_detail_response.schema.json"},
+    "capability": {"$ref": "./habit_schedule_capability_response.schema.json"}
+  }
+}

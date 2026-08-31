@@ -144,11 +144,11 @@ internal object ReminderV2Contracts {
         val parent = "ReminderResponse"
         val targetType = map["target_type"] as String
         val status = map["status"] as String
-        val anniversaryFields = listOf("template_key", "occurrence_date", "advance_days", "local_time", "timezone_mode")
+        val targetSpecificFields = listOf("template_key", "occurrence_date", "advance_days", "local_time", "timezone_mode")
         val anniversary = targetType == "anniversary"
         if (anniversary) {
             if (map["recurrence_revision"] != null || map["occurrence_start_at"] != null ||
-                map["occurrence_key"] !is String || anniversaryFields.any { map[it] == null } ||
+                map["occurrence_key"] !is String || targetSpecificFields.any { map[it] == null } ||
                 map["timezone_mode"] != "follow_device" || map["advance_minutes"] != null || method != "popup"
             ) {
                 throw NativeContractViolation("$parent Anniversary target fields are inconsistent.", "$parent.target_type")
@@ -162,14 +162,22 @@ internal object ReminderV2Contracts {
             if ((status == "sent") != (map["fulfillment_delivery_id"] is String)) {
                 throw NativeContractViolation("$parent.fulfillment_delivery_id must match sent status.", "$parent.fulfillment_delivery_id")
             }
-        } else {
-            if (anniversaryFields.any { map[it] != null } || map["fulfillment_delivery_id"] != null) {
-                throw NativeContractViolation("$parent non-Anniversary target contains Anniversary fields.", "$parent.target_type")
+        } else if (targetType == "habit") {
+            val occurrenceDate = map["occurrence_date"] as? String
+            val habitShape = map["recurrence_revision"] == null && map["occurrence_key"] is String &&
+                map["occurrence_start_at"] == null && map["template_key"] is String &&
+                occurrenceDate != null && runCatching { java.time.LocalDate.parse(occurrenceDate) }.isSuccess &&
+                map["advance_days"] == null &&
+                (map["local_time"] as? String)?.matches(Regex("^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")) == true &&
+                map["timezone_mode"] == "follow_device" && map["fulfillment_delivery_id"] == null &&
+                map["advance_minutes"] == null && method == "popup" &&
+                map["expiration_reason"] in setOf(null, "habit_occurrence_elapsed")
+            if (!habitShape) {
+                throw NativeContractViolation("$parent Habit target fields are inconsistent.", "$parent.target_type")
             }
-            if (targetType == "habit" &&
-                (map["recurrence_revision"] != null || map["occurrence_key"] != null || map["occurrence_start_at"] != null)
-            ) {
-                throw NativeContractViolation("$parent Habit target occurrence fields must be null.", "$parent.target_type")
+        } else {
+            if (targetSpecificFields.any { map[it] != null } || map["fulfillment_delivery_id"] != null) {
+                throw NativeContractViolation("$parent Event target contains target-specific fields.", "$parent.target_type")
             }
             if (method == "ring" &&
                 (targetType != "event" || map["recurrence_revision"] != null || map["occurrence_key"] != null ||

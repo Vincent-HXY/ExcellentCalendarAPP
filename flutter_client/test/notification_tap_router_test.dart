@@ -112,6 +112,30 @@ void main() {
       '/anniversary/detail/anniversary-1?occurrence_key=occurrence-1',
     ]);
   });
+
+  test('Habit tap preserves occurrence identity in the real detail route', () {
+    final navigator = FakeAppRouteNavigator();
+    final router = NotificationTapRouter(navigator: navigator);
+    router.open(
+      NotificationTapPayloadDto(
+        notificationId: 'notification-habit',
+        deliveryId: 'delivery-habit',
+        deliveryAttemptId: 'attempt-habit',
+        kind: NotificationKind.reminder,
+        reminderId: 'reminder-habit',
+        recoveryBatchId: null,
+        targetType: NotificationTargetType.habit,
+        targetId: 'habit-1',
+        occurrenceKey: 'occurrence-1',
+        route: 'habit.detail',
+        openedAt: DateTime.utc(2026, 8, 28, 2, 5),
+      ),
+    );
+
+    expect(navigator.routes, [
+      '/habit/detail/habit-1?occurrence_key=occurrence-1',
+    ]);
+  });
 }
 
 NotificationTapPayloadDto _tapPayload({

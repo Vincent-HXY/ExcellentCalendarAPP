@@ -12,4 +12,5 @@ interface NativeCalendarCoreBridge :
     NativeReminderBridge,
     NativeNotificationBridge,
     NativeAnniversaryBridge,
-    NativeCategoryBridge
+    NativeCategoryBridge,
+    NativeHabitBridge

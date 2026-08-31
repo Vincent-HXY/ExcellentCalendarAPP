@@ -8,6 +8,7 @@
 #include "excellent_calendar/common/result.hpp"
 #include "excellent_calendar/domain/anniversary.hpp"
 #include "excellent_calendar/domain/event.hpp"
+#include "excellent_calendar/domain/habit.hpp"
 #include "excellent_calendar/domain/event_occurrence_state.hpp"
 #include "excellent_calendar/domain/notification.hpp"
 #include "excellent_calendar/domain/recurrence.hpp"
@@ -29,6 +30,12 @@ struct RecurringEventState {
   std::vector<domain::Anniversary> anniversaries;
   std::vector<domain::AnniversaryRecurrence> anniversary_recurrences;
   std::vector<domain::AnniversaryReminderTemplate> anniversary_reminder_templates;
+  // Habit delivery shares the same Reminder/Notification commit and therefore
+  // needs the owning facts available to prepare/finalize atomically.
+  std::vector<domain::Habit> habits;
+  std::vector<domain::HabitRecurrence> habit_recurrences;
+  std::vector<domain::HabitCheckIn> habit_check_ins;
+  std::vector<domain::HabitReminderTemplate> habit_reminder_templates;
 };
 
 class RecurringEventTransaction {

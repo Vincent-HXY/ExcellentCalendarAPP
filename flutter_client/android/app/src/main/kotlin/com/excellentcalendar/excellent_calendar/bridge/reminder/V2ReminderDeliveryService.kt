@@ -32,7 +32,7 @@ class V2ReminderDeliveryService(
     private val eventHub: NotificationEventHub,
     private val logger: ReminderOrchestrationLogger,
     private val ringRuntime: RingRuntime? = null,
-    timezoneProvider: DeviceTimezoneProvider = AndroidDeviceTimezoneProvider,
+    private val timezoneProvider: DeviceTimezoneProvider = AndroidDeviceTimezoneProvider,
     private val attemptClient: ReminderDeliveryAttemptClient =
         ReminderDeliveryAttemptClient(nativeBridge, logger, timezoneProvider),
 ) : V2ReminderDeliverer {
@@ -53,6 +53,7 @@ class V2ReminderDeliveryService(
                 "delivery_id" to null,
                 "method" to method,
                 "expected_remind_at" to expectedRemindAt,
+                "timezone" to timezoneProvider.currentTimezone(),
             ),
             reminderId,
         )
@@ -112,6 +113,7 @@ class V2ReminderDeliveryService(
                 title = prepared.title,
                 body = prepared.body,
                 tapPayload = prepared.tapPayload,
+                habitActionPayload = prepared.habitActionPayload,
             ),
         )
         return when (posted) {

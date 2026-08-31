@@ -109,7 +109,7 @@ common::Result<application::PrepareDeliveryCommand> parse_prepare(
   if (!parsed.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(parsed.error());
   const auto& object = parsed.value();
   auto known = reject_unknown(
-      object, {"kind", "reminder_id", "recovery_batch_id", "delivery_id", "method", "expected_remind_at"},
+      object, {"kind", "reminder_id", "recovery_batch_id", "delivery_id", "method", "expected_remind_at", "timezone"},
       "PrepareDeliveryRequest");
   if (!known.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(known.error());
   auto kind = require_string(object, "kind", "PrepareDeliveryRequest");
@@ -118,6 +118,14 @@ common::Result<application::PrepareDeliveryCommand> parse_prepare(
   auto delivery_id = nullable_string(object, "delivery_id", "PrepareDeliveryRequest", true);
   auto method = require_string(object, "method", "PrepareDeliveryRequest");
   auto remind_at = nullable_string(object, "expected_remind_at", "PrepareDeliveryRequest", true);
+  std::optional<std::string> timezone;
+  if (const auto* value = field(object, "timezone"); value != nullptr) {
+    if (!value->is<std::string>() || value->get<std::string>().empty()) {
+      return common::Result<application::PrepareDeliveryCommand>::failure(
+          contract_error("PrepareDeliveryRequest.timezone", "non-empty string is required"));
+    }
+    timezone = value->get<std::string>();
+  }
   if (!kind.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(kind.error());
   if (!reminder_id.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(reminder_id.error());
   if (!batch_id.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(batch_id.error());
@@ -126,7 +134,7 @@ common::Result<application::PrepareDeliveryCommand> parse_prepare(
   if (!remind_at.ok()) return common::Result<application::PrepareDeliveryCommand>::failure(remind_at.error());
   return common::Result<application::PrepareDeliveryCommand>::success(
       {kind.value(), reminder_id.value(), batch_id.value(), method.value(),
-       remind_at.value(), delivery_id.value()});
+       remind_at.value(), delivery_id.value(), timezone});
 }
 
 common::Result<application::FinalizeDeliveryCommand> parse_finalize(

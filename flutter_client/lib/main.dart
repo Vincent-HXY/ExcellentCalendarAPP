@@ -8,6 +8,7 @@ import 'app/routing/app_router.dart';
 import 'app/routing/auth_navigator.dart';
 import 'app/routing/notification_tap_router.dart';
 import 'application/anniversary/app_clock.dart';
+import 'application/appearance/appearance_controller.dart';
 import 'application/auth/auth_service.dart';
 import 'application/auth/auth_session_controller.dart';
 import 'application/auth/logout_service.dart';
@@ -23,7 +24,9 @@ import 'application/timezone/timezone_application_service.dart';
 import 'boundary_adapters/backend_api/backend_api_config.dart';
 import 'boundary_adapters/backend_api/dio_backend_api_client.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_anniversary_adapter.dart';
+import 'boundary_adapters/dart_method_channel/method_channel_appearance_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_event_adapter.dart';
+import 'boundary_adapters/dart_method_channel/method_channel_habit_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_notification_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_reminder_adapter.dart';
 import 'boundary_adapters/dart_method_channel/method_channel_ring_adapter.dart';
@@ -35,7 +38,9 @@ import 'boundary_adapters/dart_method_channel/method_channel_refresh_token_secur
 import 'data/user/dio_user_gateway.dart';
 import 'data/user/user_profile_file_cache.dart';
 import 'gateway_interfaces/anniversary_gateway.dart';
+import 'gateway_interfaces/appearance_preferences_gateway.dart';
 import 'gateway_interfaces/category_repository.dart';
+import 'gateway_interfaces/habit_gateway.dart';
 import 'gateway_interfaces/ring_native_gateway.dart';
 import 'application/ring/active_ring_session_controller.dart';
 import 'gateway_interfaces/refresh_token_secure_store_gateway.dart';
@@ -43,6 +48,7 @@ import 'native_contract/user/current_user_response_dto.dart';
 import 'presentation/app_notification_host.dart';
 import 'presentation/anniversary/pages/anniversary_detail_page.dart';
 import 'presentation/anniversary/pages/anniversary_list_page.dart';
+import 'presentation/appearance/appearance_page.dart';
 import 'presentation/auth/pages/auth_check_page.dart';
 import 'presentation/auth/pages/email_verification_page.dart';
 import 'presentation/auth/pages/forgot_password_page.dart';
@@ -51,6 +57,10 @@ import 'presentation/auth/pages/register_page.dart';
 import 'presentation/auth/pages/reset_password_page.dart';
 import 'presentation/event_detail/pages/event_detail_flow_page.dart';
 import 'presentation/home/main_tab_page.dart';
+import 'presentation/habit/habit_design.dart';
+import 'presentation/habit/pages/habit_detail_page.dart';
+import 'presentation/habit/pages/habit_form_page.dart';
+import 'presentation/habit/pages/habit_list_page.dart';
 import 'presentation/inbox/inbox_page.dart';
 import 'presentation/ring/active_ring_session_page.dart';
 import 'presentation/ring/ring_session_host.dart';
@@ -70,6 +80,8 @@ ExcellentCalendarApp buildProductionApp() {
     anniversaryClock: const SystemAppClock(),
     categoryRepository: buildProductionCategoryRepository(),
     ringGateway: MethodChannelRingAdapter(),
+    habitGateway: MethodChannelHabitAdapter(),
+    appearanceGateway: MethodChannelAppearanceAdapter(),
   );
 }
 
@@ -152,14 +164,20 @@ class ExcellentCalendarApp extends StatefulWidget {
     required this.anniversaryClock,
     required this.categoryRepository,
     required this.ringGateway,
+    required this.habitGateway,
+    required this.appearanceGateway,
     this.authDependencies,
+    this.initialRoute = '/auth-check',
     super.key,
   });
 
   final AppClock anniversaryClock;
   final CategoryRepository categoryRepository;
   final RingNativeGateway ringGateway;
+  final HabitGateway habitGateway;
+  final AppearancePreferencesGateway appearanceGateway;
   final AuthDependencies? authDependencies;
+  final String initialRoute;
 
   @override
   State<ExcellentCalendarApp> createState() => _ExcellentCalendarAppState();
@@ -180,16 +198,22 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   late final FakeAnniversaryShareGateway _anniversaryShareGateway;
   late final CategoryRepository _categoryRepository;
   late final RingNativeGateway _ringGateway;
+  late final HabitGateway _habitGateway;
+  late final AppearanceController _appearanceController;
   late final ActiveRingSessionController _activeRingController;
   late final MethodChannelTimezoneAdapter _timezoneGateway;
   late final AuthDependencies _authDeps;
   bool _ownsAuthDeps = false;
+  late Future<String> _habitTimezoneFuture;
 
   @override
   void initState() {
     super.initState();
     _eventGateway = MethodChannelEventAdapter();
     _ringGateway = widget.ringGateway;
+    _habitGateway = widget.habitGateway;
+    _appearanceController = AppearanceController(widget.appearanceGateway);
+    _appearanceController.initialize();
     _activeRingController = ActiveRingSessionController(
       ringGateway: _ringGateway,
       eventGateway: _eventGateway,
@@ -199,6 +223,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
     _categoryRepository = widget.categoryRepository;
     _timezoneGateway = MethodChannelTimezoneAdapter();
     final timezoneGateway = _timezoneGateway;
+    _habitTimezoneFuture = _resolveHabitTimezone();
     _timezoneService = TimezoneApplicationService(timezoneGateway);
     _anniversaryGateway = NativeAnniversaryGateway(
       nativeGateway: MethodChannelAnniversaryAdapter(),
@@ -264,6 +289,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
           categoryRepository: _categoryRepository,
           onOpenAnniversaries: () =>
               Navigator.of(tabContext).pushNamed('/anniversaries'),
+          onOpenHabits: () => Navigator.of(tabContext).pushNamed('/habits'),
           onOpenRingSettings: () =>
               Navigator.of(tabContext).pushNamed('/settings/ring'),
           ringGateway: _ringGateway,
@@ -274,6 +300,8 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
         session: _authDeps.session,
         navigator: _authDeps.navigator,
         showBack: false,
+        onOpenAppearance: () =>
+            Navigator.of(context).pushNamed('/settings/appearance'),
       ),
     );
   }
@@ -297,6 +325,76 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
     );
   }
 
+  Widget _buildHabitList(BuildContext context) => _withHabitTimezone(
+    (timezone) =>
+        HabitListPage(gateway: _habitGateway, timezoneProvider: () => timezone),
+  );
+
+  Widget _buildHabitCreate(BuildContext context) => _withHabitTimezone(
+    (timezone) => HabitFormPage(
+      gateway: _habitGateway,
+      timezoneProvider: () => timezone,
+      categoryRepository: _categoryRepository,
+      permissionController: _notificationPermissionController,
+    ),
+  );
+
+  Widget _buildHabitDetail(
+    BuildContext context,
+    HabitDetailRouteData routeData,
+  ) => _withHabitTimezone(
+    (timezone) => HabitDetailPage(
+      habitId: routeData.habitId,
+      focusOccurrenceKey: routeData.occurrenceKey,
+      gateway: _habitGateway,
+      timezoneProvider: () => timezone,
+      categoryRepository: _categoryRepository,
+      permissionController: _notificationPermissionController,
+    ),
+  );
+
+  Future<String> _resolveHabitTimezone() async {
+    final timezone = await _deviceTimezone();
+    if (timezone.isEmpty) {
+      throw StateError('Device IANA timezone is unavailable.');
+    }
+    return timezone;
+  }
+
+  Widget _withHabitTimezone(Widget Function(String timezone) builder) {
+    return FutureBuilder<String>(
+      future: _habitTimezoneFuture,
+      builder: (context, snapshot) {
+        final timezone = snapshot.data;
+        if (timezone != null) return builder(timezone);
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('无法读取设备时区，习惯功能暂不可用'),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: () {
+                        setState(() {
+                          _habitTimezoneFuture = _resolveHabitTimezone();
+                        });
+                      },
+                      child: const Text('重试'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
+    );
+  }
+
   CurrentUserResponseDto? get _currentUserOrNull =>
       _authDeps.session.currentUser;
 
@@ -313,96 +411,112 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
     return RingSessionHost(
       controller: _activeRingController,
       navigatorKey: _navigatorKey,
-      child: MaterialApp(
-        navigatorKey: _navigatorKey,
-        title: 'Excellent Calendar',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF38B9C5)),
-          fontFamily: 'Roboto',
-          useMaterial3: true,
-        ),
-        initialRoute: '/auth-check',
-        onGenerateInitialRoutes: (_) => AppRouter.initialAuthCheckRoutes(
-          authCheckBuilder: (_) => AuthCheckPage(
-            startupCheck: _authDeps.startupCheck,
-            navigator: _authDeps.navigator,
+      child: ListenableBuilder(
+        listenable: _appearanceController,
+        builder: (context, _) => MaterialApp(
+          navigatorKey: _navigatorKey,
+          title: 'Excellent Calendar',
+          debugShowCheckedModeBanner: false,
+          theme: buildHabitAppTheme(
+            seedColor: colorForHabitToken(_appearanceController.token),
+            brightness: Brightness.light,
           ),
-        ),
-        onGenerateRoute: (settings) => AppRouter.onGenerateRoute(
-          settings,
-          todayBuilder: _buildToday,
-          anniversaryListBuilder: _buildAnniversaryList,
-          anniversaryDetailBuilder: _buildAnniversaryDetail,
-          ringSettingsBuilder: (_) => RingSettingsPage(gateway: _ringGateway),
-          activeRingBuilder: (_) =>
-              ActiveRingSessionPage(controller: _activeRingController),
-          eventDetailBuilder: (context, routeData) => EventDetailFlowPage(
-            controller: RecurringEventDetailController(
-              eventId: routeData.eventId,
-              gateway: _eventGateway,
+          darkTheme: buildHabitAppTheme(
+            seedColor: colorForHabitToken(_appearanceController.token),
+            brightness: Brightness.dark,
+          ),
+          themeMode: ThemeMode.system,
+          initialRoute: widget.initialRoute,
+          onGenerateInitialRoutes: widget.initialRoute == '/auth-check'
+              ? (_) => AppRouter.initialAuthCheckRoutes(
+                  authCheckBuilder: (_) => AuthCheckPage(
+                    startupCheck: _authDeps.startupCheck,
+                    navigator: _authDeps.navigator,
+                  ),
+                )
+              : null,
+          onGenerateRoute: (settings) => AppRouter.onGenerateRoute(
+            settings,
+            todayBuilder: _buildToday,
+            anniversaryListBuilder: _buildAnniversaryList,
+            anniversaryDetailBuilder: _buildAnniversaryDetail,
+            habitListBuilder: _buildHabitList,
+            habitCreateBuilder: _buildHabitCreate,
+            habitDetailBuilder: _buildHabitDetail,
+            appearanceBuilder: (_) =>
+                AppearancePage(controller: _appearanceController),
+            ringSettingsBuilder: (_) => RingSettingsPage(gateway: _ringGateway),
+            activeRingBuilder: (_) =>
+                ActiveRingSessionPage(controller: _activeRingController),
+            eventDetailBuilder: (context, routeData) => EventDetailFlowPage(
+              controller: RecurringEventDetailController(
+                eventId: routeData.eventId,
+                gateway: _eventGateway,
+                timezoneService: _timezoneService,
+                reconcileReminderScheduleUseCase:
+                    _reconcileReminderScheduleUseCase,
+                focusOccurrenceKey: routeData.occurrenceKey,
+              ),
+              completeEventUseCase: _completeEventUseCase,
+              updateEventUseCase: _updateEventUseCase,
               timezoneService: _timezoneService,
-              reconcileReminderScheduleUseCase:
-                  _reconcileReminderScheduleUseCase,
-              focusOccurrenceKey: routeData.occurrenceKey,
+              categoryRepository: _categoryRepository,
             ),
-            completeEventUseCase: _completeEventUseCase,
-            updateEventUseCase: _updateEventUseCase,
-            timezoneService: _timezoneService,
-            categoryRepository: _categoryRepository,
-          ),
-          authCheckBuilder: (_) => AuthCheckPage(
-            startupCheck: _authDeps.startupCheck,
-            navigator: _authDeps.navigator,
-          ),
-          loginBuilder: (_) => LoginPage(
-            authService: _authDeps.authService,
-            navigator: _authDeps.navigator,
-          ),
-          registerBuilder: (_) => RegisterPage(
-            authService: _authDeps.authService,
-            localeProvider: _localeTag,
-            timezoneProvider: _deviceTimezone,
-            navigator: _authDeps.navigator,
-          ),
-          verificationBuilder: (_) => EmailVerificationPage(
-            authService: _authDeps.authService,
-            navigator: _authDeps.navigator,
-          ),
-          forgotPasswordBuilder: (_) => ForgotPasswordPage(
-            authService: _authDeps.authService,
-            navigator: _authDeps.navigator,
-          ),
-          resetPasswordBuilder: (_) => ResetPasswordPage(
-            authService: _authDeps.authService,
-            navigator: _authDeps.navigator,
-            onResetSucceeded: _authDeps.logoutService.clearLocalSession,
-          ),
-          profileBuilder: (_) => ProfilePage(
-            authService: _authDeps.authService,
-            session: _authDeps.session,
-            navigator: _authDeps.navigator,
-          ),
-          editProfileBuilder: (_) => _requireUser(
-            (user) => EditProfilePage(
-              authService: _authDeps.authService,
-              initialUser: user,
-            ),
-          ),
-          changeEmailBuilder: (_) => _requireUser(
-            (user) => ChangeEmailPage(
-              authService: _authDeps.authService,
-              initialUser: user,
+            authCheckBuilder: (_) => AuthCheckPage(
+              startupCheck: _authDeps.startupCheck,
               navigator: _authDeps.navigator,
             ),
-          ),
-          changePasswordBuilder: (_) => ChangePasswordPage(
-            authService: _authDeps.authService,
-            navigator: _authDeps.navigator,
-          ),
-          accountSecurityBuilder: (_) => AccountSecurityPage(
-            logoutService: _authDeps.logoutService,
-            navigator: _authDeps.navigator,
+            loginBuilder: (_) => LoginPage(
+              authService: _authDeps.authService,
+              navigator: _authDeps.navigator,
+            ),
+            registerBuilder: (_) => RegisterPage(
+              authService: _authDeps.authService,
+              localeProvider: _localeTag,
+              timezoneProvider: _deviceTimezone,
+              navigator: _authDeps.navigator,
+            ),
+            verificationBuilder: (_) => EmailVerificationPage(
+              authService: _authDeps.authService,
+              navigator: _authDeps.navigator,
+            ),
+            forgotPasswordBuilder: (_) => ForgotPasswordPage(
+              authService: _authDeps.authService,
+              navigator: _authDeps.navigator,
+            ),
+            resetPasswordBuilder: (_) => ResetPasswordPage(
+              authService: _authDeps.authService,
+              navigator: _authDeps.navigator,
+              onResetSucceeded: _authDeps.logoutService.clearLocalSession,
+            ),
+            profileBuilder: (_) => ProfilePage(
+              authService: _authDeps.authService,
+              session: _authDeps.session,
+              navigator: _authDeps.navigator,
+              onOpenAppearance: () =>
+                  _authDeps.navigator.push('/settings/appearance'),
+            ),
+            editProfileBuilder: (_) => _requireUser(
+              (user) => EditProfilePage(
+                authService: _authDeps.authService,
+                initialUser: user,
+              ),
+            ),
+            changeEmailBuilder: (_) => _requireUser(
+              (user) => ChangeEmailPage(
+                authService: _authDeps.authService,
+                initialUser: user,
+                navigator: _authDeps.navigator,
+              ),
+            ),
+            changePasswordBuilder: (_) => ChangePasswordPage(
+              authService: _authDeps.authService,
+              navigator: _authDeps.navigator,
+            ),
+            accountSecurityBuilder: (_) => AccountSecurityPage(
+              logoutService: _authDeps.logoutService,
+              navigator: _authDeps.navigator,
+            ),
           ),
         ),
       ),
@@ -413,6 +527,7 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
   void dispose() {
     _activeRingController.dispose();
     _notificationBootstrap.dispose();
+    _appearanceController.dispose();
     if (_ownsAuthDeps) {
       _authDeps.session.dispose();
     }

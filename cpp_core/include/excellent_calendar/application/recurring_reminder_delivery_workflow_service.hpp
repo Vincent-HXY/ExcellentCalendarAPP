@@ -23,11 +23,23 @@ struct PrepareDeliveryCommand {
   std::string method;
   std::optional<std::string> expected_remind_at;
   std::optional<std::string> delivery_id;
+  std::optional<std::string> timezone;
 };
 
 struct PrepareDeliveryResult {
+  struct HabitNotificationActionPayload {
+    std::string action_id;
+    std::string action_type = "complete";
+    std::string habit_id;
+    std::string check_date;
+    std::string occurrence_key;
+    std::string reminder_id;
+    std::string delivery_id;
+  };
+
   domain::Notification notification;
   bool idempotent_replay = false;
+  std::optional<HabitNotificationActionPayload> habit_action_payload;
 };
 
 struct FinalizeDeliveryCommand {

@@ -2,9 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/notification/prepared_notification_payload.schema.json",
   "title": "PreparedNotificationPayload",
-  "description": "Immutable PendingIntent payload returned by C++. Android adds opened_at only after a tap. It contains Anniversary occurrence identity but no note or covered-member audit list.",
+  "description": "Immutable PendingIntent payload returned by C++. Android adds opened_at only after a tap. Anniversary and Habit reminder branches carry their target-specific occurrence identity but no mutable domain content.",
   "x-contract-version": 2,
   "x-anniversary-reminder-revision": 1,
+  "x-habit-revision": 1,
   "type": "object",
   "additionalProperties": false,
   "required": ["notification_id", "delivery_id", "delivery_attempt_id", "kind", "reminder_id", "recovery_batch_id", "target_type", "target_id", "occurrence_key", "route"],
@@ -21,7 +22,10 @@
     "route": {"type": ["string", "null"]}
   },
   "oneOf": [
-    {"properties": {"kind": {"const": "reminder"}, "reminder_id": {"type": "string", "format": "uuid"}, "target_type": {"enum": ["event", "habit", "anniversary"]}}, "allOf": [{"if": {"properties": {"target_type": {"const": "anniversary"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "string", "format": "uuid"}, "route": {"const": "anniversary.detail"}}}}]},
+    {"properties": {"kind": {"const": "reminder"}, "reminder_id": {"type": "string", "format": "uuid"}, "target_type": {"enum": ["event", "habit", "anniversary"]}}, "allOf": [
+      {"if": {"properties": {"target_type": {"const": "anniversary"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "string", "format": "uuid"}, "route": {"const": "anniversary.detail"}}}},
+      {"if": {"properties": {"target_type": {"const": "habit"}}, "required": ["target_type"]}, "then": {"properties": {"occurrence_key": {"type": "string", "format": "uuid"}, "route": {"const": "habit.detail"}, "recovery_batch_id": {"type": "null"}}}}
+    ]},
     {"properties": {"kind": {"const": "recovery_summary"}, "reminder_id": {"type": "null"}, "recovery_batch_id": {"type": "string", "format": "uuid"}, "target_type": {"const": "reminder_recovery_batch"}, "occurrence_key": {"type": "null"}}},
     {"properties": {"kind": {"const": "anniversary_catch_up"}, "reminder_id": {"type": "null"}, "recovery_batch_id": {"type": "string", "format": "uuid"}, "target_type": {"const": "anniversary"}, "occurrence_key": {"type": "string", "format": "uuid"}, "route": {"const": "anniversary.detail"}}}
   ]

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_delete_operation_response.schema.json",
+  "title": "HabitDeleteOperationResponse",
+  "description": "Public soft-delete result after Kotlin scheduling reconciliation.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["data_saved", "habit_id", "deleted_at", "capability"],
+  "properties": {
+    "data_saved": {"const": true},
+    "habit_id": {"type": "string", "format": "uuid"},
+    "deleted_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "capability": {"$ref": "./habit_schedule_capability_response.schema.json"}
+  }
+}

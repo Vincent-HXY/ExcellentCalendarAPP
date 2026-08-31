@@ -71,11 +71,18 @@ ReminderCancellationReason:
     - anniversary_updated
     - anniversary_template_replaced
     - anniversary_deleted
+    - habit_completed
+    - habit_skipped
+    - habit_ended
+    - habit_deleted
+    - habit_template_disabled
+    - habit_template_replaced
 
 ReminderExpirationReason:
   values:
     - recovery_window_elapsed
     - anniversary_occurrence_elapsed
+    - habit_occurrence_elapsed
 
 NotificationStatus:
   values:
@@ -118,6 +125,8 @@ DeliveryAbandonReason:
   values:
     - recovery_window_elapsed
     - recovery_summary_superseded
+    - habit_occurrence_elapsed
+    - habit_reminder_cancelled
 
 PreparedAttemptRecoveryResolution:
   values:
@@ -225,8 +234,61 @@ HabitCheckInStatus:
   values:
     - done
     - partial
-    - missed
     - skipped
+
+HabitDailyStatus:
+  values:
+    - upcoming
+    - absent
+    - partial
+    - done
+    - skipped
+    - missed
+
+HabitLifecycleStatus:
+  values:
+    - upcoming
+    - active
+    - completed
+    - ended_early
+
+HabitCheckInSource:
+  values:
+    - manual
+    - notification_action
+
+HabitNotificationActionType:
+  values:
+    - complete
+
+HabitProgressColor:
+  values:
+    - teal
+    - blue
+    - indigo
+    - green
+    - orange
+    - rose
+    - purple
+
+HabitScheduleStatus:
+  values:
+    - not_required
+    - scheduled_exact
+    - scheduled_approximate
+    - pending_permission
+    - pending_reconciliation
+
+HabitReminderReconciliationTriggerSource:
+  values:
+    - app_start
+    - device_boot
+    - app_update
+    - date_changed
+    - time_changed
+    - timezone_changed
+    - permission_restored
+    - manual_retry
 
 SyncOperationType:
   values:
@@ -279,6 +341,7 @@ DataSource:
   values:
     - manual
     - auto
+    - notification_action
     - ai_extraction
     - sync
     - import
@@ -298,6 +361,8 @@ EntityType:
     - event_occurrence_state
     - habit
     - habit_check_in
+    - habit_recurrence
+    - habit_reminder_template
     - reminder
     - notification
     - category

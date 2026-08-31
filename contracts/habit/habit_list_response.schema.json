@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_list_response.schema.json",
+  "title": "HabitListResponse",
+  "description": "Paginated card-ready Habit list with stable C++ ordering plus a global, page-independent home progress aggregate.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "x-order": "lifecycle group; active incomplete-or-partial, skipped, done; reminder local_time null-last; created_at; id",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "pagination", "today_progress"],
+  "properties": {
+    "items": {"type": "array", "maxItems": 100, "items": {"$ref": "./habit_summary_response.schema.json"}},
+    "pagination": {"allOf": [
+      {"$ref": "../common/pagination_response.schema.json"},
+      {"properties": {
+        "total": {"maximum": 9007199254740991},
+        "page": {"maximum": 9007199254740991},
+        "page_size": {"maximum": 100},
+        "next_cursor": {"minLength": 1, "maxLength": 512}
+      }}
+    ]},
+    "today_progress": {"$ref": "./habit_today_progress_response.schema.json", "description": "Computed over every non-deleted Habit, independent of pagination and list filters."}
+  }
+}

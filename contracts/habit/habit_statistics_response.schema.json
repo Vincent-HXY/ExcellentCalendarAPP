@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/habit/habit_statistics_response.schema.json",
+  "title": "HabitStatisticsResponse",
+  "description": "C++ query projection as of one device-local date. Rates are 0..1 and are never persisted in Habit. A zero eligible denominator produces 0, not null.",
+  "x-contract-version": 2,
+  "x-habit-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "as_of_date", "elapsed_eligible_days", "done_days", "skipped_days", "partial_days", "missed_days",
+    "current_streak", "longest_streak", "completion_rate_7_days", "completion_rate_30_days", "completion_rate_all",
+    "quantity_progress_rate_7_days", "quantity_progress_rate_30_days", "quantity_progress_rate_all",
+    "total_completed_count_hundredths", "average_completed_count_per_eligible_day_hundredths"
+  ],
+  "properties": {
+    "as_of_date": {"type": "string", "format": "date"},
+    "elapsed_eligible_days": {"type": "integer", "minimum": 0},
+    "done_days": {"type": "integer", "minimum": 0},
+    "skipped_days": {"type": "integer", "minimum": 0},
+    "partial_days": {"type": "integer", "minimum": 0},
+    "missed_days": {"type": "integer", "minimum": 0},
+    "current_streak": {"type": "integer", "minimum": 0},
+    "longest_streak": {"type": "integer", "minimum": 0},
+    "completion_rate_7_days": {"type": "number", "minimum": 0, "maximum": 1},
+    "completion_rate_30_days": {"type": "number", "minimum": 0, "maximum": 1},
+    "completion_rate_all": {"type": "number", "minimum": 0, "maximum": 1},
+    "quantity_progress_rate_7_days": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "quantity_progress_rate_30_days": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "quantity_progress_rate_all": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "total_completed_count_hundredths": {"type": ["integer", "null"], "minimum": 0, "maximum": 9007199254740991},
+    "average_completed_count_per_eligible_day_hundredths": {"type": ["integer", "null"], "minimum": 0, "maximum": 9007199254740991, "description": "Round-half-up average already expressed in exact hundredths."}
+  },
+  "oneOf": [
+    {"title": "BinaryStatistics", "properties": {"quantity_progress_rate_7_days": {"type": "null"}, "quantity_progress_rate_30_days": {"type": "null"}, "quantity_progress_rate_all": {"type": "null"}, "total_completed_count_hundredths": {"type": "null"}, "average_completed_count_per_eligible_day_hundredths": {"type": "null"}}},
+    {"title": "QuantitativeStatistics", "properties": {"quantity_progress_rate_7_days": {"type": "number", "minimum": 0, "maximum": 1}, "quantity_progress_rate_30_days": {"type": "number", "minimum": 0, "maximum": 1}, "quantity_progress_rate_all": {"type": "number", "minimum": 0, "maximum": 1}, "total_completed_count_hundredths": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}, "average_completed_count_per_eligible_day_hundredths": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}}}
+  ]
+}

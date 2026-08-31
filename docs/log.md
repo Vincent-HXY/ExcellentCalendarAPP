@@ -883,3 +883,255 @@
 - 任务结果：确认来源分支的 68 个文档路径已全部存在于 HXY，HXY 另有 3 个文档，因此没有来源独有文件需要导入；57 个文件内容完全相同，11 个同路径文件内容不同。来源提交 `5f7ae98` 是 HXY 的祖先，差异来自 HXY 后续提交；其中 4 个关键差异位于 Anniversary ADR、Anniversary Domain、Category Domain 与 Domain 索引，主要反映 SQLite Storage v4 落地和 Category active 状态。按用户要求保留 HXY 现状，未用来源旧内容覆盖，最终报告列出冲突供用户决策。
 - 验证状态：通过两分支 `docs` tree blob 映射核对文件路径与内容，验证来源提交为 HXY 祖先并审阅 4 个关键文件的逐行差异；本次仅追加日志，提交前执行 `git diff --check` 和分支/文件计数复核。未运行代码构建或测试，因为没有修改功能代码、Contract 或运行时文档定义。
 - 开发时间：2026-08-28 00:28 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 00:43 +08:00 R2 入口状态与相关文档同步
+
+- 使用 Skill：无（纯文档状态核对与同步）。
+- 负责模块：`docs/status/current.md`、`docs/status/roadmap.md`、架构/领域/索引文档、认证归档计划与 Cloud Backend 实现状态。
+- 任务目标：依据当前生产代码、机器 Contract、最近自动化与真机记录，将项目状态从 R1 基线同步到“进入 R2 开发”，并修正相关过期描述。
+- 任务结果：重写当前状态与路线图，确认 R1 主体工程完成、R2 成为当前阶段，Habit V1 为唯一 active 主计划；补充认证后端 16 端点、Flutter/Keystore、Ring、SQLite v4、四 Tab 导航及最近验证证据。明确保留 Backend/Auth Contract 仍为 `planned`、通知历史/普通日程管理、生产部署与设备矩阵等 R1 债务。同步修正架构文档旧入口、Category blocked/JSON writer 旧描述、Anniversary Reminder 旧待设计描述，并将两份认证计划标记为主体实现完成后归档。未修改 Contract、功能代码、依赖或工具链；工作区原有两份认证计划从 active 移至 completed 的未提交移动已保留。
+- 验证状态：按生产调用链定向核对 Flutter、Kotlin、JNI/C++、SQLite、Cloud Backend Controller/Flyway、Contract 状态和测试记录；执行 Markdown 相对链接检查、状态关键词复查与 `git diff --check`。本次为纯文档同步，未重新运行 C++/Flutter/Android/Backend 构建和测试；文档引用的通过结果均标明为最近一次已记录证据。
+- 开发时间：2026-08-28 00:43 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 02:00 +08:00 Habit 四层拆分与 Contracts Phase 0 完成
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn/HabitRecurrence/HabitReminderTemplate 领域与机器 Contract、Reminder/Notification 共享边界、SQLite v5 目标格式、Flutter/Kotlin/C++ 分层计划与总工程合并门禁。
+- 任务目标：以总工程师身份将 Habit 总计划拆为 Contracts、C++、Kotlin、Flutter 四份可执行计划，亲自完成 Contract 核心，并为下游交付顺序、阻塞条件和最终合并验收建立统一基线。
+- 任务结果：归档完成 `习惯-02-Contracts层开发计划.md`，建立 active 的 `习惯-03-CPP层开发计划.md`、`习惯-04-Kotlin层开发计划.md`、`习惯-05-Flutter层开发计划.md` 并回写主计划。冻结 10 个 Habit 与 2 个本机 Appearance 公开方法、11 个 Habit native call、完整 Schema/错误/枚举/UUIDv5 identity、Habit 专属 Reminder/Notification/action/reconciliation、公开 manual 与内部 notification-action CheckIn 输入隔离、固定点上界及 SQLite v5 四表七索引/原子 v4→v5 target。保留 SQLite v4 为 active writer，全部新 capability 保持 `planned + blocked`；未合并或伪造尚不存在的 C++、Kotlin、Flutter 生产代码。同步领域、ADR、索引、状态、路线图和问题记录，并保留工作区原有认证计划移动及其他用户修改。
+- 验证状态：`contracts/run_habit_v1_validation.py` 通过 193 个 Schema、28 个 Habit fixture、4 个 Habit identity vector、12 个公开方法和 11 个 native call；`contracts/run_anniversary_r1_validation.py` 回归通过 56 个 Anniversary/Reminder fixture 与 20 个 identity vector；`git diff --check` 无空白错误，仅有既有 LF/CRLF 提示。未执行 C++、Kotlin、Flutter 构建或真机验证，因为本轮没有这些层的生产代码变更；对应验证已作为下游完成门禁列入分计划。
+- 开发时间：2026-08-28 02:00 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 13:29 +08:00 Habit 分层计划与 Contracts 总监审阅
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Habit 主计划与 Contracts/C++/Kotlin/Flutter 分计划、Habit 领域与 ADR、Habit/Appearance/Reminder/Notification/Storage v5 机器 Contract 及专项 validator。
+- 任务目标：以只读总监身份审阅 Habit 分计划是否符合主计划，并审阅现有 Habit Contracts 是否能够安全支撑预期开发；不修改业务代码、计划或协议内容。
+- 任务结果：确认四层拆分、`Contracts → C++ → Kotlin → Flutter` 依赖顺序、职责边界和 capability blocked 策略总体合理；但发现 Contract Phase 0 暂不应视为可直接交付 C++ 的安全基线。主要阻断项包括：wire `number` 的两位小数最大值在 IEEE-754 边界不能区分相邻百分位；提醒时间变化会更换 template/occurrence identity，但当前只按 occurrence 去重，无法保证同一 Habit 同一当地日期最多一次真实展示；分页 `habit.list` 缺少首页“今日完成 X/Y”的全量聚合；挑战期限和用户文本缺少上界；DailyStatus 可引用 tombstone CheckIn、detail 锁定/历史边界等响应不变量不完整；reconciliation continuation 缺少零进展/重复 cursor 的防循环门禁。另确认 Kotlin 计划只构建 androidTest APK、未给出实际执行 instrumentation 的命令，validator 直接 fixture 覆盖仅涉及 34 个 Habit Schema 中的 6 个，Storage v5 validator 也未逐个冻结七个索引的精确 SQL。建议先把 Contracts 计划改为 Needs Revision、C++ 改回 blocked，修订协议、领域与 validator 后再恢复下游门禁。
+- 验证状态：实际执行 `python contracts/run_habit_v1_validation.py`，通过 193 个 Schema、28 个 fixture、4 个 Habit identity vector、12 个公开方法和 11 个 native call；执行 `python contracts/run_anniversary_r1_validation.py`，通过 193 个 Schema、56 个共享回归 fixture 和 20 个 identity vector；`git diff --check` 通过，仅报告工作区既有 LF/CRLF 提示。另以 IEEE-754 double 实测 `90071992547409.90` 与 `90071992547409.91` 解析为同一数值，证明现有 fixed-point 上界并非跨语言精确。未运行 C++、Kotlin、Flutter 构建或真机测试，因为本次为只读计划/协议审阅且 Habit 生产实现尚不存在。
+- 开发时间：2026-08-28 13:29 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 14:00 +08:00 Habit Contracts 总监 review 修订
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn Schema、领域不变量、生命周期矩阵、Reminder reconciliation、SQLite v5 目标约束、专项 fixtures/validator 与 C++/Kotlin/Flutter 分层计划。
+- 任务目标：逐项复核总监提出的 7 个协议问题；对真实问题修订 Contract、领域和下游实施计划，同时遵守用户要求，不直接修改 Habit 主计划。
+- 任务结果：确认 7 项均真实存在。数量 wire 从 IEEE-754 decimal number 改为 `_hundredths` JSON safe integer，并冻结相邻上界向量；增加 `(habit_id, occurrence_date)` 跨 template 每日单展示和 SQLite sent 唯一索引，明确 sent/prepared 后改时间或关闭重开从下一合法日生效；`habit.list` 增加全局、不受分页/筛选影响的 `today_progress`；冻结 400 天挑战、80/2000/32/500 文本、100 page 和 512 cursor 上限；禁止 tombstone CheckIn 出现在 response，补齐 has-ever/latest 与空历史边界对称条件；新增生命周期 × mutation 机器矩阵及 3 个确定性错误；reconciliation 回显 request limit，processed 精确等于四类 outcome 之和，续页必须正进展。SQLite v5 新索引由七个增为八个，C++/Kotlin/Flutter 分计划增加相邻整数 round-trip、同日提醒事务、重复 cursor 与单次唤醒预算、全局 X/Y 和生命周期 UI 测试。主计划本轮未修改；其旧 decimal 字段、提醒变更语义、验证计数和测试矩阵待用户批准后同步。
+- 验证状态：实际执行 `python contracts/run_habit_v1_validation.py`，通过 194 个 Schema、44 个 Habit fixture、4 个 Habit identity vector、12 个公开方法和 11 个 native call；实际执行 `python contracts/run_anniversary_r1_validation.py`，通过 194 个 Schema、56 个共享回归 fixture 和 20 个 identity vector。未运行 C++、Kotlin、Flutter 构建或真机测试，因为这些层尚无 Habit 生产实现，本轮仅修改 Contract、领域和计划；跨语言真实 round-trip 与运行时行为已列入各层开工/完成门禁。
+- 开发时间：2026-08-28 14:00 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 14:23 +08:00 Habit 三层独立并行计划改造
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Habit Contracts 交接说明、C++/Kotlin/Flutter 三份 active 分层计划、架构并行开发规则、R2 索引与状态导航。
+- 任务目标：把原串行实现依赖改造成三个可独立运行的并行计划；Kotlin/Flutter 允许使用 Contract-conformant 假数据完成各自开发与验收，三层完成后由总工程师统一接真实链路并清理运行时 Fake，同时不直接修改 Habit 主计划。
+- 任务结果：三份计划统一采用 `Contract Ready / Independent Parallel Track`，要求从同一冻结 Contract revision 建立独立分支/worktree，并定义 `Layer Complete / Awaiting Integration` 状态。C++ 独立交付真实 Domain/SQLite v5/Boundary；Kotlin 通过同接口 `FakeNativeHabitBridge` 验证 Handler、调度、通知、Receiver 与 Appearance；Flutter 通过脚本化 Gateway Fake 和显式 preview 入口交付页面与交互。Fake 只能消费预制 Contract 投影，不得复制 C++ 生命周期、统计、身份或提醒规则；默认/Release production composition 禁止回退 Fake。最终集成删除运行时 preview/debug Fake 与 seed，保留 test/instrumentation Fake 作为回归资产，再执行同一 APK、Native smoke 和真机门禁。同步更新 Contracts 完成计划、架构、索引、当前状态、路线图和 Contract README；上位主计划保持未改，并明确记录其旧串行文字待用户单独批准后统一。尚未创建共同基线提交，因为当前工作树包含未提交修改且本任务未授权 Git 提交；并行任务启动前必须先固化并记录该 revision。
+- 验证状态：`contracts/run_habit_v1_validation.py` 通过 194 个 Schema、44 个 Habit fixture、4 个 Habit identity vector、12 个公开方法和 11 个 native call；`contracts/run_anniversary_r1_validation.py` 回归通过 194 个 Schema、56 个 fixture 和 20 个 identity vector；Markdown code fence/trailing whitespace 检查通过；`git diff --check` 通过，仅有既有 LF/CRLF 提示。未运行 C++、Kotlin、Flutter 构建或真机测试，因为本轮只调整开发计划与导航，没有修改三层生产代码。
+- 开发时间：2026-08-28 14:23 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 15:20 +08:00 Habit Flutter 层独立交付
+
+- 使用 Skill：`frontend-flutter-feature`、`calendar-data-contracts`。
+- 负责模块：`flutter_client` 的 Habit DTO/Mapper、Gateway 与 MethodChannel Adapter、Application Controller、列表/表单/详情/指定日页面、通知深链、本机 Appearance、显式 Fake Preview 入口及 Flutter 测试。
+- 任务目标：严格执行 `docs/plan/active/习惯-05-Flutter层开发计划.md`，在不复制 C++ 领域计算的前提下，按冻结 Habit/Appearance Contract 完成可独立验收的 Flutter 交付，并确保生产组合不回退 Fake。
+- 任务结果：完成 10 个 Habit 方法与 2 个 Appearance 方法的严格 Contract 映射；实现安全整数百分位数量、Unicode 长度和 400 天期限校验；实现列表分组、全局今日进度、快捷/精确打卡、创建编辑、指定日记录、统计热力图、向前分页、提前结束/软删除/再来一轮、前后台刷新和并发门禁；接入通知 occurrence 深链与本机主题色；提供 fixture 派生的脚本化 Fake 和仅由 `main_habit_preview.dart` 启用的预览组合。当前状态为 **Layer Complete / Awaiting Integration**；真实 JNI/C++ 行为与 Android 真机提醒链路留待总工程师集成阶段验证。
+- 验证状态：`dart format --output=none --set-exit-if-changed lib test` 通过；`flutter analyze` 通过且无问题；`flutter test` 全量 421 项通过；`flutter build apk --debug -t lib/main_habit_preview.dart` 与 `flutter build apk --debug` 均成功，最终 `app-debug.apk` 为生产入口；未升级 Flutter、Gradle、SDK 或第三方依赖。未执行 Android 真机/ADB、真实 JNI/C++/SQLite 联调，因为本计划是 Contract-first 独立 Flutter 轨道，相关下层实现不属于本次范围。
+- 开发时间：2026-08-28 15:20 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 15:46 +08:00 Habit C++ 层独立交付
+
+- 使用 Skill：`cpp-core-feature`。
+- 负责模块：`cpp_core` 的 Habit Domain、Application Service、事务仓储、SQLite v5、Reminder/Notification 投递工作流、Boundary v2、Native Runtime 组合及专项测试。
+- 任务目标：严格执行 `docs/plan/active/习惯-03-CPP层开发计划.md`，以冻结 Habit Contract 和领域不变量为准，完成可独立构建、测试和交付的真实 C++ 实现，不伪造底层行为、不修改其他层生产代码。
+- 任务结果：完成 Habit 生命周期、重复规则、定量/非定量打卡、清除、统计、分页和乐观并发；完成四类 Habit 持久化、严格 JSON/状态校验及原子 SQLite v4→v5 迁移；完成提醒模板、同日唯一投递、prepare/finalize/replay、通知直接打卡、时区/时间变化与权限恢复 reconciliation；完成 11 个 Boundary v2 native 方法、严格请求校验、安全整数 wire 映射和 Native Runtime 组合。因冻结 Contract 已将旧计划中的 IEEE-754 decimal 数量升级为 `_hundredths` JSON safe integer，本实现采用该更高优先级真相源。当前状态为 **Layer Complete / Awaiting Integration**；Kotlin/JNI/APK/真机链路属于最终集成阶段。
+- 验证状态：重新配置并构建 `cpp_core/build-ninja`；三个新增测试目标分别通过；`cmake --build cpp_core/build-ninja --target excellent_calendar_check` 完整回归 10/10 通过。`python contracts/run_habit_v1_validation.py` 通过 194 个 Schema、44 个 Habit fixture、4 个 identity vector、12 个公开方法和 11 个 native call；`python contracts/run_anniversary_r1_validation.py` 通过 194 个 Schema、56 个 fixture 和 20 个 identity vector。`git diff --check -- cpp_core docs/log.md` 通过，仅报告仓库既有 LF/CRLF 转换提示。未执行 Kotlin、Flutter、APK、ADB 或真机验证，因为不属于本 C++ 独立计划的允许修改和验收边界。
+- 开发时间：2026-08-28 15:46 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 Native Runtime、共享所有权与陌生代码阅读方法教学
+
+- 使用 Skill：`self-learning`。
+- 负责模块：`cpp_core` Native Runtime composition root、AnniversaryQueryService 与 LocalTimeResolver 生命周期；只读教学分析。
+- 任务目标：评估学习者对 `shared_ptr` 共享所有权的理解，解释 `native_runtime.cpp` 的职责，并建立无需逐行展开全部实现的陌生方法阅读流程。
+- 任务结果：确认学习者已掌握引用计数决定共享对象生命周期的核心语义；进一步区分“当前实现采用共享所有权”和“共享所有权必然是最佳设计”，梳理 RuntimeState 的进程级持有、初始化时的依赖创建与注入、线程安全发布、Boundary getter 借用以及重新初始化时撤销旧运行时；给出按当前问题逐层展开头文件、调用点、实现和测试的目标驱动阅读法。
+- 验证状态：已核对当前开发工作区中的 SQLite/Habit Native Runtime 组装、Resolver 创建及多 Service 注入、AnniversaryQueryService 成员持有、Runtime getter 和 Result value 语义；未修改业务代码，未运行构建或测试。
+- 开发时间：2026-08-28（Asia/Shanghai）。
+
+## 2026-08-28 17:34 +08:00 Habit 三层总审阅、返修与真实链路集成
+
+- 使用 Skill：`review-worktree-architecture`、`cross-layer-feature`、`cpp-core-feature`、`android-kotlin-native-feature`、`frontend-flutter-feature`。
+- 负责模块：Habit C++ Core/SQLite v5/Boundary、Android Kotlin/MethodChannel/JNI/提醒调度、Flutter DTO/Application/页面，以及三层真实生产组合和合并门禁。
+- 任务目标：审阅 C++、Kotlin、Flutter 三层独立交付；将重大缺陷退回对应负责人修复，由总工程师修复小缺陷；删除并行开发期运行时 Fake/种子入口，接通 `Flutter → MethodChannel → Kotlin → JNI → C++ → SQLite v5`，最后执行合并后的完整主机验证并记录所有问题。
+- 任务结果：审阅确认 C++ 有 8 项 P1（upcoming reminder 被取消、failed reminder 被复活、提前结束事务/历史 clear/startDate 更新、fixed-point 词法、SQLite 精确 schema 与 UUID/所有权等），Kotlin 有 1 项 P1（11 个 Habit external 缺少 JNI 导出并可能饿死共享 reconcile），Flutter 有 6 项 P1（DTO 分支不严、生命周期快捷操作、历史日投影、mutation 锁、真实调度 capability 与暗色主题）；均由对应层负责人完成最小返修并新增回归。总工程师另修复提前结束进度冻结、已删除详情错误码、WorkManager continuation 持久化/预算失败、Kotlin 嵌套 DailyStatus/ReminderSettings 校验、Flutter Native `as_of_date` 打卡日期、成功反馈/失败重试。删除 `lib/main_habit_preview.dart` 和 `lib/**` 下 Habit/Appearance 运行时 Fake，将长期测试替身迁入 `test/fakes/**`；生产 composition 保持真实 MethodChannel，无 Fake fallback。未修改 Habit 主计划或 Contract。
+- 验证状态：两套 Contract validator 通过（194 schemas、44 Habit fixtures、4 Habit identity vectors、12 public methods、11 native calls；共享回归 56 fixtures/20 vectors）；C++ 按要求重新 configure 并执行 build-after-test，`excellent_calendar_check` 10/10 通过；Flutter format 389 文件/0 变更、`flutter analyze` 0 issues、全量 437 tests 通过、Debug APK 构建成功；Android 38 suites/200 tests（0 failures、0 errors、1 skipped）、lint、Debug APK 与 androidTest APK 全部通过；独立 Native smoke test/analyze/APK 通过；arm64-v8a、armeabi-v7a、x86_64 的 Habit JNI 均为 11/11 导出且 APK 含三 ABI；目标范围无冲突标记、无生产 Habit Fake 引用，`git diff --check` 通过，仅有既有 LF/CRLF 提示。当前 `adb devices -l` 为空且无可用 AVD，因此真实设备上的通知权限允许/拒绝/恢复、前后台/杀进程/重启、同日补发/跨日过期、通知快捷完成及时区/系统时间变化仍为 **未验证**；Contract capability 继续保持 `planned + blocked`，不得据主机结果宣称完整发布激活。
+- 开发时间：2026-08-28 17:34 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 18:08 +08:00 Habit 开启提醒后创建提示协议不兼容修复
+
+- 使用 Skill：`debug`、`android-kotlin-native-feature`。
+- 负责模块：Android Kotlin Habit mutation orchestration 公开响应拼装及对应单元测试。
+- 任务目标：复现并修复新建 Habit、开启每日提醒后点击“开始挑战”出现“数据协议不兼容，请更新应用后重试”的问题，不修改 Habit 主计划或 Contract。
+- 任务结果：真机确认不启用提醒时创建正常、启用 09:00 提醒时稳定复现；Native 创建事务和 Android Alarm 实际均成功，但 Kotlin 公开响应仍保留事务提交前 `detail.reminder_settings.schedule_reconciliation_required=true`，同时 capability 已返回调度后的 `false`，Dart 严格 DTO 因两处状态矛盾拒绝响应。现于 Kotlin orchestration 在调度结束后将 mutation/check-in 嵌套 ReminderSettings 投影为最终 capability 状态，并保留权限受阻时的待 reconciliation 状态；新增成功精确调度与权限受阻回归断言。
+- 验证状态：`HabitMutationOrchestratorTest` 定向测试通过；Android `testDebugUnitTest`、`lintDebug`、`assembleDebug` 全部通过；Debug APK 安装至 Android 16 realme RMX5100 真机后，使用完成型、21 天、每日 09:00 提醒路径创建成功，页面显示“习惯已保存 / 提醒已按精确时间安排”，日志确认 `reminder.reconcile_schedule` 与 `habit.create ... ok=true`，未再出现协议校验错误。
+- 开发时间：2026-08-28 18:08 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 18:25 +08:00 Habit 连续天数圆环与详情快捷操作调整
+
+- 使用 Skill：`frontend-flutter-feature`。
+- 负责模块：Flutter Habit 卡片和 Habit 详情页展示、交互及 Widget 回归测试。
+- 任务目标：将进行中 Habit 卡片右侧圆环中心由完成率数字改为当前连续完成天数；在详情页直接提供“跳过今天”；把软删除入口移动至右上角垃圾桶按钮，不修改主计划、Contract 或 Native 层。
+- 任务结果：圆环弧度继续表达全周期完成率，中心数字改为直接展示 C++ 统计投影 `current_streak`，并补齐“完成率 + 当前连续天数”无障碍语义；详情页对 active 且存在 today 投影的 Habit 显示“跳过今天”，通过现有 `habit.check_in(skipped)` 能力写入，完成后刷新并显示“今天已跳过”；删除入口从列表底部移至 AppBar 右上角垃圾桶，沿用既有二次确认与软删除流程。连续天数及中断归零继续由 C++ 权威统计负责，Flutter 不重复计算。
+- 验证状态：Habit Widget 定向 10 项通过；Flutter format 389 文件/0 变更、`flutter analyze` 无问题、全量 439 项测试通过、Debug APK 构建成功。APK 安装至 Android 16 realme RMX5100 真机后，确认完成率 100%/连续 1 天的卡片圆环中心显示 `1`；详情页右上角显示“删除习惯”按钮，底部显示“跳过今天”。真机核对未执行跳过或删除，未修改既有 Habit 数据。
+- 开发时间：2026-08-28 18:25 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 18:49 +08:00 Habit 最终集成白盒 Review 计划
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn 全层审阅计划，覆盖 Contract、C++ Core、SQLite v5、Kotlin/JNI/Android 提醒与通知动作、Flutter/Appearance 和共享 Reminder/Notification 回归边界。
+- 任务目标：为 Habit 开发结束后的最终集成候选版本建立一份风险导向白盒 Review 计划，提前标出最容易被实现、并行接线和测试遗漏的故障点，不修改当前业务代码。
+- 任务结果：新增 active Review 计划，明确发布阻断红线、10 个公开 Habit 方法、2 个 Appearance 方法、11 个 internal native call 的真实闭环，以及定点数精度、Unicode 长度、日期/生命周期、CheckIn tombstone、统计快照、同日跨模板提醒配额、两阶段投递崩溃窗口、通知动作安全、SQLite v4→v5 原子迁移、Fake 隔离和既有功能回归矩阵；同步更新文档索引入口。
+- 验证状态：仅新增/更新文档，未审阅或修改当前并行业务实现，未运行构建与业务测试；Habit Contract validator 通过（194 schemas、44 Habit fixtures、4 Habit identity vectors、12 public methods、11 native calls，状态 `planned + blocked`），Review 文档 34 个本地路径引用均存在，17 个风险章节与关键覆盖词检查通过，`git diff --check` 通过，仅有既有 LF/CRLF 提示。
+- 开发时间：2026-08-28 18:49 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 19:31 +08:00 Habit 最终集成白盒 Review 执行
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn Contract、C++ Core/SQLite v5/Boundary、Kotlin/JNI/Android Reminder/Notification、Flutter 页面与真实 production composition；仅审阅，不修改业务代码。
+- 任务目标：按 active Habit 白盒 Review 计划审阅当前完整工作树，判断实现是否满足主计划、Contract、领域不变量和现实 Android 运行场景，并通过独立构建与测试形成发布判定。
+- 任务结果：判定 **CHANGES REQUIRED**。确认 5 项运行时缺陷与 1 项真相源漂移：dispatcher Alarm 绕过 Habit 跨日过期 reconciliation，延迟至次日仍可能投递旧 occurrence；Flutter 对 date-only 期限预设和历史分页使用 `Duration(days)`，跨 DST 会错日；二元 Habit 详情展示 skipped 操作但 C++ 明确拒绝；Habit reconciliation 达 2000 条后续跑不保留 cursor，尾部记录可能永久饥饿；partial Reminder 文案直接展示内部“百分位”且缺失用户单位；active 主计划仍把数量写为 decimal number，与当前 `_hundredths` integer Contract 冲突。生产 composition 已使用真实 MethodChannel，未发现 Habit Fake fallback，SQLite v5、JNI 编译与现有测试基线未发现新的结构性失败。
+- 验证状态：Habit Contract validator 通过（194 schemas、44 Habit fixtures、4 identity vectors、12 public methods、11 native calls，状态 `planned + blocked`）；C++ 重新 configure 后 `excellent_calendar_check` 10/10 通过；Flutter 全量 439 tests 通过、`flutter analyze` 无问题；Android `:app:testDebugUnitTest --rerun-tasks`、`lintDebug`、`assembleDebug`、`assembleDebugAndroidTest` 通过；`git diff --check` 无 whitespace error，仅有既有 LF/CRLF 提示。当前 `adb devices -l` 为空，真机通知权限、延迟闹钟跨午夜、系统重启/杀进程、DST/时区变化及通知 action instrumentation 均为 **未验证**，capability 必须继续保持 `planned + blocked`。
+- 开发时间：2026-08-28 19:31 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 21:21 +08:00 Habit 最终 Review 问题返修
+
+- 使用 Skill：`debug`、`cross-layer-feature`、`calendar-data-contracts`、`cpp-core-feature`、`android-kotlin-native-feature`、`frontend-flutter-feature`。
+- 负责模块：Habit Contract/Domain、C++ 打卡与 Reminder 投递、Android dispatcher/WorkManager reconciliation、Flutter date-only 运算，以及相关跨层回归测试。
+- 任务目标：复核最终白盒 Review 提出的 3 类 P1、2 类 P2、1 类 P3，修复确认存在的问题，同时保护当前脏工作树中的既有三层集成修改。
+- 任务结果：确认六类问题主体均真实存在并完成返修。dispatcher 现于共享提醒投递前先完成 Habit reconciliation；`prepare_delivery` 接收可选设备 IANA timezone，并由 C++ 对 Habit occurrence 执行同当地日期终检，过期 Reminder 与 prepared Notification 在同一事务中分别转为 expired/abandoned。Flutter 新增纯 civil-date 工具，期限预设、历史分页和 DailyStatus 连续性不再使用本地 `Duration(days)`。按 Contract/主计划统一二元与数量型 Habit 均允许 `skipped`，并修订领域说明。WorkManager continuation 持久化 seek-after cursor、原 trigger、冻结 timezone 和 dispatcher plannedAt；时区变化时丢弃旧 cursor 安全重扫；有下一页时暂缓共享提醒，避免尾页 Habit 尚未清理便被投递。C++ 使用无浮点百分位格式化器生成实际数量与单位，修复 partial Reminder 文案。经本次用户授权，主计划旧 decimal number 描述已同步为 `_hundredths` JSON safe integer。Review 中“旧通知点击会补写昨天”的具体推断在当前实现不成立：既有 C++ notification-action 校验已拒绝非当地今天的 `check_date`；“最终通知一定显示百分位”也不完全成立，因为 prepare 阶段已有动态投影，但持久 Reminder 文案确实错误，现已统一修复。capability 继续保持 `planned + blocked`。
+- 验证状态：Habit Contract validator 通过（194 schemas、46 Habit fixtures、4 identity vectors、12 public methods、11 native calls）；Anniversary 共享协议回归通过（194 schemas、56 fixtures、20 vectors）；C++ build-after-test `excellent_calendar_check` 10/10 通过；Flutter format 390 文件/0 变更、`flutter analyze` 无问题、全量 440 tests 通过、Debug APK 构建成功；Android 全量 unit test、`lintDebug`、androidTest APK 构建通过；arm64-v8a、armeabi-v7a、x86_64 的 Habit JNI 导出均为 11/11；`git diff --check` 无 whitespace error，仅有既有 LF/CRLF 提示。当前 `adb devices -l` 为空，真实设备上的跨午夜延迟 Alarm、通知展示/快捷动作、进程死亡/重启、权限和时区变化矩阵仍为 **未验证**，不能据主机门禁宣称发布激活。
+- 开发时间：2026-08-28 21:21 +08:00（Asia/Shanghai）。
+
+## 2026-08-28 21:51 +08:00 Habit 最终 Review 返修独立复核
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn Contract、C++ CheckIn 与 Reminder 投递、Android dispatcher/WorkManager continuation、Flutter civil-date、JNI/APK 和共享 Anniversary 协议回归；仅审阅和验证，不修改业务代码。
+- 任务目标：独立检查最终白盒 Review 中六类问题的返修是否真实接入生产调用链、满足主计划与 Contract，并复现开发者报告的主机验证结果。
+- 任务结果：判定六类返修在主机可验证范围内均成功，未发现需要再次退回的代码缺陷。确认 Habit dispatcher 在共享投递前完成专属 reconciliation，C++ `prepare_delivery` 以当前设备时区执行当地日期终检并原子终结过期 Reminder/prepared Notification；Habit 日期运算已统一经 UTC-backed `CivilDate`；二元与数量型 skipped 均被 C++ 接受且清空完成快照；continuation 持久化 seek-after cursor、原 trigger、时区和 dispatcher plannedAt，并在时区变化时安全重扫、完成前暂缓共享 dispatcher；partial 文案使用无浮点百分位格式化后的实际数量和用户单位；主计划数量 wire 已同步为 `_hundredths` JSON safe integer。复核也确认原审阅关于旧通知 action 和最终系统通知文案的两项影响描述确有扩大：既有 C++ 会拒绝非当地今天的 action，prepare 阶段也会动态生成最终通知正文。Capability 保持 `planned + blocked` 正确。
+- 验证状态：Habit Contract validator 通过（194 schemas、46 fixtures、4 identity vectors、12 public methods、11 native calls）；Anniversary 共享回归通过（194 schemas、56 fixtures、20 vectors）；C++ build-after-test 10/10 通过；Flutter format 390 文件/0 变更、`flutter analyze` 无问题、全量 440 tests 和 Debug APK 构建通过；Android `:app:testDebugUnitTest --rerun-tasks --no-daemon` 为 38 suites/205 tests（0 failures、0 errors、1 skipped），其中 skipped 是旧 V1 `ReminderDeliveryService` 的已知 stale Alarm 测试；当前 BuildConfig 固定启用 V2，生产 composition 使用先 prepare 后展示的 `V2ReminderDeliveryService`，故不影响本次 Habit V2 返修判定，但旧 V1 代码与忽略测试仍应在后续兼容清理中处理。`lintDebug` 与 `assembleDebugAndroidTest` 通过；APK 含 arm64-v8a、armeabi-v7a、x86_64，三种 ABI 的 Habit JNI 均为 11/11 导出；`git diff --check` 退出码 0，仅有 LF/CRLF 提示。一次并发合并 Gradle 命令发生 daemon socket 序列化异常，拆分为隔离单次进程后全部通过，判定为本机 daemon 干扰而非代码失败。`adb devices -l` 仍为空，跨午夜延迟 Alarm、进程死亡/重启、真实通知展示/快捷动作、权限与时区变化矩阵未完成真机验证，因此不能标记正式发布激活。
+- 开发时间：2026-08-28 21:51 +08:00（Asia/Shanghai）。
+
+## 2026-08-29 20:23 +08:00 Habit 黑盒与异常数据复核
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn Contract、C++ Core/SQLite v5、Kotlin/JNI/Android Reminder、Flutter Habit 页面与生产装配；仅测试和审阅，不修改业务代码。
+- 任务目标：以黑盒为主复核 Habit 已实现功能，向 Contract、DTO、Application、Core/Storage 和 Android 边界施加非法、边界、分页及状态组合数据，评估尚未完善的问题并给出修正方向。
+- 任务结果：判定 **CHANGES REQUIRED**。一次性独立 Widget/Application 用例确认：Habit 卡片背景使用 `challenge_time_progress`，在完成率 30%、时间进度 80% 时实际填充 80%，与用户最终确认“背景表达完成率、时间进度只显示剩余天数”不符；列表收到 `has_more=true + next_cursor` 后只请求第一页，超过 100 条的 Habit 无法从页面访问。另确认数量型卡片左侧圆圈只显示加号，没有展示已确认的剩余数量；通知进入详情时直接向普通用户展示 occurrence 技术标识；active 计划和 current status 仍描述 C++/Kotlin/Flutter 未实现，与当前生产接线和测试事实不一致，但因缺少设备门禁，机器 capability 保持 `planned + blocked` 仍属正确。临时复现测试已删除，未留下生产或测试文件。
+- 验证状态：Habit Contract validator 通过（194 schemas、46 fixtures、4 identity vectors、12 public methods、11 native calls）；Anniversary Contract 回归通过（194 schemas、56 fixtures、20 vectors）；C++ build-after-test `excellent_calendar_check` 10/10 通过；Flutter Habit 定向 36/36、全量 440/440、`flutter analyze` 和 Debug APK 构建通过；Android Habit/Reminder 定向 unit、全量 `:app:testDebugUnitTest`、`lintDebug`、androidTest APK 构建通过；Native smoke test/analyze/Debug APK 通过；Debug APK 包含三种 ABI，Habit JNI 均为 11/11 导出；`git diff --check` 退出码 0，仅有既有 LF/CRLF 提示。当前无 Android 设备或模拟器，真实点击、通知权限/展示/快捷动作、跨午夜、杀进程/重启和时区变化仍为 **未验证**，不得激活 capability。
+- 开发时间：2026-08-29 20:23 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 12:48 +08:00 日历月/周分类视图需求发现
+
+- 使用 Skill：`frontend-flutter-feature`、`calendar-data-contracts`。
+- 负责模块：日历 Tab、月/周日期网格、Event/Anniversary/Habit 按日聚合的产品与数据边界规划；本轮仅分析，不修改业务代码。
+- 任务目标：结合两张参考截图、用户口述和现有项目架构，提取前端要素，盘点真实数据能力，并通过分轮提问收敛交互、范围、聚合语义和开发方案，最终形成可执行计划。
+- 任务结果：确认现有日历 Tab 仍为占位；Event 与 Anniversary 已有生产查询，Habit Contract 已冻结但 capability 仍为 `planned + blocked` 且工作树包含在途实现；当前缺少统一日历聚合 Contract/active plan。首轮将围绕导航、日期移动、周/月切换、日期标记、分组卡片、条目动作、创建入口、节假日、错误空态和纯前端编排/统一查询投影取舍向用户确认。
+- 验证状态：完成截图原图检查、架构/索引/状态/路线图、相关领域文档、MethodChannel Schema、Flutter 占位入口及现有 Gateway 的只读核对；未运行测试或构建，因为本轮尚未实施代码。工作区原有大量 Habit/Contract/C++/Android/Flutter 未提交改动均未触碰。
+- 开发时间：2026-08-31 12:48 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 13:34 +08:00 日历月周分类视图主计划冻结
+
+- 使用 Skill：`frontend-flutter-feature`、`calendar-data-contracts`、`cross-layer-feature`。
+- 负责模块：日历 Tab 产品规格、Calendar 只读组合投影、Event/Habit/Anniversary 按日聚合、跨层实施拆分和验收门禁；本轮不修改业务代码或 Contract。
+- 任务目标：依据用户三轮选择，将参考截图和口述需求收敛为可执行的专业开发计划，明确产品行为、数据语义、分层职责、实施顺序、风险、测试和完成定义。
+- 任务结果：新增 active 主计划 `docs/plan/active/日历-01-月周分类视图与三类数据聚合开发计划.md`，冻结中文年月、周一开头、周/月切换、年月选择、今天按钮、月→周折叠、先展开后刷新、三类圆点、三组 20 条分页、跨日/重复 Event、Habit 日状态、Anniversary 精确 occurrence、新建预填、缓存/错误和主题无障碍行为。可行性判定为 `SPECIALIST_SPLIT`，拟议 `calendar.range_summary` 与 `calendar.list_day_items` 两级只读投影，并拆为 Contract/数据、C++/SQLite、Kotlin/JNI、Flutter、真实集成和独立 Review 六轨。同步更新文档索引、当前状态与路线图，移除“日历无 active 计划”的过期入口。
+- 验证状态：计划结构、冻结需求关键词和两级查询方案自检通过；`git diff --check` 无 whitespace error，仅输出工作区既有 LF/CRLF 提示。未运行 Contract validator、C++、Flutter、Android 构建或测试，因为本轮仅建立计划且未实现任何生产代码；工作区原有 Habit/Contract/C++/Android/Flutter 修改均未触碰。
+- 开发时间：2026-08-31 13:34 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 12:57 +08:00 Habit 黑盒产品反馈返修
+
+- 使用 Skill：`frontend-flutter-feature`、`debug`。
+- 负责模块：Flutter Habit 卡片、列表分页、通知详情呈现、Application/Widget 回归测试，以及 Habit 当前状态导航文档；未修改 Contract、C++、Kotlin/JNI、SQLite 或上位主计划。
+- 任务目标：复核总经理反馈的卡片进度、101+ 列表可见性、数量型快捷圆圈和 occurrence 内部标识问题；确认真实存在时做最小修复，并校准与实现事实不一致的项目状态。
+- 任务结果：四项反馈均确认真实存在并完成修复。卡片背景改由 `completionRate` 驱动，挑战时间进度只保留“剩余 X 天”文字；列表控制器消费 `has_more/next_cursor`，提供显式“继续加载更多习惯”入口，跨页按 Habit ID 去重并只保留第一页的全局 `today_progress`；数量型快捷圆圈显示 `max(target-completed, 0)`，达标/超额显示勾选，精确数量入口继续保留；详情仍携带 `focusOccurrenceKey` 供路由与诊断使用，但不再向普通用户渲染 UUID。同步更新索引、current status 和 roadmap，明确 UI/分页反馈已关闭，Storage v5 与 Habit capability 仍为 `planned + blocked`，真机矩阵和状态校准仍是发布门禁。
+- 验证状态：Habit Application/Widget 定向 29/29 通过；Flutter 全量 444/444 通过；`flutter analyze` 无问题；Debug APK 构建成功。未执行真机通知权限、跨午夜、杀进程/重启、通知快捷动作及时区/系统时间变化矩阵，因此未将 Habit 标记为正式激活或发布完成。
+- 开发时间：2026-08-31 12:57 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 13:08 +08:00 Habit 计划与状态文档实时校准
+
+- 使用 Skill：无；本次为纯计划/状态文档治理，不使用会修改代码或 Contract 的专项 Skill。
+- 负责模块：Habit 主计划、C++/Kotlin/Flutter 分层计划、active Review、项目 current/roadmap/index，以及与当前状态直接相邻的架构、领域索引和 open issue 说明。
+- 任务目标：仅处理黑盒 Review 的 P3“计划和状态文档已经明显落后于代码”，根据当前生产接线、最新返修与验证事实更新文档，不修改或顺带处理其他功能问题。
+- 任务结果：主计划和三份分层计划已从“待 C++/并行 Fake/等待真实接线”校准为“实现与真实集成完成、主机门禁通过、最终设备门禁待完成”；同步已完成阶段清单与黑盒矩阵，关闭已经通过验证的 UI/分页项，保留通知权限、跨午夜、进程死亡/重启、通知动作、时区变化、真实 instrumentation 与 TalkBack 等设备依赖项。Review/current/roadmap/index 统一采用同一口径；Storage v5 仅描述为已实现的集成候选，机器 Storage v4 active、Habit `planned + blocked` 均未修改或提前激活。未修改业务代码、Schema、Contract 或其他问题。
+- 验证状态：Habit validator 现场通过（194 schemas、46 fixtures、4 identity vectors、12 public methods、11 native calls），并确认机器状态仍为 `planned+blocked`；当前 `adb devices -l` 无设备、`flutter emulators` 无可用模拟器，因此剩余真机矩阵继续标记未验证。已执行目标文档的状态/未勾选项/陈旧措辞检索、路径与范围检查及 `git diff --check`；文档任务未重跑业务构建和全量测试，引用最近一次已记录的主机门禁结果。
+- 开发时间：2026-08-31 13:08 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 14:10 +08:00 独立搜索功能需求发现首轮
+
+- 使用 Skill：无；本轮是产品需求发现、参考图拆解和现状只读盘点，尚未进入任何单层或跨层实现。
+- 负责模块：搜索 Tab、Event/Habit/Anniversary 三类聚合检索、筛选浮层、结果分组、匹配高亮和本地搜索历史的产品与架构规划。
+- 任务目标：结合三张参考图和用户口述，提取可复用前端要素，核对项目已有搜索与三类数据能力，识别关键产品决策，并通过分轮问答收敛为后续可执行的专业开发计划。
+- 任务结果：确认搜索 Tab 仍为占位；Event 已具备标题/内容/地点关键字及时间、状态、分类等真实搜索能力，Habit 与 Anniversary 只有列表能力；`SearchIndex` 领域与 response Schema 已存在，但统一 Search Contract、索引维护、历史、中文匹配验收和 SQLite FTS 均未实现。首轮方案建议采用固定“日程 / 习惯 / 纪念日”分组、标题与命中摘要高亮、右侧筛选入口、设备本地历史，以及先冻结统一 C++ 搜索投影、经性能门禁再决定 FTS；同时需与 active Calendar 三类聚合计划共享详情投影边界，避免重复模型。
+- 验证状态：完成三张原图、架构/索引/当前状态/路线图、SearchIndex 与 Event/Habit/Anniversary 相关 Schema、C++ Event 搜索实现、Flutter 四 Tab 占位入口及 Calendar active plan 的只读核对；未运行测试或构建，因为本轮尚未实现代码。工作区原有 Habit/Contract/C++/Android/Flutter 大量未提交改动均未触碰。
+- 开发时间：2026-08-31 14:10 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 14:22 +08:00 独立搜索功能首轮需求确认
+
+- 使用 Skill：无；本轮继续进行产品需求冻结，未进入代码或 Contract 实施。
+- 负责模块：三类聚合搜索行为、匹配范围、结果分组、时间语义、筛选入口与本地历史策略。
+- 任务目标：记录用户对首轮九项产品选择的确认，并识别进入正式开发计划前仍需冻结的状态映射、展示密度、排序、筛选提交与状态恢复细节。
+- 任务结果：用户确认采用统一 C++ 本地搜索服务且首版不直接建设 FTS；输入停止 `1s` 后自动搜索；检索日程标题/内容/地点/分类名称、习惯标题/描述/分类名称、纪念日标题/备注/分类名称；采用中文原文包含、英文忽略大小写、空格分词 AND；重复对象只显示一个逻辑结果；默认包含并弱化已完成内容；固定按“日程 / 习惯 / 纪念日”分组；确认业务发生日期时间筛选；采用右上角浮层加复杂选项二级面板；历史为设备本地最近 20 个唯一关键字且不保存筛选。
+- 验证状态：仅完成需求确认与一致性检查，未运行测试或构建；现有工作树业务改动未触碰。
+- 开发时间：2026-08-31 14:22 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 14:43 +08:00 独立搜索功能主计划冻结
+
+- 使用 Skill：`calendar-data-contracts`、`cross-layer-feature`；前者用于冻结 date/datetime、occurrence、Contract、cursor、history persistence 与未来迁移边界，后者用于完成跨层盘点和 `SPECIALIST_SPLIT` 可行性判定。
+- 负责模块：搜索 Tab 产品规格、Event/Habit/Anniversary 三类统一 Search 查询、Kotlin 本地历史、跨层协议、性能/FTS 门禁、实施拆分与验收矩阵；本轮不修改业务代码或现有 Contract。
+- 任务目标：依据用户两轮选择，将三张参考图和口述需求收敛为详细、规整、可执行的 active 开发计划，并同步项目导航和阶段状态。
+- 任务结果：新增 active 主计划 `docs/plan/active/搜索-01-三类聚合搜索与本地历史开发计划.md`，冻结 1s debounce、三类允许字段、中文连续子串/ASCII 大小写不敏感/空格 token AND、逻辑对象去重、业务日期 occurrence、默认包含完成、固定三组、20 条独立分页、智能/时间/更新排序、右上 staged 筛选浮层、设备本地 20 条历史、长按全体显示删除按钮、清空/撤销、详情返回与会话恢复。可行性判定为 `SPECIALIST_SPLIT / Contract Pending`，建议 `search.query` 加 Kotlin-local history 方法，并拆为 Contract/数据、C++/SQLite、Kotlin/JNI/历史、Flutter、真实集成/性能和独立 Review 六轨。V1 先读 canonical 数据；只有 1k/10k/50k 性能门禁不达标时才建立 SearchIndex/FTS migration 计划。同步更新 `docs/index.md`、`docs/status/current.md` 和 `docs/status/roadmap.md`，移除“搜索无 active 计划”的过期状态。
+- 验证状态：计划共 594 行、标题层级与代码围栏结构检查通过；所有用户冻结关键词、历史长按语义、`SPECIALIST_SPLIT`、Contract/性能/FTS 门禁和文档导航入口定向检索通过；受影响文档 `git diff --check` 无 whitespace error，仅有工作区既有 LF/CRLF 提示。未运行 Contract validator、C++、Flutter、Android 构建或测试，因为本轮仅建立计划且未实施生产代码；工作区原有 Habit/Contract/C++/Android/Flutter 在途修改均未触碰。
+- 开发时间：2026-08-31 14:43 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 14:14 +08:00 Habit 首次进入时区读取失败修复
+
+- 使用 Skill：`debug`。
+- 负责模块：Flutter 生产应用组合、Habit 首次路由时区初始化及对应 Widget 回归测试；未修改 Contract、Kotlin/JNI、C++ 或持久化实现。
+- 任务目标：定位并修复安装或进程冷启动后首次进入习惯页面错误显示“无法读取设备时区，习惯功能暂不可用”，点击重试后才恢复的问题。
+- 任务结果：确认根因是 `_ExcellentCalendarAppState.initState()` 在 `_timezoneGateway` 赋值前创建 `_habitTimezoneFuture`；Dart async 函数会同步执行到第一个 `await`，因此首次 `_resolveHabitTimezone()` 立即读取未初始化的 `late` 字段并以 `LateInitializationError` 结束，后续重试则因初始化已经完成而成功。现将 Habit 时区 Future 的创建移动到 `MethodChannelTimezoneAdapter` 初始化之后，不增加延时、不吞掉错误、不缓存或伪造时区，也不改变 `runtime.device_timezone` Contract。新增生产组合级回归用例，覆盖冷启动直接构建 Habit 路由、真实 MethodChannel 时区响应、错误页不得出现及 Habit 列表成功显示；该用例在修复前稳定失败且没有发出时区调用，修复后通过。
+- 验证状态：Habit composition 4/4 通过；Flutter 全量 445/445 通过；`flutter analyze` 无问题；Debug APK 构建成功；`git diff --check` 无 whitespace error，仅有工作区既有 LF/CRLF 提示。已在 realme RMX5100 Android 真机覆盖安装 `.device_test` Debug 包，强制停止后冷启动，使用既有 Debug 登录入口进入 Habit，页面直接显示现有 9 条 Habit，时区错误与重试页均未出现，logcat 未发现 `LateInitializationError`。未卸载或清除应用数据，避免删除设备现有 Habit，因此“绝对全新安装/清数据”场景仍未单独执行，但本次根因属于每次 State 初始化都会触发的确定性时序错误，已由修复前后回归和真机进程冷启动双重覆盖。
+- 开发时间：2026-08-31 14:14 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 14:38 +08:00 日历月周分类视图独立 Review 计划
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`；本轮只制定未来审查规范，不审查当前 Calendar 实现、不形成 Finding 或通过结论。
+- 负责模块：Calendar 月/周分类视图、Event occurrence、Habit 日状态、Anniversary occurrence 的只读聚合 Contract、C++/SQLite、Kotlin/JNI、Dart/Flutter、真实 production composition 和独立发布验证计划。
+- 任务目标：依据已冻结日历总计划，提前建立开发期 readiness 自检和完工后正式 Review 的详细规范，重点覆盖现实项目中高发的 date/datetime 错日、半开边界、recurrence overlap、混合 snapshot、cursor 漏重、异步 stale response、N+1、手势竞争、Fake 生产链、测试 oracle 污染和设备验证缺口。
+- 任务结果：新增 `docs/reviews/active/日历-01-月周分类视图-review计划.md`，明确 Review 尚未开始；建立启动条件、发布红线、分阶段执行流程、Contract/snapshot、时间/occurrence、三类投影、cursor/cache、C++/SQLite、Kotlin/JNI、Flutter 手势/无障碍、共享回归、独立测试矩阵、测试失真模式、Finding 格式和 PASS 门禁。计划同时吸收项目 Anniversary/Habit 历史评审经验及 RFC 5545、Google Calendar、SQLite、Flutter、Android 官方工程实践。同步勾选日历主计划 Track 6 的 Review 文档任务，并更新文档索引入口。
+- 验证状态：完成文档结构、关键风险关键词、主计划路径和 Review 状态自检；未运行 Contract validator、C++、Flutter、Android 构建或业务测试，因为本轮只制定计划且 Calendar 尚未实施。当前工作区既有 Habit/Contract/C++/Android/Flutter 大量修改均未触碰；正式 Review 仍须等待 Contract、分层实现、真实 production composition 和清晰 baseline 完成。
+- 开发时间：2026-08-31 14:38 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 15:15 +08:00 Habit 最终发布验收
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。
+- 负责模块：Habit/HabitCheckIn、Appearance、Reminder/Notification、Flutter → Kotlin → JNI → C++ → SQLite v5 的发布候选审查；本轮不修复生产代码，不修改 Contract capability 状态。
+- 任务目标：依据冻结的 Habit 主计划，对当前脏工作树执行独立黑盒、分层自动化和 Android 真机验收；仅在全部门禁通过且不存在缺陷时解除阻断。
+- 任务结果：结论为 `CHANGES_REQUIRED / RELEASE_BLOCKED`。发现创建页默认期限实际为 21 天（`HabitFormController` 将结束日初始化为开始日加 20 天），与主计划“默认期限为 30 天”及黑盒矩阵已勾选的“创建默认 30 天”冲突；真机创建也实际显示并保存 21 个计划日。生产链其它已执行场景通过：从日程页“更多”进入 Habit、四项底部导航保持不变、创建完成型 Habit、快捷打卡/撤销、卡片完成率与连续天数更新、详情/历史展示、本机 SQLite v5 持久化、通知权限关闭后的详情提示、已过提醒时间的同日补发，以及系统通知“完成” action 直接写回 CheckIn。真实设备 instrumentation 已执行并通过 production Habit JNI 11/11 导出、Unicode create/get/list/delete 与 SQLite v5；测试专用 Fake smoke 通过。由于默认期限缺陷以及设备重启/跨午夜/时区与系统时间变化/数量型通知 action/真实 TalkBack 等强制设备矩阵仍未闭环，未把 Habit/Appearance MethodChannel、Native call、identity 或 Storage v5 从 `planned + blocked` 改为 active。
+- 验证状态：Habit Contract validator 通过（194 schemas、46 fixtures、4 identity vectors、12 public methods、11 native calls）；Anniversary 回归 validator 通过；C++ `excellent_calendar_check` 构建后 10/10 通过；Flutter format 无变化、analyze 无问题、445/445 测试通过、Debug APK 构建成功；Android unit/lint/androidTest APK 组合构建成功；Native smoke 1/1、analyze 与 Debug APK 通过；realme RMX3687 Android 13 真机 production Habit instrumentation 通过。发布候选 Debug APK SHA-256：`1B247DF9C35F544D91F058CEF6DC30C7F938FCC253C8F94419ADCAB68873F543`。未验证项：设备重启、系统杀进程后的 action、跨午夜、时区/系统时间变化、数量型通知 action、重复/陈旧 action、通知点击详情、TalkBack；因此不得报告发布完成。
+- 开发时间：2026-08-31 15:15 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 15:30 +08:00 Habit 默认 30 天期限修复
+
+- 使用 Skill：`debug`、`frontend-flutter-feature`。
+- 负责模块：Flutter Habit 创建表单 Controller、页面测试注入点、Application/Widget 回归测试；未修改 Contract、C++、Kotlin/JNI、SQLite 或 Habit 上位主计划。
+- 任务目标：复核并修复新建 Habit 默认显示和提交 21 个计划日、与冻结计划默认 30 天冲突的问题，同时补齐默认总天数、结束日期和创建请求的稳定回归证据。
+- 任务结果：确认问题真实存在。根因是 `HabitFormController` 默认结束日期使用 `addDays(20)`，而 `plannedDays` 按首尾日期计数，导致默认范围只有 21 天。回归测试在修复前稳定得到 `2026-08-28 → 2026-09-17` 并失败；现将默认偏移最小修正为 `addDays(29)`，恢复含首尾共 30 个计划日。表单页新增可选 `initialStartDate` 注入以支持确定性 Widget 测试，不改变生产默认调用；Controller 测试同时断言起止日期、30 天总数和最终 `CreateHabitRequestDto`。原“21 天”快捷项仍正确使用 `addDays(20)`，经窄范围搜索确认没有第二个同类默认值错误。主计划黑盒项本轮未改写；修复和回归通过后，其默认 30 天 `[x]` 现已有真实自动化依据。
+- 验证状态：修复前 Habit 定向回归按预期失败 2 项；修复后 Habit Application/Widget 定向 31/31 通过；Flutter 格式检查 390 文件/0 变化、`flutter analyze` 无问题、全量 447/447 通过、Debug APK 构建成功。未重复执行真机创建；本次为纯 Flutter date-only 默认值修复，既有真机系统行为矩阵缺口仍不因此解除。
+- 开发时间：2026-08-31 15:30 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 15:50 +08:00 Habit V1 发布状态激活
+
+- 使用 Skill：`frontend-flutter-feature`、`calendar-data-contracts`。前者用于确认默认 30 天修复及 Flutter 回归，后者用于同步跨层 capability、identity、Schema 与 Storage v5 的机器发布状态。
+- 负责模块：Habit/Appearance MethodChannel 与 Native call、Habit/Appearance Schema、Habit identity/lifecycle matrix、Calendar Core Storage v5、Habit validator、Contract 说明、Habit 当前状态/路线/索引/主计划与开放问题；未修改 C++、Kotlin/JNI 或 Android 生产逻辑，未处理其它模块问题。
+- 任务目标：按产品负责人明确决定，将尚未闭环的真机发布矩阵和局部计划/ADR 状态漂移登记为后续统一处理的非阻断债；在确认不存在其它阻断级问题后，把 Habit V1 开发结果切换为发布态。
+- 任务结果：新增 `OPEN-HAB-001`，逐项记录已通过与仍未验证的真机系统行为，并明确“接受发布债不等于测试通过”；新增 `OPEN-HAB-002`，记录真实 instrumentation 复选框与两个 Habit ADR 的局部状态尾债。默认 30 天缺陷已由当前 Flutter 改动修复并有请求级回归。10 个 Habit 公共方法、2 个 Appearance 本机方法、11 个 Habit internal call、37 个 Habit/Appearance Schema、Habit identity/lifecycle matrix 统一切换为 `integrated + active`；Calendar Core 顶层 writer 从 v4 切换为 v5，同时保留冻结 v4 节点及其 SHA-256 迁移输入约束。主计划、current、roadmap、index 和 Contract README 已同步发布结论；按用户要求未伪造未执行设备项，也未在本轮清理两个 ADR/分计划归档尾项。
+- 验证状态：Habit validator 通过（194 schemas、46 fixtures、4 identity vectors、12 public methods、11 native calls，`status=integrated+active`）；Anniversary 共享回归通过（194 schemas、56 fixtures、20 identity vectors）；C++ 重新 configure 后 `excellent_calendar_check` 构建后 10/10；Flutter 默认 30 天专项测试通过、格式检查 2 文件/0 变化、全量 447/447、analyze 无问题、Debug APK 构建成功；Android `testDebugUnitTest`、`lintDebug`、androidTest APK 构建成功；Native smoke 1/1、analyze 与 Debug APK 通过；`git diff --check` 无 whitespace error。发布 Debug APK SHA-256：`7E84981ADB102447C8C738F5963FBEA086708985E1D60C4E67709380F18FE103`。本轮未重复执行实机矩阵；此前已通过的 production JNI/SQLite v5 与实机主链路证据继续有效，剩余场景严格保留在 `OPEN-HAB-001`。
+- 开发时间：2026-08-31 15:50 +08:00（Asia/Shanghai）。

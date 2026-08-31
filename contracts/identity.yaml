@@ -35,6 +35,15 @@ namespaces:
   anniversary_catch_up_delivery:
     uuid: f159a148-554a-56d2-a79c-9d4bd9646973
     derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/anniversary-catch-up-delivery")
+  habit_occurrence:
+    uuid: 395bbed4-6e85-5ac1-b192-5699a5c963e8
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/habit-occurrence")
+  habit_reminder:
+    uuid: e1f91a58-4138-5984-b14d-6cd94e527890
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/habit-reminder")
+  habit_notification_action:
+    uuid: 23e50bd1-fbd4-5338-b842-7547a97091cf
+    derived_from: UUIDv5(DNS, "excellent-calendar.local/contract-v2/habit-notification-action")
 
 identities:
   occurrence:
@@ -97,9 +106,38 @@ identities:
     notes:
       - covered_reminder_ids_sorted is a JSON array of canonical lowercase UUID strings sorted by Unicode code point.
       - Membership is frozen in ReminderRecoveryBatch before prepare and cannot accept later candidates.
+  habit_occurrence:
+    algorithm: UUIDv5
+    namespace: habit_occurrence
+    name: '[habit_id, template_key, occurrence_date]'
+    notes:
+      - occurrence_date is exact zero-padded device-local YYYY-MM-DD.
+      - template_key is the active C++-generated UUIDv4 template identity.
+      - timezone, local_time, remind_at, title, target amount, and scheduler state are excluded.
+      - Changing reminder local_time replaces template_key and therefore creates a new occurrence identity chain.
+      - Occurrence identity is not the daily-display quota. Across all template_key values, one habit_id plus occurrence_date may have at most one real sent display.
+  habit_reminder:
+    algorithm: UUIDv5
+    namespace: habit_reminder
+    name: '["habit", habit_id, template_key, occurrence_date]'
+    notes:
+      - The tuple is also the persistent business uniqueness key for a Habit Reminder.
+      - Same tuple and same content replay idempotently; conflicting content fails.
+      - A sent or conservatively reserved prepared display is never recreated for the same habit_id plus occurrence_date, even after CheckIn clear or template replacement.
+  habit_notification_action:
+    algorithm: UUIDv5
+    namespace: habit_notification_action
+    name: '["habit_complete", habit_id, check_date, occurrence_key]'
+    notes:
+      - The action is a set-to-done operation, never an increment.
+      - Binary completion stores done; quantitative completion stores the current target snapshot and done.
+      - Acceptance requires habit_id, check_date, occurrence_key, and action_id to match and check_date to equal the current device-local date.
 
 capability_status:
   anniversary_reminder_r1:
+    implementation_status: integrated
+    release_status: active
+  habit_v1:
     implementation_status: integrated
     release_status: active
 
@@ -152,3 +190,15 @@ test_vectors:
   anniversary_catch_up_multi_sorted:
     canonical_name: '["anniversary_catch_up","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","60f0df06-830c-52d2-a659-e8848aa200cd",["3b9c75fd-9073-5338-954a-d00ca35c5bf2","59c487fb-2737-5c31-8c5c-6ba157dc77a6"],"popup"]'
     uuid: 5a5e9379-77c9-51f3-a0fb-8f09440b557a
+  habit_occurrence:
+    canonical_name: '["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","2026-09-01"]'
+    uuid: 4c75dd26-d1f8-5d5b-bf0c-34329c9e5705
+  habit_occurrence_next_date:
+    canonical_name: '["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","2026-09-02"]'
+    uuid: 0077a510-1755-5f18-b69c-f44784d58de3
+  habit_reminder:
+    canonical_name: '["habit","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","2026-09-01"]'
+    uuid: 7ba217aa-5b7a-5c96-ad04-edc464faf74a
+  habit_notification_action:
+    canonical_name: '["habit_complete","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","2026-09-01","4c75dd26-d1f8-5d5b-bf0c-34329c9e5705"]'
+    uuid: c50c46ef-5339-5758-9ec6-08b54f2a75f5

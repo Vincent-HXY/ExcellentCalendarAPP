@@ -316,6 +316,138 @@ calls:
       envelope: common/native_result.schema.json
       data: reminder/snooze_reminder_response.schema.json
 
+  habit.create:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/create_habit_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_mutation_commit_response.schema.json
+
+  habit.update:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/update_habit_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_mutation_commit_response.schema.json
+
+  habit.list:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/list_habits_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_list_response.schema.json
+
+  habit.detail:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/get_habit_detail_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_detail_response.schema.json
+
+  habit.end:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/end_habit_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_mutation_commit_response.schema.json
+
+  habit.delete:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/delete_habit_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_delete_commit_response.schema.json
+
+  habit.check_in:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/habit_check_in_command_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_check_in_commit_response.schema.json
+
+  habit.clear_check_in:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/clear_habit_check_in_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_check_in_commit_response.schema.json
+
+  habit.list_daily_statuses:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/list_habit_daily_statuses_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_daily_status_list_response.schema.json
+
+  habit.set_reminder:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/set_habit_reminder_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/habit_mutation_commit_response.schema.json
+
+  habit.reconcile_reminders:
+    module: habit
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: habit/reconcile_habit_reminders_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: habit/reconcile_habit_reminders_response.schema.json
+
   category.list:
     module: category
     visibility: internal

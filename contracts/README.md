@@ -13,8 +13,8 @@
 - `backend_api.yaml` 定义 Flutter ↔ Backend 的 HTTPS API 入口、鉴权、幂等和 schema 映射。
 - `error_codes.yaml` 定义所有跨层失败返回可使用的错误码。
 - `enums.yaml` 定义跨语言传输时使用的字符串枚举。
-- `identity.yaml` 定义 Event/Anniversary occurrence、滚动 Reminder、Anniversary template/Reminder、snooze 和 delivery 的 UUIDv5 namespace、规范化输入和固定测试向量。
-- `storage/calendar_core_storage.yaml` 记录已激活的 Calendar Core SQLite v4、数据库事务与完整性规则，以及仅作为 migration source、冻结 payload codec 和 downgrade guard 保留的 JSON v1/v2/v3 兼容规则。
+- `identity.yaml` 定义 Event/Anniversary/Habit occurrence、滚动 Reminder、Anniversary/Habit template 或 action、snooze 和 delivery 的 UUIDv5 namespace、规范化输入和固定测试向量。
+- `storage/calendar_core_storage.yaml` 记录已激活的 Calendar Core SQLite v5、v4→v5 原子迁移、数据库事务与完整性规则，以及仅作为 migration source、冻结 payload codec 和 downgrade guard 保留的旧格式兼容规则。
 - `*.schema.json` 定义 request、response 和通用返回外壳的 JSON Schema。
 
 本层不放业务流程编排、不放 Android 系统能力实现、不放 C++ 核心领域规则、不放 Flutter 页面状态，也不直接等于数据库表。
@@ -43,8 +43,8 @@
 20. `event.update.recurrence` 省略表示保留，传对象表示设置或修改；v2 不接受含义不明确的 `null` 拆系操作。
 21. `prepare_delivery` 返回 `PreparedNotificationPayload`，其中没有 `opened_at`；Android 收到点击后追加非空 `opened_at`，才形成 EventChannel 使用的 `NotificationTapPayload`。
 22. `reminder.mark_scheduled` 必须携带 Kotlin 本次注册所依据的 `expected_remind_at`；C++ 仅在持久化 `remind_at` 仍严格相等时写入 `scheduled`，否则返回可重试的 `REMINDER_SCHEDULE_CONFLICT` 且不得修改 Reminder。
-23. `prepared` Notification 的投递内容和 PendingIntent payload 一经返回即冻结。Recovery 只能通过 `resolved_by_recovery_batch_id` 接管原 attempt，或把它终结为 `abandoned`；禁止改写原 `recovery_batch_id` 来伪造新 payload。
-24. `plan_recovery` 是唯一可写入 `ReminderStatus.expired` 的 workflow：只处理严格早于 72 小时窗口的 open `pending/scheduled` Reminder，原子禁用并清空 `scheduled_at`；重复 Reminder 同一事务保证未来 successor。
+23. `prepared` Notification 的投递内容和 PendingIntent payload 一经返回即冻结。普通 Recovery 只能通过 `resolved_by_recovery_batch_id` 接管原 attempt，或把它终结为 `abandoned`；Habit 专属 reconciliation 只能以 Habit 专属原因终结未展示 attempt，且不得伪造 RecoveryBatch 身份。禁止改写原 `recovery_batch_id` 来伪造新 payload。
+24. `plan_recovery` 是唯一可写入 `recovery_window_elapsed` 或 Anniversary expiry 的 workflow：只处理它负责的 open `pending/scheduled` Reminder；Habit 明确排除。`habit.reconcile_reminders` 是唯一可写入 `habit_occurrence_elapsed` 的 workflow，只在当地日期跨日后原子禁用并清空调度状态。
 25. occurrence reopen 若遇到同模板的后继滚动 Reminder，必须以 `occurrence_reopened` 暂存后继并恢复原 Reminder；滚动链随后复用确定性 ID，任何时刻同模板最多一条 open Reminder。
 26. Anniversary V1 的 `date` 是原始本地日期事实；`recurrence = null` 表示一次性，`anniversary_recurrence_rule_input` 表示 `yearly + interval=1`。年度 month/day 锚点只能来自 `date`，不得在 recurrence 中重复保存。
 27. `Anniversary.recurrence_id` 非空时必须指向一条活动且独占的 Anniversary 规则。仍为年度重复的标题/日期更新保留原 ID；一次性切到年度重复时创建规则；年度重复切到一次性时必须在同一 C++ transaction 中解除引用并软删除旧规则。
@@ -61,11 +61,20 @@
 38. `ActiveRingItem` 只包含 delivery/reminder/event 身份与时间，不得包含 Event 标题、正文、Reminder message、铃声 URI 或文件路径。`ring.state_changed` 可重复且可能丢失，事件身份是 `(runtime_instance_id, sequence)`；Flutter 必须先订阅再 `ring.get_state`，并结合持久化 `session_revision` 拒绝旧状态。
 39. Recovery 的 ring 宽限区间是 `[started_at - 5min, started_at]`：4:59 与恰好 5:00 具备明细资格，5:01 强制进入 popup 摘要。C++ 从持久化 `started_at` 推导边界；Kotlin 不重算。为保持从 JSON v2 迁移的历史记录兼容，`window_overflow_count` 保留原字段并固定等于 `summary_reminder_ids.length`，其计数同时包含超时 ring 与 20 条上限溢出。
 40. Anniversary create 中 `reminder_plan` 缺失是唯一旧 writer 兼容入口，明确解释为关闭且空模板；显式 `null` 非法。Update 省略表示保留，传对象整体替换，空 `templates` 删除全部模板，关闭总开关但保留非空模板表示暂停。
-41. Anniversary Reminder 使用严格 target-specific 分支：必须携带 `template_key/occurrence_key/occurrence_date/advance_days/local_time/follow_device/fulfillment_delivery_id` 的适用值，并把 Event 专用字段写成 `null`。Event/Habit reader/writer 必须把 Anniversary 专用字段写成 `null`。
+41. Anniversary Reminder 使用严格 target-specific 分支：必须携带 `template_key/occurrence_key/occurrence_date/advance_days/local_time/follow_device/fulfillment_delivery_id` 的适用值，并把 Event 专用字段写成 `null`。Event reader/writer 必须把这些 target-specific 字段写成 `null`；Habit 使用下述独立分支，不能冒充 Event 或 Anniversary。
 42. `anniversary_catch_up` 是一个真实聚合 popup attempt。其 `covered_reminder_ids` 在 RecoveryBatch 中冻结、唯一且按 UUID 文本升序；所有 covered Reminder 通过同一 `fulfillment_delivery_id` 履约，禁止伪造每成员 attempt。
 43. `anniversary.list_occurrences` 使用当地日期半开区间、最多 400 个自然日、每页最多 500 项和绑定查询快照的 opaque cursor。结果按 `(occurrence_date, anniversary_id, occurrence_key)` 升序，无 200 条总量上限。
 44. Anniversary mutation 的 NativeResult 失败表示业务数据未保存。成功 response 固定 `data_saved=true`；`pending_permission/pending_reconciliation` 是数据已保存后的平台状态，不能改写为业务保存失败。
 45. 共享 `finalize_delivery.timezone` 是可选 additive 字段，不得加入全局 `required`。新 Kotlin writer 统一传当前设备 IANA timezone；C++ 只有在加载 attempt 后确认其为 Anniversary Reminder 或 `anniversary_catch_up` 时才语义必填，缺失返回 `CONTRACT_VALIDATION_FAILED`、非法 ID 返回 `TIMEZONE_ID_INVALID`。首次成功 finalize 用该时区持久化 successor；已提交重放返回原 successor，timezone 不进入 Reminder/delivery/attempt identity；retryable failure 不生成 successor。Event、Ring 与普通 Recovery 的旧 payload 继续合法。
+46. Habit V1 是包含首尾的固定期限每日挑战，recurrence 固定 `daily + interval=1 + follow_device`；每个会受当地日期影响的 Habit request 都显式携带当前设备 IANA timezone，C++ 是日期投影与校验 owner。
+47. Habit 数量 wire 固定为带 `_hundredths` 后缀的 JSON integer，范围为 `0..9007199254740991`；目标与实际完成量非空时必须大于 0。JSON decimal number 不承载精确业务数量，例如 `1.25` 必须传 `125`。C++ 使用 checked integer 运算，累计或日均超出精确 wire 范围返回 `HABIT_STATISTICS_OVERFLOW`。
+48. `habit.check_in` 是按 `(habit_id, check_date)` 的幂等 set/upsert。Flutter 可见的 `habit_check_in_request` 只表达 manual 输入，不接收 `source/occurrence_key/action_id`；Kotlin 将其规范化为内部 `habit_check_in_command_request` 的 manual 分支，只有非导出的通知 action 路径可构造 notification_action 分支。`clear_check_in` 保留 tombstone，后续 set 复活同一逻辑 ID；`missed/absent/upcoming` 只属于查询投影，不得写入 CheckIn。
+49. Habit Reminder 使用独立 target-specific 分支，必须携带非空 `template_key/occurrence_key/occurrence_date/local_time/follow_device`，固定 `popup`，并将 Event/Anniversary 不适用字段写成 `null`。修改 `local_time` 必须软删旧 template/chain 并创建新的 UUIDv4 `template_key`；另外以 `(habit_id, occurrence_date)` 跨 template 强制每天最多一次真实展示。当天 sent/prepared 后新配置从下一合法日期生效，尚无 attempt 时可以替换当天 Reminder。
+50. `habit.reconcile_reminders` 是最多 100 条一事务、opaque cursor 续跑的 Habit 专属内部 workflow；它不进入普通 72 小时 RecoveryBatch、20 条明细上限或摘要。同日未达标且未占用日级展示槽的 occurrence 可逐条补发一次，次日过期。response 回显 request limit；processed 等于 materialized/expired/cancelled/unchanged 之和且不超过 limit，`has_more=true` 必须至少处理一条。
+51. Habit 通知 action 是 C++ 生成的确定性 set-to-done。接收方必须同时验证 `habit_id/check_date/occurrence_key/action_id`，且 `check_date` 必须等于当前当地日期；重复 action 返回同一最终状态。公开 MethodChannel 不得伪造 action source 或 identity。done/skipped 后 clear 仅在该日期跨 template 从未 sent/prepared 时恢复 Reminder。
+52. `appearance.get_local/update_local` 是 Kotlin 本机能力，不进入 JNI/C++；只接受预设 token。缺失或损坏持久化值回退 `teal` 并记诊断，未知 wire token 仍严格失败。
+53. `habit.list.today_progress` 是不受分页和筛选影响的全局首页聚合：只纳入 today 为 active 的未删除 Habit；done 进入 X/Y，partial 与 absent 只进入 Y，skipped 单列且不进入 Y，upcoming/completed/ended_early 排除。
+54. Habit V1 最多 400 个包含首尾的当地自然日；title/description/unit/note 分别最多 80/2000/32/500 个 Unicode code point，list page 最多 100、opaque cursor 最多 512。生命周期 mutation 权限由 `habit/habit_lifecycle_operation_matrix.yaml` 冻结：upcoming 不能 end，最终计划日不能 early-end，completed/ended_early 除 delete 外只读。
 
 ## Directory
 
@@ -88,6 +97,7 @@ contracts/
 ├── notification/
 ├── ring/
 ├── habit/
+├── appearance/
 ├── category/
 ├── ai/
 ├── sync/
@@ -97,7 +107,7 @@ contracts/
 └── search/
 ```
 
-当前已接入的本地核心协议包括 `common/`、`event/`、`recurrence/`、`reminder/`、`notification/`、`anniversary/`、Ring 和 Category create/list。Category 已冻结 Schema、Dart/Kotlin 边界和 Calendar Core SQLite Storage v4 中的独立表，C++ Domain/Repository/codec/bootstrap、JNI、真实磁盘读写、生产 Flutter composition 与物理设备重启验收均已闭环；对应方法和 Store 统一为 `implementation_status: integrated`、`release_status: active`。Ring 与内部 `reminder.snooze` 已完成 C++、Kotlin、Flutter、AlarmManager、前台服务、五分钟安全停止和进程恢复闭环，并在 realme RMX5100 / Android 16（API 36）国产 ROM 通过一期发布验收；经 2026-08-23 明确批准，以该设备验收替代一期完整 API 矩阵，相关公开与内部能力统一为 `implementation_status: integrated`、`release_status: active`。API 24、31、33、34、35 保留为后续兼容验证，不再阻塞一期发布。`auth/`、`user/` 与 `backend_api.yaml` 是认证和个人资料模块的计划协议；在 Flutter、Kotlin 和 Backend 实现落地前保持 `implementation_status: planned`，调用方不得把它们当作已可用能力。
+当前已接入的本地核心协议包括 `common/`、`event/`、`recurrence/`、`reminder/`、`notification/`、`anniversary/`、Habit/Appearance、Ring 和 Category create/list。Category 已冻结 Schema、Dart/Kotlin 边界和 Calendar Core SQLite Storage 中的独立表，C++ Domain/Repository/codec/bootstrap、JNI、真实磁盘读写、生产 Flutter composition 与物理设备重启验收均已闭环；对应方法和 Store 统一为 `implementation_status: integrated`、`release_status: active`。Ring 与内部 `reminder.snooze` 已完成 C++、Kotlin、Flutter、AlarmManager、前台服务、五分钟安全停止和进程恢复闭环，并在 realme RMX5100 / Android 16（API 36）国产 ROM 通过一期发布验收；经 2026-08-23 明确批准，以该设备验收替代一期完整 API 矩阵，相关公开与内部能力统一为 `implementation_status: integrated`、`release_status: active`。API 24、31、33、34、35 保留为后续兼容验证，不再阻塞一期发布。Habit/Appearance V1 的 Dart、Kotlin/JNI、C++、SQLite v5 和 production composition 已完成实现与集成，并于 2026-08-31 按产品负责人的发布决定统一激活；尚未覆盖的设备场景保留在 `docs/issues/open.md#open-hab-001`，不得描述为已验证通过。`auth/`、`user/` 与 `backend_api.yaml` 是认证和个人资料模块的计划协议；在 Flutter、Kotlin 和 Backend 实现落地前保持 `implementation_status: planned`，调用方不得把它们当作已可用能力。
 
 ## Versioning
 
@@ -106,14 +116,14 @@ Native Contract 已设计为 breaking v2，Backend API 继续使用独立的 v1�
 
 局部能力状态必须同时表达“代码是否存在”和“是否可作为发布能力依赖”：`planned` 表示目标层尚无可依赖实现；`implemented_unintegrated` 表示实现代码已经存在，但 Contract 一致性或端到端门禁尚未通过；只有 `integrated` 且对应 `release_status: active` 才表示正式可依赖。`release_status: blocked` 的能力不得因调试入口或底层调用偶然成功而被上层当作已发布功能。
 
-Native Contract v2 的公共外壳保持 active；Calendar Core SQLite Storage v4 已完成 JSON v1/v2/v3 迁移、严格校验和统一事务接线，当前为 `integrated + active`。Anniversary Reminder R1 的 Flutter、Kotlin/JNI、C++ 与 Storage v4 生产链已接通，普通到点 Alarm、系统通知正文、持久化 `kind=reminder`、successor、点击去重和完整 Native 更新链已通过 realme Android 13 验证。经产品负责人 2026-08-25 明确批准，相关 MethodChannel/native call 与 `identity.yaml` capability 统一切换为 `implementation_status: integrated`、`release_status: active`；尚未覆盖的 API 24–25、权限、时区/DST、旧 Alarm、重启与长离线设备矩阵作为已接受的发布残余风险继续跟踪，不得描述为已验证通过。JSON v1/v2/v3 目录只作为 v4 bootstrap 的受支持迁移来源；SQLite 成功接管后，保留 JSON 根只承担诊断与 `storage_version=4` 防降级职责，旧 App 不得继续写入。
+Native Contract v2 的公共外壳保持 active；Calendar Core SQLite Storage v5 已完成冻结 v4 checker、v4→v5 原子迁移、Habit Store/索引/codec metadata 与统一事务接线，当前为 `integrated + active`。Anniversary Reminder R1 的 Flutter、Kotlin/JNI、C++ 与生产存储链已接通，普通到点 Alarm、系统通知正文、持久化 `kind=reminder`、successor、点击去重和完整 Native 更新链已通过 realme Android 13 验证。经产品负责人 2026-08-25 明确批准，相关 MethodChannel/native call 与 `identity.yaml` capability 统一切换为 `implementation_status: integrated`、`release_status: active`；尚未覆盖的 API 24–25、权限、时区/DST、旧 Alarm、重启与长离线设备矩阵作为已接受的发布残余风险继续跟踪，不得描述为已验证通过。Habit V1 则于 2026-08-31 在主机门禁、production JNI/SQLite v5 及已执行实机路径通过后激活；剩余设备矩阵按 `OPEN-HAB-001` 作为明确接受的非阻断发布债。JSON v1/v2/v3 目录只作为 bootstrap 的受支持迁移来源；SQLite 成功接管后，保留 JSON 根只承担诊断与 `storage_version=4` 防降级职责，旧 App 不得继续写入。
 
 | 版本域 | 真相源 | 当前版本 | 兼容策略 |
 | --- | --- | --- | --- |
 | Native MethodChannel / JNI | `method_channels.yaml`、`native_calls.yaml` | 2（active） | Flutter、Kotlin、JNI、C++ 同一发行版本同步升级；v1/v2 双向拒绝 |
 | Backend HTTP API | `backend_api.yaml` | 1 | 正式发布后至少支持 N-1 |
 | Flutter 用户资料缓存 | `user/cached_current_user.schema.json` | 1 | 使用连续本地格式迁移，不复用 API 版本 |
-| Calendar Core SQLite | `storage/calendar_core_storage.yaml` | 4（integrated / active） | v1 导入隔离兼容表；v2 先恢复并连续迁移到 v3，再与原生 v3 一并事务导入 SQLite；保留 JSON 根写入 v4 防降级标记，旧 App 不得写入 |
+| Calendar Core SQLite | `storage/calendar_core_storage.yaml#calendar_core_v5` | 5（integrated / active） | v1/v2/v3 先按冻结链路导入 v4，既有 v4 再通过完整 checker 后以单个 SQLite transaction 追加四个 Habit Store、索引、per-store codec metadata 和 history；保留 JSON 根的 v4 防降级标记，旧 App 不得写入 |
 
 在协议版本正式发布或被外部客户端依赖前，为使 Schema 与已确定的领域不变量保持一致而进行的修正，可以继续使用当前版本。协议一旦正式发布，收紧已有字段的合法取值范围也属于破坏性变更。
 
@@ -159,6 +169,22 @@ Native envelope、错误外壳和 `contract_version=2` 不变。R1 是同一 APK
 
 不提升全局 Native version 的理由是该边界不支持独立部署或滚动混跑，且 `NativeResult` v2 外壳、公共时间/错误语义均未改变；模块 revision 通过同一 APK 的同步构建与 Contract 门禁禁止新旧组件混跑。若未来允许动态组件、跨发行版 native 库或任一旧 reader 与新 writer 混跑，必须提升全局 Native version，而不能复用本例。
 
+### Habit V1 Wire 兼容矩阵（Native v2 integrated / active revision）
+
+Habit 旧 Schema 和两个旧 MethodChannel 入口在首次实现前始终是 `planned`，当时不存在对应 C++ Domain、SQLite 行、JNI/Kotlin handler、Dart DTO/Gateway 或已发布 writer 数据，因此完整 V1 revision 继续使用 Native v2 外壳而未制造伪迁移。Flutter、Kotlin/JNI、C++ 和 SQLite v5 现已在同一 APK 中同步实现、验证并于 2026-08-31 一次性激活。
+
+| Reader / Writer | 旧 planned shape | Habit V1 frozen shape | 结论 |
+| --- | --- | --- | --- |
+| 旧 Habit 调用方 | 仅 create/check_in 草案，使用含糊 decimal quantity，缺少 timezone、聚合与 occurrence identity | 10 个公开 Habit 方法、11 个内部 call；数量统一为 integer hundredths | 严格拒绝；旧草案从未实现或发布，不造伪迁移 |
+| Event/Anniversary Reminder | 已激活的 target-specific 分支 | 新增独立 Habit 分支 | 既有分支形状保持不变；回归夹具必须继续通过 |
+| 既有 Event/Anniversary prepare reader | 无 `habit_action_payload` | 非 Habit 时字段仍可省略 | additive compatible |
+| 新 Habit prepare reader | 不存在 | Habit 时 action payload 必填且身份一致 | 新组件随同一 APK 接入 |
+| 普通 `plan_recovery` | Event/Ring 72 小时与 Anniversary catch-up | 显式排除 Habit | 既有规则不变；Habit 使用独立 cursor workflow |
+| 本机 Appearance | 不存在 | 两个 Kotlin-local MethodChannel 方法 | 不进入 JNI、C++ 或云同步 |
+| Calendar Core Storage | SQLite v4 active | v5 integrated / active | C++ 先用冻结 v4 checker 验证，再以单事务迁移并由 v5 成为当前 writer；损坏 v4 输入仍须零写入失败 |
+
+Contract validator 入口为 `run_habit_v1_validation.py`，夹具位于 `fixtures/habit/`。它同时校验 Draft 2020-12 schema/ref closure、12 个公开方法、11 个 native call、错误/枚举、`integrated + active` 状态、integer-hundredths 相邻向量、文本/日期/分页上限、今日聚合、生命周期矩阵、日级单展示、reconciliation 正进展、Recovery 隔离、4 个 Habit UUIDv5 向量、冻结 v4 hash、v5 表/索引/per-store codec/migration 原子性及 Event/Reminder additive 兼容形状。共享 Anniversary/Reminder 回归继续由 `run_anniversary_r1_validation.py` 覆盖。
+
 ### Calendar Core JSON v1/v2/v3 → SQLite v4 兼容矩阵
 
 | Reader / Writer | JSON v1 | JSON v2 | JSON v3 | SQLite v4 已存在 |
@@ -181,6 +207,8 @@ Native envelope、错误外壳和 `contract_version=2` 不变。R1 是同一 APK
 - `runtime.resolve_local_datetime` 与 `runtime.localize_instants` 同时出现在 MethodChannel 和 JNI 能力图中；Flutter 不得用 Dart/设备 offset 代替 C++ 捆绑 TZDB 的解析结果。
 - `runtime.localize_instants` 单次最多接收 400 个 UTC Instant，响应严格保留输入顺序与重复项；任一元素无效时整批失败。
 - `reminder.reconcile_schedule` 是 Kotlin 本地系统能力编排，可以组合多个 JNI workflow；MethodChannel 与 JNI 方法数量无需一一相等。
+- 10 个公开 `habit.*` 方法均有窄 C++ call；mutation 的 C++ commit response 不包含 Android capability，由 Kotlin 完成调度尝试后组装公开 response。额外的 `habit.reconcile_reminders` 只供 Kotlin 系统恢复入口调用，不暴露给 Flutter。
+- `appearance.get_local/update_local` 由 Kotlin 本地处理，只出现在 `method_channels.yaml`；它们不得进入 `native_calls.yaml`，也不得把 SharedPreferences 细节暴露给 Flutter。
 - `ring.get_state/pick_ringtone/update_settings/test/stop_active` 是 Kotlin 本地平台能力；`ring.snooze_active` 逐项组合内部 `reminder.snooze`，`ring.complete_item` 组合既有 `event.complete`。这些公开方法不要求在 `native_calls.yaml` 一一出现。
 - `ring.state_changed` 是独立 EventChannel；允许重复、不能保证无丢失。公开恢复协议固定为“先订阅，再调用 `ring.get_state`”，并用 `runtime_instance_id + sequence + session_revision` 仲裁。
 
@@ -206,8 +234,16 @@ Compatibility fixture 位于 `fixtures/ring/`。4:59、5:00、5:01 三个 Recove
 
 - `recurrence/event_recurrence_rule_input.schema.json` 是 Event v2 唯一创建/更新输入，只接收 `frequency/interval/end_at/count`。
 - `recurrence/recurrence_response.schema.json` 是 C++ 派生的不可变 revision，不保存 `target_type/target_id`。
-- `recurrence/recurrence_rule.schema.json` 仅保留给尚未实施的 Habit 计划协议，不能被 Event 或 Anniversary 引用。
+- Habit V1 只使用 `habit/habit_recurrence_rule_input.schema.json` 与 `habit/habit_recurrence_response.schema.json`；已经删除的通用 planned `recurrence_rule.schema.json` 不得恢复或跨领域复用。
 - `yearly/custom` 保留稳定枚举入口，但 v2 C++ 必须返回 `FEATURE_NOT_IMPLEMENTED`。
+
+### Habit V1 Contract revision（frozen / integrated / active）
+
+- `Habit`、`HabitRecurrence`、`HabitCheckIn` 和 `HabitReminderTemplate` 的事实、聚合、请求与响应已经分离；response 不暴露 SQLite 行，list/detail 直接返回 C++ 计算的生命周期、今日状态、统计、进度和稳定排序投影，list 另含不受分页影响的 `today_progress`。
+- create/update/end/delete/check-in/clear/set-reminder 需要数据库 logical commit 与 Android side effect 分离：C++ 成功固定 `data_saved=true`，Kotlin 用 capability 表达 exact、approximate、待权限或待 reconcile。平台失败不得伪装成领域未保存。
+- exact 优先、无 exact 权限时允许 approximate 并显式标注降级；通知权限拒绝保存业务数据并进入待权限。全局 `OPEN-NOT-002` 仍跟踪其他 Reminder 产品策略，不回滚本 revision 已冻结的 Habit V1 行为。
+- 所有 date-sensitive request 显式传 IANA timezone；local date 是稳定事实，不转换成 UTC 午夜。未知 enum/token、缺失 nullable 字段、decimal/非整数/越界数量都必须在不可信边界严格失败。
+- Contract、C++、Kotlin/JNI、Flutter、Storage v5 与 production composition 已落地，运行时 Fake 已移除，主机门禁和本轮明确执行的实机路径通过；相关 capability 已于 2026-08-31 切换为 `integrated + active`。产品负责人接受的剩余真机矩阵只作为 `OPEN-HAB-001` 发布后验证债，不得反向解释为已验证通过。
 
 ### Anniversary V1 base + Reminder R1 integrated / active
 
@@ -279,7 +315,7 @@ event.create -> NativeResult<EventResponse>
 event.search -> NativeResult<EventListResponse>
 event.complete -> NativeResult<EventResponse>
 event.reopen -> NativeResult<EventResponse>
-habit.check_in -> NativeResult<HabitCheckInResponse>
+habit.check_in -> NativeResult<HabitCheckInMutationResponse>
 ```
 
 ## Backend API Result
