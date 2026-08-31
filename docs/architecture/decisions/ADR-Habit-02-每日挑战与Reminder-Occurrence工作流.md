@@ -1,7 +1,8 @@
 # ADR-Habit-02：每日挑战与 Reminder Occurrence 工作流
 
-Status: Accepted (Contract Frozen, Implementation Pending)
+Status: Accepted
 Date: 2026-08-28
+Implemented: 2026-08-31
 
 ## Context
 
@@ -27,4 +28,4 @@ Habit 是固定期限的 date-only 每日挑战，既不能使用 Event 的 revi
 - Flutter 只消费组合投影，不计算 lifecycle、streak/rate、Reminder/action identity。
 - Kotlin 只校验/转发 Contract、执行 Android side effect 和本机 appearance；后台 action 不启动 Flutter Engine。
 - C++/SQLite v5 必须为 Habit、Recurrence、CheckIn、template、Reminder/Notification 联动提供同一事务。
-- Habit 能力在 Flutter、Kotlin/JNI、C++、SQLite v5 与真实 APK 门禁通过前保持 `planned + blocked`；Contract 冻结不代表生产功能已完成。
+- Habit 能力已在 Flutter、Kotlin/JNI、C++、SQLite v5 与真实 production composition 中落地并切换为 `integrated + active`；仍未执行的设备场景由 `OPEN-HAB-001` 跟踪，不得被解释为已验证通过。

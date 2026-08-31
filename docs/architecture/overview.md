@@ -23,11 +23,10 @@ C++ Application / Workflow / Domain
     ↓
 Repository
     ↓
-Calendar Core SQLite Storage v4 (contract-active)
-    ↳ Storage v5 Habit integrated candidate (release blocked)
+Calendar Core SQLite Storage v5 (contract-active)
 ```
 
-Habit V1 的 SQLite Storage v5 runtime、v4→v5 migration、Repository 与真实 JNI/APK composition 已实现并通过主机测试；但 `contracts/storage/calendar_core_storage.yaml` 仍声明 v4 为 active、v5 为 planned，Habit capability 也保持 `planned + blocked`。因此当前应称为“v5 已实现的集成候选版本”，不能在真机与状态校准门禁完成前称为正式激活 writer。
+Habit V1 的 SQLite Storage v5 runtime、v4→v5 migration、Repository 与真实 JNI/APK composition 已实现并通过发布门禁；`contracts/storage/calendar_core_storage.yaml`、Habit/Appearance capability 与 identity 当前统一为 `integrated + active`。仍未执行的设备场景是 `OPEN-HAB-001` 中明确接受的发布验证债，不得描述为已通过。
 
 提醒投递是主链路的 Android 平台分支：
 
@@ -220,6 +219,7 @@ Contract 冻结后，各实现层可以从同一基线在独立分支/worktree �
 - [ADR-Anniversary-01：Anniversary 使用独立实体](./decisions/ADR-Anniversary-01-Anniversary使用独立实体.md)
 - [ADR-Habit-01：Habit 与 HabitCheckIn 分离](./decisions/ADR-Habit-01-Habit与HabitCheckIn分离.md)
 - [ADR-Habit-02：每日挑战与 Reminder Occurrence 工作流](./decisions/ADR-Habit-02-每日挑战与Reminder-Occurrence工作流.md)
+- [ADR-Habit-03：跨层真相源与 Storage v5 同包激活](./decisions/ADR-Habit-03-跨层真相源与Storage-v5同包激活.md)
 - [ADR-Category-01：Category 弱引用与最小冻结语义](./decisions/ADR-Category-01-弱引用与最小冻结语义.md)
 - [ADR-Common-01：领域校验、派生状态与严格失败](./decisions/ADR-Common-01-领域校验与派生状态.md)
 
@@ -235,10 +235,10 @@ files/local_storage/calendar_core_storage_json
 
 关键事实：
 
-- 机器 Contract 当前仍把 `calendar_core.sqlite3` Storage v4 标为 active；工作树中的 Storage v5 writer/migration 已实现并接入 Habit 集成候选版本，但发布状态仍 blocked。C++ Repository 接口不变，实体写入、Store generation 与跨 Workflow 修改统一进入 SQLite 事务。
+- 机器 Contract 当前把 `calendar_core.sqlite3` Storage v5 标为 active；v4→v5 migration 和 Habit 四个 Store 已进入正式 production composition。C++ Repository 接口不变，实体写入、Store generation 与跨 Workflow 修改统一进入 SQLite 事务。
 - Event/Reminder/Recurrence/Occurrence/Notification/Recovery、Anniversary 与 Category 共用一个进程级数据库连接；回调失败会同时回滚业务行和 generation。
-- SQLite 以主键、业务唯一索引和 Reminder 调度索引约束身份与查询；严格 v3 codec 仍负责完整字段及跨 Store 领域校验，避免迁移漏字段。
-- JSON v2 会先完成既有可恢复 v2→v3 迁移，再进入 SQLite；严格 JSON v3 逐记录无损导入。JSON v1 的 Event/Reminder/Notification 进入隔离兼容表，不被错误解释为 v3 数据。
+- SQLite 以主键、业务唯一索引和 Reminder 调度索引约束身份与查询；v5 per-store codec metadata 和严格领域校验共同防止迁移漏字段或错误解释 payload。
+- JSON v2 会先完成既有可恢复 v2→v3 迁移，再按冻结链路导入 SQLite v4 并原子迁移到 v5；严格 JSON v3 逐记录无损导入，JSON v1 的 Event/Reminder/Notification 进入隔离兼容表。
 - SQLite 成功后，原 JSON 集合保留为诊断/恢复快照，并把根 `storage_version` 标为 4 作为降级 guard；运行时不再从这些文件读取业务数据。旧两类 journal 只在迁移前恢复。
 - Calendar Core runtime 是进程级 owner；Android 通过 `AndroidNativeBridgeFactory` 统一创建和初始化。进程内 JNI 测试必须复用正式 factory，隔离 Store 时使用独立测试进程。
 - 回滚到任何 JSON writer 都不安全；旧运行时必须因 v4 guard 拒绝目录，不能继续写快照形成双写分叉。

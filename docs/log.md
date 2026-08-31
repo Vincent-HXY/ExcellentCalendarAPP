@@ -1135,3 +1135,21 @@
 - 任务结果：新增 `OPEN-HAB-001`，逐项记录已通过与仍未验证的真机系统行为，并明确“接受发布债不等于测试通过”；新增 `OPEN-HAB-002`，记录真实 instrumentation 复选框与两个 Habit ADR 的局部状态尾债。默认 30 天缺陷已由当前 Flutter 改动修复并有请求级回归。10 个 Habit 公共方法、2 个 Appearance 本机方法、11 个 Habit internal call、37 个 Habit/Appearance Schema、Habit identity/lifecycle matrix 统一切换为 `integrated + active`；Calendar Core 顶层 writer 从 v4 切换为 v5，同时保留冻结 v4 节点及其 SHA-256 迁移输入约束。主计划、current、roadmap、index 和 Contract README 已同步发布结论；按用户要求未伪造未执行设备项，也未在本轮清理两个 ADR/分计划归档尾项。
 - 验证状态：Habit validator 通过（194 schemas、46 fixtures、4 identity vectors、12 public methods、11 native calls，`status=integrated+active`）；Anniversary 共享回归通过（194 schemas、56 fixtures、20 identity vectors）；C++ 重新 configure 后 `excellent_calendar_check` 构建后 10/10；Flutter 默认 30 天专项测试通过、格式检查 2 文件/0 变化、全量 447/447、analyze 无问题、Debug APK 构建成功；Android `testDebugUnitTest`、`lintDebug`、androidTest APK 构建成功；Native smoke 1/1、analyze 与 Debug APK 通过；`git diff --check` 无 whitespace error。发布 Debug APK SHA-256：`7E84981ADB102447C8C738F5963FBEA086708985E1D60C4E67709380F18FE103`。本轮未重复执行实机矩阵；此前已通过的 production JNI/SQLite v5 与实机主链路证据继续有效，剩余场景严格保留在 `OPEN-HAB-001`。
 - 开发时间：2026-08-31 15:50 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 16:04 +08:00 Habit 重大架构决策收录
+
+- 使用 Skill：`calendar-data-contracts`。
+- 负责模块：Habit ADR、架构概览决策索引、项目文档索引，以及与 ADR 状态直接相关的 `OPEN-HAB-002`；未修改 Contract、业务代码、测试或其它模块决策。
+- 任务目标：结合 Habit 总计划及 Contract、C++、Kotlin、Flutter 分层计划，从本次开发中筛选 2–4 项最可能影响后续开发的稳定决策写入 `docs/architecture/decisions/`。
+- 任务结果：最终保留三项决策主题。ADR-Habit-01 固化 Habit 定义与 CheckIn 事实分离、统计动态投影和百分位整数；ADR-Habit-02 固化 date-only 每日挑战、确定性 Reminder/Occurrence/action identity、同日补发及 C++ 事务仲裁；新增 ADR-Habit-03，固化 Contract-first 同 APK 升级、C++/SQLite v5 单一真相源、v4→v5 原子迁移和 production 禁止 Fake fallback。两个旧 ADR 的实施状态已校准为 Accepted/Implemented，Architecture Overview 和 `docs/index.md` 已加入第三个 ADR；`OPEN-HAB-002` 仅保留计划/Review 归档尾项。未把页面入口、卡片样式、预设颜色等可调整产品选择升级为 ADR。
+- 验证状态：三个 Habit ADR 状态与路径检查通过；新增 ADR 被架构概览和项目索引引用；Habit Contract validator 继续通过；受影响文档 `git diff --check` 无 whitespace error。纯文档/决策任务未重跑 C++、Flutter 或 Android 构建，沿用 15:50 发布激活记录中的完整构建证据。
+- 开发时间：2026-08-31 16:04 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 16:07 +08:00 Habit 高价值缺陷经验归档
+
+- 使用 Skill：`debug`。
+- 负责模块：Habit 开发期问题复盘、`docs/issues/resolved/` 经验归档及 resolved 索引；未修改 Contract、生产代码、测试或 capability 状态。
+- 任务目标：结合 Habit Contract、分层实现、白盒 Review、黑盒反馈、发布验收和首次启动缺陷，不按表面严重程度机械排序，选出两条对后续开发最有指导价值的问题并归档。
+- 任务结果：新增 `docs/issues/resolved/08-habit-implementation.md`，对本轮主要问题分类评估并说明未入选原因。最终归档 `RES-HAB-002`“调度回调未在副作用前重验目标业务合法性”，沉淀 Alarm/WorkManager/恢复回调只是可能陈旧的提示、Android 先编排 reconciliation 且 C++ 在事务内做最终当地日期裁决的通用约束；归档 `RES-HAB-003`“将 civil date 当作 24 小时时长导致 DST 错日”，沉淀 Contract `date` 必须保持年月日值类型、禁止本地 `DateTime + Duration(days)` 代替日历日运算的通用约束。批次 continuation 被评为高价值首要候补；首次进入页面的 `late` 初始化顺序错误虽然用户影响直接，但可迁移经验较弱，未因表面阻断级别占用名额。同步更新 resolved README 入口，并明确跨午夜真机矩阵仍由 `OPEN-HAB-001` 跟踪，resolved 代码缺陷不冒充设备场景已验证。
+- 验证状态：`RES-HAB-002/003` 编号全仓唯一性检查通过；两条记录引用的 Kotlin/C++/Flutter 实现、测试和 Open Issue 路径均存在；resolved README 链接检查通过；新文档和既有 tracked 差异均无 whitespace error，仅有工作区既有 LF/CRLF 提示。纯文档复盘未运行 Contract validator、C++、Flutter 或 Android 测试与构建。
+- 开发时间：2026-08-31 16:07 +08:00（Asia/Shanghai）。

@@ -167,13 +167,13 @@
 
 ## P3：低优先级
 
-### OPEN-HAB-002 Habit 计划与 ADR 状态尾项仍需统一校准
+### OPEN-HAB-002 Habit 计划与评审状态尾项仍需统一校准
 
 - 类型：文档状态漂移 / 维护债
-- 现状：Habit 主计划中的真实设备 instrumentation 清单仍有局部未勾选项，两个 Habit ADR 仍标记 `Implementation Pending`；实际代码、主机验证、部分实机验证与 2026-08-31 发布决定已经前进到 `integrated + active`。这些旧标签不改变机器 Contract 和当前发布状态。
-- 发布决定：产品负责人于 2026-08-31 明确接受该状态清理作为非阻断尾债；本次只校准当前状态、机器 Contract 和发布结论，不伪造未执行的真机场景，也不借机改写 ADR 历史。
-- 影响：后续开发者若只读取旧复选框或 ADR 标题，可能误判 Habit 尚未实现，造成重复开发或状态再次漂移。
-- 关闭条件：统一复核并更新 Habit 主/分计划、active review 与两个 ADR 的实施状态；已执行项补齐证据，未执行项继续链接 `OPEN-HAB-001`，然后按项目规则归档完成记录。
+- 现状：三个 Habit ADR 已于 2026-08-31 校准为 Accepted/Implemented，并补录跨层真相源与 Storage v5 同包激活决策；主计划中的真实设备 instrumentation 清单、部分分计划和 active review 仍有局部历史状态或未归档尾项。这些旧标签不改变机器 Contract 和当前发布状态。
+- 发布决定：产品负责人于 2026-08-31 明确接受剩余状态清理作为非阻断尾债；不得为消除复选框差异而伪造未执行的真机场景。
+- 影响：后续开发者若只读取旧复选框或 active 文件位置，仍可能误判 Habit 尚未发布，造成重复开发或状态再次漂移。
+- 关闭条件：统一复核并更新 Habit 主/分计划和 active review；已执行项补齐证据，未执行项继续链接 `OPEN-HAB-001`，然后按项目规则归档完成记录。
 - 证据位置：`docs/status/current.md`、`docs/status/roadmap.md`、`docs/index.md` 和 Habit 机器 Contract。
 
 ### OPEN-CAT-004 真机 Debug Store 留有验收数据

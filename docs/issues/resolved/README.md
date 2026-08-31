@@ -12,6 +12,7 @@
 - [Anniversary](05-anniversary.md)
 - [Category、Storage 与发布门禁](06-category-storage.md)
 - [Habit Contract](07-habit-contract.md)
+- [Habit 实现期高价值缺陷](08-habit-implementation.md)
 - [仍开放的问题](../open.md)
 
 ## 源问题覆盖表
@@ -67,6 +68,11 @@
 | 完整 Schema 校验环境缺失 | OPEN-TOOL-001 |
 | Android lint 既有阻断 | RES-AND-001；API 24–25 设备兼容仍为未验证风险 |
 | 真机 Store 遗留验收记录 | OPEN-CAT-004 |
+
+## Habit 实现期经验入口
+
+- `RES-HAB-002`：异步调度回调只是可能陈旧的执行提示；任何通知等外部副作用前，都必须由领域层重验目标在当前版本、生命周期、当地日期和时区下仍然合法。
+- `RES-HAB-003`：Contract `date` 必须在应用层保持 civil-date 语义；不得用本地 `DateTime + Duration(days)` 代替日历日运算。
 
 ## 归档规则
 

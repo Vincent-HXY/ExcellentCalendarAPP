@@ -1,7 +1,8 @@
 # ADR-Habit-01: Habit 与 HabitCheckIn 分离
 
-Status: Accepted (Contract Frozen, Implementation Pending)
+Status: Accepted
 Date: 2026-08-15 (Recorded)
+Implemented: 2026-08-31
 
 ## Context
 
@@ -21,4 +22,4 @@ Date: 2026-08-15 (Recorded)
 
 - Habit 定义与历史行为可以独立修改、查询和同步。
 - 派生统计可以重算，不需要把缓存值当成领域真相。
-- Habit V1 的字段、daily recurrence、CheckIn set/clear、统计与 Reminder/action identity 已由 ADR-Habit-02 和机器 Contract 冻结；Flutter、Kotlin/JNI、C++ 与 SQLite v5 仍待实现，因此不表示生产能力已完成。
+- Habit V1 已按该边界在 Flutter、Kotlin/JNI、C++ 与 SQLite v5 落地并激活；Flutter 只消费 C++ 统计投影，不建立第二份统计真相源。

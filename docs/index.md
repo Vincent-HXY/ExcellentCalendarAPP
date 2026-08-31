@@ -216,7 +216,7 @@ rg -n -i "<keyword>" <file>
 3. Kotlin 交付记录：`docs/plan/active/习惯-04-Kotlin层开发计划.md`，MethodChannel/JNI/调度/通知动作/Appearance 已完成并接入生产组合；
 4. Flutter 交付记录：`docs/plan/active/习惯-05-Flutter层开发计划.md`，Application/UI/真实 MethodChannel composition 已完成，运行时 preview/Fake 已删除；
 5. 2026-08-31 已关闭黑盒确认的卡片完成率背景、101+ 列表分页、数量型圆圈剩余量、occurrence 技术文本和默认 30 天问题；Habit/Appearance 与 Storage v5 已为 `integrated + active`，剩余真机矩阵由 `OPEN-HAB-001` 跟踪，测试专用 Fake 保留为回归资产；
-6. 领域与决策真相源：`docs/domains/habit.md`、`docs/domains/habit_check_in.md`、`docs/domains/habit_recurrence.md`、`docs/domains/habit_reminder_template.md`、`docs/architecture/decisions/ADR-Habit-01-Habit与HabitCheckIn分离.md`、`docs/architecture/decisions/ADR-Habit-02-每日挑战与Reminder-Occurrence工作流.md`；
+6. 领域与决策真相源：`docs/domains/habit.md`、`docs/domains/habit_check_in.md`、`docs/domains/habit_recurrence.md`、`docs/domains/habit_reminder_template.md`、`docs/architecture/decisions/ADR-Habit-01-Habit与HabitCheckIn分离.md`、`docs/architecture/decisions/ADR-Habit-02-每日挑战与Reminder-Occurrence工作流.md`、`docs/architecture/decisions/ADR-Habit-03-跨层真相源与Storage-v5同包激活.md`；
 7. 生命周期机器矩阵：`contracts/habit/habit_lifecycle_operation_matrix.yaml`；
 8. 机器验证入口：`contracts/run_habit_v1_validation.py` 与 `contracts/fixtures/habit/manifest.json`。
 9. 发布版本的白盒审阅记录：`docs/reviews/active/习惯-01-Habit与HabitCheckIn闭环-review计划.md`；白盒阻断项和本轮黑盒 UI/分页项已返修并完成复核，Review/ADR/计划的局部状态与归档清理由 `OPEN-HAB-002` 跟踪，不影响机器发布态。
