@@ -78,6 +78,73 @@ void main() {
     });
   }
 
+  testWidgets(
+    'Calendar historical date is preserved and defaults to no reminder',
+    (tester) async {
+      final gateway = _RecordingEventGateway();
+      await _pumpPage(
+        tester,
+        eventGateway: gateway,
+        timezoneGateway: FakeTimezoneGateway(),
+        initialDate: DateTime.utc(2000, 1, 2),
+      );
+
+      expect(find.text('不提醒'), findsOneWidget);
+      await _enterTitle(tester, '历史日程');
+      await tester.tap(find.text('完成'));
+      await tester.pumpAndSettle();
+
+      expect(gateway.createRequests, hasLength(1));
+      final request = gateway.createRequests.single;
+      expect(request.startAt?.year, 2000);
+      expect(request.startAt?.month, 1);
+      expect(request.startAt?.day, 2);
+      expect(request.reminders, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'HH:45 default start keeps the 15-minute reminder in the future',
+    (tester) async {
+      final gateway = _RecordingEventGateway();
+      final now = DateTime.utc(2026, 9, 2, 10, 45);
+      await _pumpPage(
+        tester,
+        eventGateway: gateway,
+        timezoneGateway: FakeTimezoneGateway(),
+        nowProvider: () => now,
+      );
+
+      final range = tester.widget<TimeRangeCard>(find.byType(TimeRangeCard));
+      expect(range.startAt, DateTime.utc(2026, 9, 2, 12));
+      expect(
+        range.startAt.subtract(const Duration(minutes: 15)).isAfter(now),
+        isTrue,
+      );
+    },
+  );
+
+  testWidgets('23:xx default start rolls into tomorrow instead of clamping', (
+    tester,
+  ) async {
+    final gateway = _RecordingEventGateway();
+    final now = DateTime.utc(2026, 9, 2, 23, 50);
+    await _pumpPage(
+      tester,
+      eventGateway: gateway,
+      timezoneGateway: FakeTimezoneGateway(),
+      initialDate: DateTime.utc(2026, 9, 2),
+      nowProvider: () => now,
+    );
+
+    final range = tester.widget<TimeRangeCard>(find.byType(TimeRangeCard));
+    expect(range.startAt, DateTime.utc(2026, 9, 3, 1));
+    expect(
+      range.startAt.subtract(const Duration(minutes: 15)).isAfter(now),
+      isTrue,
+    );
+  });
+
   const unsupportedRecurrences = {'每年': '每年重复暂未开放', '自定义': '自定义重复规则后续实现'};
 
   for (final recurrence in unsupportedRecurrences.entries) {
@@ -311,6 +378,8 @@ Future<void> _pumpPage(
   WidgetTester tester, {
   required _RecordingEventGateway eventGateway,
   required FakeTimezoneGateway timezoneGateway,
+  DateTime? initialDate,
+  DateTime Function()? nowProvider,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -335,6 +404,8 @@ Future<void> _pumpPage(
                           timezoneGateway,
                         ),
                         categoryRepository: FakeCategoryRepository(),
+                        initialDate: initialDate,
+                        nowProvider: nowProvider,
                       ),
                     ),
                   );

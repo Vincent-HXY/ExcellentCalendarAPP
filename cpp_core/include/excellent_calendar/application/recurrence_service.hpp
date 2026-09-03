@@ -43,6 +43,27 @@ class RecurrenceService {
       std::string_view range_end_date,
       int limit = 200) const;
 
+  /**
+   * Expands monotonically from an already bounded index until the first
+   * occurrence whose start is at or after the exclusive range end. These
+   * batch paths prepare the immutable source schedule once, preserving the
+   * same DST and UUIDv5 rules as occurrence_at() without reparsing it for
+   * every CalendarView occurrence.
+   */
+  common::Result<std::vector<domain::EventOccurrence>>
+  list_timed_occurrences_from_index(
+      const domain::RecurringEventSchedule& event,
+      const domain::Recurrence& recurrence,
+      int first_index,
+      std::string_view exclusive_range_end_at) const;
+
+  common::Result<std::vector<domain::EventOccurrence>>
+  list_all_day_occurrences_from_index(
+      const domain::RecurringEventSchedule& event,
+      const domain::Recurrence& recurrence,
+      int first_index,
+      std::string_view exclusive_range_end_date) const;
+
   common::Result<domain::EventOccurrence> first_timed_occurrence_with_reminder_after(
       const domain::RecurringEventSchedule& event,
       const domain::Recurrence& recurrence,

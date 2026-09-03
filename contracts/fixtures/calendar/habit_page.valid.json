@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-01",
+  "timezone": "Asia/Shanghai",
+  "section": "habit",
+  "snapshot_token": "calsnap1.ABCDEFGHIJKLMNOPQRST",
+  "page_size": 20,
+  "items": [
+    {
+      "habit_id": "44444444-4444-4444-8444-444444444444",
+      "date": "2026-09-01",
+      "title": "阅读",
+      "status": "partial",
+      "check_in_id": "55555555-5555-4555-8555-555555555555",
+      "completed_count_hundredths": 1500,
+      "target_count_hundredths": 3000,
+      "unit": "分钟",
+      "has_active_reminder": true
+    },
+    {
+      "habit_id": "66666666-6666-4666-8666-666666666666",
+      "date": "2026-09-01",
+      "title": "拉伸",
+      "status": "done",
+      "check_in_id": "77777777-7777-4777-8777-777777777777",
+      "completed_count_hundredths": null,
+      "target_count_hundredths": null,
+      "unit": null,
+      "has_active_reminder": false
+    }
+  ],
+  "has_more": false,
+  "next_cursor": null
+}
+

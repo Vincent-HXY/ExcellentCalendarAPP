@@ -579,4 +579,58 @@ common::Result<common::Unit> SqliteHabitTransaction::execute(
   });
 }
 
+SqliteCalendarQueryRepository::SqliteCalendarQueryRepository(
+    std::shared_ptr<SqliteCalendarDatabase> database,
+    std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
+    : database_(std::move(database)),
+      runtime_lease_(std::move(runtime_lease)) {}
+
+common::Result<common::Unit> SqliteCalendarQueryRepository::initialize() {
+  auto access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  return runtime_lease_ && !access.has_value()
+             ? common::Result<common::Unit>::failure(
+                   revoked("calendar_query_repository.initialize"))
+             : database_->validate();
+}
+
+common::Result<repository::CalendarQuerySnapshot>
+SqliteCalendarQueryRepository::load_snapshot(
+    const std::optional<std::array<
+        std::int64_t,
+        repository::kCalendarQueryContributingStores.size()>>&
+        expected_generations) {
+  auto access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  return runtime_lease_ && !access.has_value()
+             ? common::Result<repository::CalendarQuerySnapshot>::failure(
+                   revoked("calendar_query_repository.load_snapshot"))
+             : database_->load_calendar_query_snapshot(expected_generations);
+}
+
+SqliteSearchQueryRepository::SqliteSearchQueryRepository(
+    std::shared_ptr<SqliteCalendarDatabase> database,
+    std::shared_ptr<storage::RuntimeStorageLease> runtime_lease)
+    : database_(std::move(database)), runtime_lease_(std::move(runtime_lease)) {}
+
+common::Result<common::Unit> SqliteSearchQueryRepository::initialize() {
+  auto access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  return runtime_lease_ && !access.has_value()
+             ? common::Result<common::Unit>::failure(
+                   revoked("search_query_repository.initialize"))
+             : database_->validate();
+}
+
+common::Result<repository::SearchQuerySnapshot>
+SqliteSearchQueryRepository::load_snapshot(
+    const std::vector<domain::SearchTargetType>& requested_targets,
+    const std::optional<std::array<
+        std::int64_t, repository::kSearchQueryContributingStores.size()>>&
+        expected_generations) {
+  auto access = runtime_lease_ ? runtime_lease_->acquire() : std::nullopt;
+  return runtime_lease_ && !access.has_value()
+             ? common::Result<repository::SearchQuerySnapshot>::failure(
+                   revoked("search_query_repository.load_snapshot"))
+             : database_->load_search_query_snapshot(requested_targets,
+                                                       expected_generations);
+}
+
 }  // namespace excellent_calendar::storage::sqlite

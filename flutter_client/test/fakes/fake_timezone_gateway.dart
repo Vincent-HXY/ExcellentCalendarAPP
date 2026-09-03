@@ -18,6 +18,8 @@ class FakeTimezoneGateway implements TimezoneNativeGateway {
     List<String> deviceTimezones = const ['Asia/Shanghai'],
     ResolveTimezoneFake? resolve,
     LocalizeTimezoneFake? localize,
+    this.deviceFailure,
+    this.resolveFailure,
   }) : _deviceTimezones = List.of(deviceTimezones),
        _resolve = resolve,
        _localize = localize;
@@ -25,6 +27,8 @@ class FakeTimezoneGateway implements TimezoneNativeGateway {
   final List<String> _deviceTimezones;
   final ResolveTimezoneFake? _resolve;
   final LocalizeTimezoneFake? _localize;
+  final NativeInvocation<DeviceTimezoneResponseDto>? deviceFailure;
+  final NativeInvocation<ResolveLocalDateTimeResponseDto>? resolveFailure;
   int _deviceReadIndex = 0;
 
   final List<ResolveLocalDateTimeRequestDto> resolveRequests = [];
@@ -33,6 +37,7 @@ class FakeTimezoneGateway implements TimezoneNativeGateway {
   @override
   Future<NativeInvocation<DeviceTimezoneResponseDto>>
   getDeviceTimezone() async {
+    if (deviceFailure case final failure?) return failure;
     final index = _deviceReadIndex < _deviceTimezones.length
         ? _deviceReadIndex
         : _deviceTimezones.length - 1;
@@ -46,6 +51,7 @@ class FakeTimezoneGateway implements TimezoneNativeGateway {
   Future<NativeInvocation<ResolveLocalDateTimeResponseDto>>
   resolveLocalDateTime(ResolveLocalDateTimeRequestDto request) async {
     resolveRequests.add(request);
+    if (resolveFailure case final failure?) return failure;
     final response =
         _resolve?.call(request) ??
         ResolveLocalDateTimeResponseDto(

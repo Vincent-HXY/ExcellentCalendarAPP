@@ -1,0 +1,26 @@
+{
+  "days": [
+    {
+      "date": "2026-09-01",
+      "event_statuses": ["completed"],
+      "habit_statuses": ["done"],
+      "anniversary_count": 0,
+      "summary": {"has_open_event": false, "has_pending_habit": false, "has_anniversary": false}
+    },
+    {
+      "date": "2026-09-02",
+      "event_statuses": ["completed", "skipped"],
+      "habit_statuses": ["done", "partial"],
+      "anniversary_count": 1,
+      "summary": {"has_open_event": true, "has_pending_habit": true, "has_anniversary": true}
+    },
+    {
+      "date": "2026-09-03",
+      "event_statuses": ["pending"],
+      "habit_statuses": ["upcoming"],
+      "anniversary_count": 0,
+      "summary": {"has_open_event": true, "has_pending_habit": true, "has_anniversary": false}
+    }
+  ]
+}
+

@@ -8,6 +8,7 @@
 #include "excellent_calendar/application/anniversary_query_service.hpp"
 #include "excellent_calendar/application/anniversary_workflow_service.hpp"
 #include "excellent_calendar/application/category_service.hpp"
+#include "excellent_calendar/application/calendar_view_query_service.hpp"
 #include "excellent_calendar/application/event_lifecycle_workflow_service.hpp"
 #include "excellent_calendar/application/recurrence_service.hpp"
 #include "excellent_calendar/application/reminder_recovery_workflow_service.hpp"
@@ -18,6 +19,8 @@
 #include "excellent_calendar/application/recurring_reminder_delivery_workflow_service.hpp"
 #include "excellent_calendar/application/recurring_reminder_query_service.hpp"
 #include "excellent_calendar/application/rolling_reminder_service.hpp"
+#include "excellent_calendar/application/search_query_service.hpp"
+#include "excellent_calendar/common/search_token_crypto.hpp"
 #include "excellent_calendar/infrastructure/time/tzdb_local_time_resolver.hpp"
 #include "excellent_calendar/storage/runtime_storage_lease.hpp"
 #include "excellent_calendar/storage/sqlite/sqlite_calendar_database.hpp"
@@ -60,6 +63,13 @@ struct RuntimeState {
   std::shared_ptr<application::CategoryService> category_service;
   std::shared_ptr<storage::sqlite::SqliteHabitTransaction> habit_transaction;
   std::shared_ptr<application::HabitService> habit_service;
+  std::shared_ptr<storage::sqlite::SqliteCalendarQueryRepository>
+      calendar_query_repository;
+  std::shared_ptr<application::CalendarViewQueryService>
+      calendar_view_query_service;
+  std::shared_ptr<storage::sqlite::SqliteSearchQueryRepository>
+      search_query_repository;
+  std::shared_ptr<application::SearchQueryService> search_query_service;
   std::shared_ptr<storage::RuntimeStorageLease> writer_lease;
   std::string storage_directory;
   std::string recurring_storage_directory;
@@ -68,6 +78,11 @@ struct RuntimeState {
 std::mutex g_state_mutex;
 std::mutex g_initialization_mutex;
 RuntimeState g_state;
+
+const common::Result<common::SearchHmacKey>& process_search_hmac_key() {
+  static const auto key = common::generate_search_hmac_key();
+  return key;
+}
 
 void clear_runtime_state() {
   RuntimeState previous;
@@ -272,6 +287,35 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
   auto habit_service = std::make_shared<application::HabitService>(
       habit_transaction, resolver.value(), common::utc_now_iso8601,
       common::generate_uuid_v4);
+  auto calendar_query_repository =
+      std::make_shared<storage::sqlite::SqliteCalendarQueryRepository>(
+          database, writer_lease);
+  auto calendar_query_initialized = calendar_query_repository->initialize();
+  if (!calendar_query_initialized.ok()) {
+    return common::Result<RecurringRuntimeInitializationResult>::failure(
+        calendar_query_initialized.error());
+  }
+  auto calendar_view_query_service =
+      std::make_shared<application::CalendarViewQueryService>(
+          calendar_query_repository, resolver.value(), recurrence,
+          common::utc_now_iso8601);
+  const auto& search_key = process_search_hmac_key();
+  if (!search_key.ok()) {
+    return common::Result<RecurringRuntimeInitializationResult>::failure(
+        search_key.error());
+  }
+  auto search_query_repository =
+      std::make_shared<storage::sqlite::SqliteSearchQueryRepository>(
+          database, writer_lease);
+  auto search_query_initialized = search_query_repository->initialize();
+  if (!search_query_initialized.ok()) {
+    return common::Result<RecurringRuntimeInitializationResult>::failure(
+        search_query_initialized.error());
+  }
+  auto search_query_service =
+      std::make_shared<application::SearchQueryService>(
+          search_query_repository, resolver.value(), recurrence,
+          common::utc_now_iso8601, search_key.value());
 
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -294,6 +338,12 @@ common::Result<RecurringRuntimeInitializationResult> initialize_recurring_runtim
     g_state.category_service = std::move(category_service);
     g_state.habit_transaction = std::move(habit_transaction);
     g_state.habit_service = std::move(habit_service);
+    g_state.calendar_query_repository =
+        std::move(calendar_query_repository);
+    g_state.calendar_view_query_service =
+        std::move(calendar_view_query_service);
+    g_state.search_query_repository = std::move(search_query_repository);
+    g_state.search_query_service = std::move(search_query_service);
     g_state.writer_lease = std::move(writer_lease);
     g_state.recurring_storage_directory = std::string(storage_directory);
   }
@@ -389,6 +439,18 @@ std::shared_ptr<application::CategoryService> current_category_service() {
 std::shared_ptr<application::HabitService> current_habit_service() {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   return g_state.habit_service;
+}
+
+std::shared_ptr<application::CalendarViewQueryService>
+current_calendar_view_query_service() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.calendar_view_query_service;
+}
+
+std::shared_ptr<application::SearchQueryService>
+current_search_query_service() {
+  std::lock_guard<std::mutex> lock(g_state_mutex);
+  return g_state.search_query_service;
 }
 
 std::shared_ptr<domain::LocalTimeResolver> current_local_time_resolver() {

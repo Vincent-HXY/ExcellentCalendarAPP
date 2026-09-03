@@ -1,0 +1,24 @@
+{
+  "query": "项目 meeting",
+  "target_type": "event",
+  "items": [
+    {"id": "exact", "title": "项目 MEETING", "content": null, "location": null, "category_name": null},
+    {"id": "prefix", "title": "项目 meeting 复盘", "content": null, "location": null, "category_name": null},
+    {"id": "contains", "title": "本周 项目 meeting 复盘", "content": null, "location": null, "category_name": null},
+    {"id": "title_tokens", "title": "项目 kickoff meeting", "content": null, "location": null, "category_name": null},
+    {"id": "body", "title": "每周安排", "content": "项目 meeting 记录", "location": null, "category_name": null},
+    {"id": "location", "title": "会面", "content": "项目记录", "location": "meeting room", "category_name": null},
+    {"id": "category", "title": "会面", "content": "项目记录", "location": null, "category_name": "Meeting"},
+    {"id": "missing_token", "title": "项目", "content": null, "location": null, "category_name": null}
+  ],
+  "expected_matching_order": ["exact", "prefix", "contains", "title_tokens", "body", "location", "category"],
+  "expected_tiers": {
+    "exact": 0,
+    "prefix": 1,
+    "contains": 2,
+    "title_tokens": 3,
+    "body": 4,
+    "location": 5,
+    "category": 6
+  }
+}

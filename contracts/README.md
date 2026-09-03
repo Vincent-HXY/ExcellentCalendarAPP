@@ -75,6 +75,17 @@
 52. `appearance.get_local/update_local` 是 Kotlin 本机能力，不进入 JNI/C++；只接受预设 token。缺失或损坏持久化值回退 `teal` 并记诊断，未知 wire token 仍严格失败。
 53. `habit.list.today_progress` 是不受分页和筛选影响的全局首页聚合：只纳入 today 为 active 的未删除 Habit；done 进入 X/Y，partial 与 absent 只进入 Y，skipped 单列且不进入 Y，upcoming/completed/ended_early 排除。
 54. Habit V1 最多 400 个包含首尾的当地自然日；title/description/unit/note 分别最多 80/2000/32/500 个 Unicode code point，list page 最多 100、opaque cursor 最多 512。生命周期 mutation 权限由 `habit/habit_lifecycle_operation_matrix.yaml` 冻结：upcoming 不能 end，最终计划日不能 early-end，completed/ended_early 除 delete 外只读。
+55. Calendar View 是 Event/Recurrence/OccurrenceState、Habit/CheckIn、Anniversary/AnniversaryRecurrence 与 Reminder 的只读组合投影，不是领域实体，不新增可写表、缓存事实或 Storage 版本。范围摘要最多 42 个当地自然日，并为请求区间每天恰好返回一个升序项。
+56. `calendar.range_summary` 返回 `snapshot_token`；`calendar.list_day_items` 的三个 section 首屏和续页都必须携带该 token。每次查询在一个 SQLite read transaction 内校验所有贡献 Store 的 generation；任何 generation 变化返回 `CALENDAR_SNAPSHOT_EXPIRED`。Flutter 只原子接纳同一 token 的范围与三分组结果，不能混合快照。
+57. Calendar cursor 绑定 date、timezone、section、page_size、排序 revision、完整最后排序键和 snapshot token。terminal page 固定 `next_cursor=null`；非终页必须非空并产生严格前进。malformed、query mismatch 与 snapshot expired 使用不同错误码，均不得静默从第一页续接。
+58. Calendar Event、Habit 与 Anniversary item 使用 section 判别的强类型 schema。C++ 单点负责当地日重叠、recurrence 展开、daily status、圆点守恒、Reminder 活动态与稳定排序；Flutter/Kotlin 不重算这些规则。Contract 不传“进行中”“待完成”“第 N 周年”等本地化文案，只传枚举、日期、时间和精确数量字段。
+59. Search V1 是 Event/Habit/Anniversary/当前 Category 的只读组合查询，不是 `SearchIndex` writer，也不写第二套事实。三组首屏由一个 C++ Search Query Service 在同一 SQLite read snapshot 和同一固定 Clock instant 中产生；Flutter 不得分别查询三类后拼接。
+60. Search 关键字最多 128 个 Unicode scalar / 512 UTF-8 bytes。规范化只按冻结 Unicode White_Space 集合 trim、折叠为 U+0020 并切 token；比较只把 ASCII `A-Z` 映射到 `a-z`，不做 Unicode normalization、拼音、语义、错字或完整 case folding。token 使用 AND，可跨允许字段命中。
+61. `query_generation` 是 Flutter 的 safe-integer 关联令牌，response 必须原样回显；它不等于 Store generation，也不进入 cursor binding。Search V1 每页固定 20；初始 response 必须恰好返回 requested sections，cursor chain 的累计唯一项、精确 total、has_more、cursor 前进、timezone/evaluated_at/snapshot 必须守恒。`srchcur1.*`/`srchsnap1.*` 由 C++ 每进程 OS-CSPRNG key 的完整 HMAC-SHA-256 认证，采用独立 domain、canonical Base64URL 和 constant-time tag compare；禁止 FNV/Calendar checksum 复用。malformed、query mismatch、expired 分别使用三个错误码。
+62. Search Category filter 的三态为：`category_ids=null + include_uncategorized=false` 不限制；空数组 + true 仅未分类；非空 ID 数组可选择是否同时包含未分类。未分类只指目标 `category_id=null`；悬空或软删除弱引用仍是有 ID 的对象。名称匹配和投影只读取当前活动 Category，旧名称不得命中。
+63. Search item 按 section 使用三个强类型 Schema。Event 的 `occur_at` 与 `occur_date` 互斥，重复导航必须携带 revision 与 occurrence key；Habit 与 Anniversary 保持 date-only。Event 状态与 completed recurring-series cutoff 分别逐字段等同 Calendar Contract；cutoff 以 timed start instant 或 recurrence timezone 全天日初为 anchor，并严格排除等于/晚于 `completed_at` 的 occurrence。有范围时按 cancelled → cutoff → overlap → 完成开关完成资格过滤，再选距请求 timezone 当地 today 最近 occurrence，open 不优先；无范围的 completed series 选择 cutoff 前最后一个 eligible occurrence。timed 查询窗口以请求 timezone 当地午夜和 TZDB gap/fold 策略映射为 instant 后做半开 overlap，all-day 直接用 civil-date 半开 overlap。C++ 单点负责这些投影、匹配 tier、完成/temporal bucket 与稳定排序；Flutter/Kotlin 不重算。
+64. Search history 仅由 Kotlin 通过 `AtomicFile` 保存在 `Context.noBackupFilesDir`，最多 20 个规范化关键字，按 ASCII-insensitive identity 去重并保持最近优先。`replace_local_history` 以 `expected_revision` 原子 compare-and-replace 完整有序列表；只有 `finishWrite` 成功才发布新内存快照。revision 上界的幂等请求零写入成功，变化/修复返回 `SEARCH_HISTORY_STORAGE_FAILED` 并保留原快照。键盘成功查询（含零结果）、历史点击和打开结果记录；失败键盘查询与 debounce 不记录。文件不进入 cloud backup/device transfer。
+65. Search V1 不升级 SQLite v5、不新增 table/index/trigger/FTS writer。先以 canonical Store 窄快照、文本预过滤和有界 recurrence 算法执行 1k/10k/50k 性能门禁；失败后另立 Storage v6/SearchIndex/FTS migration 计划，不能在下层实现或集成阶段临时添加索引。
 
 ## Directory
 
@@ -99,6 +110,7 @@ contracts/
 ├── habit/
 ├── appearance/
 ├── category/
+├── calendar/
 ├── ai/
 ├── sync/
 ├── user/
@@ -107,7 +119,7 @@ contracts/
 └── search/
 ```
 
-当前已接入的本地核心协议包括 `common/`、`event/`、`recurrence/`、`reminder/`、`notification/`、`anniversary/`、Habit/Appearance、Ring 和 Category create/list。Category 已冻结 Schema、Dart/Kotlin 边界和 Calendar Core SQLite Storage 中的独立表，C++ Domain/Repository/codec/bootstrap、JNI、真实磁盘读写、生产 Flutter composition 与物理设备重启验收均已闭环；对应方法和 Store 统一为 `implementation_status: integrated`、`release_status: active`。Ring 与内部 `reminder.snooze` 已完成 C++、Kotlin、Flutter、AlarmManager、前台服务、五分钟安全停止和进程恢复闭环，并在 realme RMX5100 / Android 16（API 36）国产 ROM 通过一期发布验收；经 2026-08-23 明确批准，以该设备验收替代一期完整 API 矩阵，相关公开与内部能力统一为 `implementation_status: integrated`、`release_status: active`。API 24、31、33、34、35 保留为后续兼容验证，不再阻塞一期发布。Habit/Appearance V1 的 Dart、Kotlin/JNI、C++、SQLite v5 和 production composition 已完成实现与集成，并于 2026-08-31 按产品负责人的发布决定统一激活；尚未覆盖的设备场景保留在 `docs/issues/open.md#open-hab-001`，不得描述为已验证通过。`auth/`、`user/` 与 `backend_api.yaml` 是认证和个人资料模块的计划协议；在 Flutter、Kotlin 和 Backend 实现落地前保持 `implementation_status: planned`，调用方不得把它们当作已可用能力。
+当前已接入的本地核心协议包括 `common/`、`event/`、`recurrence/`、`reminder/`、`notification/`、`anniversary/`、Habit/Appearance、Ring 和 Category create/list。Calendar View R1 的 Contract、C++/SQLite、Kotlin/JNI、Flutter 与 production composition 已落地并通过主机、Debug、三 ABI、一台 Android 13 设备的隔离 JNI/SQLite 与基础 UI，以及 Release 签名 fail-closed/一次性非生产密钥 APK/AAB 验签；产品负责人于 2026-09-02 明确接受正式生产签名/商店上传、真机时区与 DST、TalkBack、200% 字体/减少动画、强杀恢复、升级回滚/密钥恢复和正式 Release UI 全链作为 `OPEN-CAL-001` 非阻断发布债，`calendar.*` 因此统一为 `implementation_status: integrated`、`release_status: active`。当前仍没有生产密钥签名或商店校验过的正式产物。Search V1 Revision 2 的 Contract、C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 与 production composition 已落地，并通过主机、Android 13 seeded 三类真实查询、History 强杀恢复、中文 IME/日期流程、旋转及代表设备性能复审；产品负责人于 2026-09-02 接受搜索框 TalkBack 语义和正式签名链为 `OPEN-SEA-001` 非阻断发布债，统一 Search Query 与本地 History 能力已切换为 `integrated + active`。SearchIndex/FTS 仍是 deferred/planned 加速方向。Category 已冻结 Schema、Dart/Kotlin 边界和 Calendar Core SQLite Storage 中的独立表，C++ Domain/Repository/codec/bootstrap、JNI、真实磁盘读写、生产 Flutter composition 与物理设备重启验收均已闭环；对应方法和 Store 统一标记为 `integrated + active`。Ring 与内部 `reminder.snooze` 已完成 C++、Kotlin、Flutter、AlarmManager、前台服务、五分钟安全停止和进程恢复闭环，并在 realme RMX5100 / Android 16（API 36）国产 ROM 通过一期发布验收；经 2026-08-23 明确批准，以该设备验收替代一期完整 API 矩阵，相关公开与内部能力统一为 `integrated + active`。API 24、31、33、34、35 保留为后续兼容验证，不再阻塞一期发布。Habit/Appearance V1 的 Dart、Kotlin/JNI、C++、SQLite v5 和 production composition 已完成实现与集成，并于 2026-08-31 按产品负责人的发布决定统一激活；尚未覆盖的设备场景保留在 `docs/issues/open.md#open-hab-001`，不得描述为已验证通过。`auth/`、`user/` 与 `backend_api.yaml` 是认证和个人资料模块的计划协议；在 Flutter、Kotlin 和 Backend 实现落地前保持 `implementation_status: planned`，调用方不得把它们当作已可用能力。
 
 ## Versioning
 
@@ -184,6 +196,35 @@ Habit 旧 Schema 和两个旧 MethodChannel 入口在首次实现前始终是 `p
 | Calendar Core Storage | SQLite v4 active | v5 integrated / active | C++ 先用冻结 v4 checker 验证，再以单事务迁移并由 v5 成为当前 writer；损坏 v4 输入仍须零写入失败 |
 
 Contract validator 入口为 `run_habit_v1_validation.py`，夹具位于 `fixtures/habit/`。它同时校验 Draft 2020-12 schema/ref closure、12 个公开方法、11 个 native call、错误/枚举、`integrated + active` 状态、integer-hundredths 相邻向量、文本/日期/分页上限、今日聚合、生命周期矩阵、日级单展示、reconciliation 正进展、Recovery 隔离、4 个 Habit UUIDv5 向量、冻结 v4 hash、v5 表/索引/per-store codec/migration 原子性及 Event/Reminder additive 兼容形状。共享 Anniversary/Reminder 回归继续由 `run_anniversary_r1_validation.py` 覆盖。
+
+### Calendar View R1 Wire 兼容矩阵（Native v2 integrated / active revision）
+
+Calendar View 在本 revision 前只有 Flutter 占位页，没有 `calendar.*` reader、writer、JNI endpoint、SQLite 行或历史 cursor。R1 因此继续使用 Native v2 外壳，并通过同一 APK 同步升级全部调用方；本次只校准 capability 状态，不改变 wire、Storage 或 revision 常量。
+
+| Reader / Writer | R1 前 | Calendar View R1 | 结论 |
+| --- | --- | --- | --- |
+| 旧 Flutter/Kotlin/C++ | 不调用、不识别 `calendar.*` | 两个公开方法与两个 internal call | additive；新组件必须同包，不能让新 Flutter 对接旧 Native |
+| 既有 Event/Habit/Anniversary reader/writer | 各领域独立 active | Calendar 只读取 typed projection | 既有 wire shape 与 writer 不变，三套共享回归必须通过 |
+| Calendar Core SQLite v5 | 现有业务 Store/generation | 同一 read transaction 读取并生成 opaque snapshot token | 无新表、无 writer、无 Storage migration |
+| Calendar cursor/snapshot | 不存在 | 仅本地会话中的 opaque `calcur1` / `calsnap1` | 不持久化、不导入导出；App/时区/数据 generation 变化后重建 |
+| production capability | 无 Calendar 链 | Contract、四层代码和真实 production composition 已落地；七项发布后矩阵由 `OPEN-CAL-001` 跟踪 | 2026-09-02 产品发布例外后为 `integrated + active`；签名门禁已 fail-closed，但尚无生产密钥/商店正式产物 |
+
+专项 validator 为 `run_calendar_v1_validation.py`，夹具位于 `fixtures/calendar/`；它校验所有 Schema/ref、两个能力映射、错误/枚举、42 天、gap-free summary、三类 typed page、terminal cursor、分页边界、cursor binding 与圆点守恒，并与 Anniversary/Habit validator 共同作为下游启动门禁。
+
+### Search V1 Wire 兼容矩阵（Native v2 / Search Revision 2 / integrated + active）
+
+Search V1 冻结前只有 `event.search` 与未接线的 SearchIndex projection，没有统一 `search.*` reader、JNI endpoint、历史文件或生产 FTS。V1 因此作为 Native v2 additive capability 同包升级，不修改旧 `event.search`，也不触发业务数据 migration。
+
+| Reader / Writer | Search V1 前 | Search V1 | 结论 |
+| --- | --- | --- | --- |
+| 旧 Flutter/Kotlin/C++ | 不调用、不识别统一 Search | `search.query` + 两个 Kotlin-local history 方法 | additive；新组件必须同包，不能让新 Flutter 对接旧 Native |
+| `event.search` | 单 Event 旧 request/response | 原样保留 | 兼容调用方不受影响；统一 Search 不暗改旧排序或 payload |
+| Event/Habit/Anniversary/Category | canonical SQLite v5 facts | 只读组合 projection | 不新增字段、writer、表、索引或 Storage version |
+| SearchIndex/FTS | 只有 planned 可重建概念 | 性能门禁前仍不启用 | `occur_at/occur_date` 语义补齐不代表 writer、rebuild 或 FTS 已实现 |
+| local history | 不存在 | Kotlin AtomicFile format v1 + monotonic revision，位于 noBackupFilesDir | additive local format；天然排除 cloud backup/device transfer，不进入 JNI/C++/SQLite |
+| production capability | Search Tab 占位 | Contract、四层实现、同 APK、设备与性能门禁已完成 | 2026-09-02 产品发布例外后为 `integrated + active`；`OPEN-SEA-001` 跟踪搜索框 TalkBack 语义和正式签名链 |
+
+专项 validator 为 `run_search_v1_validation.py`，夹具位于 `fixtures/search/`；Revision 2 的 31 组 fixture 校验 12 个 Search Schema/ref、三条公开方法、唯一 native query、错误/枚举、Unicode 规范化、跨字段 AND、相关度与稳定排序、三类 typed item、Event overlap/status/DST/最近 occurrence、request-response section 守恒、cursor-chain 无重漏与元数据恒定、HMAC tamper/旧进程 key、history revision 上界/CAS 与 NativeResult。下层必须消费同一夹具，不能复制一份漂移的规则。Revision 1 从未投产，已经撤回。
 
 ### Calendar Core JSON v1/v2/v3 → SQLite v4 兼容矩阵
 

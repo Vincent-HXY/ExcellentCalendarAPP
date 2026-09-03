@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "excellent_calendar/repository/anniversary_transaction.hpp"
+#include "excellent_calendar/repository/calendar_query_repository.hpp"
 #include "excellent_calendar/repository/category_repository.hpp"
 #include "excellent_calendar/repository/habit_transaction.hpp"
 #include "excellent_calendar/repository/event_reminder_transaction.hpp"
@@ -14,6 +15,7 @@
 #include "excellent_calendar/repository/recurring_event_transaction.hpp"
 #include "excellent_calendar/repository/reminder_notification_transaction.hpp"
 #include "excellent_calendar/repository/reminder_repository.hpp"
+#include "excellent_calendar/repository/search_query_repository.hpp"
 #include "excellent_calendar/storage/runtime_storage_lease.hpp"
 #include "excellent_calendar/storage/sqlite/sqlite_calendar_database.hpp"
 
@@ -176,6 +178,44 @@ class SqliteHabitTransaction final : public repository::HabitTransaction {
   common::Result<repository::HabitState> load() override;
   common::Result<common::Unit> execute(std::string_view operation,
                                        const Operation& action) override;
+
+ private:
+  std::shared_ptr<SqliteCalendarDatabase> database_;
+  std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
+};
+
+class SqliteCalendarQueryRepository final
+    : public repository::CalendarQueryRepository {
+ public:
+  explicit SqliteCalendarQueryRepository(
+      std::shared_ptr<SqliteCalendarDatabase> database,
+      std::shared_ptr<storage::RuntimeStorageLease> runtime_lease = {});
+
+  common::Result<common::Unit> initialize() override;
+  common::Result<repository::CalendarQuerySnapshot> load_snapshot(
+      const std::optional<std::array<
+          std::int64_t,
+          repository::kCalendarQueryContributingStores.size()>>&
+          expected_generations = std::nullopt) override;
+
+ private:
+  std::shared_ptr<SqliteCalendarDatabase> database_;
+  std::shared_ptr<storage::RuntimeStorageLease> runtime_lease_;
+};
+
+class SqliteSearchQueryRepository final
+    : public repository::SearchQueryRepository {
+ public:
+  explicit SqliteSearchQueryRepository(
+      std::shared_ptr<SqliteCalendarDatabase> database,
+      std::shared_ptr<storage::RuntimeStorageLease> runtime_lease = {});
+
+  common::Result<common::Unit> initialize() override;
+  common::Result<repository::SearchQuerySnapshot> load_snapshot(
+      const std::vector<domain::SearchTargetType>& requested_targets,
+      const std::optional<std::array<
+          std::int64_t, repository::kSearchQueryContributingStores.size()>>&
+          expected_generations = std::nullopt) override;
 
  private:
   std::shared_ptr<SqliteCalendarDatabase> database_;

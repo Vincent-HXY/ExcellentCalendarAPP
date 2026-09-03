@@ -6,24 +6,49 @@ import 'auth_route_arguments.dart';
 typedef EventDetailRouteBuilder =
     Widget Function(BuildContext context, EventDetailRouteData routeData);
 typedef AnniversaryDetailRouteBuilder =
-    Widget Function(BuildContext context, String anniversaryId);
+    Widget Function(BuildContext context, AnniversaryDetailRouteData routeData);
 typedef HabitDetailRouteBuilder =
     Widget Function(BuildContext context, HabitDetailRouteData routeData);
 
+enum ContentDetailRouteOutcome { unchanged, changed, deleted }
+
 class HabitDetailRouteData {
-  const HabitDetailRouteData({required this.habitId, this.occurrenceKey});
+  const HabitDetailRouteData({
+    required this.habitId,
+    this.occurrenceKey,
+    this.selectedDate,
+  });
   final String habitId;
   final String? occurrenceKey;
+  final String? selectedDate;
 }
 
 class EventDetailRouteData {
   const EventDetailRouteData({
     required this.eventId,
     required this.occurrenceKey,
+    this.recurrenceRevision,
+    this.occurrenceStartAt,
+    this.occurrenceStartDate,
   });
 
   final String eventId;
   final String? occurrenceKey;
+  final int? recurrenceRevision;
+  final DateTime? occurrenceStartAt;
+  final String? occurrenceStartDate;
+}
+
+class AnniversaryDetailRouteData {
+  const AnniversaryDetailRouteData({
+    required this.anniversaryId,
+    this.occurrenceKey,
+    this.occurrenceDate,
+  });
+
+  final String anniversaryId;
+  final String? occurrenceKey;
+  final String? occurrenceDate;
 }
 
 class AppRouter {
@@ -161,13 +186,29 @@ class AppRouter {
       if ({'event', 'habit', 'anniversary'}.contains(type) &&
           id.trim().isNotEmpty) {
         if (type == 'event') {
-          final occurrenceValues = uri.queryParametersAll['occurrence_key'];
-          if (occurrenceValues != null &&
-              (occurrenceValues.length != 1 ||
-                  occurrenceValues.single.trim().isEmpty)) {
+          final occurrence = _queryValue(uri, 'occurrence_key');
+          final revision = _queryValue(uri, 'recurrence_revision');
+          final occurrenceStartAt = _queryValue(uri, 'occurrence_start_at');
+          final occurrenceStartDate = _queryValue(uri, 'occurrence_start_date');
+          if (!occurrence.isValid ||
+              !revision.isValid ||
+              !occurrenceStartAt.isValid ||
+              !occurrenceStartDate.isValid) {
             return _todayRoute(todayBuilder);
           }
-          final occurrenceKey = occurrenceValues?.single;
+          final parsedRevision = revision.value == null
+              ? null
+              : int.tryParse(revision.value!);
+          final parsedStartAt = occurrenceStartAt.value == null
+              ? null
+              : _parseWholeSecondUtc(occurrenceStartAt.value!);
+          if (revision.value != null &&
+                  (parsedRevision == null || parsedRevision < 1) ||
+              occurrenceStartAt.value != null && parsedStartAt == null ||
+              occurrenceStartDate.value != null &&
+                  !_isLocalDate(occurrenceStartDate.value!)) {
+            return _todayRoute(todayBuilder);
+          }
           final arguments = settings.arguments;
           if (arguments is EventDetailPageArguments) {
             return MaterialPageRoute<void>(
@@ -185,7 +226,10 @@ class AppRouter {
           if (eventDetailBuilder != null) {
             final routeData = EventDetailRouteData(
               eventId: id,
-              occurrenceKey: occurrenceKey,
+              occurrenceKey: occurrence.value,
+              recurrenceRevision: parsedRevision,
+              occurrenceStartAt: parsedStartAt,
+              occurrenceStartDate: occurrenceStartDate.value,
             );
             return MaterialPageRoute<void>(
               settings: settings,
@@ -194,16 +238,34 @@ class AppRouter {
           }
         }
         if (type == 'anniversary' && anniversaryDetailBuilder != null) {
+          final occurrence = _queryValue(uri, 'occurrence_key');
+          final occurrenceDate = _queryValue(uri, 'occurrence_date');
+          if (!occurrence.isValid ||
+              !occurrenceDate.isValid ||
+              occurrenceDate.value != null &&
+                  !_isLocalDate(occurrenceDate.value!) ||
+              (occurrence.value == null) != (occurrenceDate.value == null)) {
+            return _todayRoute(todayBuilder);
+          }
           return MaterialPageRoute<void>(
             settings: settings,
-            builder: (context) => anniversaryDetailBuilder(context, id),
+            builder: (context) => anniversaryDetailBuilder(
+              context,
+              AnniversaryDetailRouteData(
+                anniversaryId: id,
+                occurrenceKey: occurrence.value,
+                occurrenceDate: occurrenceDate.value,
+              ),
+            ),
           );
         }
         if (type == 'habit' && habitDetailBuilder != null) {
-          final occurrenceValues = uri.queryParametersAll['occurrence_key'];
-          if (occurrenceValues != null &&
-              (occurrenceValues.length != 1 ||
-                  occurrenceValues.single.trim().isEmpty)) {
+          final occurrence = _queryValue(uri, 'occurrence_key');
+          final selectedDate = _queryValue(uri, 'selected_date');
+          if (!occurrence.isValid ||
+              !selectedDate.isValid ||
+              selectedDate.value != null &&
+                  !_isLocalDate(selectedDate.value!)) {
             return _todayRoute(todayBuilder);
           }
           return MaterialPageRoute<void>(
@@ -212,7 +274,8 @@ class AppRouter {
               context,
               HabitDetailRouteData(
                 habitId: id,
-                occurrenceKey: occurrenceValues?.single,
+                occurrenceKey: occurrence.value,
+                selectedDate: selectedDate.value,
               ),
             ),
           );
@@ -273,6 +336,39 @@ class AppRouter {
         settings: const RouteSettings(name: '/today'),
         builder: todayBuilder,
       );
+
+  static _OptionalQueryValue _queryValue(Uri uri, String key) {
+    final values = uri.queryParametersAll[key];
+    if (values == null) return const _OptionalQueryValue(null, true);
+    if (values.length != 1 || values.single.trim().isEmpty) {
+      return const _OptionalQueryValue(null, false);
+    }
+    return _OptionalQueryValue(values.single, true);
+  }
+
+  static DateTime? _parseWholeSecondUtc(String value) {
+    if (!RegExp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$').hasMatch(value)) {
+      return null;
+    }
+    final parsed = DateTime.tryParse(value);
+    return parsed?.isUtc == true ? parsed : null;
+  }
+
+  static bool _isLocalDate(String value) {
+    final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(value);
+    if (match == null) return false;
+    final year = int.parse(match.group(1)!);
+    final month = int.parse(match.group(2)!);
+    final day = int.parse(match.group(3)!);
+    if (year < 1 || month < 1 || month > 12 || day < 1) return false;
+    return day <= DateTime.utc(year, month + 1, 0).day;
+  }
+}
+
+class _OptionalQueryValue {
+  const _OptionalQueryValue(this.value, this.isValid);
+  final String? value;
+  final bool isValid;
 }
 
 class NotificationTargetDetailPage extends StatelessWidget {

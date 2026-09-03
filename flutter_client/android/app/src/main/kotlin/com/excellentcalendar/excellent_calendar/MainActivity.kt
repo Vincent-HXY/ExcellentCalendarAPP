@@ -8,6 +8,7 @@ import com.excellentcalendar.excellent_calendar.android.notification.AndroidNoti
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationPermissionManager
 import com.excellentcalendar.excellent_calendar.android.notification.AndroidNotificationRuntime
 import com.excellentcalendar.excellent_calendar.android.appearance.SharedPreferencesAppearanceStore
+import com.excellentcalendar.excellent_calendar.android.search.SearchHistoryStoreProvider
 import com.excellentcalendar.excellent_calendar.bridge.auth.KeystoreRefreshTokenSecureStore
 import com.excellentcalendar.excellent_calendar.bridge.channel.NativeMethodChannelHandler
 import com.excellentcalendar.excellent_calendar.bridge.channel.AnniversaryCapabilityProvider
@@ -138,6 +139,7 @@ class MainActivity : FlutterActivity() {
             ringOrchestrator = ringOrchestrator,
             authTokenStore = authTokenStore,
             appearanceStore = SharedPreferencesAppearanceStore(applicationContext),
+            searchHistoryStore = SearchHistoryStoreProvider.get(applicationContext),
             contractProfile = NativeContractRuntimeProfile.current,
             reconcileRetryEnqueuer = {
                 com.excellentcalendar.excellent_calendar.android.alarm.ReminderWorkScheduler.enqueueContinuation(

@@ -1,0 +1,8 @@
+# Copy this file to android/key.properties. Never commit key.properties or the keystore.
+# Use forward slashes in Windows paths so Java properties parsing does not consume backslashes.
+storeFile=C:/secure/excellent-calendar-release.jks
+storePassword=replace-with-secret
+keyAlias=excellent-calendar-release
+keyPassword=replace-with-secret
+# SHA-256 fingerprint of the certificate selected by keyAlias, without separators.
+certificateSha256=REPLACE_WITH_64_HEXADECIMAL_CHARACTERS

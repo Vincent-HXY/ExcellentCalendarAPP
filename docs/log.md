@@ -1153,3 +1153,386 @@
 - 任务结果：新增 `docs/issues/resolved/08-habit-implementation.md`，对本轮主要问题分类评估并说明未入选原因。最终归档 `RES-HAB-002`“调度回调未在副作用前重验目标业务合法性”，沉淀 Alarm/WorkManager/恢复回调只是可能陈旧的提示、Android 先编排 reconciliation 且 C++ 在事务内做最终当地日期裁决的通用约束；归档 `RES-HAB-003`“将 civil date 当作 24 小时时长导致 DST 错日”，沉淀 Contract `date` 必须保持年月日值类型、禁止本地 `DateTime + Duration(days)` 代替日历日运算的通用约束。批次 continuation 被评为高价值首要候补；首次进入页面的 `late` 初始化顺序错误虽然用户影响直接，但可迁移经验较弱，未因表面阻断级别占用名额。同步更新 resolved README 入口，并明确跨午夜真机矩阵仍由 `OPEN-HAB-001` 跟踪，resolved 代码缺陷不冒充设备场景已验证。
 - 验证状态：`RES-HAB-002/003` 编号全仓唯一性检查通过；两条记录引用的 Kotlin/C++/Flutter 实现、测试和 Open Issue 路径均存在；resolved README 链接检查通过；新文档和既有 tracked 差异均无 whitespace error，仅有工作区既有 LF/CRLF 提示。纯文档复盘未运行 Contract validator、C++、Flutter 或 Android 测试与构建。
 - 开发时间：2026-08-31 16:07 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 17:59 +08:00 搜索四层计划拆分与 Search V1 Contract 冻结
+
+- 使用 Skill：`calendar-data-contracts`、`cross-layer-feature`；前者用于由总工程师亲自冻结 Search 的 wire、date/datetime、occurrence、cursor、history CAS 与兼容边界，后者用于按 C++、Kotlin/JNI、Flutter 三个可并行执行面完成只读盘点和最终集成门禁拆分。
+- 负责模块：搜索主计划、Search 领域说明、Contracts/Schema/enum/error/capability map/fixture/validator，以及 C++/SQLite、Kotlin/JNI/本地历史、Flutter 聚合页面三份派发计划；本轮未实现或改写三个下层的生产业务代码。
+- 任务目标：把已冻结的三类聚合搜索总计划拆成 Contracts、C++、Kotlin、Flutter 四个清晰责任面，由总工程师完成核心 Contracts，并为三个下层建立能独立派发、最终统一合并的实施与验收入口；Flutter 计划额外冻结现代视觉、动效、无障碍和 production composition 要求。
+- 任务结果：完成 `搜索-02` Contract 计划并冻结 `search.query`、两个 Kotlin-local history 方法、12 个 Search Schema、6 个 Search 错误、4 组 enum、23 组 schema/semantic/golden fixture 与专项 validator。明确 `query_generation` 为 wire safe-integer 且 response 原样回显；冻结 Unicode whitespace、ASCII-only fold、token AND、Category 三态、三类 typed projection、date/datetime occurrence、相关度/排序、独立分页与 snapshot-bound cursor、本地历史 revision CAS 和 Android backup/device-transfer 排除。V1 保持 SQLite v5 不变，不引入 FTS/SearchIndex migration。新增 `搜索-03/04/05` 三份下层计划，其中 Flutter 单列视觉系统、组件密度、类型色、高亮、staged filter、1s debounce、竞态防护、微动效、Reduced Motion、无障碍及 Golden/Widget 验收。主计划、领域说明、文档索引和当前状态已同步；Search capability 保持 `planned + blocked`，等待三层完成后由总工程师统一真实接线、性能门禁与发布 Review。
+- 验证状态：Search validator 通过（213 schemas、23 fixtures、3 public methods、1 native call、FTS deferred）；Calendar View 回归通过（213 schemas、19 fixtures）；Habit 回归通过（213 schemas、46 fixtures、4 identity vectors、`integrated+active`）；Anniversary 回归通过（213 schemas、56 fixtures、20 identity vectors）。计划路径和机器入口存在性检查通过；`git diff --check` 无 whitespace error，仅有工作区既有 LF/CRLF 提示。工作区中并行存在的 Calendar/Habit/Anniversary/C++/Android/Flutter 在途改动均保留，未被回滚或格式化。
+- 开发时间：2026-08-31 17:59 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 19:55 +08:00 Calendar View R1 四层实现与总工程师汇整
+
+- 使用 Skill：`calendar-data-contracts`、`cpp-core-feature`、`android-kotlin-native-feature`、`frontend-flutter-feature`、`cross-layer-feature`、`review-worktree-architecture`。总工程师亲自完成 Calendar Contract/机器不变量与最终状态汇整，并按 C++/SQLite、Kotlin/JNI、Flutter 三个独立责任面派发实现，最后执行跨层接线和独立复读。
+- 负责模块：`calendar.range_summary`、`calendar.list_day_items` 的八个 Schema、十九组 fixture、错误/枚举/capability/validator；C++ Calendar Query Service、SQLite v5 read snapshot、九 Store generation、固定 Clock、三类投影与 keyset cursor；Kotlin Handler/Bridge/JNI/三 ABI；Flutter CalendarPage、Controller、缓存/分页/路由、Material 3 视觉/动画/无障碍；四份分层计划、Calendar domain、当前状态与正式 Review。
+- 任务目标：把日历总计划拆成 Contracts、C++、Kotlin/JNI、Flutter 四份可执行计划；由总工程师完成关键 Contracts，统筹下层实现，并将真实 Flutter→MethodChannel→Kotlin→JNI→C++→SQLite 链、测试和状态统一汇整。
+- 任务结果：四层代码与 production composition 已落地。C++ 使用同一 SQLite read transaction 读取九个贡献 Store/generation，snapshot 固定 evaluation Clock，cursor 绑定完整查询与排序，无 Calendar 表/writer/Storage migration；Flutter 已替换占位 Tab，完成月周网格、三类圆点/卡片、独立分页、缓存刷新、三类创建/详情回跳、主题派生视觉、160–260 ms 动效、reduce-motion、360dp/200%/深浅色与 Semantics。独立 Review 发现的 Habit 数量关系、civil-date DST、section 起手手势、inactive 跨午夜/时区和状态文档漂移均已返修，最终无开放 P0/P1/P2/P3，结论 `PASS WITH RISKS`。机器状态统一为 `implemented_unintegrated + blocked`，未提前激活。
+- 验证状态：Calendar validator 通过（213 schemas、19 fixtures、2 public methods、2 native calls），Anniversary 56 fixtures/20 identity vectors 与 Habit 46 fixtures/4 identity vectors 回归通过；C++ 构建后 `excellent_calendar_check` 11/11，独立 Calendar test 1/1，Release host stress P95 为 range42 `126.54 ms`、Event20 `157.33 ms`、三 section `406.72 ms`；Android Calendar 定向 16 项、全量 unit、lint、Debug 主/测试 APK、三 ABI/JNI symbols 通过，既有 Android 13 production 只读 smoke 通过；Flutter 定向 76 项、全量 535 项、analyze、Debug APK 通过。最终 Debug APK 为 204023430 bytes，SHA-256 `759D59849330624B1C031C0EE47A464BA390BED60EC58693A619E75B69D601AD`。`git diff --check` 无 whitespace error，仅既有 LF/CRLF 提示。
+- 未验证与阻断：ADB 当前无设备，新安全 `CalendarSeededIntegrationSmokeRunner` 的“只读 → Event/Habit/Anniversary seed → 只读”真机序列未执行；同一 APK 真实三类 UI、真机手势/TalkBack/动态主题/200% 字体、进程恢复、设备时区/DST 与 Android 16 参考性能未闭环；Release Flutter/native 三 ABI 已编译，但最终 Java 打包被既有 release classpath 缺少 `integration_test` plugin 阻塞。Contract bootstrap runner 因本机代理不能重装已清理的临时依赖，已使用仓库现存隔离环境直接执行同一 validator 并通过。主计划、四份分层计划和 Review 保持 active，不归档。
+- 工作树保护：并行 Search Contract/docs 及用户原有 Habit active→completed 计划移动均保留，未回滚、覆盖、归因或整理。
+- 开发时间：2026-08-31 19:55 +08:00（Asia/Shanghai）。
+
+## 2026-08-31 21:00 +08:00 Search V1 开发前复核与 Contract Revision 2
+
+- 使用 Skill：`calendar-data-contracts`、`cross-layer-feature`。前者用于由总工程师修订跨 Dart/Kotlin/C++ 的机器协议与共享 Event 真相源，后者用于同步主计划及 C++、Kotlin/JNI、Flutter 三份下层派发计划；本轮未实现三层生产业务代码，也未激活 Search capability。
+- 负责模块：`contracts/search/` 的 12 个 Search Schema 与不变量、Search fixture/validator、Search domain/Contract README、搜索-01/02/03/04/05 计划、文档索引与当前状态；保留工作区既有 Calendar/Habit/C++/Android/Flutter 修改。
+- 任务目标：复核“Contract Frozen / Downstream Ready”是否过早，逐项判断 Event occurrence、状态、当地日期/DST overlap、分页守恒、history 触发与 revision、cursor 认证、前台跨午夜/时区以及主计划状态漂移，并对真实问题做定向补强。
+- 任务结果：确认所有提出的技术缺口真实存在，但不需要推倒重做。撤回从未投产的 Search Revision 1，冻结 Revision 2：范围内 Event 改回“资格过滤后最近 occurrence”，open 不再优先；Event 五态逐字段对齐 Calendar Contract，补齐 reopen、ongoing distance、timed/all-day、跨午夜/多日和 TZDB gap/fold 规则；page size 固定 20，并新增实际 Schema request-response pair/cursor-chain 守恒，覆盖缺 section、提前 terminal、跨页重漏、cursor 不前进与 total/timezone/evaluated_at/snapshot 漂移；cursor/snapshot 固定为每进程 OS-CSPRNG key 的 full-tag HMAC-SHA-256、独立 domain、canonical Base64URL 与 constant-time 验签，禁止 FNV/Calendar checksum 复用；history 改用 `AtomicFile + noBackupFilesDir`，冻结 durable success 后才发布内存快照、revision 上界 fail-closed 及键盘/历史点击/结果打开的记录时机；Flutter 计划补齐 resume、当地午夜和前台最多 60 秒时区 guard。31 组 fixture 新增原始反例、23h/25h 日、午夜 gap/fold、HMAC tamper/旧进程 key 和 history 上界向量。搜索-02 标记为 `Contract Frozen Revision 2 / Downstream Ready`，搜索-03/04/05 仍为 Not Started；Track 5 继续是总工程师正式集成/设备性能/能力激活门禁。
+- 验证状态：Search validator 通过（213 schemas、31 fixtures、3 public methods、1 native call、`planned+blocked`、FTS deferred）；Calendar View 回归通过（213 schemas、19 fixtures）；Habit 回归通过（213 schemas、46 fixtures、4 identity vectors、`integrated+active`）；Anniversary 回归通过（213 schemas、56 fixtures、20 identity vectors）；Search validator `py_compile` 通过；`git diff --check` 无 whitespace error，仅有工作区既有 LF/CRLF 转换提示。标准 bootstrap runner 被本机旧 Python/pip 的系统代理异常阻断，已使用满足 `requirements-validation.txt` 版本范围的隔离 Python 3.12 依赖直接运行同一 validator；这是环境入口问题，不是 Contract failure。
+- 开发时间：2026-08-31 21:00 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 13:08 +08:00 Search V1 Flutter 聚合搜索页面开发
+
+- 使用 Skill：`frontend-flutter-feature`。
+- 负责模块：`flutter_client/lib` 与 `flutter_client/test` 内的 Search typed boundary、MethodChannel adapter、Gateway、Controller/History/Civil Clock coordinator、Material 3 聚合搜索页、筛选与结果组件、详情 route outcome、底部 Search Tab 及相关测试；按项目规则仅额外追加本日志。
+- 任务目标：严格实施 `docs/plan/active/搜索-05-Flutter聚合搜索页面开发计划.md`，基于 Search Contract Revision 2 落地三类聚合搜索的 Flutter 分层、交互、视觉、竞态保护、本地历史协调与 production composition，不在 Dart 伪造 Native 搜索或激活 capability。
+- 任务结果：已完成严格 DTO/Mapper 与错误映射、`SearchGateway`/`SearchHistoryGateway`、真实 `MethodChannelSearchAdapter`、独立 generation/section epoch/history revision 状态机、1 秒 debounce 与 IME composing/pending submit、三组独立分页/过期刷新/详情回流恢复深度、CivilDate 日期筛选与 resume/当地午夜/60 秒时区 guard、五组 staged filter 和 Category 三态、history CAS 串行写/冲突重试/回滚/清空撤销、深浅色/动效/reduce-motion/Semantics/200% 字体友好布局，以及 `ContentDetailRouteOutcome` 导航回流。`MainTabPage.searchBuilder` 为懒加载且 `IndexedStack` 保留会话状态；production 注入真实 adapter、Category repository 与 timezone source。Fake 仅位于 `test/`，运行时无 Fake/seed。当前结论为 **Layer Complete / Awaiting Integration**，Search capability 继续 `planned + blocked`。
+- 验证状态：31 组 Revision 2 fixture 均由 Dart contract test 消费；Search contract/adapter/date/controller/widget/golden 定向测试通过，并覆盖 generation、section epoch、cursor/page size/total 守恒、history revision 冲突与写入失败、详情回流、懒加载会话保留；4 幅深浅色 history/ready/filter Golden 通过并完成视觉检查。`dart format --output=none --set-exit-if-changed lib test` 通过（445 文件、0 变化），`flutter analyze` 无问题，全量 `flutter test` 571/571 通过，`flutter build apk --debug` 成功产出 `build/app/outputs/flutter-apk/app-debug.apk`，`git diff --check` 无 whitespace error（仅工作区既有 LF/CRLF 提示）。
+- 未验证与集成门禁：当前下层 Search Kotlin/JNI/C++/SQLite 尚未由本 Flutter 任务做真实集成，因此未在设备执行中文输入法、TalkBack、旋转/窗口、进程死亡/本地 history 持久化、真实三类 Flutter→MethodChannel→Kotlin→JNI→C++→SQLite 链路与设备性能矩阵；这些严格标记为 **未验证**，留给 Track 5 总工程师统一集成、正式 Review 和 capability 激活。
+- 工作树保护：保留了开始时已存在的 Contract、C++、Android、Calendar 和其它在途修改；本次与 Calendar 共享的 `main.dart`、`app_router.dart`、`main_tab_page.dart`、`bottom_nav_bar.dart`、`bottom_nav_item.dart`、Event/Habit/Anniversary 详情页与相关测试为定向合并，未回滚或整理用户/并行工作内容。
+- 开发时间：2026-09-01 13:08 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 13:08 +08:00 Search V1 C++ 与 SQLite 查询层完成
+
+- 使用 Skill：`cpp-core-feature`。严格执行 `docs/plan/active/搜索-03-CPP与SQLite查询开发计划.md`，源码修改限制在 `cpp_core/**`，仅按项目要求追加本日志；未修改 Contract、Flutter、Kotlin/JNI、SQLite v5 schema/version 或 capability 状态。
+- 负责模块：Search Unicode/匹配领域能力、`SearchQueryService`、Event/Habit/Anniversary/Category 只读投影、`SearchQueryRepository`、SQLite v5 deferred read snapshot、稳定排序/分页、HMAC cursor/snapshot、严格 Boundary/API、native runtime 注入、Core/Boundary/SQLite/性能测试。
+- 任务目标：消费已冻结 Search Contract Revision 2，实现唯一 internal `search.query` 的 C++/SQLite 下层；保持旧 `event.search` 不变，不引入 FTS/SearchIndex writer/migration，并提供 Kotlin JNI 后续可调用的 `search_query_v2(std::string_view)`。
+- 任务结果：完成冻结 Unicode White_Space、严格 UTF-8、128 scalar/512 bytes、ASCII-only fold、跨字段 token AND、7 级相关度和 200-scalar snippet；在一个 deferred SQLite transaction 中按目标只读 `events/recurrence_versions/event_occurrence_states/categories`、`habits/habit_recurrences/categories`、`anniversaries/anniversary_recurrences/categories` 及 generation，相关 mutation 精确失效而无关 mutation不失效。三类 projection 复用现有 TZDB、有限 recurrence seek、Event occurrence UUIDv5、Habit lifecycle/百分位整数和 Anniversary leap identity；输出固定 section、精确 total、稳定 keyset pagination。cursor/snapshot 使用每进程 OS CSPRNG 32-byte Search-only key、独立 domain 的 full-tag HMAC-SHA-256、canonical Base64URL、constant-time tag compare 与 versioned length-prefixed binary；完整 query binding 以 Search-only HMAC digest 压缩，100 个 Category ID 仍满足 2057 字符 cursor 上限。runtime 保持单一 SQLite owner；旧 `EventService::search_events` 及其 endpoint/test 零改动。结果状态：`Layer Complete / Awaiting Integration`，Search capability 仍应保持 `planned + blocked`，等待 Kotlin/JNI、Flutter 与总工程师最终集成。
+- 验证状态：Search Contract validator 通过（213 schemas、31 fixtures、3 public methods、1 native call、Revision 2、`planned+blocked`、FTS deferred），并已纳入 CTest；默认构建执行 `cmake -S cpp_core -B cpp_core/build-ninja -G Ninja -DEXCELLENT_CALENDAR_BUILD_TESTS=ON` 与 `cmake --build cpp_core/build-ninja --target excellent_calendar_check`，13/13 全部通过。真实 SQLite 测试确认 target-only load、同 snapshot facts+generation、Event/Habit/Category generation 失效边界及查询前后 DB bytes 零变化；Boundary 覆盖 valid/invalid Contract fixture、missing/extra/null/type/enum/date/safe integer/cursor/UTF-8，Core 覆盖 Unicode、跨字段相关度、DST 23h overlap、all-day 状态、recurring occurrence 选择、2100 leap、pagination、tamper/domain/旧 key、query mismatch。最终 Release 性能原始摘要：1k cold `11.891 ms`/warm P50 `11.482 ms`/P95 `12.128 ms`/peak `21,221,376 B`；10k cold `123.024 ms`/P50 `122.061 ms`/P95 `123.814 ms`/peak `71,979,008 B`，满足 ≤300ms；50k cold `637.992 ms`/P50 `617.411 ms`/P95 `653.464 ms`/peak `290,299,904 B`，无卡死/OOM。三档均为 18 条只读 SQL、candidate 守恒；本次小时级长 recurrence 实测每个 Event 检查 6 个邻域候选，一般上界为“事件跨度折算的 recurrence 数 + 该系列 occurrence-state 数量的两倍 + 6”，不随 anchor 到查询窗口的距离增长。未验证 Kotlin/JNI、Flutter、Android 设备、端到首屏 ≤500ms 与真实设备内存；这些属于后续分层/集成门禁。
+- 开发时间：2026-09-01 13:08 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 16:06 +08:00 Search V1 三层生产汇整与主机集成验收
+
+- 使用 Skill：`cross-layer-feature`、`calendar-data-contracts`。前者用于核对并汇整 Flutter → MethodChannel → Kotlin → JNI → C++ → SQLite v5 的真实生产链路，后者只用于修复集成前发现的 Search History Contract 元数据漂移并增加机器防回归门禁。
+- 负责模块：Search production composition、MethodChannel/Handler/JNI/API/runtime 接线、本机 AtomicFile History、三 ABI 符号与 APK 组合、跨层回归及性能复核；未修改 Calendar/Habit/Anniversary 的领域行为、SQLite schema/version、旧 `event.search`、依赖版本或 FTS/SearchIndex。
+- 任务目标：在搜索-03/04/05 均回报 `Layer Complete / Awaiting Integration` 后，由总工程师保护共享脏工作树并完成三层汇整，确认生产 Search 使用真实 canonical SQLite 数据、运行时没有 Search Fake/seed，并依据 Track 5 证据决定是否允许激活 capability。
+- 任务结果：真实链路已闭合为 `SearchPage/SearchController → MethodChannelSearchAdapter → SearchMethodHandler → nativeQuerySearchV2 → search_query_v2 → 进程级 SearchQueryService → 同一 SQLite v5 runtime`；History 固定留在 Kotlin `SearchHistoryStoreProvider → AtomicFileSearchHistoryStore(noBackupFilesDir)`，没有 JNI/C++/SQLite History 入口。生产组合中未发现 Search Fake/seed，测试 Fake 保留在 `flutter_client/test`；Search Tab 的旧占位分支在 `buildProductionApp` 组合中不可达。确认 `contracts/method_channels.yaml` 两条 History 路径仍误写为 SharedPreferences，与 Revision 2 和实际实现冲突，现已改为 `atomic_file_search_history_store`，并在 Search validator 中冻结三条公开方法的完整 implementation path。三层生产代码已正确定向合并，无需为汇整重写业务规则或增加第二套事实源；Search V1 继续不启用 FTS。
+- 验证状态：Search validator 通过（213 schemas、31 fixtures、3 public methods、1 native call），Calendar 19 fixtures、Habit 46 fixtures/4 identity vectors、Anniversary 56 fixtures/20 identity vectors 回归通过；C++ 重新 configure 后构建后 `excellent_calendar_check` 13/13。Release Search 性能复测：1k cold `11.584 ms`/warm P95 `11.019 ms`，10k cold `117.114 ms`/warm P50 `115.905 ms`/P95 `117.793 ms`（满足 ≤300ms），50k cold `583.768 ms`/warm P50 `574.491 ms`/P95 `587.600 ms`，三档均为 18 条只读 SQL，50k 未卡死或 OOM。Flutter 格式检查 448 文件/0 变化、analyze 无问题、全量 571/571、Debug APK 构建成功；Android Search 定向及全量 unit、lint、Debug 主 APK/androidTest APK 均通过。arm64-v8a、armeabi-v7a、x86_64 各恰好导出一个 `nativeQuerySearchV2`，History JNI symbol 为 0，Debug APK 包含三 ABI native 库；既有 Flutter Native smoke 格式/analyze/test/Debug APK 通过；`git diff --check` 无 whitespace error，仅有工作区既有 LF/CRLF 提示。
+- 未验证与放行结论：`adb devices -l` 无 Android 设备，`flutter emulators` 也无可用模拟器，因此未执行安全 instrumentation 中已经准备好的三类 seeded 真实查询、AtomicFile `prepare → force-stop → restart` 恢复、同 APK UI/详情回跳、中文输入法/TalkBack/旋转/进程恢复及设备端请求到首屏 ≤500ms/1k-50k 性能矩阵。按主计划 Track 5，这些证据缺失时不得伪装完成发布，故 `search.*` 保持 `planned + blocked`；当前准确状态是 **Production Integrated / Host Verified / Awaiting Android Device Gate**。
+- 工作树保护：保留并行 Calendar/Habit/Anniversary 及三层已有修改；本轮只定向修复 Search Contract 元数据/validator 并追加本日志，没有回滚、覆盖、格式化或归因用户已有内容。
+- 开发时间：2026-09-01 16:06 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 18:08 +08:00 日历月/周分类视图独立 Review
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。前者用于按脏工作树、架构边界和独立黑盒 oracle 审查 Calendar 候选，后者用于核对 Calendar 跨层 Contract、九 Store snapshot、时间/重复/映射与兼容不变量；本轮未修改产品代码或测试。
+- 负责模块：Calendar Contract/fixture、C++/SQLite Query Service、Kotlin/MethodChannel/JNI、Flutter Controller/Page/production composition，以及共享 Event/Habit/Anniversary/Reminder 边界；并行 Search 与用户既有 Habit 归档修改只在触及共享边界时纳入，没有回滚、整理或重新归因。
+- 任务目标：依据 `docs/reviews/active/日历-01-月周分类视图-review计划.md` 对完成候选执行正式独立审查，不接受实现方自报 `PASS WITH RISKS` 作为 oracle，独立验证易错的自然日/DST、重复系列状态、snapshot/cursor、分页、异步缓存、JNI/ABI、真实 SQLite、性能与发布门禁。
+- 任务结果：结论为 **CHANGES REQUIRED**。确认 1 个 P1：`CalendarViewQueryService` 对 `Event.status=completed` 的重复系列仍按无限 Recurrence 展开，且把 `completed_at` 之后新生成的所有未来 occurrence 投影为 `completed`；独立探针中系列于 `2026-08-15` 完成，查询 `2026-09-01` 仍返回 1 条新 occurrence。确认 1 个 P2：production Calendar 新建 Habit 复用应用启动时缓存的 `_habitTimezoneFuture`，而 Calendar 查询会在恢复时重新读取设备 timezone；设备时区变化后可用新时区浏览、却用旧时区创建 Habit。另确认 SQLite 每个公开调用都会读取/解码九个完整 Store，主机 Release stress 当前仍低于冻结阈值，因此保留为设备/规模风险而不另报 Finding。未修改现有 Review 文档中的实现方自报结论，最终独立结论以本次报告与日志为准。
+- 验证状态：Calendar validator 通过（213 schemas、19 fixtures、2 public methods、2 native calls，`implemented_unintegrated+blocked`）；C++ 重新 configure 后构建后 `excellent_calendar_check` 13/13；Flutter Calendar 定向 83/83、全量 571/571、`flutter analyze` 无问题；Android Calendar JVM 16/16、`lintDebug`、Debug 主/测试 APK 通过，三 ABI 各导出 2 个 Calendar JNI symbol。独立 Release benchmark：typical P95 range/event/三 section 为 `13.66/16.84/44.56 ms`，stress 为 `129.64/156.17/415.14 ms`，均低于 `250/150/450` 与 `750/400/1200 ms` 门槛；Debug APK SHA-256 为 `87C8C296F0BD669B1CC0BEF0731B38E9D1D07BE8D8657DBE819722487B73DDFB`。`assembleRelease` 独立复现既有 `integration_test` release classpath 缺失而失败；`adb devices` 无设备，seeded 三类 UI、手势、TalkBack、进程恢复、设备时区/DST 和 Android 16 性能仍未验证。`git diff --check` 无 whitespace error，仅有既有 LF/CRLF 提示；临时独立探针及外部 Release build 目录均已删除。
+- 开发时间：2026-09-01 18:08 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 18:09 +08:00 Search V1 三类聚合与本地历史独立 Review
+
+- 使用 Skill：`review-worktree-architecture`。依据 HXY 分支当前 HEAD `3c06eb501a2a58c2b7cb75076fda47efaeb37f08` 冻结脏工作树范围，并由独立测试 oracle 先从 Contract、架构和 active plan 推导预期，再检查实现；本轮未修改产品代码或既有测试。
+- 负责模块：Search Revision 2 Contract、C++/SQLite 查询与 recurrence 展开、Kotlin/MethodChannel/JNI/AtomicFile History、Flutter DTO/Controller/History/Page、production composition、跨层构建和发布门禁；Calendar/Habit 等并行变更仅在触及共享边界时分类，没有重新审查其独立功能。
+- 任务目标：执行 `搜索-01-三类聚合搜索与本地历史-review计划.md`，核对计划偏差、跨层职责、Contract 充分性、实现完整性、历史并发、Unicode、分页/occurrence、性能证据、真实生产接线与设备放行条件。
+- 任务结果：结论为 **CHANGES REQUIRED**。确认 3 个 P1：Flutter History CAS conflict reload 后未把当前用户操作重放到最新快照，会以旧 `_desired` 覆盖并发新增；Dart 使用 UTF-16 `String.length` 与运行时 `trim()/\\s`，不符合 128 Unicode scalar 和冻结 whitespace 集，合法的 128 emoji 与仅含 U+FEFF 的关键字/历史会在 Flutter 层被拒绝或改义；C++ recurrence 候选半径随 occurrence-state 数增长并最高循环到约一百万索引，违反 50k 不得百万级展开的门禁，而性能测试输出的 `sql_statements=18`、`recurrence_seek_observed_candidates=6` 是硬编码文本，未测得该最坏路径。另确认 2 个 P2：非 Search Tab 恢复 App 时 SearchPage 自行把 controller 设为 active，绕过 Tab 前台条件；当前 status/index 与搜索-01/03/04/05 仍写“占位/尚未实现/Not Started”，与已有三层 production 实现冲突，但 capability 因设备门禁未完成继续保持 `planned + blocked` 是正确的。未实施修复。
+- 独立验证状态：Search validator 通过（213 schemas、31 fixtures、3 public methods、1 native call、`planned+blocked`），Calendar/Habit/Anniversary validator 回归通过；C++ 重新 configure 后 build-after-test `excellent_calendar_check` 13/13。独立 Release 性能复测为 1k P95 `11.562 ms`、10k P95 `121.100 ms`、50k P95 `627.940 ms`，当前普通数据通过，但测试数据未覆盖长 occurrence-state 历史，不能消除无界展开 finding；默认未优化构建的 10k P95 `370.604 ms` 不作为产品 finding。Flutter format/analyze/571 tests/Debug APK 通过；Android unit/lint/Debug APK/androidTest APK 通过；Native smoke analyze/test/Debug APK 通过。临时 Flutter 黑盒探针独立复现：history 并发新增 `gamma` 被下一次 replace 丢失，U+FEFF history 被 Dart DTO 抛出 `FormatException`；探针和独立 Release build 目录已删除，复核前后工作树清单一致。
+- 未验证与放行结论：`adb devices -l` 无连接设备，因此 seeded 三类真实查询、force-stop 后 AtomicFile History、中文 IME、TalkBack、旋转/窗口、真实端到首屏 P95、设备 1k/10k/50k 与内存均未执行。即使修复上述 findings，也必须完成代表性 Android 设备门禁后才能激活 `search.*`；当前仍为 **Production Integrated / Host Verified / Changes Required / Awaiting Android Device Gate**。
+- 开发时间：2026-09-01 18:09 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 18:42 +08:00 Calendar 独立 Review P1/P2 返修
+
+- 使用 Skill：`debug`、`calendar-data-contracts`、`cpp-core-feature`、`frontend-flutter-feature`。按证据驱动流程先建立修复前失败回归，再冻结 completed 重复系列边界并分别修改 Contract、C++ 投影与 Flutter production composition。
+- 负责模块：Calendar completed recurring-series 可见性、Calendar Query Contract/validator、C++ `range_summary/list_day_items` 统一投影、Calendar→Habit 创建时区接线及对应 C++/Flutter 回归；未修改 Kotlin/JNI、SQLite schema/version、Search 业务实现、依赖版本或 capability 状态。
+- 任务目标：独立判断后续 Review 报告的“completed 系列继续生成未来 occurrence”P1 和“设备时区变化后 Calendar 新建 Habit 使用旧时区”P2 是否真实，并在真实存在时完成最小完整返修。
+- 任务结果：两项均由修复前回归稳定复现。completed 系列冻结为 occurrence 锚点严格早于 `completed_at` 才保留：timed 使用 `occurrence_start_at`，all-day 使用 recurrence timezone 当地日初；精确等于截止点排除，截止前已开始的跨时/多日 occurrence 保留完整区间。该规则写入机器 invariant 和领域文档，并在 C++ 摘要/日列表共用同一过滤。Calendar 新建 Habit 改为进入创建页前重新读取真实设备 timezone，不再消费启动时 `_habitTimezoneFuture`。Review/主计划/current status 已校准为 Findings 已返修但等待独立复审；`calendar.*` 继续 `implemented_unintegrated + blocked`。
+- 验证状态：修复前 C++ 回归失败于“锚点等于 completed_at 仍出现”，Flutter composition 回归实际提交 `America/Los_Angeles` 而非 Calendar 已刷新到的 `Asia/Tokyo`；修复后两项定向通过。Calendar validator 通过 `213 schemas / 19 fixtures / 2 public methods / 2 native calls`，Search 共享回归 validator 通过；重新 configure 后 `excellent_calendar_check` 13/13；`flutter analyze` 无问题、全量 575/575、`habit_composition_test.dart` 5/5，Debug APK 构建通过，SHA-256 `1D0E901CA4474C415022A63418FD3CF315BC306D3E09C391BFD0F6616EDB321D`。Android 设备复审、Release APK 和原发布设备矩阵仍未验证，不据此解除 blocked。
+- 开发时间：2026-09-01 18:42 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 18:47 +08:00 Search V1 独立 Review findings 返修
+
+- 使用 Skill：`debug`。按证据驱动流程先建立修复前失败回归，再在 Flutter boundary/application、C++ Search application/SQLite diagnostics 和 production composition 所属层实施最小修复；未升级依赖、Schema/SQLite version、FTS 或 capability。
+- 负责模块：Search History CAS drain、Dart Search Unicode scalar/frozen whitespace、Search Controller/Page Tab×App lifecycle、C++ recurring Event occurrence-state seek、运行时 SQL/candidate 性能诊断、Search 分计划与当前状态校准；保护并行 Calendar/Habit/Anniversary 与用户既有脏工作树。
+- 任务目标：独立判断 Search Review 的 3 个 P1 和 2 个 P2 是否成立，修复真实偏差并提供可供复审的失败前/通过后证据。
+- 任务结果：四项代码 finding 均真实并已返修。History coordinator 由旧完整 `_desired` 重试改为 pending intent 队列，conflict reload 后在最新 committed 快照上按序重放；独立用例由错误 `[beta, alpha]` 修正为 `[beta, gamma, alpha]`。新增唯一 Dart `SearchTextContract`，严格扫描 UTF-16 surrogate、统计 Unicode scalar/UTF-8 bytes，仅按 Revision 2 冻结 whitespace 归一化并执行 ASCII fold；Request/Response/History/Controller/Page/highlight 共用，128 emoji 与 U+FEFF 边界通过。Search active 改为 Tab 可见与 App lifecycle 的合取，resume 不再覆盖非 Search Tab。C++ 不再以 state rows 作为展开半径，而把 state start 映射为 recurrence index、合并连续 closed/cancelled 区间，仅计算 seek 窗口和区间边界；10 万 state 回归实际只计算 22 个 occurrence，仍能找到第 100001 个开放 occurrence。性能测试的 SQL/candidate 输出改为运行时 diagnostics。Review 日志中可定位的第二个 P2 是计划/status/index 仍写占位/Not Started，现已校准；用户消息正文没有第五个代码 finding。
+- 验证状态：修复前定向回归分别复现 History 覆盖、128 emoji 拒绝、U+FEFF 改义；修复后 Search Flutter 定向 30/30、`flutter analyze` 无问题、全量 Flutter 576/576、Debug APK 成功。C++ Search core（含 10 万 state）通过；Release 性能 1k/10k/50k warm P95 为 `19.091/120.749/569.948 ms`，三档实测 `sql_statements=18`、`recurrence_candidates=13`。Android `testDebugUnitTest + lintDebug + assembleDebugAndroidTest`、三 ABI CMake 与既有 Flutter Native smoke analyze/test/Debug APK 通过；`git diff --check` 无 whitespace error，仅有既有 LF/CRLF 提示。`adb devices -l` 仍无设备，seeded 查询、AtomicFile force-stop 恢复、IME/TalkBack/旋转/进程恢复和设备性能未验证。
+- 新发现阻断：全套 C++ build-after-test 中 12/13 通过，唯一失败是 Search Contract validator。`contracts/calendar/calendar_query_invariants.yaml` 刚加入 `completed_recurring_series` cutoff，而 `contracts/search/search_query_invariants.yaml` 的 `event.status_projection` 尚未同步；validator 明确报 `Search and Calendar Event status projection drift`。本轮没有静默选择或修改该真相源，Search completed recurring-series 的 Contract 与实现对齐需单独授权/决策。故 Review 原四项代码 finding 可提交复审，但整体状态仍是 **Production Integrated / Host Verified / Review Findings Repaired / Contract Drift Blocked / Awaiting Independent Re-review & Android Device Gate**，`search.*` 保持 `planned + blocked`。
+- 开发时间：2026-09-01 18:47 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 20:16 +08:00 Calendar P1/P2 返修独立复审
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。前者用于重新冻结当前脏工作树范围、从公开规则派生独立 oracle 并执行黑盒返修复审，后者用于核对 completed recurrence 的 occurrence/时区/半开边界及 Calendar→Habit 跨层时区事实源；本轮未修改产品代码或既有测试。
+- 负责模块：`contracts/calendar/calendar_query_invariants.yaml`、`docs/domains/calendar_view.md`、C++ `CalendarViewQueryService` completed-series 投影、Flutter production Calendar→Habit composition 及直接回归；并行 Search/Habit 等修改仅在共享 Contract 回归处验证，没有回滚、整理或重新归因。
+- 任务目标：不采用开发侧“已修复”自报结论，独立确认 P1“completed 重复系列仍产生未来 occurrence”和 P2“Calendar 新建 Habit 使用启动缓存旧时区”是否真实关闭，并保持设备/Release 发布门禁与代码 Finding 分离。
+- 任务结果：两项 Finding 均独立关闭。C++ 共用判定以 timed `occurrence_start_at` 或 all-day recurrence timezone 当地日初为 anchor，执行严格 `anchor < completed_at`，且在摘要和日列表展开后、状态投影前一致过滤；等号和未来实例排除，截止前实例保留完整区间，显式 occurrence state 仍优先。Flutter Calendar→Habit 分支在导航前直接 `await _resolveHabitTimezone()`，不读取 `_habitTimezoneFuture`，提交使用本次刷新值。独立外部探针额外通过：前一日开始并跨到次日的 timed instance、两日 all-day instance、请求时区与 recurrence 时区不同的当地日初等号边界；探针源码和可执行文件已精确删除，复审前后工作树清单哈希均为 `d69ca00a1f08e251d1f133b006f4002a0ac52bef33c84387f4300fbf3ac33435`（追加本日志前）。代码复审结论为 **PASS WITH RISKS**，原 P1/P2 可标记 Closed；`calendar.*` 仍保持 `implemented_unintegrated + blocked`，不因本次复审自动激活。
+- 验证状态：Calendar validator 通过（213 schemas、19 fixtures、2 public methods、2 native calls）；Search 共享 validator 同步通过（213 schemas、31 fixtures、3 public methods、1 native call）；C++ 重新 configure 后 build-after-test `excellent_calendar_check` 13/13；独立 C++ 黑盒探针通过；`habit_composition_test.dart` 5/5、`flutter analyze` 无问题、Flutter 全量 576/576、Debug APK 构建成功，SHA-256 `058FDEB262CB829B04A4CBD7ED32D6C60BCA9A18AA7F76EECE8F3D95936165B9`；`git diff --check` 无 whitespace error，仅工作树既有 LF/CRLF 提示。`adb devices` 仍无设备。
+- 剩余风险与文档偏差：seeded 真机三类数据、真实 UI/手势/TalkBack/进程恢复、设备时区/DST、Android 16 参考性能和 Release Java 打包本轮未执行，原发布阻断保持。另发现 `docs/status/current.md:19,112,135` 与 `docs/index.md:228` 仍写 Search/Calendar status projection drift、Search validator 失败，但本次实际 Search validator 与 C++ 全门禁均通过；这是非 Calendar 代码修复的 P3 状态文档漂移，需由 Search/总工程师在其独立复审轨更新，不影响本次两项 Finding 的关闭。
+- 开发时间：2026-09-01 20:16 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 20:28 +08:00 Search V1 Review findings 返修独立复核
+
+- 使用 Skill：`review-worktree-architecture`。以 HXY HEAD `3c06eb501a2a58c2b7cb75076fda47efaeb37f08` 为基线重新冻结当前脏工作树，并由未读取实现的独立 oracle 先从 Search/Calendar Contract 与 active plan 派生 History、Unicode、lifecycle、长期 recurrence 和 completed-series 边界；本轮未修改产品代码或既有测试。
+- 负责模块：Flutter Search History CAS、SearchTextContract/DTO/Controller/Page/highlight、Tab×App lifecycle、C++ Search recurrence seek 与 diagnostics、Search/Calendar Event completed-series Contract 闭包、计划/状态文档和主机/Android 构建门禁；并行 Calendar 复审修改只作为共享 Contract 事实读取，没有回滚或重新归因。
+- 任务目标：独立确认上一轮 Search Review 的 3 个 P1、2 个 P2 是否真实修复，并判断总工程师新增的 Search/Calendar Event status projection 问题是否存在及其可行解法。
+- 任务结果：上一轮四项代码 finding 均独立关闭。History conflict 已改为 pending intent 队列，reload 后在最新 committed 上按序重放；独立用例得到 `[beta, gamma, alpha]`。Dart 已统一使用 scalar/UTF-8/frozen-whitespace 工具，128 emoji 接受、129 emoji 拒绝、U+FEFF 保留；Controller/Page/highlight 不再使用平台 `trim/\\s` 作为 Search 规则。Search active 已变为 Tab selected 与 App resumed 的合取，非 Search Tab resume 不再激活。C++ 10 万连续 state 回归只计算 22 个 occurrence，Release 三档 diagnostics 为运行时值，原近百万 occurrence 展开与硬编码计数均关闭。原文档 P2 的“Not Started/占位”主状态已校准，但 `docs/status/current.md:86,135`、`docs/index.md:228` 及搜索计划头仍声称 Search validator 失败，`docs/status/roadmap.md:50` 还称 C++ P1 未修，形成新的 P3 状态文档漂移。
+- 新问题判断：**底层语义问题真实，但总工程师报告的具体失败证据不准确。** 当前 `python contracts/run_search_v1_validation.py` 实际通过；validator 只比较 Calendar `status_projection` 子树，而新 `completed_recurring_series_cutoff` 是其兄弟节点，故不会报 drift。与此同时 machine Contract 确有欠规范/冲突：Calendar 要求 completed 系列只保留 anchor 严格早于 `completed_at` 的 occurrence，Search 未声明该 cutoff 且计划仍允许选择未来 occurrence。独立 C++ 黑盒探针在系列 `completed_at=2026-08-15T00:00:00Z`、查询时钟 `2026-09-01` 时实际选中 `2026-09-01`，若采用 Calendar/domain 的“系列彻底结束”语义，正确最后保留项应为 `2026-08-15`。因此应以 **Contract alignment blocker** 处理，在决策前不能把某一侧实现静默认定为唯一正确。
+- 可行方案：推荐把 Search 显式对齐 Calendar cutoff：在 Search machine invariant 引用/复制完整 cutoff 闭包并加强 validator sentinel，抽取 C++ 公共 completed-series eligibility helper 供 Calendar/Search 共用，然后覆盖 timed/all-day、anchor `< / == / > completed_at`、跨区、跨时/多日、显式 state 与 `include_completed`。备选是明确规定 Search 采用不同的“历史系列模板”语义并新增独立 projection/导航 Contract，但会产生明显跨页面不一致，成本更高；临时方案可在完成决策前隐藏 completed recurring series，但会损失默认“包含已完成”能力，只适合作为阻断期 fail-closed，不宜作为最终语义。仅修改 validator 文案不能修复行为。
+- 验证状态：Search/Calendar/Habit/Anniversary validator 均通过；C++ 重新 configure 后 build-after-test 13/13。独立 Release Search core 通过，10 万 state 为 22 candidates；性能 1k/10k/50k warm P95 为 `11.896/117.196/599.941 ms`，均为实测 `sql_statements=18`、`recurrence_candidates=13`。Flutter analyze 无问题，全量含 2 个临时独立 oracle 为 578/578（产品既有 576），Debug APK 通过；Android unit/lint/androidTest APK 与三 ABI CMake 通过。独立 completed-series C++ 探针按 Calendar cutoff 预期失败并稳定复现未来 occurrence；所有临时 Dart/C++ 探针、可执行文件和独立 Release build 目录均已精确删除。`adb devices -l` 无设备，真机门禁仍未验证。
+- 工作树保护：初始清单为 255 路径；复核期间并行 Calendar reviewer 删除了其预先存在的 `.codex-review-calendar-rereview-probe.cpp` 并追加 20:16 日志，故本轮清理自身探针后为 254 路径。该并行变化不是本 Review 所为；除追加本日志外没有改变产品工作树。
+- 开发时间：2026-09-01 20:28 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 20:57 +08:00 Calendar 真机黑盒与异常数据复核
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。以前者冻结 Calendar 范围、从需求/Contract 独立派生黑盒 oracle 并审查当前脏工作树，以后者核对自然日、重复 occurrence、snapshot/cursor、Habit 日状态和跨层时区边界；本轮只测试和报告，没有修改产品代码或既有测试。
+- 负责模块：Calendar Contract、C++/SQLite Query Snapshot、Kotlin/JNI/MethodChannel、Flutter Controller/页面/三类创建入口、Android Debug 隔离包与真机 UI；并行 Search/Habit 改动仅在共享构建中回归，没有重新归因或回滚。
+- 任务目标：在已基本完成的 Calendar 实现上执行主机与 Android 真机黑盒测试，通过真实三类数据、非法 Unicode timezone/超长 cursor、历史日期创建、月周切换、相邻月、今天、未开放按钮、详情导航和布局检查，判断是否仍有可行动问题。
+- 任务结果：结论为 **CHANGES REQUIRED**，确认 3 项问题。P1：Calendar SQLite 九 Store 窄快照加载 `reminders` 却不加载 `reminder_recovery_batches`，随后对该不完整切片调用完整 `validate_recurring_event_state`；只要合法 Reminder 带 `recovery_batch_id`，Calendar 两接口即返回 `STORAGE_DATA_CORRUPTED / Reminder recovery batch is missing`，真机保留旧隔离数据升级安装后已实际复现，纯净数据才通过。P1：从历史日期进入“新建日程”会按要求预填历史日，但页面默认启用“15 分钟前”提醒，直接保存稳定失败为 `REMINDER_TIME_INVALID`；关闭提醒后同一日程可成功保存、出蓝点/卡片并进入详情，且失败提示直接泄漏英文错误码和 request id。P2：月视图的 overlay FAB 与滚动内容没有可靠避让，真机截图中覆盖空态说明和日程卡片右下区域，违反主计划“不得遮挡月历、卡片、加载更多或底部导航”的验收条款。此前 completed recurring cutoff 与 Calendar→Habit 当前时区两项返修均独立复核通过。
+- 验证状态：Calendar validator 通过（213 schemas、19 fixtures、2 public methods、2 native calls）；重新 configure 后 `excellent_calendar_check` 13/13；Calendar C++ benchmark typical P95 为 `range42=38.71 ms / event20=50.09 ms / three sections=129.78 ms`，stress P95 为 `354.68 / 492.17 / 1204.20 ms`。Calendar Flutter 专项 83/83、Flutter 全量 576/576、`flutter analyze`、Android 重跑 Calendar unit、`lintDebug`、Debug APK 和 androidTest APK 均通过。Android 16 真机隔离包通过 production JNI 2/2、Unicode 非法时区、超长 cursor，以及真实 MethodChannel→JNI→C++→SQLite 三类 Unicode seeded 查询 `{event=1, habit=1, anniversary=1}` 并自动清理；手工完成周/月、左右滑月、相邻月日期、年月面板、今天、两个未开放提示、历史日期三类预填、Event 创建/圆点/卡片/详情。测试结束后已卸载 `.device_test` 与其 test 包，正式应用和正式数据未变更。
+- 未验证：Release APK、TalkBack 实际朗读、系统 200% 字体/减少动画真机、设备时区/DST 切换、强杀/升级矩阵和 Android 参考设备 frame/heap 指标；其中 Widget 级 360dp/200%/深浅色/Semantics/减少动画测试已通过，不能替代上述设备门禁。
+- 开发时间：2026-09-01 20:57 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 21:13 +08:00 Calendar 三项 Review Finding 返修
+
+- 使用 Skill：`debug`、`calendar-data-contracts`、`cpp-core-feature`、`frontend-flutter-feature`。按复现证据定位首个错误边界，并分别在 C++/SQLite、Flutter Application 与页面布局所属层完成最小闭环修复。
+- 负责模块：Calendar SQLite 九 Store 查询切片及 Reminder recovery 引用校验、Calendar 历史日期 Event 创建默认值与提交错误映射、Calendar 创建入口布局避让，以及对应 Contract/领域说明和回归测试；未修改 Kotlin/JNI、Storage schema/version、依赖或工具链。
+- 任务目标：研判并修复三项外部 Review Finding：合法 recovery batch 引用导致 Calendar 全量失败、历史日期 Event 默认 15 分钟提醒无法保存、月视图 overlay FAB 遮挡卡片/空态/加载更多。
+- 任务结果：三项 Finding 均确认真实并已修复。Calendar token 仍只覆盖冻结的九个 generation-contributing Store，但同一 SQLite read transaction 会额外只读 `ReminderRecoveryBatch` identity 作为关系校验辅助事实；专用 Calendar slice validator 放行合法引用，同时继续把真实孤儿引用判为 `STORAGE_DATA_CORRUPTED`，不会忽略所有恢复关系错误。历史日期仍按 Calendar 选择值预填，不强制改为今天，但页面默认设为“不提醒”；用户手动添加的已失效一次性提醒会在时区解析后、Native create 前被拦截，Native `REMINDER_TIME_INVALID` 及其他失败也映射为中文且不再暴露 code/request id。创建 FAB 改为参与 Scaffold 布局的底部操作区，普通与 200% 字体均不覆盖滚动正文。
+- 验证状态：Calendar Contract runner 通过（213 schemas、19 fixtures、2 public methods、2 native calls，状态保持 `implemented_unintegrated + blocked`）；C++ 定向真实 SQLite 回归通过，覆盖合法 batch 引用与直接删除 batch 后的真实孤儿引用；重新 configure 后 build-after-test `excellent_calendar_check` 13/13；Flutter 返修定向 44/44、全量 580/580、`flutter analyze` 0 issue；360×800 Widget 矩形回归覆盖 Event 卡片、空态和加载更多，均与创建按钮不相交；最终 C++ 收口后重新构建 Debug APK 成功，SHA-256 `5D2738CE40D31A8C50B0A5F79FB9A8576578902835EB5CF16EA6B506383F10BB`；`git diff --check` 无 whitespace error，仅既有 LF/CRLF 提示。
+- 剩余门禁：本轮未执行 Release APK、TalkBack 真机朗读、系统 200% 字体/减少动画真机、真机时区/DST、强杀恢复及完整升级矩阵；因此 Calendar 继续保持 `implemented_unintegrated + blocked`，不得据此解除发布门禁。
+- 开发时间：2026-09-01 21:13 +08:00（Asia/Shanghai）。
+
+## 2026-09-01 21:49 +08:00 Search 真机黑盒、异常数据与性能复核
+
+- 使用 Skill：`review-worktree-architecture`。先依据 Search Contract Revision 2、领域不变量和 active 计划冻结独立黑盒 oracle，再审查当前 Search 跨层实现；本轮不修改产品代码或既有测试，只追加审查日志。
+- 负责模块：Flutter Search 页面、筛选、1 秒防抖、历史管理和本地化；Kotlin AtomicFile/noBackup History 与 MethodChannel；JNI/C++/SQLite 三类聚合查询、分页/快照和性能；Android 16 隔离 Debug 真机流程。
+- 任务目标：在搜索功能基本完成后，以黑盒和跨层异常输入验证三类聚合搜索、筛选、历史删除/清空/撤销、进程恢复、中文界面、数据规模和端到端真机链路，并给出缺口与修改方向。
+- 任务结果：结论为 **CHANGES REQUIRED**。确认四项问题：P1，10k Search core warm P95 `399.315 ms`，超过 active plan 的 `≤300 ms` 门禁，50k 档因此未执行；P1，Android `search_seeded` 真机脚本把 Anniversary create 的直接 `AnniversaryDetailResponse` 错当成 `data.detail`，在三类 query 前失败且遗留已创建纪念日，导致真实 Event+Habit+Anniversary 端到端门禁不可用；P2，清空历史后的撤销条没有任何超时，独立 Widget 黑盒和 Android 16 真机均证明 30 秒后仍常驻，不符合“短暂撤销提示”；P2，应用未注册 Flutter 中文本地化 delegate/locale，Search 自定义日期选择器显示 `Save/Close/September/英文星期`，已应用筛选删除语义显示 `Delete`，不符合中文界面要求。
+- 通过项：Search validator 通过（213 schemas、31 fixtures、3 public methods、1 native call，状态仍 `planned+blocked`）；C++ 重新 configure 后 build-after-test 13/13；Flutter Search 专项 39/39、全量 580/580、`flutter analyze` 0 issue；Android unit、lint、Debug APK、androidTest APK和三 ABI CMake 构建成功。Android 16 真机通过真实 Search 页面打开、1 秒停顿搜索、ASCII 不区分大小写、关键词高亮、纪念日分组、键盘提交写入历史、长按进入逐条删除、清空/撤销、仅纪念日筛选，以及 AtomicFile interrupted-write 强杀恢复。测试历史已撤销恢复，正式应用数据未清空。
+- 未验证与边界：因 `search_seeded` 测试脚本自身失败，未获得三类真实 Store 同次查询和自动清理证据；50k 性能档被 10k 门禁提前中止；TalkBack 实际朗读、旋转/分屏、系统 200% 字体、设备时区/DST 切换和 Release APK 未执行。真机隔离 Debug 的本地测试登录不会跨进程保存，但不归因于 Search。
+- 工作树保护：一次性独立撤销超时 Widget 用例稳定失败后已精确删除；未修复发现项。审查期间工作树存在并行任务变化，最终以当前状态重新核对，`git diff --check` 无 whitespace error，仅既有 LF/CRLF 提示。
+- 开发时间：2026-09-01 21:49 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 11:10 +08:00 Search completed recurring-series cutoff 独立复核
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。以前者在 HXY HEAD `3c06eb501a2a58c2b7cb75076fda47efaeb37f08` 上冻结当前脏工作树、由未读取实现的独立 oracle 从公开领域规则与机器 Contract 派生测试矩阵并执行独立黑盒探针；以后者核对 completed series 的 timed/all-day anchor、严格截止、时区和显式 occurrence state 优先级。本轮未修改产品代码、Contract 或既有测试。
+- 负责模块：`contracts/calendar/calendar_query_invariants.yaml`、`contracts/search/search_query_invariants.yaml`、Search validator、C++ `SearchQueryService` completed recurring Event 候选选择，以及相关 Search/Calendar 领域与 active plan 状态说明。
+- 任务目标：核实总工程师报告的“Calendar cutoff 未同步、Search validator drift、C++ build-after-test 12/13”是否真实，并给出可行修复策略及利弊，不实施修复。
+- 任务结果：**底层 Contract/行为问题真实，但报告的 validator/构建失败证据不真实。** Calendar 已冻结 `occurrence_anchor < completed_at` 的 completed-series cutoff；Search 只复用其同级的 `status_projection` 子树，未声明 cutoff。当前 validator 也只深比较 `status_projection`，因此 `python contracts/run_search_v1_validation.py` 实际通过，重新 configure 后 build-after-test 为 13/13，不是 12/13。独立静态 sentinel 因 Search `completed_recurring_series_cutoff=null` 按预期失败；独立 C++ 黑盒在 `completed_at=2026-08-15T01:00:00Z` 的每日 timed 系列上，于 `2026-09-01` 实际选择 `2026-09-01T01:00:00Z` 并投影 completed，证明 cutoff 后 occurrence 仍进入 Search。临时探针源码和可执行文件均已精确删除。
+- 修复建议：首选让 Search 显式复用 Calendar 的完整 cutoff 闭包、让 validator 同时深比较 status 与 cutoff、在 C++ 抽取 Calendar/Search 共用 eligibility helper，并补齐 timed/all-day、`< / == / >`、request timezone 与 recurrence timezone、跨 cutoff 长区间、显式 completed/skipped/cancelled、`include_completed`、total/cursor 语义测试。Search 尚为 `planned + blocked` 且未发布，可选择 Revision 2 amendment（改动较小但审计性较弱）或 Revision 3 重新冻结（审计清晰但同步成本更高）。仅扩 validator 不能修复运行时；暂时隐藏全部 completed recurring series 只能作为有损 fail-closed；另立 Search-specific “历史模板”语义会造成 Calendar/Search 不一致和更高导航/维护成本。
+- 验证状态：Search validator 通过（213 schemas、31 fixtures、3 public methods、1 native call）；Calendar validator 通过（213 schemas、19 fixtures、2 public methods、2 native calls）；C++ `excellent_calendar_check` 13/13；独立 Contract sentinel 与 C++ cutoff 黑盒均按预期失败并揭示覆盖缺口。未执行 Android 设备门禁，因为本任务只核实 Contract/C++ blocker，且设备验证不能替代该语义决策。
+- 开发时间：2026-09-02 11:10 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 11:10 +08:00 Calendar 三项返修独立复审
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。重新冻结 HXY 当前脏工作树、Calendar Contract/领域/active plan 与跨层边界，先定义 recovery 引用完整性、历史日期创建、错误本地化和正文避让的独立 oracle，再审查实现并运行一次性黑盒探针；未修改产品代码或既有测试。
+- 负责模块：Calendar C++/SQLite 九 Store 查询快照及 ReminderRecoveryBatch 辅助校验、Flutter Calendar 创建入口和 NewSchedule/Event 创建流程、Android Debug 主机门禁；Search 等并行改动仅随全量构建回归，不重新归因。
+- 任务目标：独立验证 2026-09-01 21:13 报告的三项返修是否真实关闭，并继续检查边界和异常输入。
+- 任务结果：原 Event recovery 合法引用/孤儿引用主路径、历史 timed Event 默认不提醒与失效提醒本地拦截、Native create 错误本地化、创建按钮正文避让均通过；但结论仍为 **CHANGES REQUIRED**。P1：SQLite 调用前先删除所有非 Event Reminder，Calendar 专用 recovery 引用校验因此看不到 Anniversary Reminder；独立真实 SQLite 探针在合法 Anniversary recovery 状态提交后直接删除 batch，`load_snapshot()` 仍成功并输出 `ANNIVERSARY_ORPHAN_ACCEPTED`，违反 `validation_support_stores` 对所有 Reminder 引用的完整性要求。P2：一次性失效提醒预检只位于 `!draft.isAllDay` 分支，历史全天 Event 手动恢复 15 分钟提醒仍调用 Native；独立 Flutter 探针期望本地 `validationFailure`/0 次 create，实际得到 `nativeFailure`/1 次 create。该页每小时最后 15 分钟还可能生成“下一整点 + 默认 15 分钟提醒”，提醒已失效，默认保存会被新预检拒绝。P3：设备时区读取、当地时间解析及响铃能力失败仍拼接 `${error.code}: ${error.message}`；独立探针得到 `TIMEZONE_READ_FAILED: native detail`，技术错误仍可直接展示给用户。
+- 验证状态：Calendar validator `213 schemas / 19 fixtures / 2 public methods / 2 native calls` 通过且保持 `implemented_unintegrated + blocked`；C++ 重新 configure 后 build-after-test 13/13；Flutter 返修相关既有定向 47/47、全量 580/580、`flutter analyze` 0 issue；Android `testDebugUnitTest lintDebug`、三 ABI `assembleDebugAndroidTest` 与 `flutter build apk --debug` 通过。重建 Debug APK SHA-256 为 `6C88BAE8C243499181E40B016A61589E38799067E8BD322AB5F11DD5A4F58DBD`，与开发侧旧 Debug 产物哈希不同，不据此判断代码回归。两个临时 Flutter 探针和一个 C++/SQLite 探针均已精确删除。
+- 未验证与门禁：`adb devices -l` 无设备，故同一 APK 真机 UI、Android 16 seeded recovery、TalkBack、系统 200% 字体/减少动画、设备时区/DST、进程恢复、参考设备性能与 Release 包仍未验证；发布 blocked 状态正确保留。
+- 开发时间：2026-09-02 11:10 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 11:37 +08:00 Calendar recovery 与创建边界二次返修
+
+- 使用 Skill：`debug`、`calendar-data-contracts`、`cpp-core-feature`、`frontend-flutter-feature`。以复审给出的触发条件建立独立失败回归，再分别在 Contract、C++/SQLite 与 Flutter Application/Presentation 所属层完成最小修复。
+- 负责模块：Calendar 查询快照的全 Reminder recovery 引用完整性、一次性全天 Event 提醒的绝对时刻解析与失效预检、新建日程默认时间边界、创建流程时区/响铃错误本地化；未修改 Kotlin/JNI、SQLite schema/version、依赖或工具链。
+- 任务目标：研判并修复 Anniversary Reminder 孤儿 recovery 引用漏检、历史全天提醒绕过本地预检及 `HH:45`/`23:xx` 默认时间失效、创建流程泄漏 Native 错误码三项复审 Finding。
+- 任务结果：三项 Finding 均确认真实并已关闭。Calendar 现在先在未按 target 过滤的全部 Reminder 上验证 `recovery_batch_id`，再使用 Event 子集执行结构关系校验；合法 Anniversary recovery batch 不阻断加载，删除 batch 后稳定返回 `STORAGE_DATA_CORRUPTED / Reminder recovery batch is missing`。一次性全天 Event 以设备时区下开始自然日 `00:00` 为锚点解析 UTC，并向 Native 提交绝对 `remind_at`；失效提醒在 Event create 前本地拦截。默认开始时间继续采用整点，但保证“开始时间 - 15 分钟”严格晚于页面时钟，`23:xx` 可自然跨到次日而不再夹到 23:00。设备时区读取、当地时间解析和响铃能力检查统一返回中文用户提示，不再拼接 Native code/message/request id。
+- 验证状态：新增失败回归在修复前分别复现 `Anniversary orphan unexpected success`、全天提醒实际 create、三条原生错误直出，修复后均通过；Calendar Contract runner `213 schemas / 19 fixtures / 2 public methods / 2 native calls`；C++ 重新 configure 后 build-after-test `excellent_calendar_check` 13/13；Flutter 创建控制器 12/12、新建页 12/12、全量 587/587，`flutter analyze` 0 issue；Android `testDebugUnitTest`、`lintDebug`、三 ABI `assembleDebugAndroidTest` 与 `flutter build apk --debug` 通过。Debug APK SHA-256 为 `16974D8743B16C544D7018BBD01B32B2C5948029BDB5E35FEDE7DA8C932B05FF`；`git diff --check` 无 whitespace error，仅既有 LF/CRLF 提示。
+- 剩余门禁：本轮未执行真机测试、Release APK、TalkBack、系统 200% 字体/减少动画真机、设备时区/DST 切换、强杀恢复及完整升级矩阵；Calendar 继续保持 `implemented_unintegrated + blocked`，本次返修不解除发布门禁。
+- 开发时间：2026-09-02 11:37 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 11:58 +08:00 Search completed recurring-series cutoff 闭包与 C++ 返修
+
+- 使用 Skill：`calendar-data-contracts`、`debug`。先核验机器真相源和实际门禁，再分别建立 validator sentinel 与 C++ 黑盒失败回归；采用 Calendar Contract 为共同真相源完成 Revision 2 发布前 amendment 和最小运行时修复。
+- 负责模块：Search completed recurring-series invariant/validator、Search 领域说明与 active 状态、C++ Calendar/Search 共用 occurrence eligibility、Search cutoff 附近有界 seek/选择/分页及回归测试；未改变 Dart/Kotlin/JNI wire DTO、SQLite schema/version、历史格式、依赖版本或 capability 状态，并保护工作树内其他 Calendar/Habit/Search 在途修改。
+- 任务目标：研判“Search 缺少 Calendar completed-series cutoff、validator 未覆盖且 C++ 会返回 cutoff 后 occurrence”是否真实，确认此前“validator 失败、C++ 12/13”证据是否准确，并在真实问题存在时按 timed/all-day、时区/DST、显式 state、完成开关、total/cursor 规格修复。
+- 任务结果：结论与独立复核一致：业务/实现问题真实，但旧门禁失败说法不真实。修复前 Search validator 实际通过、完整 C++ build-after-test 为 13/13；新增 validator 深比较后旧 Search invariant 按预期失败，新增 C++ 回归也稳定复现“截止前无 occurrence 的 completed series 仍被返回”。最终保留 Contract Revision 2，并记录 2026-09-02 pre-release amendment，因为没有 wire shape、reader/writer、持久化或已发布 cursor 迁移；Search 现完整引用并复制 Calendar cutoff，validator 同时深比较 status projection 与 cutoff 并强制 eligibility 顺序。C++ 抽取 `completed_recurring_series_eligibility` 供 Calendar/Search 共用：timed start instant 或 recurrence timezone 全天日初必须严格 `< completed_at`；等号/之后排除，截止前长区间保留，显式 completed/skipped 不得复活。Search 固定执行 cancelled → cutoff → overlap → include_completed → selection → total/sort/cursor；无日期 completed series 选择 cutoff 前最后一个 eligible occurrence，无 eligible occurrence 则不返回。
+- 验证状态：Search/Calendar/Habit/Anniversary validator 全部通过（213 schemas；Search 31 fixtures，Calendar 19，Habit 46，Anniversary 56）；重新 configure 后 `excellent_calendar_check` 13/13。Search C++ 回归覆盖 timed/all-day、`< / == / >`、America/Los_Angeles DST fold、请求/recurrence timezone、跨 cutoff 长区间、显式 state、include_completed、无日期最后 eligible、精确 total 与两页 cursor 守恒。Release 1k/10k/50k warm P95 为 `11.259/114.548/593.120 ms`，三档实测 `sql_statements=18`、`recurrence_candidates=13`。Flutter analyze 无问题、全量 587/587；Android unit/lint/androidTest APK、三 ABI CMake、主 Debug APK和 Native smoke analyze/test/APK 全部通过；Debug APK SHA-256 `198022B9C7F6B6876CF2105D202BEFC47B59A80F417BA7850CCC37E702AC59DC`。`git diff --check` 无 whitespace error，仅既有 LF/CRLF 提示。
+- 剩余门禁：`adb devices -l` 无设备，本轮未执行 seeded 三类真实查询、AtomicFile force-stop 恢复、IME/TalkBack/旋转/进程恢复或设备性能。此修复只关闭 completed-series Contract/C++ blocker，不代替后续 Review 中 seeded 脚本、撤销时限、本地化和设备性能等独立 finding 的返修/复审；`search.*` 保持 `planned + blocked`。
+- 开发时间：2026-09-02 11:58 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 12:58 +08:00 Search 真机脚本、撤销时限、本地化与性能门禁返修
+
+- 使用 Skill：`debug`、`cross-layer-feature`。先按 Review 的四个触发条件核对实际代码并建立 Flutter 失败回归，再在 Search 对应层做最小修复；未修改 Contract、SQLite schema/version、Search 业务排序/匹配、其他领域行为或 capability 状态。
+- 负责模块：Search Android seeded instrumentation、Flutter History Application 协调、应用级中文本地化、筛选无障碍语义，以及 C++ 性能测试构建配置门禁。
+- 任务目标：独立判断 10k 性能、三类真机脚本、清空历史撤销常驻和英文 Material 控件四项 Review Finding；修复真实偏差，并防止错误性能构建再次产生误导证据。
+- 任务结果：seeded 脚本、撤销时限和本地化三项均确认真实并已修复。`anniversary.create` 直连 Native 返回 `AnniversaryDetailResponse`，脚本现从 `data.anniversary` 读取 ID；运行前和 finally 均按隔离测试标题分页发现并删除遗留纪念日，解析失败后仍可兜底清理。History 撤销窗口冻结为 6 秒，超时、后续 History intent、离开/暂停 Search 及 Controller dispose 都会取消计时并清除临时状态；撤销成功会取消旧计时器，避免稍后误删恢复后的历史。顶层应用注册 `zh_CN` 及 Material/Widgets/Cupertino delegates，日期范围选择器与筛选删除提示均使用中文。
+- 性能判断：Review 的“10k 产品性能不达标”未复现。相同代码在本机 Release 的 10k warm P95 为 `121.566 ms`，满足 `≤300 ms`；未设置 `CMAKE_BUILD_TYPE` 的同一 Ninja 构建为 `751.409 ms` 并失败，且现存 Review 时段构建目录为未优化配置。原性能程序未声明配置，确有证据歧义，因此新增 Release-only fail-fast；非 Release 现在在造数前明确拒绝。最终 Release 1k/10k/50k warm P95 为 `10.829/121.566/1137.080 ms`，三档 `sql_statements=18`、`recurrence_candidates=13`，50k 未卡死/OOM；真实 Android Release 设备性能仍需独立门禁。
+- 验证状态：修复前 Widget 回归稳定复现撤销 7 秒后仍存在且 locale 为 `en_US`；修复后 Search Controller/Page 定向 24/24、Flutter 全量 589/589、`flutter analyze` 0 issue、Debug APK 成功。Search Contract validation 与 C++ 重新 configure 后 build-after-test 13/13；Android `testDebugUnitTest`、`lintDebug`、三 ABI CMake 和 `assembleDebugAndroidTest` 成功，修复后的 Search runner 已进入测试 APK。既有 Flutter Native smoke analyze/test/Debug APK 通过。
+- 未验证与放行结论：`adb devices -l` 无连接设备，故修复后的 `search_seeded` 真实 Event+Habit+Anniversary 同次查询、遗留数据兜底清理、中文 IME/TalkBack、旋转/进程恢复及 Android Release 设备 1k/10k/50k 性能仍未执行。代码 Findings 可提交复审，但 `search.*` 继续保持 `planned + blocked`。
+- 开发时间：2026-09-02 12:58 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 13:37 +08:00 Search Android 设备复审与发布门禁
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。先冻结 HXY HEAD `3c06eb501a2a58c2b7cb75076fda47efaeb37f08` 与当前 Search 相关脏工作树范围，依据 Search Revision 2、active 主计划和既有四项 Review Finding 建立独立复审矩阵；本轮未修改产品代码、Contract、既有测试或 capability 状态。
+- 负责模块：Search C++/SQLite 性能与 completed recurring-series cutoff；Kotlin/MethodChannel/JNI 三类型 seeded query、AtomicFile History；Flutter Search 历史、中文本地化、筛选和无障碍；Android 13 realme RMX3687（序列号 `ZXNZDEW4ZPN7499L`）隔离 `.device_test` APK。
+- 任务目标：在手机连接后复核性能构建模式保护、三类型真机脚本及兜底清理、6 秒撤销、本地化四项返修，并检查是否存在新的发布阻断；只有设备与主机门禁、独立复审全部通过时才允许把 `search.*` 切换到发布态。
+- 复审结果：原四项中，性能构建保护、seeded 三类型脚本、撤销时限和可见中文本地化均得到独立证据。非 Release 性能程序在造数前以 exit 2 拒绝；Windows Release 1k/10k/50k warm P95 为 `11.349/121.387/589.251 ms`。同一 arm64 Release 性能程序交叉编译后在设备 Awake 状态得到 `20.294/210.954/1076.98 ms`，10k 满足 `<=300 ms`，50k 峰值内存 `185327616` bytes 且无卡死/OOM；锁屏状态三次 10k P95 `313.720/315.441/317.568 ms`，因 Android 非交互 CPU 策略不作为交互发布基线。`search_seeded` 连续两次通过真实 Event+Habit+Anniversary Unicode query、typed sections 与 cleanup；History interrupted-write prepare -> force-stop -> verify 恢复旧完整 AtomicFile snapshot。真实页面长按历史显示逐项“删除”按钮，清空后立即出现“撤销”，7 秒后撤销和提示均消失；筛选、保存/关闭、月份、星期和日期节点均为中文。
+- 新发现：结论仍为 **CHANGES REQUIRED / 不切换发布态**。P2 发布门禁：Flutter 当前 `DateRangePicker` 的 header Semantics 在框架 `date_picker.dart` 中直接拼接英文 `to`，真机无障碍树实际为“选择搜索日期范围 1月18日 to 1月18日”。可见 UI 已中文化，但中文 TalkBack 验收仍不成立；本轮未冒险启用全局 TalkBack 服务，使用真实 Android accessibility/UIAutomator 节点确认该标签。中文搜狗 IME 已真实弹出并可向 Search 输入；候选词 composing 不触发查询由既有 Flutter 回归覆盖，自动化未替代人工听读。
+- 主机验证：Search/Calendar Contract runner 均通过（Search 213 schemas、31 fixtures、3 public methods、1 native call，状态保持 `planned + blocked`）；重新 configure 后 `excellent_calendar_check` 13/13；Search 定向 Flutter 35/35、全量 589/589、`flutter analyze` 0 issue；Android `testDebugUnitTest`、`lintDebug`、三 ABI CMake、Debug APK 和 androidTest APK 构建通过。Debug APK SHA-256 为 `4EA2AA9BD1927184C642E2487422BB246D02B1806ADA85A18935DDCBCDEBE9AA`。
+- 发布结论：代表设备性能、三类型真实链路、History 强杀恢复及四项原始 Finding 已闭环；但中文 TalkBack 日期范围标题仍有中英混读，违反 active 主计划“TalkBack 和中文通过后才激活”的显式门禁。`contracts/search/**`、`search.*` MethodChannel/native call 继续保持 `planned + blocked`，不得在该语义缺口解决及独立复测前改为 `integrated + active`。
+- 开发时间：2026-09-02 13:37 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 13:55 +08:00 Search 日期范围中文 TalkBack 语义返修
+
+- 使用 Skill：`debug`、`frontend-flutter-feature`。先在真实 Widget Semantics 树稳定复现，再核对当前 Flutter SDK 实现和 Search 页面入口，将修复限制在 Flutter Presentation 与对应 Widget 回归；未修改 Flutter SDK、Contract、Application/Controller、Native、依赖、工具链或 capability 状态。
+- 负责模块：Search 筛选弹层中的自定义日期范围选择流程及中文无障碍回归测试。
+- 任务目标：研判并修复自定义日期范围标题在 Android 无障碍节点中出现“选择搜索日期范围 1月18日 to 1月18日”的中英混读发布阻断，同时保持 inclusive 自定义日期范围、staged filter 和现有 Material 3 交互。
+- 任务结果：Finding 确认真实。Flutter SDK `DateRangePicker` header 直接构造 `$helpText $startDateText to $endDateText`，该英文连接词不经过 `MaterialLocalizations`，项目仅注册中文 delegate 无法覆盖；外层 `excludeSemantics` 又会同时屏蔽日历子节点，不能作为修复。Search 改为连续的两个中文 Material 单日选择步骤：先“选择开始日期/下一步”，再“选择结束日期/保存”；第二步以开始日为最早可选日，取消任一步均不改变 staged filter，保存后仍映射为同一 inclusive `SearchDateFilter.custom`。两个步骤复用 SDK 单日历、主题、中文月份/星期、标准动画与日期节点语义，不复制或修改 SDK 源码。
+- 验证状态：修复前新增 Widget 回归按预期捕获唯一错误节点 `选择搜索日期范围 8月31日 to 8月31日`；修复后同一回归验证开始/结束两个中文标题、完整语义树无独立英文 `to`，并验证保存后 custom `date_from/date_to_exclusive` 仍正确。Search 六个专项测试文件 41/41、Flutter 全量 589/589、`flutter analyze` 0 issue、两份本次文件定向 format check 通过，Debug APK 构建成功，SHA-256 `2378E61F7505D7C374B00BE4E8D156721238BE4A00E8270BC27FE5A9F59A204B`。Android 13 realme RMX3687 `.device_test` 真机无障碍节点确认第一步为“选择开始日期/1月18日周一”、第二步为“选择结束日期/1月18日周一”，月份、星期、按钮和日期节点均为中文且无 `to`；验证中未创建、删除或修改日历业务数据。
+- 限制与状态：仓库级 `dart format --output=none --set-exit-if-changed lib test` 仍报告既有修改文件 `test/create_schedule_controller_test.dart` 需要格式化，本轮为保护无关在途修改未触碰；本次两份目标文件格式正确。未开启 TalkBack 服务进行人工听读，真机证据来自 Android accessibility/UIAutomator 节点，仍建议独立复审时补一次人工焦点顺序与听读。`search.*` 继续保持 `planned + blocked`，本次不擅自解除总发布门禁。
+- 开发时间：2026-09-02 13:55 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 15:42 +08:00 Calendar 二次返修独立复核与发布硬门禁检查
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。在 HXY HEAD `3c06eb501a2a58c2b7cb75076fda47efaeb37f08` 上冻结 265 个未提交路径（68 unstaged、197 untracked）的工作树边界，以 Calendar 机器 Contract、领域文档、active plan/review 和公开创建接口先定义独立 oracle，再审查实现；未修改产品代码、Contract 或既有测试。
+- 负责模块：Calendar C++/SQLite ReminderRecoveryBatch 引用完整性；Flutter 新建 Event 的全天提醒、默认时间和用户错误映射；Android Debug/Release 打包、隔离设备 JNI/SQLite smoke 与 Calendar 基本黑盒交互。
+- 任务目标：独立复核 Anniversary recovery、全天一次性提醒、`HH:45/23:xx` 默认时间和 Native 错误脱敏返修，并检查是否已具备进入正式发布版的硬门禁。
+- 复核结果：四项返修均得到独立证据。混合 SQLite 探针在 Event recovery 仍合法时单独删除 Anniversary batch，查询稳定返回 `STORAGE_DATA_CORRUPTED / Reminder recovery batch is missing`；全天亚洲时区当地午夜 reminder 在“未来 1 秒”允许、恰好等于 now 时本地拒绝且不调用 create；未知 Native code/message/request id 统一映射为中文通用提示；`23:44:59` 默认 15 分钟提醒严格位于未来。一次性 Flutter/C++ 探针均已精确删除。
+- 新 Finding：结论为 **CHANGES REQUIRED**。P1 发布硬阻断：`flutter build apk --release` 虽成功，但 `android/app/build.gradle.kts` 的 release 明确复用 debug signing；`apksigner verify --print-certs` 实际证书为 `CN=Android Debug`。该 APK 只能用于本机 release-mode 验证，不能作为正式长期发布签名链。需建立外部化的正式 keystore/CI secret 配置、签名校验门禁和受控备份/轮换方案，禁止凭据入库；修复后重新生成并验证 release APK/AAB。
+- 主机验证：Calendar Contract `213 schemas / 19 fixtures / 2 public methods / 2 native calls` 且保持 `implemented_unintegrated + blocked`；C++ 重新 configure 后 build-after-test 13/13；相关 Flutter 定向 27/27，包含独立探针的全量 592/592，`flutter analyze` 0 issue；Android `testDebugUnitTest`、`lintDebug`、三 ABI CMake、Debug APK 和 androidTest APK 构建成功；Release APK 新构建成功，SHA-256 `54DFC3580E11320B90727CF52FE610EF2F40493EABB938353038605B8FCE8555`，但证书门禁失败。
+- 设备验证：Android 13 realme RMX3687 隔离 `.device_test` 包通过只读 Calendar JNI 2/2，以及 MethodChannel → JNI → C++ → SQLite 的 Event/Habit/Anniversary 三类 Unicode seeded query、occurrence identity 与自动清理；清理后只读复查三类计数归零。真实页面完成本地测试登录、进入 Calendar、周/月切换、42 日月范围加载、时间线未开放提示、选择历史日后“回到今天”入口和中文 Semantics 基本检查；未触碰发布包或用户业务数据。
+- 剩余门禁：未执行正式签名产物、AAB/商店上传校验、设备时区/DST 切换、TalkBack 人工焦点/听读、200% 字体与减少动画真机、强杀恢复、完整升级/回滚矩阵和正式发布签名恢复演练。因此 Calendar 继续保持 `implemented_unintegrated + blocked`，不得激活或描述为发布就绪。
+- 工作树保护：审查开始 manifest 为 265 路径、0 staged；Search 与其他并行改动只随全量回归，不归因或整理。全部一次性源码、可执行文件、截图和 UI dump 已精确清理。
+- 开发时间：2026-09-02 15:42 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 16:15 +08:00 Search 最终真机复审与发布门禁检查
+
+- 使用 Skill：`review-worktree-architecture`、`calendar-data-contracts`。以 HXY HEAD `3c06eb501a2a58c2b7cb75076fda47efaeb37f08`、Search Revision 2 机器 Contract、领域说明和 active 主计划为基线，复核当前包含 266 个未提交路径的脏工作树；本轮仅增加开发日志，未修改产品代码、Contract、既有测试或 capability 状态。
+- 负责模块：Search Contract、C++/SQLite 查询与性能、Kotlin/JNI/MethodChannel、AtomicFile 本地历史、Flutter Search 页面、中文 IME/日期筛选/TalkBack/旋转，以及 Android Release 签名门禁；真机为 Android 13 realme RMX3687（`ZXNZDEW4ZPN7499L`）隔离 `.device_test` 包。
+- 已关闭的旧阻断：Search seeded 脚本连续两次通过真实 Event、Habit、Anniversary Unicode 聚合查询、typed section 与兜底清理；History interrupted-write → force-stop → verify 成功恢复旧完整 AtomicFile snapshot；清空历史的“撤销”在 6 秒窗口后消失；搜狗中文 composing 等待 2 秒不发起查询、候选提交及键盘搜索正常；强制横屏后关键字和结果态保持。真实 TalkBack 服务已启用并观察中文焦点；开始/结束日期两步均无英文 `to`，此前日期范围中英混读 Finding 确认关闭。
+- 新 Finding 与结论：**CHANGES REQUIRED / 不切换发布态。** P1 无障碍发布阻断：独立 Flutter Semantics 探针显示 Search 顶部输入区域被合并成同一个同时具有 `isButton` 与 `isTextField` 的节点，标签串联“搜索 / 搜索日程、习惯与纪念日 / 筛选”，输入 hint 为空；Android UIAutomator 将覆盖整个标题、输入框和筛选按钮的父节点导出为 `android.widget.Button`，筛选按钮又作为子节点重复出现。TalkBack 无法把搜索输入与筛选识别为两个职责清晰的控件，违反主计划完整 Semantics/TalkBack 门禁。应拆分标题、TextField 和筛选按钮的 semantics boundary，保证输入导出为有限边界的 `EditText`、筛选仅有一个 Button，并补 Flutter 节点角色/顺序与真机 TalkBack 焦点回归。
+- 发布运营硬阻断：稳定执行 `flutter build apk --release` 与 Gradle `assembleRelease` 均在造包前按设计拒绝，原因是尚未配置非 Debug 的正式 keystore、五项 `EXCELLENT_CALENDAR_RELEASE_*` 凭据和证书 SHA-256。该 fail-closed 行为是正确的安全保护，不是 Search 业务回归；但在正式签名 APK/AAB、嵌入证书校验及密钥保管/恢复演练证据完成前，不能宣称可正式发布。
+- 主机验证：Search/Calendar/Habit/Anniversary validator 均通过（Search 213 schemas、31 fixtures、3 public methods、1 native call，状态仍 `planned + blocked`）；C++ 重新 configure 后 build-after-test 13/13；Windows Release 1k/10k/50k warm P95 为 `10.777/120.377/604.937 ms`。Search Flutter 定向 41/41、全量 592/592、`flutter analyze` 0 issue；Android unit、lint、三 ABI Debug APK 与 androidTest APK 构建通过，Debug APK SHA-256 `5BB121129279583F375854B589F2E56D5F5B99B53B4DE1FCDF2D7A14EB77FE54`。仓库级 Dart format 检查仅报告两个既有非 Search 文件，31 个 Search 目标文件单独检查通过；`git diff --check` 无 whitespace error，仅既有 LF/CRLF 提示。
+- 设备性能与清理：arm64 Release 性能程序在设备 Awake 状态的 1k/10k/50k warm P95 为 `20.239/207.769/1060.820 ms`，10k 满足 `<=300 ms`，50k 峰值约 `185.4 MB` 且无卡死/OOM；三档均 `sql_statements=18`、`recurrence_candidates=13`。测试包、UI dump、设备临时性能程序和 tzdata 已精确删除，旋转恢复自动、TalkBack 关闭，未触碰用户正式应用或业务数据。
+- 范围与剩余风险：审查期间 `flutter_client/android/app/build.gradle.kts` 被并行任务更新，已在稳定版本上重新验证 Debug 构建和 Release fail-closed，但当前仍是未冻结、0 staged 的大范围脏工作树；最终发布前还需以冻结提交重跑上述门禁。除搜索框语义结构与正式签名/发布运营链外，本轮测试范围内未发现新的崩溃、数据损坏、三类型链路、历史恢复、中文输入、旋转或性能 P1 阻断。
+- 开发时间：2026-09-02 16:15 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 22:03 +08:00 Search V1 发布例外登记与能力激活
+
+- 使用 Skill：`calendar-data-contracts`。按产品负责人本轮明确决定，将最终复审发现的搜索框 TalkBack 语义边界和正式 Release 签名链作为已接受的发布后债务登记，并同步 Search 机器 Contract、领域、计划、索引、当前状态和路线图；未修改搜索业务逻辑、跨层 payload、SQLite schema/version、History format、依赖或用户数据。
+- 发布决定：新增 `OPEN-SEA-001`，分别记录合并的输入框/筛选 Semantics 角色风险，以及缺少生产 keystore、正式签名 APK/AAB、商店校验和密钥恢复演练的分发风险。产品负责人明确接受两项在本版本中不再阻断统一 Search Query 与设备本地 History 激活；该接受不表示问题已修复或场景已验证通过。
+- Contract 校准：`search.query`、`search.get_local_history`、`search.replace_local_history`、唯一内部 `search.query` native call、11 个 Query/History Schema 和 `search_query_invariants.yaml` 统一切换为 `implementation_status: integrated`、`release_status: active`。未实现的 `search_index_response.schema.json` 保持 `planned`，FTS 保持 deferred；Revision 2、wire shape、错误、枚举、fixture 和 Storage 均无变化，因此无需 Contract 升版或数据迁移。
+- 文档与计划：更新 `contracts/README.md`、`docs/domains/search_index.md`、`docs/status/current.md`、`docs/status/roadmap.md` 和 `docs/index.md`，将 Search 描述为“已激活并进入带开放债的维护轨”；搜索-01/02/03/04/05 均校准为 Completed/Released 并从 `docs/plan/active/` 归档至 `docs/plan/completed/`。历史派发清单和发布前 `planned + blocked` 证据保留，不伪造未执行项目。
+- 验证状态：Search validator 通过 `213 schemas / 31 fixtures / 3 public methods / 1 native call / integrated+active / FTS deferred`；Calendar validator 通过 `213 / 19 / 2 / 2 / integrated+active`；Habit validator 通过 `213 / 46 / 4 identity / 12 public / 11 native / integrated+active`；Anniversary validator 通过 `213 schemas / 56 fixtures / 20 identity vectors`。`git diff --check` 无 whitespace error，仅既有 LF/CRLF 提示。状态检索未发现权威当前文档继续把统一 Search Query/History 描述为 blocked；命中项仅为 SearchIndex planned、发布前历史证据或已接受债务边界。
+- 剩余风险：Search V1 可作为正式能力依赖，但当前仍没有生产签名商店产物，搜索框 TalkBack 语义仍需修复；两项均由 `OPEN-SEA-001` 持续跟踪。当前大范围脏工作树不是冻结发布提交，本次只完成能力状态校准，后续实际出包仍需在冻结提交上执行发布流水线。
+- 开发时间：2026-09-02 22:03 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 16:19 +08:00 Android Release 正式签名门禁返修
+
+- 使用 Skill：`debug`、`android-kotlin-native-feature`。按复审 Finding 独立核验 Gradle 配置和既有 Release APK，未修改 Contract、Flutter/Dart、Kotlin 业务代码、C++、工具链或依赖版本。
+- 负责模块：`flutter_client/android` Release signingConfig、APK/AAB 签名身份校验、私密配置示例与发布签名操作说明。
+- 任务目标：判断 Release 复用 Debug 签名是否真实存在；若成立，移除 Debug fallback，使缺少正式身份、使用 Debug 证书或证书指纹不匹配时均无法产出可通过门禁的 Release APK/AAB，同时不把 keystore 或密码提交仓库。
+- 任务结果：Finding 确认真实。原 `release.signingConfig` 明确绑定 `debug`；复审所指 APK SHA-256 `54DFC3580E11320B90727CF52FE610EF2F40493EABB938353038605B8FCE8555` 经 `apksigner` 独立确认 signer 为 `CN=Android Debug`、证书 SHA-256 `D32EDEEBBFB537D459A8F6E050426895C93780803A2A9B947532BD024B315AD6`。现已改为从 ignored `android/key.properties` 或五项 `EXCELLENT_CALENDAR_RELEASE_*` 环境变量注入，要求固定证书 SHA-256；Release 任务图在执行前校验配置和 keystore 身份，明确拒绝 Debug 证书，并在构建后再次校验 APK signer 与 AAB 每个内容项的 signer。新增 `verifyReleaseApkSigning`、`verifyReleaseBundleSigning` 两个 CI 入口；`.p12/.pfx` 也已加入忽略规则。
+- 独立门禁验证：未配置签名时，`flutter build apk --release`、`flutter build appbundle --release` 和包含 Release 的 Gradle aggregate assemble 均在造包前按预期失败；配置默认 Android Debug keystore 即使指纹正确也按预期失败。仓库外一次性 3072-bit RSA PKCS12（证书 SHA-256 `D5EA7DE7A803941759DF7504E70EF96E9A343ED093394FBE715EFE42DF1B995E`）下，APK/AAB 两个校验任务成功，产物内嵌证书均与 pinned fingerprint 一致；验证 APK/AAB SHA-256 分别为 `5919C647E5BB3F4D869D89BEF045B3AE762CEAA18AC265E6FA16BBC5C398329A`、`C3DCE6F014AAB7FA3746D164CEC1E5141B3AEF8AE30825FD01DCD3217DC65635`。一次性私钥、证书及其 Release 产物随后已精确删除，避免被误认为正式发布包。
+- 回归与设备：Android `testDebugUnitTest`、`lintDebug`、`assembleDebug` 均成功。Android 13 realme RMX3687 的隔离 `.device_test` Debug APK 最终重新安装成功，冷启动成功，应用进程无 `AndroidRuntime`/`FATAL EXCEPTION` 标记；未触碰正式应用包或业务数据。
+- 发布状态与剩余条件：代码层的 Debug-signing fallback 已关闭，但仓库不能代替发布负责人创建、保管或授权真实生产密钥。正式发布仍需发布负责人在私密环境/CI 注入生产 keystore 与 pinned fingerprint，完成至少一次加密备份恢复和轮换演练，并保存 APK/AAB 验签证据；在此之前保持发布门禁阻塞是正确结论。
+- 开发时间：2026-09-02 16:19 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 17:03 +08:00 Local-first 云同步概念与项目基线讲解
+
+- 使用 Skill：`self-learning`。按“直觉模型 → 分布式问题 → 专业机制 → 项目落点 → 反例与掌握检验”梳理云同步，不实施同步代码、Contract 或数据库迁移。
+- 负责模块：跨设备 Local-first 同步概念；Calendar Core SQLite v5、本地 Event/Anniversary/Habit 数据边界；Cloud Backend 认证基座、planned sync/calendar 模块与同步占位 Contract。
+- 任务目标：结合 ExcellentCalendarAPP 当前实现，向用户讲清副本与最终一致性、原子操作日志、增量游标与幂等、版本/冲突/删除语义，以及同步数据和设备本地数据的边界，为后续项目专项设计建立共同概念模型。
+- 任务结果：确认当前项目已具备本地 SQLite v5 事务/软删除/稳定身份和账号后端基座，但没有生产同步 API、服务端日历业务表、设备注册或客户端同步引擎；现有 `SyncOperation`/`SyncResult` 只作为未发布概念占位。识别后续设计前必须冻结的关键问题：账号与本地数据归属、Outbox 与业务写同事务、服务端 change sequence/cursor、实体版本与本地 generation/recurrence revision 分离、删除 tombstone/恢复/清理、冲突矩阵，以及 Reminder 用户意图与每设备投递状态的重新分界。
+- 验证状态：只读核对架构概览、文档索引、R2 当前状态/路线、同步与账号领域说明、同步 Schema、SQLite v5 Contract、相关 ADR、Cloud Backend 模块/架构和实际源码入口；未执行构建、测试或设备验证，本任务无产品代码改动。
+- 开发时间：2026-09-02 17:03 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 17:07 +08:00 Calendar V1 发布例外登记与 capability 激活
+
+- 使用 Skill：`calendar-data-contracts`。按用户明确的产品发布决定核对 Calendar 领域说明、公开/内部 capability、Schema 状态、专项 validator、当前状态、路线图、计划、Review 与开放问题；未修改 wire 字段、Native v2、Calendar View revision、Storage v5、数据模型、迁移链或产品实现。
+- 负责模块：Calendar View R1 的发布状态一致性、`OPEN-CAL-001` 风险登记、五份开发计划与专项 Review 归档。
+- 任务目标：将正式生产签名/商店上传、真机时区与 DST、TalkBack、200% 字体/减少动画、强杀恢复、升级回滚/签名密钥恢复及正式 Release UI 全链登记为后续问题；在没有其他新硬缺陷的前提下，将 Calendar V1 从 `implemented_unintegrated + blocked` 切换为发布能力。
+- 任务结果：新增 `OPEN-CAL-001`，逐项记录七项未验证矩阵、影响、关闭条件与 2026-09-02 产品负责人非阻断接受决定。同步将两个 `calendar.*` MethodChannel、两个 internal call、八个 Calendar Schema、查询不变量和机器 validator 校准为 `integrated + active`；领域、Contract README、架构、索引、当前状态与路线图同步。五份日历计划移入 `docs/plan/completed/`，专项 Review 移入 `docs/reviews/archive/`；Review 保留“生产签名/商店与设备矩阵未通过”的历史事实，不倒写成完整 PASS。
+- 签名边界校准：本轮读取到并行返修已移除 Release Debug fallback，缺少生产配置、Debug 证书或指纹不匹配时均 fail-closed；一次性非生产密钥已验证 APK/AAB 门禁，且临时密钥与产物已删除。当前准确残余风险是尚无生产密钥保管/恢复演练、生产签名产物和商店上传证据，而不是仍允许生成 Debug 签名 Release。
+- 验证状态：Calendar validator 通过 `213 schemas / 19 fixtures / 2 public methods / 2 native calls / integrated+active`；Anniversary 通过 `213 schemas / 56 fixtures / 20 identity vectors`；Habit 通过 `213 schemas / 46 fixtures / 4 identity vectors / 12 public / 11 native / integrated+active`；Search 通过 `213 schemas / 31 fixtures / 3 public / 1 native / planned+blocked`。本次仅改 Contract 状态、validator 断言和文档，没有重新运行 C++、Flutter、Android 或真机测试；其最近证据与未验证边界均原样记录。
+- 开发时间：2026-09-02 17:07 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 22:28 +08:00 Local-first 云同步需求发现与可行性门禁
+
+- 使用 Skill：`calendar-data-contracts`、`cross-layer-feature`、`backend-api-development`。按项目架构、文档索引、当前状态、R2 路线、同步/用户领域占位、机器 Contract、SQLite v5、本地 Appearance、Cloud Backend 迁移与实际源码入口进行只读盘点；未实施同步代码、协议或数据库迁移。
+- 负责模块：账号与个人资料、Event/Anniversary/Habit 及其依赖实体、用户偏好、提醒同步边界、设备身份、客户端操作日志、Backend 增量同步与冲突处理的需求与分层规划。
+- 任务目标：以产品经理式问答发掘多设备共享、提醒同步和个性化设置同步的完整需求，先识别必须由用户决定的产品语义，再形成可执行的分层开发计划。
+- 任务结果：可行性判定为 `SPECIALIST_SPLIT / DECISION_REQUIRED`。现有账号/个人资料后端和 Flutter 会话链已实现但 `backend_api.yaml` 与 Auth MethodChannel 仍为 planned；Calendar Core SQLite v5、本地 Event/Anniversary/Habit 已激活，但没有账号分区、原子 Sync Outbox、设备注册、生产 Sync API、服务端日历业务表或客户端同步引擎。现有 `sync.apply`、`SyncOperation`、`SyncResult`、Sync Log/Adapter 与 Backend sync/calendar 包均为概念占位，不足以安全实施。Appearance 当前协议和 UI 明确为 Kotlin 本机配置且不进入云同步，新需求将要求显式 Contract revision，而不能静默复用现状。
+- 关键设计门禁：登录时既有游客数据归属、退出/换号后的本地隔离；同步实体闭包与派生/设备数据排除；提醒意图和每设备调度/权限的两级开关；个性化设置类型化；实体版本、幂等键、设备游标、删除墓碑与恢复窗口；冲突 UX；首轮 bootstrap、弱网后台策略、端到端加密边界和多平台范围。完成用户选择前不创建 active plan 或写实现。
+- 验证状态：完成只读 Git 状态与实现盘点；确认 `cloud_backend/**` 当前无未提交修改，而仓库其他层存在大量用户在途修改，后续必须保护。当前仅为需求发现，无构建、测试或设备验证；下一步等待用户完成第一轮产品决策，再输出冲突矩阵、阶段拆分和正式开发计划清单。
+- 开发时间：2026-09-02 22:28 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 22:27 +08:00 RAG 概念与项目落地路径讲解
+
+- 使用 Skill：`self-learning`。按“直觉模型 → 反面推演 → 专业原理 → 项目落点 → 最小实践 → 掌握检验”解释 Retrieval-Augmented Generation，并结合当前代码库推演只读问答与候选日程两类落地方式。
+- 负责模块：AI Pipeline、`ai.extract` Contract、Cloud Backend planned AI/Search/Calendar 模块、Calendar Core SQLite v5 与 Search V1 查询边界。
+- 任务目标：说明 RAG 的检索、上下文组装与生成流程，区分关键词搜索、向量检索和 RAG，并给出符合 Android-first、Local-first、Contract-first 架构的开发阶段、数据流、安全边界与验收思路。
+- 任务结果：确认当前 AI/OCR 只有 Schema、MethodChannel 声明和 README 骨架，`ai.extract` 未标记 integrated/active；Cloud Backend AI/Search/Calendar 仍为 planned，SearchIndex/FTS 也未实现。建议先建立只读、可追溯、带引用的日历问答 MVP；任何写操作必须生成 Candidate Event，经 Contract 校验、C++ AI Result Validator 与用户确认后再进入既有 Event 创建链路，禁止模型直接写 SQLite 或绕过 C++ Domain。
+- 验证状态：只读核对架构概览、文档索引、当前状态与路线图、AI Pipeline/Validator 说明、AI Schema、MethodChannel 声明及 Backend 模块占位；未实施产品代码，未执行构建、测试或设备验证。除本条追加日志外未修改项目文件。
+- 开发时间：2026-09-02 22:27 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 22:31 +08:00 项目状态与文档索引实时校准
+
+- 使用 Skill：`review-worktree-architecture`。以 HEAD `3c06eb501a2a58c2b7cb75076fda47efaeb37f08` 和当前 274 个未提交路径（0 staged、72 unstaged、202 untracked）为边界，核对机器 Contract、production composition、计划/Review 归档、开放问题和最近实际验证；只修改状态、路线、索引与本条日志，不修改业务代码、Contract 或测试。
+- 负责模块：`docs/status/current.md`、`docs/status/roadmap.md`、`docs/index.md` 和开发日志。
+- 任务目标：根据当前工作树实时更新项目状态与导航入口，消除 Calendar/Search 已激活结论和旧 `blocked` 中间验证记录之间的矛盾，并把最新 Local-first 云同步需求盘点纳入 R2 当前拓扑。
+- 任务结果：`current.md` 将研判时间更新到 2026-09-02 22:31，收敛为 Habit、Calendar、Search 已 `integrated + active` 且分别保留 `OPEN-HAB-001`、`OPEN-CAL-001`、`OPEN-SEA-001` 发布后债；删除当前验证基线中的 Calendar/Search 旧阻塞中间态，改用 2026-09-02 最终主机与 Android 13 证据。云同步明确为 `SPECIALIST_SPLIT / DECISION_REQUIRED`：只完成需求与架构盘点，尚无 active plan、生产 Contract、服务端日历表、本地 Outbox、设备注册或客户端同步引擎。`roadmap.md` 补齐产品决策、Contract/数据和分层实施顺序；`index.md` 新增最小同步资料入口，并明确概念 Schema/空包不证明实现。
+- 验证状态：Calendar validator 通过 `213 schemas / 19 fixtures / 2 public methods / 2 native calls / integrated+active`；Search 通过 `213 / 31 / 3 / 1 / integrated+active / FTS deferred`；Habit 通过 `213 schemas / 46 fixtures / 4 identity vectors / 12 public methods / 11 native calls / integrated+active`；Anniversary 通过 `213 schemas / 56 fixtures / 20 identity vectors`。新增索引路径全部存在，当前状态文档未再命中 Calendar/Search/Habit 的旧 active-plan 或 blocked 表述，`docs/plan/active/` 当前文件数为 0；`git diff --check HEAD --` 无 whitespace error，仅既有 LF/CRLF 提示。因本任务只改 Markdown，未重复执行 C++、Flutter、Android 或真机测试，文中相应结果均明确引用最近已记录证据。
+- 剩余边界：`docs/domains/README.md` 仍包含 Storage v4 active、Habit planned/blocked 等较早状态描述；它低于机器 Contract 和当前状态文档，且不在本次指定修改范围内，后续应单独校准，避免领域总览继续制造导航噪声。
+- 开发时间：2026-09-02 22:31 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 22:45 +08:00 云同步第一轮产品决策与扩展能力澄清
+
+- 使用 Skill：`calendar-data-contracts`、`backend-api-development`。基于上一轮同步基线，解释游客本机数据归属、账号缓存保留、可见冲突、HTTPS、公网 IP、云备份/历史版本及服务端提醒；未实施同步代码、Contract 或数据库迁移。
+- 负责模块：Local-first workspace/账号隔离、同步冲突 UX、传输安全、备份恢复边界、设备推送与本地提醒协作。
+- 已确认产品决策：V1 为 Android 多设备但协议跨平台；首次登录由用户选择是否合并游客数据；退出后保留加密账号缓存；同步完整业务事实及完成/打卡历史；提醒采用账号级跨设备策略与设备级接收开关；同步可移植个性化设置；冲突采用自动合并与显式字段冲突提示；同步触发、删除墓碑、安全、设备管理和分阶段上线均采用推荐方案。
+- 设计澄清：建议使用互斥的游客 workspace 与账号 workspace，而非靠每条记录的松散布尔值判断是否上传；同步引擎只绑定账号 workspace，本机 workspace 永不创建云端 Outbox。选择不合并时数据保留在独立“本机数据”空间，后续可由用户显式迁移到账号。`3B` 意味着后续必须单独设计账号级数据库加密、Keystore 密钥生命周期、退出隐藏、设备撤销与本地擦除边界。
+- HTTPS 结论：截至 2026-09-02，Let's Encrypt 已正式支持公网 IPv4/IPv6 的 IP 地址证书，但证书有效期约 160 小时，需支持 shortlived profile 的 ACME 客户端和可靠自动续期；Android 9+ 默认禁止明文 HTTP。公网 IP 不再是开发 HTTPS 的绝对阻塞，但稳定域名仍更易运维，正式账号/同步数据不得使用明文 HTTP或自签名证书绕过系统信任。
+- 扩展能力结论：同步只保证当前状态收敛，不等于备份；历史恢复应以新版本操作恢复，不能回拨 change cursor 或直接覆盖在线数据库。服务端推送分为“数据变化唤醒”与“到期提醒投递”；前者可作为后续同步加速，后者会与本地 Alarm/Notification 产生去重、准时性和双真相源风险，不建议纳入同步 V1。
+- 验证状态：完成官方 Let's Encrypt IP 证书、Certbot 支持和 Android cleartext 规则核对，并核对 Firebase 对 Doze、消息延迟与投递接受不等于设备送达的官方说明。当前仍为需求设计，无构建、测试或设备验证；等待用户确认本机空间展示方式、恢复层级和推送范围后进入下一轮计划冻结。
+- 开发时间：2026-09-02 22:45 +08:00（Asia/Shanghai）。
+
+## 2026-09-02 23:02 +08:00 README 与领域文档实时同步
+
+- 使用 Skill：`calendar-data-contracts`。以当前机器 Contract、SQLite v5、已激活查询能力、开放验证债、Local-first 同步需求盘点和实际跨端目录为真相源，保持既有 README 与 `docs/domains/` 的说明、表格和目录树风格进行文档校准。
+- 负责模块：根 `README.md`、`docs/domains/README.md`、Anniversary、Category、SyncOperation、UserSyncState 领域文档及开发日志；保留用户已有的 `search_index.md` 修改和未跟踪 `calendar_view.md`，未改业务代码、Contract、Schema 或测试。
+- 任务目标：消除 README 与领域总览中 Storage v4 仍为 active、Habit 尚待激活、Calendar/Search 缺失、同步占位容易被误解为已实现，以及跨端文件示例过时等描述，使项目入口与实时开发状态一致。
+- 任务结果：README 新增 R2 当前状态表和权威导航，明确 SQLite v5 是唯一 live writer、Habit/Calendar/Search 已 `integrated + active` 且保留对应开放验证债、SearchIndex/FTS deferred、Backend Auth 代码完成但机器 Contract planned、Local-first Sync 为 `SPECIALIST_SPLIT / DECISION_REQUIRED`；同步更新领域对象、Contract 目录、Dart/Kotlin/JNI/C++ 示例和 planned 能力标记。领域总览补入 CalendarView/SearchQuery，校准 v4→v5 迁移与事务边界；Anniversary/Category 说明 v4 引入且由 v5 继承；SyncOperation/UserSyncState 明确仍是未冻结的概念模型和实施前产品门禁。
+- 验证状态：README 中 31 个 Schema 引用全部可解析，README 与领域总览中的 33 个本地 Markdown 链接全部存在，目标文件 `git diff --check` 无 whitespace error（仅既有 LF/CRLF 提示）。Calendar validator 通过 `213 schemas / 19 fixtures / 2 public methods / 2 native calls / integrated+active`；Search 通过 `213 / 31 / 3 / 1 / integrated+active / FTS deferred`；Habit 通过 `213 schemas / 46 fixtures / 4 identity vectors / 12 public methods / 11 native calls / integrated+active`；Anniversary 通过 `213 schemas / 56 fixtures / 20 identity vectors`。本任务仅修改 Markdown，未重复执行 C++、Flutter、Android 构建或真机测试。
+- 开发时间：2026-09-02 23:02 +08:00（Asia/Shanghai）。
+
+## 2026-09-03 19:39 +08:00 云同步第二轮决策冻结与环境边界
+
+- 使用 Skill：`calendar-data-contracts`、`backend-api-development`。继续收敛 Local-first 云同步需求与安全边界，未修改产品代码、Contract 或数据库。
+- 负责模块：游客/账号 workspace、版本恢复、提醒触发、退出缓存隐私、开发与正式网络环境。
+- 已确认产品决策：本机空间与账号空间分开展示（13A）；V1 当前状态同步、V1.1 单条数据 30 天历史、V2 整账号备份（14A）；V1 不接入 FCM，依靠前台、网络恢复、手动与系统后台机会同步，提醒继续由设备本地调度（15A）；开发环境使用私网 IP，正式环境使用可访问 80/443 的公网 IP（16）；退出登录后保留的加密账号缓存完全隐藏，仅重新登录同一账号后可见（17A）。
+- 环境设计边界：开发版允许显式配置私网 HTTP 与测试账号；正式版必须使用公网 HTTPS、禁止明文回退，并补齐 Release 网络权限、环境配置校验及密钥/日志隔离。公网 IP 是否固定、证书自动续期与生产入口稳定性仍待确认。
+- 验证状态：本轮为需求设计与决策记录，没有执行构建、测试或设备验证。下一步继续确认首次迁移粒度、同步总开关、提醒默认值、退出缓存保留期、云端数据清除、附件范围和同步状态 UX。
+- 开发时间：2026-09-03 19:39 +08:00（Asia/Shanghai）。
+
+## 2026-09-03 19:50 +08:00 云同步第三轮产品决策冻结
+
+- 使用 Skill：`calendar-data-contracts`、`backend-api-development`。结合现有 Event、Anniversary、Habit、HabitCheckIn、Category、Profile 与 Appearance Contract，继续收敛云同步 V1 产品语义；未修改产品代码、Contract 或数据库。
+- 负责模块：游客数据迁移、同步开关、提醒跨设备策略、退出缓存、账号删除、个性化设置、同步状态、附件范围与后台时效。
+- 已确认产品决策：首次迁移采用数量预览后全量原子迁移（18A）；同步总开关按设备独立控制，关闭期间修改进入本地待同步队列（19A）；提醒规则同步但其他设备是否执行由账号策略与设备开关共同决定（20A）；退出后加密缓存保留 30 天并支持立即清除（21A）；V1 暂不提供账号注销（22C）；个性化设置采用可移植字段白名单（23A）；正常同步保持安静、异常和冲突明显展示（24A）；V1 不同步业务附件，仅同步结构化字段、文字与头像（25A）；无 FCM 时采用系统机会型后台同步，不承诺固定分钟时效（26A）。
+- 风险与门禁：22C 仅视为当前测试阶段范围决定；公开发布前必须重新评审账号注销和云端个人数据删除能力。30 天缓存清理按“到期后在下次启动或系统允许时执行”设计，不能承诺设备长期关机时准点清除。公网 IP 是否固定仍待用户补充。
+- 验证状态：本轮为需求设计与现有 Contract 字段核对，无构建、测试或设备验证。下一步确认首次账号同步方向、实体级冲突策略、重复日程语义、设备数量、安全验证及 V1 发布性质。
+- 开发时间：2026-09-03 19:50 +08:00（Asia/Shanghai）。
+
+## 2026-09-03 20:00 +08:00 云同步第四轮冲突与设备规则冻结
+
+- 使用 Skill：`calendar-data-contracts`、`backend-api-development`。继续收敛云同步冲突模型、时间语义、重复规则与设备治理；未修改产品代码、Contract 或数据库。
+- 负责模块：退出前同步、发布边界、首次账号同步、字段级冲突、HabitCheckIn 并发、删除与编辑竞争、跨时区语义、重复系列、设置同步和设备管理。
+- 已确认产品决策：退出前尝试最终同步并提示未上传数量（27A）；V1 为内测/有限测试，公开发布前补齐账号注销与云端数据删除（28A）；首次登录先取得云端基线再合并本机待同步操作（29A）；不同字段自动合并、相同字段进入用户冲突处理（30A）；习惯增量打卡按幂等操作累计，清空或直接改总数发生竞争时提示冲突（31A）；删除优先隐藏对象但保留竞争编辑版本供恢复（32A）；按定时、全天、纪念日/打卡日期与重复规则分别保持正确时区语义（33A）；重复日程同步系列规则与稳定例外记录（34A）；个人信息与可移植设置采用服务端接收顺序，不进入业务冲突中心（35A）；最多 10 台活跃设备，支持命名、重新验证后移除及联网后清缓存（36A）。
+- 冲突管理 UX：入口固定为“我的 → 冲突管理”；存在未解决冲突时卡片右上角显示红点，全部解决后消失。详情必须展示业务对象、具体冲突字段、本机与云端值、修改设备及时间，并提供保留本机、保留云端或手动编辑。
+- 验证状态：本轮仅完成需求设计和开发日志追加，未执行构建、测试或设备验证。下一步确认未解决对象行为、冲突留存、多账号与共享范围、运营备份、部署监控、内测容量及公网 IP 稳定性，再形成正式开发计划。
+- 开发时间：2026-09-03 20:00 +08:00（Asia/Shanghai）。
+
+## 2026-09-03 20:23 +08:00 云同步最终产品与内测运维决策冻结
+
+- 使用 Skill：`calendar-data-contracts`、`backend-api-development`。完成冲突中心、多账号、共享边界和内测运维的产品决策收敛；未修改产品代码、Contract 或数据库。
+- 负责模块：冲突态交互、冲突副本保留、多账号缓存隔离、跨账号共享边界、服务器备份、部署拓扑、监控告警、冲突提示和容量基线。
+- 已确认产品决策：冲突对象可查看，修改须经冲突详情完成（37A）；未解决冲突持续保留、解决后保留30天（38A）；同一时刻仅一个活跃账号但允许多个独立加密缓存（39A）；V1不支持跨账号分享或协作（40A）；内测期暂不做服务器灾难恢复备份（41B）；采用单台Linux服务器部署且数据库/Redis不暴露公网（42A）；仅保留服务器日志并人工排查（43B）；新冲突使用一次性应用内提示与“我的”红点（44A）；首轮按100账号、每账号最多10台设备和数万条结构化记录设计及压测（45A）。
+- 风险与发布门槛：41B和43B只适用于可接受数据丢失与人工排障的小规模内测，产品不得把云同步宣传为可靠备份。公开发布前必须至少补齐离机加密备份及恢复演练、证书/服务/磁盘/备份失败基础告警，并重新评审账号注销与云端数据删除。
+- 验证状态：本轮为需求设计和风险记录，没有执行构建、测试或设备验证。正式计划仍需确认公网IP稳定性、服务器操作系统及CPU/内存/磁盘规格；未知时可采用显式容量假设，不阻塞架构计划，但会使部署容量结论保持未验证。
+- 开发时间：2026-09-03 20:23 +08:00（Asia/Shanghai）。
+
+## 2026-09-03 20:41 +08:00 云同步 active 总计划建立
+
+- 使用 Skill：`calendar-data-contracts`、`backend-api-development`。根据已完成的需求访谈、当前 SQLite v5/Android/Cloud Backend 代码基线与测试服务器条件，建立 Local-first 多设备同步正式总计划；未实施产品代码、Contract、数据库迁移或服务器变更。
+- 负责模块：同步产品边界、workspace/账号隔离、SQLite Outbox 与加密、Backend 设备/版本/change feed、字段级冲突、提醒意图、本机调度、Kotlin 后台同步、Flutter 冲突 UX、测试部署和端到端验收。
+- 任务结果：新增 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，共 27 节、209 项已确认/待办清单，覆盖 V1 数据闭包、分层职责、SQLite v6、设备顺序与 Cursor、冲突算法、SessionCredentialBroker、分阶段实施、验证矩阵、容量目标、风险、工作量及 V1.1/V2 演进；同步将 current/roadmap/index 与 SyncOperation/UserSyncState 状态更新为 `ACTIVE PLAN / CONTRACT PENDING`，并继续明确现有 Schema/空包不代表同步已实现。
+- 测试服务器结论：CentOS 7、4 核、4 GB、50 GB 仅作为 100 账号以内的短期测试环境。CentOS 7 已 EOL，当前 Docker 官方不再支持该版本；计划要求只复用经验证可工作的现有容器运行时，预构建镜像后部署，PostgreSQL/8080 不暴露公网，无法兼容时更换受支持系统。41B/43B 的无灾备和仅日志人工排查仅作为内测风险，公开发布前必须补齐。
+- 关键停止条件：账号缓存加密依赖需先完成 ADR、许可证/三 ABI/迁移/性能 spike；后台同步前必须统一 Refresh Token 刷新所有权；生产同步 Contract 冻结前不得开始各层业务实现。
+- 验证状态：计划文件存在，共 982 行、209 个清单项、无行尾空白；相关状态文档未再命中“同步尚无 active plan / DECISION_REQUIRED”；目标 tracked 文档 `git diff --check` 通过，仅有仓库既有 LF/CRLF 提示。由于本任务只建立计划和文档，未执行 C++、Backend、Flutter、Android 构建、测试或真机验证。
+- 开发时间：2026-09-03 20:41 +08:00（Asia/Shanghai）。

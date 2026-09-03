@@ -1,0 +1,227 @@
+{
+  "page_size": 20,
+  "defaults": {
+    "target_type": "event",
+    "timezone": "Asia/Shanghai",
+    "evaluated_at": "2026-08-31T08:00:00Z",
+    "snapshot_token": "srchsnap1.SEQUENCEABCDEFGHIJKLMNOP"
+  },
+  "query_template": {
+    "keyword": "项目",
+    "timezone": "Asia/Shanghai",
+    "target_types": ["event"],
+    "date_from": null,
+    "date_to_exclusive": null,
+    "category_ids": null,
+    "include_uncategorized": false,
+    "include_completed": true,
+    "sort_by": "relevance"
+  },
+  "response_template": {
+    "normalized_keyword": "项目"
+  },
+  "event_item_template": {
+    "target_type": "event",
+    "target_id": "00000000-0000-4000-8000-000000000001",
+    "title": "项目",
+    "match": {"primary_field": "title", "matched_fields": ["title"], "snippet": null},
+    "category": null,
+    "updated_at": "2026-08-31T07:00:00Z",
+    "status": "pending",
+    "is_all_day": false,
+    "is_recurring": false,
+    "occur_at": "2026-09-01T01:00:00Z",
+    "occur_date": null,
+    "location": null,
+    "recurrence_revision": null,
+    "occurrence_key": null
+  },
+  "id_sets": {
+    "e01": ["e01"],
+    "first_20": [
+      "e01", "e02", "e03", "e04", "e05", "e06", "e07", "e08", "e09", "e10",
+      "e11", "e12", "e13", "e14", "e15", "e16", "e17", "e18", "e19", "e20"
+    ],
+    "e21": ["e21"],
+    "duplicate_e20": ["e20"],
+    "leaked_e22": ["e22"],
+    "event_21": [
+      "e01", "e02", "e03", "e04", "e05", "e06", "e07", "e08", "e09", "e10",
+      "e11", "e12", "e13", "e14", "e15", "e16", "e17", "e18", "e19", "e20", "e21"
+    ],
+    "second_20": [
+      "e21", "e22", "e23", "e24", "e25", "e26", "e27", "e28", "e29", "e30",
+      "e31", "e32", "e33", "e34", "e35", "e36", "e37", "e38", "e39", "e40"
+    ]
+  },
+  "vectors": [
+    {
+      "name": "valid 21 item cursor chain",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 1, "cursor": null},
+          "response": {"query_generation": 1, "total_count": 21, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000001"}
+        },
+        {
+          "request": {"query_generation": 2, "cursor": "srchcur1.SEQUENCECURSOR000001"},
+          "response": {"query_generation": 2, "total_count": 21, "item_ids_ref": "e21", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": null
+    },
+    {
+      "name": "terminal flag before accumulated total",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 3, "cursor": null},
+          "response": {"query_generation": 3, "total_count": 21, "item_ids_ref": "first_20", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "review counterexample returns one of twenty-one then claims terminal",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 20, "cursor": null},
+          "response": {"query_generation": 20, "total_count": 21, "item_ids_ref": "e01", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "cross-page duplicate",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 4, "cursor": null},
+          "response": {"query_generation": 4, "total_count": 21, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000002"}
+        },
+        {
+          "request": {"query_generation": 5, "cursor": "srchcur1.SEQUENCECURSOR000002"},
+          "response": {"query_generation": 5, "total_count": 21, "item_ids_ref": "duplicate_e20", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "cross-page leak replaces expected item",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 6, "cursor": null},
+          "response": {"query_generation": 6, "total_count": 21, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000003"}
+        },
+        {
+          "request": {"query_generation": 7, "cursor": "srchcur1.SEQUENCECURSOR000003"},
+          "response": {"query_generation": 7, "total_count": 21, "item_ids_ref": "leaked_e22", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "cursor does not advance",
+      "total_count": 41,
+      "expected_ids_ref": null,
+      "pages": [
+        {
+          "request": {"query_generation": 8, "cursor": null},
+          "response": {"query_generation": 8, "total_count": 41, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000004"}
+        },
+        {
+          "request": {"query_generation": 9, "cursor": "srchcur1.SEQUENCECURSOR000004"},
+          "response": {"query_generation": 9, "total_count": 41, "item_ids_ref": "second_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000004"}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "total count drifts during cursor chain",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 10, "cursor": null},
+          "response": {"query_generation": 10, "total_count": 21, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000005"}
+        },
+        {
+          "request": {"query_generation": 11, "cursor": "srchcur1.SEQUENCECURSOR000005"},
+          "response": {"query_generation": 11, "total_count": 22, "item_ids_ref": "e21", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "continuation returns wrong section",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 12, "cursor": null},
+          "response": {"query_generation": 12, "total_count": 21, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000006"}
+        },
+        {
+          "request": {"query_generation": 13, "cursor": "srchcur1.SEQUENCECURSOR000006"},
+          "response": {"query_generation": 13, "target_type": "habit", "total_count": 21, "item_ids_ref": "e21", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "continuation returns wrong timezone",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 14, "cursor": null},
+          "response": {"query_generation": 14, "total_count": 21, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000007"}
+        },
+        {
+          "request": {"query_generation": 15, "cursor": "srchcur1.SEQUENCECURSOR000007"},
+          "response": {"query_generation": 15, "timezone": "UTC", "total_count": 21, "item_ids_ref": "e21", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "continuation returns wrong evaluated at",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 16, "cursor": null},
+          "response": {"query_generation": 16, "total_count": 21, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000008"}
+        },
+        {
+          "request": {"query_generation": 17, "cursor": "srchcur1.SEQUENCECURSOR000008"},
+          "response": {"query_generation": 17, "evaluated_at": "2026-08-31T08:00:01Z", "total_count": 21, "item_ids_ref": "e21", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    },
+    {
+      "name": "continuation returns wrong snapshot",
+      "total_count": 21,
+      "expected_ids_ref": "event_21",
+      "pages": [
+        {
+          "request": {"query_generation": 18, "cursor": null},
+          "response": {"query_generation": 18, "total_count": 21, "item_ids_ref": "first_20", "has_more": true, "next_cursor": "srchcur1.SEQUENCECURSOR000009"}
+        },
+        {
+          "request": {"query_generation": 19, "cursor": "srchcur1.SEQUENCECURSOR000009"},
+          "response": {"query_generation": 19, "snapshot_token": "srchsnap1.DIFFERENTABCDEFGHIJKLMNOP", "total_count": 21, "item_ids_ref": "e21", "has_more": false, "next_cursor": null}
+        }
+      ],
+      "expected_error": "CONTRACT_VALIDATION_FAILED"
+    }
+  ]
+}

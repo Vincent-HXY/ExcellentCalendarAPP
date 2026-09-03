@@ -28,4 +28,17 @@ common::Result<common::Unit> decode_recurring_event_store_v2_for_migration(
 common::Result<common::Unit> validate_recurring_event_state(
     const repository::RecurringEventState& state);
 
+// Calendar intentionally projects a narrow read-only slice. This validator
+// checks only the Event/Recurrence/OccurrenceState/Event-Reminder relations
+// available to that slice.
+common::Result<common::Unit> validate_calendar_recurring_event_slice(
+    const repository::RecurringEventState& state);
+
+// Recovery ownership is target-agnostic. Call this with the unfiltered
+// Calendar Reminder slice plus recovery batch identities, before target-
+// specific structural validation removes non-Event reminders.
+common::Result<common::Unit>
+validate_calendar_reminder_recovery_references(
+    const repository::RecurringEventState& state);
+
 }  // namespace excellent_calendar::storage::json

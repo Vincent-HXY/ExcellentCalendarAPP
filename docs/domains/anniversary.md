@@ -21,7 +21,7 @@
 
 `AnniversaryRecurrence` 是 Anniversary 独占的轻量年度规则，持久化集合命名为 `anniversary_recurrences`。它不属于 Event v2 的不可变 Recurrence revision，也不保存 `anniversaryId`、月、日、时区、UTC occurrence 或 RRULE；关系真相只保存在 `Anniversary.recurrenceId`。
 
-当前 SQLite Storage v4 已激活 `anniversaries`、`anniversary_recurrences` 与 `anniversary_reminder_templates` 表。Anniversary create/update/delete/toggle/recovery/finalize 与其他会共享 Reminder 等表的 Workflow，统一通过同一 SQLite 连接和数据库事务原子提交；旧 JSON workflow journal 只在 v1/v2/v3→v4 迁移前恢复，不再承担运行时写入。
+`anniversaries`、`anniversary_recurrences` 与 `anniversary_reminder_templates` 表在 SQLite Storage v4 引入，并由当前 active 的 Storage v5 原样继承。Anniversary create/update/delete/toggle/recovery/finalize 与其他会共享 Reminder 等表的 Workflow，统一通过同一 SQLite 连接和数据库事务原子提交；旧 JSON workflow journal 只在 v1/v2/v3→v4 迁移前恢复，不再承担运行时写入。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |

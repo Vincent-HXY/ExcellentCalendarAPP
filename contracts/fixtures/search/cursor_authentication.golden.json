@@ -1,0 +1,63 @@
+{
+  "profile": "search_runtime_hmac_sha256",
+  "signing_key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "vectors": [
+    {
+      "name": "valid cursor envelope",
+      "token_kind": "cursor",
+      "payload_hex": "010000000a666978747572652d7631",
+      "token": "srchcur1.AQAAAApmaXh0dXJlLXYxt0T0PDe2Oq6ESDRURtet_MVBDLK5EA1vyEMSMw5hRcM",
+      "expected_error": null
+    },
+    {
+      "name": "payload tamper with unchanged tag",
+      "token_kind": "cursor",
+      "payload_hex": "010000000a666978747572652d7630",
+      "token": "srchcur1.AQAAAApmaXh0dXJlLXYwt0T0PDe2Oq6ESDRURtet_MVBDLK5EA1vyEMSMw5hRcM",
+      "expected_error": "SEARCH_CURSOR_INVALID"
+    },
+    {
+      "name": "tag tamper",
+      "token_kind": "cursor",
+      "payload_hex": "010000000a666978747572652d7631",
+      "token": "srchcur1.AQAAAApmaXh0dXJlLXYxu0T0PDe2Oq6ESDRURtet_MVBDLK5EA1vyEMSMw5hRcM",
+      "expected_error": "SEARCH_CURSOR_INVALID"
+    },
+    {
+      "name": "truncated tag",
+      "token_kind": "cursor",
+      "payload_hex": "010000000a666978747572652d7631",
+      "token": "srchcur1.AQAAAApmaXh0dXJlLXYxt0T0PDe2Oq6ESDRURtet_MVBDLK5EA1vyEMSMw5hRc",
+      "expected_error": "SEARCH_CURSOR_INVALID"
+    },
+    {
+      "name": "previous process key is rejected",
+      "token_kind": "cursor",
+      "payload_hex": "010000000a666978747572652d7631",
+      "token": "srchcur1.AQAAAApmaXh0dXJlLXYxt0T0PDe2Oq6ESDRURtet_MVBDLK5EA1vyEMSMw5hRcM",
+      "verification_key_hex": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
+      "expected_error": "SEARCH_CURSOR_INVALID"
+    },
+    {
+      "name": "authenticated but unsupported payload version is rejected",
+      "token_kind": "cursor",
+      "payload_hex": "020000000a666978747572652d7631",
+      "token": "srchcur1.AgAAAApmaXh0dXJlLXYxHdmjFMHyq-L9xr8hSbQu1mzf5HrVEbak8_bdBHiNGBs",
+      "expected_error": "SEARCH_CURSOR_INVALID"
+    },
+    {
+      "name": "valid snapshot envelope uses a distinct domain",
+      "token_kind": "snapshot",
+      "payload_hex": "0100000008736e617073686f74",
+      "token": "srchsnap1.AQAAAAhzbmFwc2hvdLSDHXME8gRb3KSdQAVkZQKYVj5mTBIHXAoJn5eZtnjg",
+      "expected_error": null
+    },
+    {
+      "name": "cursor tag cannot authenticate as snapshot",
+      "token_kind": "snapshot",
+      "payload_hex": "010000000a666978747572652d7631",
+      "token": "srchsnap1.AQAAAApmaXh0dXJlLXYxt0T0PDe2Oq6ESDRURtet_MVBDLK5EA1vyEMSMw5hRcM",
+      "expected_error": "SEARCH_CURSOR_INVALID"
+    }
+  ]
+}

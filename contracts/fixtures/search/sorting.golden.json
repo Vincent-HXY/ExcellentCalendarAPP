@@ -1,0 +1,30 @@
+{
+  "relevance": {
+    "items": [
+      {"id": "completed", "tier": 0, "completion_bucket": 1, "temporal_bucket": 0, "distance": 0, "updated_at": "2026-08-31T10:00:00Z"},
+      {"id": "future-near", "tier": 0, "completion_bucket": 0, "temporal_bucket": 0, "distance": 1, "updated_at": "2026-08-30T10:00:00Z"},
+      {"id": "future-far", "tier": 0, "completion_bucket": 0, "temporal_bucket": 0, "distance": 4, "updated_at": "2026-08-31T11:00:00Z"},
+      {"id": "past-near", "tier": 0, "completion_bucket": 0, "temporal_bucket": 1, "distance": 1, "updated_at": "2026-08-31T12:00:00Z"},
+      {"id": "lower-tier", "tier": 1, "completion_bucket": 0, "temporal_bucket": 0, "distance": 0, "updated_at": "2026-08-31T12:00:00Z"}
+    ],
+    "expected_order": ["future-near", "future-far", "past-near", "completed", "lower-tier"]
+  },
+  "occur_time": {
+    "items": [
+      {"id": "past-far", "temporal_bucket": 1, "distance": 10},
+      {"id": "none", "temporal_bucket": 2, "distance": 0},
+      {"id": "future-far", "temporal_bucket": 0, "distance": 5},
+      {"id": "future-near", "temporal_bucket": 0, "distance": 1},
+      {"id": "past-near", "temporal_bucket": 1, "distance": 1}
+    ],
+    "expected_order": ["future-near", "future-far", "past-near", "past-far", "none"]
+  },
+  "updated_at": {
+    "items": [
+      {"id": "b", "updated_at": "2026-08-31T09:00:00Z"},
+      {"id": "a", "updated_at": "2026-08-31T09:00:00Z"},
+      {"id": "new", "updated_at": "2026-08-31T10:00:00Z"}
+    ],
+    "expected_order": ["new", "a", "b"]
+  }
+}

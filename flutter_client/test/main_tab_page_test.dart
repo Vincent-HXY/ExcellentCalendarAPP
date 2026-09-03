@@ -69,4 +69,80 @@ void main() {
     await tester.pumpAndSettle();
     expect(profileBuildCount, 1);
   });
+
+  testWidgets('real calendar tab is lazy and preserves its session subtree', (
+    tester,
+  ) async {
+    var calendarBuildCount = 0;
+    final selectedTabs = <int>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainTabPage(
+          scheduleBuilder: (_) => const Text('日程首页内容'),
+          calendarBuilder: (_) {
+            calendarBuildCount += 1;
+            return const TextField(key: ValueKey('calendar-preserved-field'));
+          },
+          profileBuilder: (_) => const Text('个人信息内容'),
+          onTabChanged: selectedTabs.add,
+        ),
+      ),
+    );
+
+    expect(calendarBuildCount, 0);
+    await tester.tap(find.text('日历'));
+    await tester.pumpAndSettle();
+    expect(calendarBuildCount, 1);
+    await tester.enterText(
+      find.byKey(const ValueKey('calendar-preserved-field')),
+      'kept calendar state',
+    );
+
+    await tester.tap(find.text('日程'));
+    await tester.tap(find.text('日历'));
+    await tester.pumpAndSettle();
+
+    expect(calendarBuildCount, 1);
+    expect(find.text('kept calendar state'), findsOneWidget);
+    expect(selectedTabs, [1, 0, 1]);
+    expect(find.text('日历板块正在开发中'), findsNothing);
+  });
+
+  testWidgets('real search tab is lazy and preserves its session subtree', (
+    tester,
+  ) async {
+    var searchBuildCount = 0;
+    final selectedTabs = <int>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainTabPage(
+          scheduleBuilder: (_) => const Text('日程首页内容'),
+          searchBuilder: (_) {
+            searchBuildCount += 1;
+            return const TextField(key: ValueKey('search-preserved-field'));
+          },
+          profileBuilder: (_) => const Text('个人信息内容'),
+          onTabChanged: selectedTabs.add,
+        ),
+      ),
+    );
+
+    expect(searchBuildCount, 0);
+    await tester.tap(find.text('搜索'));
+    await tester.pumpAndSettle();
+    expect(searchBuildCount, 1);
+    await tester.enterText(
+      find.byKey(const ValueKey('search-preserved-field')),
+      'kept search state',
+    );
+
+    await tester.tap(find.text('日程'));
+    await tester.tap(find.text('搜索'));
+    await tester.pumpAndSettle();
+
+    expect(searchBuildCount, 1);
+    expect(find.text('kept search state'), findsOneWidget);
+    expect(selectedTabs, [2, 0, 2]);
+    expect(find.text('搜索板块正在开发中'), findsNothing);
+  });
 }

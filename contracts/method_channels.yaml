@@ -568,6 +568,79 @@ methods:
       - cpp_anniversary_occurrence_query_service
     event_stream: false
 
+  calendar.range_summary:
+    module: calendar
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: calendar/calendar_range_summary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: calendar/calendar_range_summary_response.schema.json
+    implementation_path:
+      - kotlin_calendar_handler
+      - calendar.range_summary native call
+      - cpp_calendar_view_query_service
+    event_stream: false
+
+  calendar.list_day_items:
+    module: calendar
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: calendar/calendar_list_day_items_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: calendar/calendar_day_item_page.schema.json
+    implementation_path:
+      - kotlin_calendar_handler
+      - calendar.list_day_items native call
+      - cpp_calendar_view_query_service
+    event_stream: false
+
+  search.query:
+    module: search
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: search/search_query_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: search/search_query_response.schema.json
+    implementation_path:
+      - kotlin_search_handler
+      - search.query native call
+      - cpp_search_query_service
+    event_stream: false
+
+  search.get_local_history:
+    module: search
+    implementation: kotlin_local
+    implementation_status: integrated
+    release_status: active
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: search/search_history_response.schema.json
+    implementation_path:
+      - kotlin_search_handler
+      - atomic_file_search_history_store
+    event_stream: false
+
+  search.replace_local_history:
+    module: search
+    implementation: kotlin_local
+    implementation_status: integrated
+    release_status: active
+    request: search/replace_search_history_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: search/search_history_response.schema.json
+    implementation_path:
+      - kotlin_search_handler
+      - atomic_file_search_history_store
+    event_stream: false
+
   ai.extract:
     module: ai
     request: ai/ai_extraction_request.schema.json

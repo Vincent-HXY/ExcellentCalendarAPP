@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/search/search_history_response.schema.json",
+  "title": "SearchHistoryResponse",
+  "description": "Device-local ordered Search history from the Kotlin AtomicFile store in noBackupFilesDir. revision is a monotonic safe-integer compare-and-replace token; it is not an account or sync revision.",
+  "x-contract-version": 2,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["revision", "items"],
+  "properties": {
+    "revision": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "items": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    }
+  }
+}

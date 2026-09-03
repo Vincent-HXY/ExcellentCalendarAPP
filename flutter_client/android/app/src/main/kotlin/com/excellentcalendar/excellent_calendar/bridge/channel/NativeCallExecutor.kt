@@ -129,7 +129,7 @@ internal class NativeCallExecutor(
     private fun contractFailure(method: String, error: NativeContractViolation): NativeResultContract {
         logger.log(method, null, "contract validation failed field=${error.field ?: "unknown"}")
         return NativeResultContract.failure(
-            code = NativeErrorCodes.ContractValidationFailed,
+            code = error.errorCode,
             message = error.message ?: "Request or native response does not match contract.",
             details = linkedMapOf(
                 "method" to method,

@@ -1,5 +1,23 @@
 # ExcellentCalendarAPP
 
+> 项目状态基线：2026-09-02（Asia/Shanghai）。本 README 保留完整产品设想、架构解释和开发环境说明；实时完成度以 [`docs/status/current.md`](docs/status/current.md)、机器 Contract 和实际代码/测试为准，目录或 Schema 存在不代表生产能力已经实现。
+
+## 当前开发状态
+
+ExcellentCalendarAPP 当前处于 **R2 开发阶段**，执行拓扑已经转为“已发布能力维护 + 开放验证债收口 + Local-first 云同步产品决策”。
+
+| 能力 | 当前状态 | 重要边界 |
+| --- | --- | --- |
+| Calendar Core | SQLite Storage v5、Event、Recurrence、Reminder、Anniversary、Category 与通知/响铃主链已落地 | JSON v1/v2/v3 只作为迁移输入和降级 guard，不再是 live writer |
+| Habit V1 | Contract、C++/SQLite v5、Kotlin/JNI/Android、Flutter/Appearance 与 production composition 已 `integrated + active` | 未完成真机系统行为矩阵由 `OPEN-HAB-001` 跟踪 |
+| Calendar View V1 | 月/周分类视图及三类聚合查询已 `integrated + active` | 正式签名、时区/DST、无障碍和恢复矩阵由 `OPEN-CAL-001` 跟踪 |
+| Search V1 | 三类 canonical 查询、独立分页和设备本地 History 已 `integrated + active` | 搜索框 TalkBack 语义与正式签名链由 `OPEN-SEA-001` 跟踪；SearchIndex/FTS 仍为 `planned/deferred` |
+| 认证与个人资料 | Cloud Backend、Flutter 页面、会话恢复和 Android Keystore 代码已实现并完成开发联调 | `contracts/backend_api.yaml` 和 `auth.refresh_token.*` 仍为 `planned`，尚未校准为正式发布能力 |
+| Local-first 云同步 | 已完成首轮需求与架构盘点，当前为 `SPECIALIST_SPLIT / DECISION_REQUIRED` | 尚无 active plan、生产同步 Contract、服务端日历表、本地 Outbox、设备注册或客户端同步引擎 |
+| 四象限、AI/OCR、微信、Widget、备份 | 仍属于后续范围 | 不得由占位目录、Schema 或目标架构图推断为已实现 |
+
+当前架构入口见 [`docs/architecture/overview.md`](docs/architecture/overview.md)，领域语义见 [`docs/domains/`](docs/domains/)，文档导航见 [`docs/index.md`](docs/index.md)，开放风险见 [`docs/issues/open.md`](docs/issues/open.md)。
+
 ## 开发环境基线
 
 本节记录当前主开发机已经验证通过的开发环境。团队成员请优先保持版本一致；安装路径不强制一致。文中的 `A:\...` 是当前主开发机参考路径，如果安装到其他目录，需要把命令和环境变量中的路径替换成自己电脑上的真实路径。
@@ -71,6 +89,8 @@ cmake --build cpp_core/build-ninja --target excellent_calendar_check
 
 
 ## 功能需求分析
+
+本节描述产品目标范围，不是完成清单。上表未标记为已实现的项目仍需经过领域、Contract、分层实现和验证门禁。
 
 #### (1) 日程
 
@@ -167,13 +187,13 @@ Flutter UI
 负责页面展示、按钮、输入、状态显示
         ↓ MethodChannel / EventChannel
 Kotlin Service / Bridge
-负责权限、通知、后台服务、系统回调、网络请求等Android系统能力
+负责权限、通知、后台服务、系统回调等 Android 平台能力
         ↓ JNI
 C++ Core
-负责核心算法、搜索、压缩、加密、日志存储、全文搜索、本地索引、数据库修改等等
+负责领域规则、跨实体 Workflow、Calendar/Search 查询与 Repository；加密、导出、全文索引等后续能力必须另行进入 Contract 和实施计划
 		↓ 
 SQLite
-数据持久化存储
+Calendar Core Storage v5 数据持久化
 ```
 
 
@@ -181,17 +201,24 @@ SQLite
 ### 核心对象包括：
 
 - Event：日程
+- EventOccurrenceState：重复日程单次 occurrence 状态
 - Habit：习惯
+- HabitRecurrence：Habit 独占的 date-only 每日规则
+- HabitCheckIn：习惯打卡事实
+- HabitReminderTemplate：Habit 每日提醒配置
 - Reminder：提醒
+- Notification：提醒投递结果
+- ReminderRecoveryBatch：提醒恢复批次
 - Category：分类
-- Recurrence：重复规则
-- Notification：通知
-- SearchIndex：搜索索引
+- Recurrence：Event 重复规则的不可变 revision
+- Anniversary：纪念日及其独立年度规则
+- CalendarView：Calendar Core 生成的只读组合投影
+- SearchQuery：三类 canonical 数据生成的只读组合查询
+- SearchIndex：未来可选的搜索加速索引
 - AIExtraction：AI 解析结果
-- SyncOperation：同步操作
-- UserData：用户数据
+- SyncOperation：未来同步操作占位模型
+- UserAccount / UserProfile / UserPreferences / UserSyncState：拆分后的账号、资料、偏好与同步状态
 - DatedMessage：投送消息
-- Anniversary：纪念日
 
 ---
 
@@ -249,30 +276,36 @@ Contract Layer 的核心目标是：
 本项目同时存在两类文档：
 
 ```text
-DATA_MODEL.md
+docs/domains/
 contracts/
 ```
 
 二者职责不同。
 
-#### DATA_MODEL.md
+#### docs/domains/
 
-`DATA_MODEL.md` 描述的是核心业务对象的领域模型，例如：
+`docs/domains/README.md` 与按对象拆分的领域文档描述核心业务对象、组合查询投影和数据边界，例如：
 
 ```text
 Event
+EventOccurrenceState
 Habit
+HabitRecurrence
 HabitCheckIn
+HabitReminderTemplate
 Reminder
 Notification
+ReminderRecoveryBatch
 Category
 Recurrence
+Anniversary
+CalendarView
+SearchQuery
 SearchIndex
 AIExtraction
 SyncOperation
-UserData
+UserAccount / UserProfile / UserPreferences / UserSyncState
 DatedMessage
-Anniversary
 ```
 
 它回答的问题是：
@@ -320,7 +353,7 @@ Contract = 跨语言传输协议
 
 二者不能混用。
 
-例如，`Event` 是业务领域对象；但是 `CreateEventRequest`、`EventResponse`、`SearchEventRequest`、`NativeResult<EventResponse>` 是跨层传输对象。
+例如，`Event` 是业务领域对象；但是 `CreateEventRequest`、`EventResponse`、`SearchQueryRequest`、`NativeResult<EventResponse>` 是跨层传输对象。
 
 ------
 
@@ -333,61 +366,46 @@ ExcellentCalendarAPP/
 ├── contracts/
 │   ├── README.md
 │   ├── method_channels.yaml
+│   ├── native_calls.yaml
 │   ├── error_codes.yaml
 │   ├── enums.yaml
+│   ├── identity.yaml
+│   ├── backend_api.yaml
 │   │
 │   ├── common/
-│   │   ├── native_result.schema.json
-│   │   ├── native_error.schema.json
-│   │   ├── pagination_request.schema.json
-│   │   └── pagination_response.schema.json
-│   │
+│   │   └── NativeResult、NativeError、分页与通用响应
 │   ├── event/
-│   │   ├── create_event_request.schema.json
-│   │   ├── update_event_request.schema.json
-│   │   ├── delete_event_request.schema.json
-│   │   ├── event_response.schema.json
-│   │   ├── event_list_response.schema.json
-│   │   └── search_event_request.schema.json
-│   │
+│   │   └── Event 创建、更新、详情、列表与生命周期
 │   ├── recurrence/
-│   │   ├── recurrence_rule.schema.json
-│   │   └── recurrence_response.schema.json
-│   │
+│   │   └── Event Recurrence request/response
 │   ├── reminder/
-│   │   ├── create_reminder_request.schema.json
-│   │   ├── reminder_response.schema.json
-│   │   └── reminder_list_response.schema.json
-│   │
+│   │   └── Reminder、recovery 与调度工作流
 │   ├── notification/
-│   │   ├── notification_response.schema.json
-│   │   └── notification_list_response.schema.json
-│   │
+│   │   └── Notification attempt、点击与权限状态
 │   ├── habit/
-│   │   ├── create_habit_request.schema.json
-│   │   ├── habit_response.schema.json
-│   │   ├── habit_check_in_request.schema.json
-│   │   └── habit_check_in_response.schema.json
-│   │
+│   │   └── Habit、Recurrence、CheckIn、Reminder 与统计
+│   ├── anniversary/
+│   │   └── Anniversary、独立年度规则、Reminder 与 occurrence
 │   ├── category/
-│   │   ├── create_category_request.schema.json
-│   │   └── category_response.schema.json
-│   │
+│   │   └── Category create/list
+│   ├── calendar/
+│   │   └── Calendar range summary 与三类 day item
+│   ├── search/
+│   │   └── Search Query、分组分页与设备本地 History
+│   ├── appearance/
+│   ├── ring/
+│   ├── runtime/
+│   ├── auth/
+│   ├── user/
 │   ├── ai/
-│   │   ├── ai_extraction_request.schema.json
-│   │   ├── ai_extraction_response.schema.json
-│   │   └── ai_candidate_event.schema.json
-│   │
+│   │   └── AI candidate 占位协议
 │   ├── sync/
-│   │   ├── sync_operation.schema.json
-│   │   └── sync_result.schema.json
-│   │
-│   └── user/
-│       ├── user_data_response.schema.json
-│       └── update_user_settings_request.schema.json
+│   │   └── SyncOperation / SyncResult 概念占位
+│   └── storage/
+│       └── Calendar Core SQLite v5 与连续迁移真相源
 ```
 
-当前阶段可以先实现 `common/`、`event/`、`reminder/`、`recurrence/`、`habit/`、`category/` 中的核心协议。`ai/`、`sync/`、`user/` 可以先保留文档级设计，不需要立即实现完整逻辑。
+当前 `common/event/recurrence/reminder/anniversary/category/habit/calendar/search/ring/appearance` 的已发布部分已经按机器 Contract 接入真实链路。`auth/user/backend_api.yaml` 对应代码已经实现并完成开发联调，但机器状态仍为 `planned`；`ai/sync` 与 SearchIndex/FTS 继续是概念占位或 deferred 能力。具体状态必须读取文件内的 `implementation_status/release_status`，不能按目录是否存在推断。
 
 ------
 
@@ -999,7 +1017,7 @@ deleted_at
     },
     "recurrence": {
       "oneOf": [
-        { "$ref": "../recurrence/recurrence_rule.schema.json" },
+        { "$ref": "../recurrence/event_recurrence_rule_input.schema.json" },
         { "type": "null" }
       ]
     },
@@ -1278,7 +1296,7 @@ deleted_at
 重复规则必须按领域拆分，不能用一个通用 DTO 抹平 Event、Habit 和 Anniversary 的锚点、生命周期与 occurrence 语义。
 
 - Event 使用 `event_recurrence_rule_input.schema.json` 与不可变 `(recurrence_id, revision)`；其锚点由 C++ 从 Event 时间字段派生。
-- Habit 暂时使用计划态 `recurrence_rule.schema.json`，尚未激活。
+- Habit 使用独立的 `habit_recurrence_rule_input.schema.json` 与 `habit_recurrence_response.schema.json`，V1 固定为 date-only `daily + interval=1 + follow_device`，并已随 Habit V1 激活；不得复用 Event Recurrence revision。
 - Anniversary V1 使用独立的 `anniversary_recurrence_rule_input.schema.json` 与 `anniversary_recurrence_response.schema.json`，不得引用 Event Recurrence revision。
 
 ##### 11.1 `anniversary_recurrences` 数据结构
@@ -1300,9 +1318,9 @@ deleted_at
 3. 仍为年度重复时更新标题或日期保留原 `recurrence_id`；日期变化只改变后续动态计算使用的锚点。
 4. 从一次性切换为年度重复时创建新规则；从年度重复切换为一次性时，在同一 C++ transaction 中清空引用并软删除旧规则。
 5. 不提前生成 2027、2028、2029 等 occurrence。C++ 查询按请求 IANA timezone 动态计算下一次本地日期；2 月 29 日在非闰目标年落到二月最后一天。
-6. Anniversary V1 occurrence 没有持久化状态或 Reminder 身份。未来增加提醒前必须另行完成 occurrence identity、幂等与 reconciliation 设计门禁。
+6. Anniversary occurrence 不持久化状态，但已经具有由 `anniversary_id + occurrence_date` 生成的稳定 `occurrence_key`；Reminder R1 使用 occurrence、template 与 reminder 的确定性 identity，并由 C++ workflow 负责幂等、滚动 successor 和 reconciliation。
 
-Anniversary Contract 已切换为 `implementation_status: integrated`。正式本地持久化是 Calendar Core SQLite Storage v4；`anniversaries`、`anniversary_recurrences`、Reminder template、Reminder 与 Notification 等逻辑 Store 通过同一数据库事务原子提交。合法 JSON v2/v3 目录会连续迁移到 SQLite v4，旧集合保留为带版本 4 降级 guard 的诊断快照，不再参与运行时读写。Flutter → Kotlin → JNI → C++ 调用、Repository/workflow、Anniversary Reminder/Notification、occurrence 查询及自动化回归均已接入；迁移后的真机证据以 `docs/log.md` 的 v4 记录为准。
+Anniversary Contract 已切换为 `implementation_status: integrated`、`release_status: active`。`anniversaries`、`anniversary_recurrences`、Reminder template、Reminder 与 Notification 等表在 SQLite Storage v4 引入，并由当前正式的 Calendar Core SQLite Storage v5 原样继承；相关 Workflow 通过同一数据库事务原子提交。合法 JSON v2/v3 目录会连续迁移到 SQLite v4，再通过受控相邻迁移进入 v5；旧集合保留为带版本 4 降级 guard 的诊断快照，不再参与运行时读写。Flutter → Kotlin → JNI → C++、Repository/workflow、Anniversary Reminder/Notification、occurrence 查询及自动化回归均已接入。
 
 ------
 
@@ -1310,25 +1328,17 @@ Anniversary Contract 已切换为 `implementation_status: integrated`。正式�
 
 ##### 12.1 Dart 侧
 
-Dart 侧在 `flutter_client` 中新增：
+Dart 侧当前按边界模块组织：
 
 ```text
 flutter_client/lib/native_contract/
-├── common/
-│   ├── native_result_dto.dart
-│   └── native_error_dto.dart
-├── event/
-│   ├── create_event_request_dto.dart
-│   ├── event_response_dto.dart
-│   └── event_detail_response_dto.dart
-├── reminder/
-│   ├── reminder_response_dto.dart
-│   └── create_reminder_request_dto.dart
-├── recurrence/
-│   └── recurrence_rule_dto.dart
-└── habit/
-    ├── habit_response_dto.dart
-    └── habit_check_in_response_dto.dart
+├── common/、shared/                    # 统一结果、错误、分页与 JSON 归一化
+├── event/、recurrence/                # 事件、occurrence 与重复规则
+├── reminder/、notification/           # 提醒、调度与通知
+├── anniversary/、category/、habit/    # 纪念日、分类与习惯
+├── calendar/、search/                 # Calendar View 与 Search Query V1
+├── runtime/、appearance/、ring/       # 运行时、外观与圆环状态
+└── auth/、user/                       # 本地认证边界与用户缓存模型
 ```
 
 Dart DTO 负责：
@@ -1346,16 +1356,17 @@ Dart UI 不应该直接拼 MethodChannel Map。
 
 ##### 12.2 Kotlin 侧
 
-Kotlin 侧新增：
+Kotlin 侧当前以 Contract 校验器和模块契约文件承接同一份跨层协议：
 
 ```text
 android/app/src/main/kotlin/.../bridge/contract/
-├── NativeResult.kt
-├── NativeError.kt
-├── EventContract.kt
-├── ReminderContract.kt
-├── RecurrenceContract.kt
-└── HabitContract.kt
+├── NativeResultContract.kt、NativeErrorContract.kt
+├── EventV2Contracts.kt、RecurrenceV2Contracts.kt
+├── ReminderV2Contracts.kt、NotificationContracts.kt
+├── AnniversaryContracts.kt、CategoryContracts.kt、HabitContracts.kt
+├── CalendarContracts.kt、SearchContracts.kt
+├── RuntimeTimezoneContracts.kt、AppearanceContracts.kt、RingContracts.kt
+└── AuthRefreshTokenContracts.kt
 ```
 
 Kotlin Contract 负责：
@@ -1377,8 +1388,17 @@ android/app/src/main/kotlin/.../bridge/native/
 ├── NativeEventBridge.kt
 ├── NativeReminderBridge.kt
 ├── NativeNotificationBridge.kt
+├── NativeAnniversaryBridge.kt
+├── NativeCategoryBridge.kt
+├── NativeHabitBridge.kt
+├── NativeCalendarViewBridge.kt
+├── NativeSearchBridge.kt
+├── NativeRuntimeBridge.kt
 ├── NativeCalendarCoreBridge.kt
 ├── JniNativeCalendarCoreBridge.kt
+├── JniHabitBridge.kt
+├── JniCalendarViewBridge.kt
+├── JniSearchBridge.kt
 ├── CalendarCoreStorageDirectoryResolver.kt
 └── AndroidNativeBridgeFactory.kt
 ```
@@ -1389,8 +1409,8 @@ android/app/src/main/kotlin/.../bridge/native/
 2. `NativeCalendarCoreBridge.kt` 是聚合接口，只继承各模块接口，不直接新增方法。
 3. `JniNativeCalendarCoreBridge.kt` 是聚合实现类，负责加载 native 库、初始化 C++ storage，并实现所有模块接口方法。
 4. `AndroidNativeBridgeFactory.kt` 是 Android 统一创建入口，文件名和职责保持稳定，并通过 `CalendarCoreStorageDirectoryResolver.kt` 指定正式数据目录。
-5. Android 运行时 Calendar Core JSON 目录是 `files/local_storage/calendar_core_storage_json`；历史 `files/local_storage/test_storage_json` 仅作为旧版本升级迁移来源，不再作为新代码的正式目录名。
-6. 后续新增模块时，例如纪念日模块，应该新增 `NativeAnniversaryBridge.kt`，再让 `NativeCalendarCoreBridge.kt` 继承它，并同步补齐 `JniNativeCalendarCoreBridge.kt`、C++ JNI 导出符号、contracts、Kotlin contract 校验和测试 fake。
+5. Android Calendar Core 继续使用历史兼容目录名 `files/local_storage/calendar_core_storage_json`，但当前唯一 live writer 是其中的 SQLite v5 文件 `calendar_core.sqlite3`；目录内 JSON v1/v2/v3 只作迁移输入和降级 guard。历史 `files/local_storage/test_storage_json` 仅作为旧版本升级迁移来源，不再作为新代码的正式目录名。
+6. 后续新增模块时继续沿用现有 Anniversary、Habit、Calendar View 与 Search 的拆分方式：先新增窄接口，再让 `NativeCalendarCoreBridge.kt` 聚合，并同步补齐 JNI 实现、C++ 导出符号、contracts、Kotlin contract 校验和测试 fake。
 7. 只需要单模块能力的服务应依赖窄接口，例如 reminder 调度服务依赖 `NativeReminderBridge`；只有 MethodChannel 总入口或跨模块编排流程才依赖 `NativeCalendarCoreBridge`。
 
 ------
@@ -1404,25 +1424,34 @@ C++ Domain Model
 C++ Boundary Contract
 ```
 
-例如：
+当前实现示例：
 
 ```text
 cpp_core/
 ├── include/excellent_calendar/domain/
 │   ├── event.hpp
 │   ├── reminder.hpp
-│   └── recurrence.hpp
+│   ├── recurrence.hpp
+│   ├── anniversary.hpp
+│   ├── habit.hpp
+│   └── search.hpp
 │
 ├── include/excellent_calendar/boundary/contract/
 │   ├── create_event_request.hpp
 │   ├── event_response.hpp
 │   ├── native_result.hpp
-│   └── native_error.hpp
+│   ├── anniversary_json.hpp
+│   ├── habit_json.hpp
+│   ├── calendar_view_json.hpp
+│   └── search_json.hpp
 │
 └── src/boundary/contract/
-    ├── create_event_request_json.cpp
-    ├── event_response_json.cpp
-    └── native_result_json.cpp
+    ├── event_response.cpp
+    ├── native_result.cpp
+    ├── anniversary_json.cpp
+    ├── habit_json.cpp
+    ├── calendar_view_json.cpp
+    └── search_json.cpp
 ```
 
 C++ Domain Model 负责表达核心业务规则。
@@ -1529,80 +1558,44 @@ Notification
 
 ------
 
-#### 14. Contract 优先级
+#### 14. Contract 当前状态
 
-根据当前本地优先阶段，Contract 实现优先级如下。
+早期“第一至第四优先级”已经不能代表实际进度。当前应按机器 Contract 和真实 production composition 区分以下三类。
 
-##### 第一优先级：必须尽快明确
-
-```text
-common/native_result.schema.json
-common/native_error.schema.json
-method_channels.yaml
-error_codes.yaml
-enums.yaml
-
-event/create_event_request.schema.json
-event/update_event_request.schema.json
-event/event_response.schema.json
-event/event_detail_response.schema.json
-event/search_event_request.schema.json
-event/event_list_response.schema.json
-
-recurrence/recurrence_rule.schema.json
-reminder/create_reminder_request.schema.json
-reminder/reminder_response.schema.json
-category/category_response.schema.json
-```
-
-原因：
+##### 已集成并激活
 
 ```text
-这些协议直接影响日程创建、提醒生成、重复规则、分类展示、搜索查询，是当前核心闭环。
+NativeResult / NativeError / error_codes / enums / identity
+Event / Event Recurrence / Reminder / Anniversary / Category
+Habit / HabitCheckIn / HabitRecurrence / HabitReminderTemplate
+Ring / Appearance
+Calendar View range/day query
+Search Query / device-local Search History
+Calendar Core SQLite Storage v5
 ```
 
-##### 第二优先级：习惯系统相关
+这些能力已有对应跨层实现和验证，但已激活不等于所有设备、正式签名或恢复矩阵均已通过；开放边界分别记录在 `docs/issues/open.md`。
+
+##### 代码已实现、机器状态仍待校准
 
 ```text
-habit/create_habit_request.schema.json
-habit/habit_response.schema.json
-habit/habit_check_in_request.schema.json
-habit/habit_check_in_response.schema.json
+Backend Auth / User Profile / Avatar HTTP API
+auth.refresh_token.* Android secure-store MethodChannel
 ```
 
-原因：
+Cloud Backend、Flutter 账号/个人资料和 Android Keystore 代码已经完成开发联调，但 `contracts/backend_api.yaml` 及四个 `auth.refresh_token.*` 仍为 `planned`，不能描述为正式 active。
+
+##### Planned / Deferred
 
 ```text
-习惯功能必须区分 Habit 和 HabitCheckIn，否则无法稳定表达坚持日期、完成次数、连续天数和完成率。
+notification.list 与通知历史页面
+SearchIndex / SQLite FTS
+SyncOperation / UserSyncState / sync.apply
+AI extraction / OCR / Candidate Event
+四象限、附件、导入导出与备份
 ```
 
-##### 第三优先级：通知日志与搜索
-
-```text
-notification/notification_response.schema.json
-search/search_index_response.schema.json
-```
-
-原因：
-
-```text
-Notification 是投递结果日志，SearchIndex 是搜索性能优化结构，可以在主流程稳定后补齐。
-```
-
-##### 第四优先级：未来能力预留
-
-```text
-ai/ai_extraction_request.schema.json
-ai/ai_extraction_response.schema.json
-sync/sync_operation.schema.json
-user/user_data_response.schema.json
-```
-
-原因：
-
-```text
-AI、云同步、用户云端数据属于未来能力。当前可以保留 schema 草案，但不必强制完整实现。
-```
+其中 Local-first 云同步已完成需求与架构盘点，但仍处于 `DECISION_REQUIRED`；必须先冻结产品语义、数据所有权、Outbox、游标、版本、删除和冲突策略，再建立生产 Contract 与分层计划。
 
 ------
 
@@ -1633,7 +1626,7 @@ EventEntity
 EventViewModel
 ```
 
-当前阶段不需要所有层都完整实现，但概念上必须分清。
+对 `planned/deferred` 能力可以只保留概念设计；一旦能力标记为 `integrated + active`，相关 Contract、调用方、边界适配、真实存储/平台实现和验证必须完整闭环，不能只实现其中一层。
 
 ------
 
@@ -1753,7 +1746,7 @@ Anniversary.date        date
 
 #### 16. 后续演进方向
 
-当前阶段可以手写 schema 和 DTO。
+当前仍以人工维护的 Schema、DTO 和边界映射为主，并通过模块 validator、单元测试与跨层 smoke 防止漂移。
 
 当协议逐渐稳定后，可以考虑：
 
@@ -1761,12 +1754,12 @@ Anniversary.date        date
 1. 根据 JSON Schema 自动生成 Dart DTO
 2. 根据 JSON Schema 自动生成 Kotlin data class
 3. 根据 JSON Schema 自动生成 C++ boundary struct
-4. 在 CI 中校验 schema 是否合法
-5. 在单元测试中校验示例 JSON 是否符合 schema
+4. 将现有模块 Contract validator 固化进 CI
+5. 持续用 fixture、语义 validator 和跨层测试校验示例 JSON
 6. 未来如果云端同步复杂度上升，再考虑 Protobuf / FlatBuffers / OpenAPI
 ```
 
-但现阶段不建议一开始就引入过重的 IDL 或自动生成体系。
+在现有 Native Contract v2 和已发布能力稳定运行期间，不应为单个功能贸然引入新的重型 IDL 或自动生成体系；若统一引入，必须作为独立工具链变更并验证全部调用方。
 
 当前最重要的是：
 
@@ -1896,7 +1889,7 @@ ExcellentCalendarAPP
 │   │   └── 负责 C++ 领域模型与 SQLite 数据结构之间的转换
 │   │
 │   └── Backend Sync Adapter
-│       └── 负责本地同步模块与云端 API 之间的通信
+│       └── [planned] 负责本地同步模块与云端 API 之间的通信
 │
 ├── Android Native Layer Android 系统能力层
 │   ├── Notification Service
@@ -1909,13 +1902,13 @@ ExcellentCalendarAPP
 │   │   └── 负责通知权限、闹钟权限、文件权限等
 │   │
 │   ├── Share Receiver
-│   │   └── 负责接收其他 App 分享来的文本或图片
+│   │   └── [planned] 负责接收其他 App 分享来的文本或图片
 │   │
 │   ├── Widget Provider
-│   │   └── 负责桌面小组件，例如今日日程、习惯、最近三天
+│   │   └── [planned] 负责桌面小组件，例如今日日程、习惯、最近三天
 │   │
 │   └── WeChat Bridge
-│       └── 负责微信登录、微信分享、微信推送相关能力
+│       └── [planned] 负责微信登录、微信分享、微信推送相关能力
 │
 ├── C++ Core Engine 核心引擎层
 │   ├── Event Engine
@@ -1928,74 +1921,74 @@ ExcellentCalendarAPP
 │   │   └── 负责重复日程规则解析、展开、下一次发生时间计算
 │   │
 │   ├── Search Engine
-│   │   └── 负责全文搜索、条件过滤、排序、分页
+│   │   └── [V1 active] 负责 canonical 三类查询、条件过滤、排序、分页；全文索引/FTS deferred
 │   │
 │   ├── Habit Engine
 │   │   └── 负责习惯打卡、统计、连续天数、完成率
 │   │
 │   ├── Calendar Query Engine
-│   │   └── 负责年/月/周/日/最近三日视图的数据聚合
+│   │   └── [V1 active] 负责月/周范围与选中日的 Event/Habit/Anniversary 聚合；年/最近三日另行规划
 │   │
 │   ├── Quadrant Engine
-│   │   └── 负责按照重要性和紧急性生成四象限数据
+│   │   └── [planned] 负责按照重要性和紧急性生成四象限数据
 │   │
 │   ├── AI Result Validator
-│   │   └── 负责校验 AI 生成的候选日程是否可靠、合法
+│   │   └── [planned] 负责校验 AI 生成的候选日程是否可靠、合法
 │   │
 │   ├── Sync Log Engine
-│   │   └── 负责记录本地操作日志，为后续云同步和冲突处理做准备
+│   │   └── [decision required] 负责与业务写同事务记录 Outbox；当前尚未实现
 │   │
 │   ├── Crypto / Export Engine
-│   │   └── 负责本地数据加密、备份导出、备份导入
+│   │   └── [planned] 负责本地数据加密、备份导出、备份导入
 │   │
 │   └── Storage Repository
 │       └── 负责统一访问 SQLite，避免各个 Engine 直接乱写 SQL，所有的SQL语句都写在这里
 │
 ├── Local Storage 本地存储层，所有的数据库文件，内容都写在这里
 │   ├── SQLite
-│   │   └── 负责结构化数据持久化
+│   │   └── [v5 active] 负责 Calendar Core 结构化数据持久化
 │   │
 │   ├── SQLite FTS
-│   │   └── 负责全文搜索索引
+│   │   └── [deferred] 负责未来全文搜索加速索引
 │   │
 │   ├── Attachment Store
-│   │   └── 负责保存图片、导入文件、附件
+│   │   └── [planned] 负责保存图片、导入文件、附件
 │   │
 │   └── Operation Log
-│       └── 负责保存本地增删改操作记录
+│       └── [decision required] 负责未来同步 Outbox；当前尚未实现
 │
 ├── AI Pipeline AI 输入管道
 │   ├── OCR Adapter
-│   │   └── 负责从图片中提取文字
+│   │   └── [planned] 负责从图片中提取文字
 │   │
 │   ├── Text Extraction
-│   │   └── 负责清洗文本、提取可能包含日程的信息
+│   │   └── [planned] 负责清洗文本、提取可能包含日程的信息
 │   │
 │   ├── Time Parser
-│   │   └── 负责识别“明天上午”“下周五”等自然语言时间
+│   │   └── [planned] 负责识别“明天上午”“下周五”等自然语言时间
 │   │
 │   ├── Category Recommender
-│   │   └── 负责推荐分类，例如学习、工作、购物、纪念日
+│   │   └── [planned] 负责推荐分类，例如学习、工作、购物、纪念日
 │   │
 │   ├── Reminder Recommender
-│   │   └── 负责推荐提前多久提醒
+│   │   └── [planned] 负责推荐提前多久提醒
 │   │
 │   └── Candidate Event Builder
-│       └── 负责生成候选日程，等待用户确认
+│       └── [planned] 负责生成候选日程，等待用户确认
 │
 └── Optional Cloud Backend 可选云端
     ├── Auth
-    │   └── 负责账号登录和身份验证
+    │   └── [代码已实现、Contract planned] 负责账号登录、会话和个人资料
     │
     ├── Sync API
-    │   └── 负责多设备数据同步
+    │   └── [decision required] 负责多设备数据同步；当前只有空包占位
     │
     ├── Backup API
-    │   └── 负责云端备份和恢复
+    │   └── [planned] 负责云端备份和恢复
     │
     ├── AI API Proxy
-    │   └── 负责转发 AI 请求，隐藏密钥和控制成本
+    │   └── [planned] 负责转发 AI 请求，隐藏密钥和控制成本
     │
     └── WeChat Push Gateway
-        └── 负责服务端微信提醒推送
+        └── [planned] 负责服务端微信提醒推送
 ```

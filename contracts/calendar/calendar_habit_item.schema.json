@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/calendar/calendar_habit_item.schema.json",
+  "title": "CalendarHabitItem",
+  "description": "One Habit daily projection inside its effective challenge interval. Daily status and exact hundredths progress are supplied by C++; absent/missed/upcoming are never fabricated CheckIn records. For quantitative items, partial means 0 < completed < target and done means completed >= target; over-completion remains exact.",
+  "x-contract-version": 2,
+  "x-calendar-view-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "habit_id",
+    "date",
+    "title",
+    "status",
+    "check_in_id",
+    "completed_count_hundredths",
+    "target_count_hundredths",
+    "unit",
+    "has_active_reminder"
+  ],
+  "properties": {
+    "habit_id": {"type": "string", "format": "uuid"},
+    "date": {"type": "string", "format": "date"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 80},
+    "status": {"type": "string", "enum": ["upcoming", "absent", "partial", "done", "skipped", "missed"]},
+    "check_in_id": {"type": ["string", "null"], "format": "uuid"},
+    "completed_count_hundredths": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "target_count_hundredths": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "unit": {"type": ["string", "null"], "minLength": 1, "maxLength": 32},
+    "has_active_reminder": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {"properties": {"target_count_hundredths": {"type": "null"}, "unit": {"type": "null"}}},
+        {"properties": {"target_count_hundredths": {"type": "integer", "minimum": 1}, "unit": {"type": "string", "minLength": 1}}}
+      ]
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["upcoming", "absent", "missed"]}}, "required": ["status"]},
+      "then": {"properties": {"check_in_id": {"type": "null"}, "completed_count_hundredths": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "partial"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "check_in_id": {"type": "string", "format": "uuid"},
+          "completed_count_hundredths": {"type": "integer", "minimum": 1},
+          "target_count_hundredths": {"type": "integer", "minimum": 1},
+          "unit": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "done"}}, "required": ["status"]},
+      "then": {
+        "properties": {"check_in_id": {"type": "string", "format": "uuid"}},
+        "oneOf": [
+          {"properties": {"completed_count_hundredths": {"type": "null"}, "target_count_hundredths": {"type": "null"}, "unit": {"type": "null"}}},
+          {"properties": {"completed_count_hundredths": {"type": "integer", "minimum": 1}, "target_count_hundredths": {"type": "integer", "minimum": 1}, "unit": {"type": "string", "minLength": 1}}}
+        ]
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "skipped"}}, "required": ["status"]},
+      "then": {"properties": {"check_in_id": {"type": "string", "format": "uuid"}, "completed_count_hundredths": {"type": "null"}}}
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "sort_revision": 2,
+  "required_bindings": [
+    "normalized_keyword_comparison_key",
+    "target_types",
+    "date_from",
+    "date_to_exclusive",
+    "category_ids_and_uncategorized_mode",
+    "include_completed",
+    "sort_by",
+    "requested_target_type",
+    "timezone",
+    "page_size",
+    "contract_version",
+    "cursor_sort_revision",
+    "evaluated_at",
+    "complete_last_sort_key",
+    "canonical_store_snapshot_token"
+  ],
+  "malformed_cursor_error": "SEARCH_CURSOR_INVALID",
+  "query_mismatch_error": "SEARCH_CURSOR_QUERY_MISMATCH",
+  "changed_generation_error": "SEARCH_CURSOR_EXPIRED",
+  "client_query_generation_is_bound": false
+}

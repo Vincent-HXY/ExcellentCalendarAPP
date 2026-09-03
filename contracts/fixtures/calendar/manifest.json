@@ -1,0 +1,24 @@
+{
+  "fixture_version": 1,
+  "cases": [
+    {"name": "42-day range boundary", "schema": "../../calendar/calendar_range_summary_request.schema.json", "instance": "range_request_42_days.valid.json", "expected_valid": true, "semantic_check": "range_request"},
+    {"name": "43-day range rejected", "schema": "../../calendar/calendar_range_summary_request.schema.json", "instance": "range_request_43_days.semantic_invalid.json", "expected_valid": true, "semantic_check": "range_request", "expected_error": "CALENDAR_RANGE_TOO_LARGE"},
+    {"name": "reversed range rejected", "schema": "../../calendar/calendar_range_summary_request.schema.json", "instance": "range_request_reversed.semantic_invalid.json", "expected_valid": true, "semantic_check": "range_request", "expected_error": "CALENDAR_RANGE_INVALID"},
+    {"name": "empty calendar day remains explicit", "schema": "../../calendar/calendar_range_summary_response.schema.json", "instance": "range_summary_empty_day.valid.json", "expected_valid": true, "semantic_check": "range_response"},
+    {"name": "three-type range summary", "schema": "../../calendar/calendar_range_summary_response.schema.json", "instance": "range_summary_three_types.valid.json", "expected_valid": true, "semantic_check": "range_response"},
+    {"name": "gap in range summary rejected semantically", "schema": "../../calendar/calendar_range_summary_response.schema.json", "instance": "range_summary_gap.semantic_invalid.json", "expected_valid": true, "semantic_check": "range_response", "expected_error": "CONTRACT_VALIDATION_FAILED"},
+    {"name": "first day-items request", "schema": "../../calendar/calendar_list_day_items_request.schema.json", "instance": "list_day_items_first_page.valid.json", "expected_valid": true, "semantic_check": "day_request"},
+    {"name": "malformed cursor rejected", "schema": "../../calendar/calendar_list_day_items_request.schema.json", "instance": "list_day_items_bad_cursor.invalid.json", "expected_valid": false},
+    {"name": "malformed snapshot rejected", "schema": "../../calendar/calendar_list_day_items_request.schema.json", "instance": "list_day_items_bad_snapshot.invalid.json", "expected_valid": false},
+    {"name": "typed Event page", "schema": "../../calendar/calendar_day_item_page.schema.json", "instance": "event_page.valid.json", "expected_valid": true, "semantic_check": "day_page"},
+    {"name": "typed Habit page", "schema": "../../calendar/calendar_day_item_page.schema.json", "instance": "habit_page.valid.json", "expected_valid": true, "semantic_check": "day_page"},
+    {"name": "quantity Habit over-completion remains done", "schema": "../../calendar/calendar_day_item_page.schema.json", "instance": "habit_page_overcomplete.valid.json", "expected_valid": true, "semantic_check": "day_page"},
+    {"name": "partial Habit cannot reach target", "schema": "../../calendar/calendar_day_item_page.schema.json", "instance": "habit_page_partial_at_target.semantic_invalid.json", "expected_valid": true, "semantic_check": "day_page", "expected_error": "CONTRACT_VALIDATION_FAILED"},
+    {"name": "done quantity Habit cannot be below target", "schema": "../../calendar/calendar_day_item_page.schema.json", "instance": "habit_page_done_below_target.semantic_invalid.json", "expected_valid": true, "semantic_check": "day_page", "expected_error": "CONTRACT_VALIDATION_FAILED"},
+    {"name": "typed Anniversary page", "schema": "../../calendar/calendar_day_item_page.schema.json", "instance": "anniversary_page.valid.json", "expected_valid": true, "semantic_check": "day_page"},
+    {"name": "non-terminal page cannot be empty", "schema": "../../calendar/calendar_day_item_page.schema.json", "instance": "nonterminal_empty.invalid.json", "expected_valid": false},
+    {"name": "range-dot conservation vectors", "instance": "summary_conservation.golden.json", "semantic_check": "summary_conservation"},
+    {"name": "pagination boundary vectors", "instance": "pagination_boundaries.golden.json", "semantic_check": "pagination_boundaries"},
+    {"name": "cursor and snapshot binding vectors", "instance": "cursor_binding.golden.json", "semantic_check": "cursor_binding"}
+  ]
+}

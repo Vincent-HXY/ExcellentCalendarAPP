@@ -29,6 +29,8 @@ class JniNativeCalendarCoreBridge(
     @Volatile private var runtimeInitAttempted = false
     @Volatile private var runtimeInitFailureJson: String? = null
     private val habitBridge = JniHabitBridge(::invokeHabitNative)
+    private val calendarViewBridge = JniCalendarViewBridge(::invokeCalendarViewNative)
+    private val searchBridge = JniSearchBridge(::invokeSearchNative)
 
     override fun initializeRuntime(requestJson: String): String {
         ensureLibraryLoaded()
@@ -161,6 +163,14 @@ class JniNativeCalendarCoreBridge(
     override fun setHabitReminder(requestJson: String) = habitBridge.setHabitReminder(requestJson)
     override fun reconcileHabitReminders(requestJson: String) = habitBridge.reconcileHabitReminders(requestJson)
 
+    override fun calendarRangeSummary(requestJson: String) =
+        calendarViewBridge.calendarRangeSummary(requestJson)
+
+    override fun calendarListDayItems(requestJson: String) =
+        calendarViewBridge.calendarListDayItems(requestJson)
+
+    override fun querySearch(requestJson: String) = searchBridge.querySearch(requestJson)
+
     override fun createReminder(requestJson: String) = callWithRuntime("nativeCreateReminder") {
         if (profile == NativeContractProfile.V2) nativeCreateReminderV2(requestJson) else nativeCreateReminder(requestJson)
     }
@@ -250,6 +260,21 @@ class JniNativeCalendarCoreBridge(
             "nativeSetHabitReminderV2" -> nativeSetHabitReminderV2(requestJson)
             "nativeReconcileHabitRemindersV2" -> nativeReconcileHabitRemindersV2(requestJson)
             else -> throw NativeBridgeUnavailableException("Unknown Habit JNI symbol.")
+        }
+    }
+
+    private fun invokeCalendarViewNative(symbol: String, requestJson: String): String = v2Only(symbol) {
+        when (symbol) {
+            "nativeCalendarRangeSummaryV2" -> nativeCalendarRangeSummaryV2(requestJson)
+            "nativeCalendarListDayItemsV2" -> nativeCalendarListDayItemsV2(requestJson)
+            else -> throw NativeBridgeUnavailableException("Unknown Calendar View JNI symbol.")
+        }
+    }
+
+    private fun invokeSearchNative(symbol: String, requestJson: String): String = v2Only(symbol) {
+        when (symbol) {
+            "nativeQuerySearchV2" -> nativeQuerySearchV2(requestJson)
+            else -> throw NativeBridgeUnavailableException("Unknown Search JNI symbol.")
         }
     }
 
@@ -405,6 +430,9 @@ class JniNativeCalendarCoreBridge(
     external fun nativeListHabitDailyStatusesV2(requestJson: String): String
     external fun nativeSetHabitReminderV2(requestJson: String): String
     external fun nativeReconcileHabitRemindersV2(requestJson: String): String
+    external fun nativeCalendarRangeSummaryV2(requestJson: String): String
+    external fun nativeCalendarListDayItemsV2(requestJson: String): String
+    external fun nativeQuerySearchV2(requestJson: String): String
     external fun nativeCreateReminder(requestJson: String): String
     external fun nativeCreateReminderV2(requestJson: String): String
     external fun nativeUpdateReminder(requestJson: String): String

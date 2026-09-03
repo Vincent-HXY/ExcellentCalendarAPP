@@ -2,7 +2,7 @@
 
 > 定位：这是项目的**当前架构地图**，用于快速判断系统如何分层、代码应放在哪里、哪些边界不能绕过，以及哪些能力已经真实落地。
 >
-> 基线：2026-08-31。项目已进入 R2 开发阶段；实现状态以 `docs/status/current.md`、机器 Contract 和实际代码为准。Contract 或目录存在，不代表对应生产能力已经完成。
+> 基线：2026-09-02。项目已进入 R2 开发阶段；实现状态以 `docs/status/current.md`、机器 Contract 和实际代码为准。Contract 或目录存在，不代表对应生产能力已经完成。
 
 ## 1. Architecture at a Glance
 
@@ -27,6 +27,8 @@ Calendar Core SQLite Storage v5 (contract-active)
 ```
 
 Habit V1 的 SQLite Storage v5 runtime、v4→v5 migration、Repository 与真实 JNI/APK composition 已实现并通过发布门禁；`contracts/storage/calendar_core_storage.yaml`、Habit/Appearance capability 与 identity 当前统一为 `integrated + active`。仍未执行的设备场景是 `OPEN-HAB-001` 中明确接受的发布验证债，不得描述为已通过。
+
+Calendar View V1 的只读聚合链已接入同一 SQLite v5 runtime，并于 2026-09-02 按产品负责人的发布例外切换为 `integrated + active`。该状态不新增 Calendar writer、表或迁移；正式签名/商店上传、时区/DST、无障碍、大字体/减少动画、进程恢复、升级回滚/密钥恢复和正式 Release UI 全链仍由 `OPEN-CAL-001` 跟踪，不得描述为已通过。
 
 提醒投递是主链路的 Android 平台分支：
 

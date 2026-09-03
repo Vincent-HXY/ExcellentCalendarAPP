@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/bootstrap/notification_permission_controller.dart';
+import '../../../app/routing/app_router.dart';
 import '../../../application/anniversary/app_clock.dart';
 import '../../../application/anniversary/anniversary_detail_controller.dart';
 import '../../../application/anniversary/anniversary_models.dart';
@@ -23,6 +24,8 @@ class AnniversaryDetailPage extends StatefulWidget {
     required this.shareGateway,
     required this.clock,
     this.permissionController,
+    this.focusOccurrenceKey,
+    this.focusOccurrenceDate,
     super.key,
   });
 
@@ -31,6 +34,8 @@ class AnniversaryDetailPage extends StatefulWidget {
   final AnniversaryShareGateway shareGateway;
   final AppClock clock;
   final NotificationPermissionController? permissionController;
+  final String? focusOccurrenceKey;
+  final String? focusOccurrenceDate;
 
   @override
   State<AnniversaryDetailPage> createState() => _AnniversaryDetailPageState();
@@ -45,6 +50,8 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
 
   late final AnniversaryDetailController _controller;
   int _themeIndex = 0;
+  bool _changed = false;
+  bool _isPopping = false;
 
   @override
   void initState() {
@@ -90,6 +97,7 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
     if (!mounted || updated == null) {
       return;
     }
+    _changed = true;
     _controller.replaceDetail(updated);
   }
 
@@ -122,11 +130,21 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
       return;
     }
     if (deleted) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(ContentDetailRouteOutcome.deleted);
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(_controller.errorMessage ?? '删除失败，请稍后重试')),
+    );
+  }
+
+  void _popWithResult() {
+    if (_isPopping) return;
+    _isPopping = true;
+    Navigator.of(context).pop(
+      _changed
+          ? ContentDetailRouteOutcome.changed
+          : ContentDetailRouteOutcome.unchanged,
     );
   }
 
@@ -236,7 +254,11 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
 
   Future<void> _toggleReminders(bool enabled) async {
     final succeeded = await _controller.setRemindersEnabled(enabled);
-    if (!mounted || succeeded) return;
+    if (!mounted) return;
+    if (succeeded) {
+      _changed = true;
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(_controller.errorMessage ?? '提醒状态更新失败')),
     );
@@ -253,31 +275,38 @@ class _AnniversaryDetailPageState extends State<AnniversaryDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark.copyWith(
-        statusBarColor: Colors.transparent,
-        systemNavigationBarColor: AnniversaryColors.detailBackground,
-      ),
-      child: Scaffold(
-        backgroundColor: AnniversaryColors.detailBackground,
-        body: SafeArea(
-          child: Column(
-            children: [
-              ListenableBuilder(
-                listenable: _controller,
-                builder: (context, _) => _DetailTopBar(
-                  isBusy: _controller.phase == AnniversaryDetailPhase.deleting,
-                  onBack: () => Navigator.of(context).maybePop(),
-                  onSelected: _handleMenu,
-                ),
-              ),
-              Expanded(
-                child: ListenableBuilder(
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _popWithResult();
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.dark.copyWith(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: AnniversaryColors.detailBackground,
+        ),
+        child: Scaffold(
+          backgroundColor: AnniversaryColors.detailBackground,
+          body: SafeArea(
+            child: Column(
+              children: [
+                ListenableBuilder(
                   listenable: _controller,
-                  builder: (context, _) => _buildContent(),
+                  builder: (context, _) => _DetailTopBar(
+                    isBusy:
+                        _controller.phase == AnniversaryDetailPhase.deleting,
+                    onBack: _popWithResult,
+                    onSelected: _handleMenu,
+                  ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: ListenableBuilder(
+                    listenable: _controller,
+                    builder: (context, _) => _buildContent(),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

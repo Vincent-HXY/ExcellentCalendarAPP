@@ -1,0 +1,16 @@
+{
+  "query_generation": 13,
+  "keyword": "项目",
+  "timezone": "Asia/Shanghai",
+  "target_types": ["habit", "event"],
+  "date_from": null,
+  "date_to_exclusive": null,
+  "category_ids": null,
+  "include_uncategorized": false,
+  "include_completed": true,
+  "sort_by": "updated_at",
+  "sections": [
+    {"target_type": "habit", "page_size": 20, "cursor": null},
+    {"target_type": "event", "page_size": 20, "cursor": null}
+  ]
+}

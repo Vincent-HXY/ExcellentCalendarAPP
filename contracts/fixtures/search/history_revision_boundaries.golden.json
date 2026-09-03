@@ -1,0 +1,45 @@
+{
+  "maximum_revision": 9007199254740991,
+  "vectors": [
+    {
+      "name": "last legal increment succeeds",
+      "operation": "replace",
+      "current_revision": 9007199254740990,
+      "current_items": ["项目"],
+      "replacement_items": ["会议"],
+      "expected_revision": 9007199254740991,
+      "expected_write": true,
+      "expected_error": null
+    },
+    {
+      "name": "idempotent replace at maximum succeeds without write",
+      "operation": "replace",
+      "current_revision": 9007199254740991,
+      "current_items": ["项目"],
+      "replacement_items": ["项目"],
+      "expected_revision": 9007199254740991,
+      "expected_write": false,
+      "expected_error": null
+    },
+    {
+      "name": "changed replace at maximum fails closed",
+      "operation": "replace",
+      "current_revision": 9007199254740991,
+      "current_items": ["项目"],
+      "replacement_items": ["会议"],
+      "expected_revision": 9007199254740991,
+      "expected_write": false,
+      "expected_error": "SEARCH_HISTORY_STORAGE_FAILED"
+    },
+    {
+      "name": "repair needing a revision at maximum preserves bytes",
+      "operation": "repair",
+      "current_revision": 9007199254740991,
+      "current_items": ["  项目  "],
+      "replacement_items": ["项目"],
+      "expected_revision": 9007199254740991,
+      "expected_write": false,
+      "expected_error": "SEARCH_HISTORY_STORAGE_FAILED"
+    }
+  ]
+}

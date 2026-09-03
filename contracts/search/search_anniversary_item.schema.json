@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/search/search_anniversary_item.schema.json",
+  "title": "SearchAnniversaryItem",
+  "description": "One logical solar Anniversary result with one date-only occurrence and its C++-calculated local-natural-day relation. No UTC-midnight occurrence is allowed.",
+  "x-contract-version": 2,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "target_type",
+    "target_id",
+    "title",
+    "match",
+    "category",
+    "updated_at",
+    "occurrence_key",
+    "occur_date",
+    "source_date",
+    "is_repeating",
+    "relation",
+    "days",
+    "years_elapsed"
+  ],
+  "properties": {
+    "target_type": {"const": "anniversary"},
+    "target_id": {"type": "string", "format": "uuid"},
+    "title": {"type": "string", "minLength": 1},
+    "match": {"$ref": "./search_match_projection.schema.json"},
+    "category": {
+      "oneOf": [
+        {"$ref": "./search_category_projection.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "occurrence_key": {"type": "string", "format": "uuid"},
+    "occur_date": {"type": "string", "format": "date"},
+    "source_date": {"type": "string", "format": "date"},
+    "is_repeating": {"type": "boolean"},
+    "relation": {"type": "string", "enum": ["remaining", "elapsed", "today"]},
+    "days": {"type": "integer", "minimum": 0},
+    "years_elapsed": {"type": "integer", "minimum": 0}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"relation": {"const": "today"}}, "required": ["relation"]},
+      "then": {"properties": {"days": {"const": 0}}},
+      "else": {"properties": {"days": {"type": "integer", "minimum": 1}}}
+    },
+    {
+      "if": {"properties": {"is_repeating": {"const": false}}, "required": ["is_repeating"]},
+      "then": {"properties": {"years_elapsed": {"const": 0}}}
+    }
+  ]
+}

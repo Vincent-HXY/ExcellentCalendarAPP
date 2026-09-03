@@ -13,9 +13,11 @@
 #include "excellent_calendar/domain/notification.hpp"
 #include "excellent_calendar/domain/reminder.hpp"
 #include "excellent_calendar/repository/anniversary_transaction.hpp"
+#include "excellent_calendar/repository/calendar_query_repository.hpp"
 #include "excellent_calendar/repository/category_repository.hpp"
 #include "excellent_calendar/repository/habit_transaction.hpp"
 #include "excellent_calendar/repository/recurring_event_transaction.hpp"
+#include "excellent_calendar/repository/search_query_repository.hpp"
 
 struct sqlite3;
 
@@ -56,6 +58,17 @@ class SqliteCalendarDatabase final {
   load_anniversary_occurrence_snapshot();
   common::Result<repository::CategoryState> load_category_state();
   common::Result<repository::HabitState> load_habit_state();
+  common::Result<repository::CalendarQuerySnapshot>
+  load_calendar_query_snapshot(
+      const std::optional<std::array<
+          std::int64_t,
+          repository::kCalendarQueryContributingStores.size()>>&
+          expected_generations = std::nullopt);
+  common::Result<repository::SearchQuerySnapshot> load_search_query_snapshot(
+      const std::vector<domain::SearchTargetType>& requested_targets,
+      const std::optional<std::array<
+          std::int64_t, repository::kSearchQueryContributingStores.size()>>&
+          expected_generations = std::nullopt);
 
   common::Result<std::vector<domain::Event>> load_legacy_events();
   common::Result<std::vector<domain::Reminder>> load_legacy_reminders();

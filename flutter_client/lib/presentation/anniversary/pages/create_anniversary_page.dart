@@ -15,6 +15,7 @@ class CreateAnniversaryPage extends StatefulWidget {
     required this.gateway,
     required this.clock,
     this.initialDetail,
+    this.initialDate,
     this.permissionController,
     super.key,
   });
@@ -22,6 +23,7 @@ class CreateAnniversaryPage extends StatefulWidget {
   final AnniversaryGateway gateway;
   final AppClock clock;
   final AnniversaryDetail? initialDetail;
+  final DateTime? initialDate;
   final NotificationPermissionController? permissionController;
 
   @override
@@ -40,6 +42,7 @@ class _CreateAnniversaryPageState extends State<CreateAnniversaryPage> {
     _controller = AnniversaryFormController(
       gateway: widget.gateway,
       initialDetail: widget.initialDetail,
+      initialDate: widget.initialDate,
       permissionController: widget.permissionController,
     );
     _titleController = TextEditingController(text: _controller.title);

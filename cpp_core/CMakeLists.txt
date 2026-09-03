@@ -68,6 +68,8 @@ add_library(
     src/application/anniversary_query_service.cpp
     src/application/anniversary_workflow_service.cpp
     src/application/category_service.cpp
+    src/application/calendar_view_query_service.cpp
+    src/application/completed_recurring_series_eligibility.cpp
     src/application/event_service.cpp
     src/application/create_event_workflow_service.cpp
     src/application/event_lifecycle_workflow_service.cpp
@@ -81,11 +83,13 @@ add_library(
     src/application/reminder_service.cpp
     src/application/reminder_service_v2.cpp
     src/application/rolling_reminder_service.cpp
+    src/application/search_query_service.cpp
     src/application/notification_service.cpp
     src/boundary/api/event_api.cpp
     src/boundary/api/anniversary_v2_endpoint.cpp
     src/boundary/api/habit_v2_endpoint.cpp
     src/boundary/api/category_v2_endpoint.cpp
+    src/boundary/api/calendar_view_v2_endpoint.cpp
     src/boundary/api/event_v2_endpoint.cpp
     src/boundary/api/native_runtime.cpp
     src/boundary/api/notification_api.cpp
@@ -93,11 +97,13 @@ add_library(
     src/boundary/api/recurring_v2_api.cpp
     src/boundary/api/reminder_api.cpp
     src/boundary/api/reminder_v2_endpoint.cpp
+    src/boundary/api/search_v2_endpoint.cpp
     src/boundary/api/runtime_v2_endpoint.cpp
     src/boundary/contract/consume_reminder_after_delivery_response.cpp
     src/boundary/contract/anniversary_json.cpp
     src/boundary/contract/habit_json.cpp
     src/boundary/contract/category_json.cpp
+    src/boundary/contract/calendar_view_json.cpp
     src/boundary/contract/event_list_response.cpp
     src/boundary/contract/event_response.cpp
     src/boundary/contract/native_result.cpp
@@ -106,12 +112,14 @@ add_library(
     src/boundary/contract/reminder_response.cpp
     src/boundary/contract/recurring_v2_json.cpp
     src/boundary/contract/schedulable_reminder_list_response.cpp
+    src/boundary/contract/search_json.cpp
     src/common/clock.cpp
     src/common/datetime.cpp
     src/common/error_code_metadata.cpp
     src/common/failure_reason.cpp
     src/common/id_generator.cpp
     src/common/string_utils.cpp
+    src/common/search_token_crypto.cpp
     src/common/uuid.cpp
     src/application/habit_service.cpp
     src/domain/data_source.cpp
@@ -126,6 +134,7 @@ add_library(
     src/domain/recurrence.cpp
     src/domain/reminder.cpp
     src/domain/reminder_recovery_batch.cpp
+    src/domain/search.cpp
     src/infrastructure/time/tzdb_local_time_resolver.cpp
     src/storage/runtime_storage_lease.cpp
     src/storage/json/atomic_json_file_store.cpp
@@ -161,6 +170,10 @@ target_link_libraries(
     excellent_calendar_sqlite
 )
 
+if(WIN32)
+    target_link_libraries(excellent_calendar_core PRIVATE bcrypt)
+endif()
+
 target_include_directories(
     excellent_calendar_core
     PUBLIC
@@ -172,6 +185,13 @@ option(EXCELLENT_CALENDAR_BUILD_TESTS "Build Excellent Calendar C++ tests" OFF)
 
 if(EXCELLENT_CALENDAR_BUILD_TESTS)
     enable_testing()
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+    add_test(
+        NAME excellent_calendar_search_contract_validation
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../contracts/run_search_v1_validation.py
+    )
 
     add_executable(
         excellent_calendar_core_tests
@@ -347,6 +367,67 @@ if(EXCELLENT_CALENDAR_BUILD_TESTS)
         COMMAND excellent_calendar_habit_reminder_tests
     )
 
+    add_executable(
+        excellent_calendar_view_query_tests
+        tests/calendar_view_query_tests.cpp
+    )
+    target_compile_definitions(
+        excellent_calendar_view_query_tests
+        PRIVATE
+        EXCELLENT_CALENDAR_TEST_TZDB_DIR="${CMAKE_CURRENT_SOURCE_DIR}/third_party/tzdata/2026c"
+    )
+    target_link_libraries(
+        excellent_calendar_view_query_tests
+        PRIVATE
+        excellent_calendar_core
+        excellent_calendar_sqlite
+    )
+    add_test(
+        NAME excellent_calendar_view_query_tests
+        COMMAND excellent_calendar_view_query_tests
+    )
+
+    add_executable(
+        excellent_calendar_search_tests
+        tests/search_core_tests.cpp
+    )
+    target_link_libraries(
+        excellent_calendar_search_tests
+        PRIVATE
+        excellent_calendar_core
+        excellent_calendar_sqlite
+    )
+    target_compile_definitions(
+        excellent_calendar_search_tests
+        PRIVATE
+        EXCELLENT_CALENDAR_TEST_TZDB_DIR="${CMAKE_CURRENT_SOURCE_DIR}/third_party/tzdata/2026c"
+        EXCELLENT_CALENDAR_SEARCH_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../contracts/fixtures/search"
+    )
+    add_test(
+        NAME excellent_calendar_search_tests
+        COMMAND excellent_calendar_search_tests
+    )
+
+    add_executable(
+        excellent_calendar_search_performance
+        tests/search_performance_tests.cpp
+    )
+    target_compile_definitions(
+        excellent_calendar_search_performance
+        PRIVATE
+        EXCELLENT_CALENDAR_TEST_TZDB_DIR="${CMAKE_CURRENT_SOURCE_DIR}/third_party/tzdata/2026c"
+        EXCELLENT_CALENDAR_SEARCH_PERFORMANCE_RELEASE=$<IF:$<CONFIG:Release>,1,0>
+    )
+    target_link_libraries(
+        excellent_calendar_search_performance
+        PRIVATE
+        excellent_calendar_core
+        excellent_calendar_sqlite
+    )
+    if(WIN32)
+        target_link_libraries(excellent_calendar_search_performance PRIVATE psapi)
+    endif()
+
     add_custom_target(
         excellent_calendar_check
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
@@ -361,6 +442,8 @@ if(EXCELLENT_CALENDAR_BUILD_TESTS)
         excellent_calendar_storage_v5_tests
         excellent_calendar_habit_tests
         excellent_calendar_habit_reminder_tests
+        excellent_calendar_view_query_tests
+        excellent_calendar_search_tests
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         USES_TERMINAL
     )

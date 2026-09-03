@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/calendar/calendar_range_day_summary.schema.json",
+  "title": "CalendarRangeDaySummary",
+  "description": "Page-independent type-presence projection for exactly one requested local date. Booleans are derived from the complete frozen snapshot, never from a 20-item page.",
+  "x-contract-version": 2,
+  "x-calendar-view-revision": 1,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["date", "has_open_event", "has_pending_habit", "has_anniversary"],
+  "properties": {
+    "date": {"type": "string", "format": "date"},
+    "has_open_event": {"type": "boolean"},
+    "has_pending_habit": {"type": "boolean"},
+    "has_anniversary": {"type": "boolean"}
+  }
+}

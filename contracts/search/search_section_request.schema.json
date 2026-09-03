@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/search/search_section_request.schema.json",
+  "title": "SearchSectionRequest",
+  "description": "One independently paged Search section. Search V1 always requests 20 items; cursor=null requests its first page and a non-null authenticated cursor binds the entire query, section, fixed page size, evaluation clock, sort revision, and canonical Store snapshot.",
+  "x-contract-version": 2,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["target_type", "page_size", "cursor"],
+  "properties": {
+    "target_type": {"type": "string", "enum": ["event", "habit", "anniversary"]},
+    "page_size": {"const": 20},
+    "cursor": {
+      "type": ["string", "null"],
+      "pattern": "^srchcur1\\.[A-Za-z0-9_-]{20,2048}$",
+      "maxLength": 2057
+    }
+  }
+}

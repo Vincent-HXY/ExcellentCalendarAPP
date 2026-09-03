@@ -457,6 +457,48 @@ errors:
     boundaries: [native, domain, delivery, recovery]
     data_saved_allowed: false
 
+  CALENDAR_RANGE_INVALID:
+    module: calendar
+    message: "Calendar local-date range is empty or reversed"
+    retryable: false
+    boundaries: [method_channel, native, domain]
+    data_saved_allowed: false
+
+  CALENDAR_RANGE_TOO_LARGE:
+    module: calendar
+    message: "Calendar local-date range exceeds 42 natural days"
+    retryable: false
+    boundaries: [method_channel, native, domain]
+    data_saved_allowed: false
+
+  CALENDAR_SNAPSHOT_INVALID:
+    module: calendar
+    message: "Calendar snapshot token is malformed"
+    retryable: false
+    boundaries: [method_channel, native]
+    data_saved_allowed: false
+
+  CALENDAR_SNAPSHOT_EXPIRED:
+    module: calendar
+    message: "Calendar snapshot no longer matches the authoritative data generations"
+    retryable: true
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  CALENDAR_CURSOR_INVALID:
+    module: calendar
+    message: "Calendar day-items cursor is malformed"
+    retryable: false
+    boundaries: [method_channel, native]
+    data_saved_allowed: false
+
+  CALENDAR_CURSOR_QUERY_MISMATCH:
+    module: calendar
+    message: "Calendar day-items cursor does not match the date, timezone, section, page size, sort revision, or snapshot"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
   CALENDAR_WORKFLOW_COMMIT_FAILED:
     module: storage
     message: "Calendar workflow logical commit failed before becoming authoritative"
@@ -482,6 +524,43 @@ errors:
     module: search
     message: "Search query is invalid"
     retryable: false
+    boundaries: [method_channel, native, domain]
+    data_saved_allowed: false
+
+  SEARCH_CURSOR_INVALID:
+    module: search
+    message: "Search cursor is malformed or cannot be authenticated"
+    retryable: false
+    boundaries: [method_channel, native]
+    data_saved_allowed: false
+
+  SEARCH_CURSOR_QUERY_MISMATCH:
+    module: search
+    message: "Search cursor does not match the normalized query, filters, target section, timezone, page size, or sort revision"
+    retryable: false
+    boundaries: [native, domain]
+    data_saved_allowed: false
+
+  SEARCH_CURSOR_EXPIRED:
+    module: search
+    message: "Search cursor no longer matches the authoritative data generations"
+    retryable: true
+    boundaries: [native, domain, storage]
+    data_saved_allowed: false
+
+  SEARCH_HISTORY_CONFLICT:
+    module: search
+    message: "Device-local search history changed after the supplied revision"
+    retryable: true
+    boundaries: [method_channel, android_storage]
+    data_saved_allowed: false
+
+  SEARCH_HISTORY_STORAGE_FAILED:
+    module: search
+    message: "Device-local search history could not be read, normalized, or atomically committed"
+    retryable: true
+    boundaries: [method_channel, android_storage]
+    data_saved_allowed: false
 
   AI_EXTRACTION_FAILED:
     module: ai

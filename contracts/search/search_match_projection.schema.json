@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/search/search_match_projection.schema.json",
+  "title": "SearchMatchProjection",
+  "description": "Non-persisted match presentation selected by C++. Flutter may highlight visible normalized tokens but does not use these fields to decide inclusion or ranking.",
+  "x-contract-version": 2,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["primary_field", "matched_fields", "snippet"],
+  "properties": {
+    "primary_field": {
+      "type": "string",
+      "enum": ["title", "content", "description", "note", "location", "category_name"]
+    },
+    "matched_fields": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["title", "content", "description", "note", "location", "category_name"]
+      }
+    },
+    "snippet": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["field", "text", "prefix_truncated", "suffix_truncated"],
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": ["content", "description", "note", "location", "category_name"]
+            },
+            "text": {"type": "string", "minLength": 1, "maxLength": 200},
+            "prefix_truncated": {"type": "boolean"},
+            "suffix_truncated": {"type": "boolean"}
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"primary_field": {"const": "title"}},
+        "required": ["primary_field"]
+      },
+      "then": {"properties": {"snippet": {"type": "null"}}},
+      "else": {"properties": {"snippet": {"type": "object"}}}
+    }
+  ]
+}

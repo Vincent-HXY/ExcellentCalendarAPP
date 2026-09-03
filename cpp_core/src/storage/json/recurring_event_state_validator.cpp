@@ -632,6 +632,21 @@ void validate_recovery_integrity(
   }
 }
 
+void validate_calendar_recovery_references_or_throw(
+    const repository::RecurringEventState& state) {
+  std::set<std::string> recovery_batch_ids;
+  for (const auto& batch : state.recovery_batches) {
+    recovery_batch_ids.insert(batch.id);
+  }
+  for (const auto& reminder : state.reminders) {
+    if (reminder.recovery_batch_id.has_value() &&
+        recovery_batch_ids.find(*reminder.recovery_batch_id) ==
+            recovery_batch_ids.end()) {
+      throw DecodeFailure("Reminder recovery batch is missing");
+    }
+  }
+}
+
 }  // namespace
 
 common::Result<common::Unit> validate_recurring_event_state(
@@ -650,6 +665,37 @@ common::Result<common::Unit> validate_recurring_event_state(
     validate_reminders(state, event_ids, recurrence_keys);
     validate_notifications(state);
     validate_recovery_integrity(state);
+    return common::Result<common::Unit>::success(common::Unit{});
+  } catch (const std::exception& error) {
+    return corrupted(error);
+  }
+}
+
+common::Result<common::Unit> validate_calendar_recurring_event_slice(
+    const repository::RecurringEventState& state) {
+  try {
+    repository::AnniversaryState anniversary_state;
+    anniversary_state.anniversaries = state.anniversaries;
+    anniversary_state.recurrences = state.anniversary_recurrences;
+    anniversary_state.reminder_templates = state.anniversary_reminder_templates;
+    anniversary_state.reminders = state.reminders;
+    auto anniversary_valid = validate_anniversary_state(anniversary_state);
+    if (!anniversary_valid.ok()) return anniversary_valid;
+    const auto event_ids = validate_events(state);
+    const auto recurrence_keys = validate_recurrences(state, event_ids);
+    validate_occurrence_states(state, event_ids);
+    validate_reminders(state, event_ids, recurrence_keys);
+    return common::Result<common::Unit>::success(common::Unit{});
+  } catch (const std::exception& error) {
+    return corrupted(error);
+  }
+}
+
+common::Result<common::Unit>
+validate_calendar_reminder_recovery_references(
+    const repository::RecurringEventState& state) {
+  try {
+    validate_calendar_recovery_references_or_throw(state);
     return common::Result<common::Unit>::success(common::Unit{});
   } catch (const std::exception& error) {
     return corrupted(error);

@@ -1,0 +1,4 @@
+{
+  "request_instance": "query_three_sections.valid.json",
+  "response_instance": "query_response_three_types.valid.json"
+}

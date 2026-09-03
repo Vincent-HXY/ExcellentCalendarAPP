@@ -3,12 +3,15 @@ package com.excellentcalendar.excellent_calendar.bridge.channel
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.excellentcalendar.excellent_calendar.android.search.SearchHistoryStore
 import com.excellentcalendar.excellent_calendar.bridge.auth.RefreshTokenSecureStore
 import com.excellentcalendar.excellent_calendar.android.appearance.AppearancePreferencesStore
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeAnniversaryBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarCoreBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeCalendarViewBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeCategoryBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeHabitBridge
+import com.excellentcalendar.excellent_calendar.bridge.native.NativeSearchBridge
 import com.excellentcalendar.excellent_calendar.bridge.native.NativeContractProfile
 import com.excellentcalendar.excellent_calendar.bridge.notification.NotificationMethodOrchestrator
 import com.excellentcalendar.excellent_calendar.android.ring.RingRuntime
@@ -60,6 +63,9 @@ class NativeMethodChannelHandler(
     private val nativeAnniversaryBridge: NativeAnniversaryBridge = nativeCalendarCoreBridge,
     private val nativeCategoryBridge: NativeCategoryBridge = nativeCalendarCoreBridge,
     private val nativeHabitBridge: NativeHabitBridge = nativeCalendarCoreBridge,
+    private val nativeCalendarViewBridge: NativeCalendarViewBridge = nativeCalendarCoreBridge,
+    private val nativeSearchBridge: NativeSearchBridge = nativeCalendarCoreBridge,
+    private val searchHistoryStore: SearchHistoryStore? = null,
     private val reminderOrchestrator: ReminderNativeOrchestrator? = null,
     private val notificationOrchestrator: NotificationMethodOrchestrator? = null,
     private val pendingReminderScheduleService: PendingReminderScheduleService? = null,
@@ -131,6 +137,17 @@ class NativeMethodChannelHandler(
                 contractProfile,
                 nativeCallExecutor,
                 anniversaryOrchestrator,
+            ),
+            CalendarMethodHandler(
+                nativeCalendarViewBridge,
+                contractProfile,
+                nativeCallExecutor,
+            ),
+            SearchMethodHandler(
+                nativeSearchBridge,
+                searchHistoryStore,
+                contractProfile,
+                nativeCallExecutor,
             ),
             ReminderMethodHandler(
                 nativeCalendarCoreBridge,
@@ -205,6 +222,11 @@ class NativeMethodChannelHandler(
         const val MethodAnniversaryPreviewCountdown = "anniversary.preview_countdown"
         const val MethodAnniversarySetRemindersEnabled = "anniversary.set_reminders_enabled"
         const val MethodAnniversaryListOccurrences = "anniversary.list_occurrences"
+        const val MethodCalendarRangeSummary = "calendar.range_summary"
+        const val MethodCalendarListDayItems = "calendar.list_day_items"
+        const val MethodSearchQuery = "search.query"
+        const val MethodSearchGetLocalHistory = "search.get_local_history"
+        const val MethodSearchReplaceLocalHistory = "search.replace_local_history"
         const val MethodCategoryList = "category.list"
         const val MethodCategoryCreate = "category.create"
         const val MethodHabitCreate = "habit.create"

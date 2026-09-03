@@ -1,0 +1,11 @@
+{
+  "date": "2026-09-01",
+  "timezone": "Asia/Shanghai",
+  "section": "event",
+  "snapshot_token": "calsnap1.ABCDEFGHIJKLMNOPQRST",
+  "page_size": 20,
+  "items": [],
+  "has_more": true,
+  "next_cursor": "calcur1.ABCDEFGHIJKLMNOPQRST"
+}
+

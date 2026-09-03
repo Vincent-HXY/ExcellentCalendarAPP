@@ -1,0 +1,107 @@
+{
+  "query_generation": 7,
+  "normalized_keyword": "项目 MEETING",
+  "timezone": "Asia/Shanghai",
+  "evaluated_at": "2026-08-31T08:00:00Z",
+  "snapshot_token": "srchsnap1.ABCDEFGHIJKLMNOPQRST",
+  "sections": [
+    {
+      "target_type": "event",
+      "items": [
+        {
+          "target_type": "event",
+          "target_id": "11111111-1111-4111-8111-111111111111",
+          "title": "项目 MEETING",
+          "match": {
+            "primary_field": "title",
+            "matched_fields": ["title"],
+            "snippet": null
+          },
+          "category": {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "name": "工作",
+            "color": "#39AFBD",
+            "icon": null
+          },
+          "updated_at": "2026-08-31T07:00:00Z",
+          "status": "pending",
+          "is_all_day": false,
+          "is_recurring": true,
+          "occur_at": "2026-09-01T01:00:00Z",
+          "occur_date": null,
+          "location": "会议室",
+          "recurrence_revision": 2,
+          "occurrence_key": "44444444-4444-4444-8444-444444444444"
+        }
+      ],
+      "total_count": 1,
+      "has_more": false,
+      "next_cursor": null
+    },
+    {
+      "target_type": "habit",
+      "items": [
+        {
+          "target_type": "habit",
+          "target_id": "55555555-5555-4555-8555-555555555555",
+          "title": "晨间复盘",
+          "match": {
+            "primary_field": "description",
+            "matched_fields": ["description"],
+            "snippet": {
+              "field": "description",
+              "text": "整理项目 meeting 记录",
+              "prefix_truncated": false,
+              "suffix_truncated": false
+            }
+          },
+          "category": null,
+          "updated_at": "2026-08-31T06:00:00Z",
+          "lifecycle_status": "active",
+          "occur_date": "2026-08-31",
+          "challenge_start_date": "2026-08-01",
+          "challenge_end_date": "2026-09-30",
+          "ended_date": null,
+          "remaining_days": 31,
+          "target_count_hundredths": null,
+          "unit": null
+        }
+      ],
+      "total_count": 1,
+      "has_more": false,
+      "next_cursor": null
+    },
+    {
+      "target_type": "anniversary",
+      "items": [
+        {
+          "target_type": "anniversary",
+          "target_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "title": "项目 Meeting 周年",
+          "match": {
+            "primary_field": "title",
+            "matched_fields": ["title"],
+            "snippet": null
+          },
+          "category": {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "name": "工作",
+            "color": "#39AFBD",
+            "icon": null
+          },
+          "updated_at": "2026-08-30T05:00:00Z",
+          "occurrence_key": "60f0df06-830c-52d2-a659-e8848aa200cd",
+          "occur_date": "2026-09-01",
+          "source_date": "2020-09-01",
+          "is_repeating": true,
+          "relation": "remaining",
+          "days": 1,
+          "years_elapsed": 6
+        }
+      ],
+      "total_count": 1,
+      "has_more": false,
+      "next_cursor": null
+    }
+  ]
+}

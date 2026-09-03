@@ -1,8 +1,6 @@
 #include "excellent_calendar/common/datetime.hpp"
 
-#include <chrono>
 #include <cctype>
-#include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -56,6 +54,27 @@ std::int64_t days_from_civil(int year, unsigned month, unsigned day) {
       (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1;
   const unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
   return static_cast<std::int64_t>(era) * 146097 + static_cast<std::int64_t>(doe) - 719468;
+}
+
+struct CivilDate {
+  int year = 0;
+  int month = 0;
+  int day = 0;
+};
+
+CivilDate civil_from_days(std::int64_t days) {
+  days += 719468;
+  const auto era = (days >= 0 ? days : days - 146096) / 146097;
+  const auto doe = static_cast<unsigned>(days - era * 146097);
+  const auto yoe =
+      (doe - doe / 1460U + doe / 36524U - doe / 146096U) / 365U;
+  int year = static_cast<int>(yoe) + static_cast<int>(era) * 400;
+  const auto doy = doe - (365U * yoe + yoe / 4U - yoe / 100U);
+  const auto mp = (5U * doy + 2U) / 153U;
+  const auto day = doy - (153U * mp + 2U) / 5U + 1U;
+  const auto month = mp + (mp < 10U ? 3U : static_cast<unsigned>(-9));
+  year += month <= 2U;
+  return {year, static_cast<int>(month), static_cast<int>(day)};
 }
 
 }  // namespace
@@ -125,17 +144,21 @@ bool is_iso8601_utc_datetime(std::string_view value) {
 
 /** 把 epoch 秒格式化为 UTC ISO 8601。 */
 std::string format_epoch_seconds_utc_iso8601(std::int64_t epoch_seconds) {
-  const auto time = static_cast<std::time_t>(epoch_seconds);
-
-  std::tm utc{};
-#if defined(_WIN32)
-  gmtime_s(&utc, &time);
-#else
-  gmtime_r(&time, &utc);
-#endif
-
+  auto days = epoch_seconds / 86400;
+  auto seconds_of_day = epoch_seconds % 86400;
+  if (seconds_of_day < 0) {
+    seconds_of_day += 86400;
+    --days;
+  }
+  const auto date = civil_from_days(days);
+  const auto hour = static_cast<int>(seconds_of_day / 3600);
+  const auto minute = static_cast<int>((seconds_of_day % 3600) / 60);
+  const auto second = static_cast<int>(seconds_of_day % 60);
   std::ostringstream output;
-  output << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
+  output << std::setfill('0') << std::setw(4) << date.year << '-'
+         << std::setw(2) << date.month << '-' << std::setw(2) << date.day
+         << 'T' << std::setw(2) << hour << ':' << std::setw(2) << minute
+         << ':' << std::setw(2) << second << 'Z';
   return output.str();
 }
 

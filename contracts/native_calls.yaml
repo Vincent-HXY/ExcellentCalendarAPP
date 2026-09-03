@@ -567,3 +567,39 @@ calls:
     result:
       envelope: common/native_result.schema.json
       data: anniversary/anniversary_occurrence_list_response.schema.json
+
+  calendar.range_summary:
+    module: calendar
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: calendar/calendar_range_summary_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: calendar/calendar_range_summary_response.schema.json
+
+  calendar.list_day_items:
+    module: calendar
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: calendar/calendar_list_day_items_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: calendar/calendar_day_item_page.schema.json
+
+  search.query:
+    module: search
+    visibility: internal
+    caller: kotlin
+    implementation: cpp
+    implementation_status: integrated
+    release_status: active
+    request: search/search_query_request.schema.json
+    result:
+      envelope: common/native_result.schema.json
+      data: search/search_query_response.schema.json

@@ -28,6 +28,11 @@ bool less_equal(const domain::LocalDate& left, const domain::LocalDate& right) {
   return left < right || left == right;
 }
 
+std::string habit_day_key(std::string_view habit_id,
+                          const domain::LocalDate& date) {
+  return std::string(habit_id) + "\n" + domain::format_local_date(date);
+}
+
 common::Error not_found(std::string id) {
   return common::make_error("HABIT_NOT_FOUND", "Habit not found",
                             {{"id", std::move(id)}});
@@ -452,17 +457,15 @@ common::Result<bool> materialize_reminder(
   return common::Result<bool>::success(true);
 }
 
-HabitDailyStatus project_day(const repository::HabitState& state,
-                             const domain::Habit& habit,
-                             const domain::LocalDate& date,
-                             const domain::LocalDate& today) {
+HabitDailyStatus project_day_with_check_in(
+    const domain::Habit& habit, const domain::LocalDate& date,
+    const domain::LocalDate& today, const domain::HabitCheckIn* check_in) {
   HabitDailyStatus result;
   result.date = date;
   if (today < date) {
     result.status = "upcoming";
     return result;
   }
-  const auto* check_in = find_active_check_in(state, habit.id, date);
   if (check_in == nullptr) {
     result.status = date < today ? "missed" : "absent";
     result.is_final = date < today;
@@ -482,6 +485,14 @@ HabitDailyStatus project_day(const repository::HabitState& state,
         static_cast<double>(*check_in->target_count_snapshot_hundredths);
   }
   return result;
+}
+
+HabitDailyStatus project_day(const repository::HabitState& state,
+                             const domain::Habit& habit,
+                             const domain::LocalDate& date,
+                             const domain::LocalDate& today) {
+  return project_day_with_check_in(
+      habit, date, today, find_active_check_in(state, habit.id, date));
 }
 
 common::Result<HabitStatistics> statistics(
@@ -655,6 +666,31 @@ common::Result<common::Unit> validate_operation_target(
 }
 
 }  // namespace
+
+HabitDailyStatus project_habit_daily_status(
+    const repository::HabitState& state, const domain::Habit& habit,
+    const domain::LocalDate& date, const domain::LocalDate& today) {
+  return project_day(state, habit, date, today);
+}
+
+HabitDailyStatusProjector::HabitDailyStatusProjector(
+    const std::vector<domain::HabitCheckIn>& check_ins) {
+  active_check_ins_.reserve(check_ins.size());
+  for (const auto& check_in : check_ins) {
+    if (check_in.deleted_at.has_value()) continue;
+    active_check_ins_.emplace(
+        habit_day_key(check_in.habit_id, check_in.check_date), &check_in);
+  }
+}
+
+HabitDailyStatus HabitDailyStatusProjector::project(
+    const domain::Habit& habit, const domain::LocalDate& date,
+    const domain::LocalDate& today) const {
+  const auto found = active_check_ins_.find(habit_day_key(habit.id, date));
+  return project_day_with_check_in(
+      habit, date, today,
+      found == active_check_ins_.end() ? nullptr : found->second);
+}
 
 HabitService::HabitService(
     std::shared_ptr<repository::HabitTransaction> transaction,

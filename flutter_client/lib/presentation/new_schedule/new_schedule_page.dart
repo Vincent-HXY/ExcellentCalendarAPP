@@ -28,6 +28,8 @@ class NewSchedulePage extends StatefulWidget {
     required this.timezoneService,
     required this.categoryRepository,
     this.ringGateway,
+    this.initialDate,
+    this.nowProvider,
     super.key,
   });
 
@@ -35,6 +37,8 @@ class NewSchedulePage extends StatefulWidget {
   final TimezoneApplicationService timezoneService;
   final CategoryRepository categoryRepository;
   final RingNativeGateway? ringGateway;
+  final DateTime? initialDate;
+  final DateTime Function()? nowProvider;
 
   @override
   State<NewSchedulePage> createState() => _NewSchedulePageState();
@@ -66,13 +70,18 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
   @override
   void initState() {
     super.initState();
+    final now = _now();
     _submitController = CreateScheduleController(
       createEventUseCase: widget.createUseCase,
       timezoneService: widget.timezoneService,
       ringGateway: widget.ringGateway,
+      nowProvider: _now,
     );
-    _startAt = _nextDefaultStartAt();
+    _startAt = _nextDefaultStartAt(widget.initialDate, now);
     _endAt = _startAt.add(const Duration(hours: 1));
+    if (_isHistoricalInitialDate(widget.initialDate, now)) {
+      _reminderPresets = {};
+    }
     _titleController.addListener(_handleTitleChanged);
     unawaited(_refreshDeviceTimezone(showError: true));
   }
@@ -90,15 +99,53 @@ class _NewSchedulePageState extends State<NewSchedulePage> {
     setState(() {});
   }
 
-  static DateTime _nextDefaultStartAt() {
-    final now = DateTime.now();
-    return DateTime.utc(
+  DateTime _now() => widget.nowProvider?.call() ?? DateTime.now();
+
+  static DateTime _nextDefaultStartAt(DateTime? initialDate, DateTime now) {
+    final wallNow = DateTime.utc(
+      now.year,
+      now.month,
+      now.day,
+      now.hour,
+      now.minute,
+      now.second,
+      now.millisecond,
+      now.microsecond,
+    );
+    var candidate = DateTime.utc(
       now.year,
       now.month,
       now.day,
       now.hour,
     ).add(const Duration(hours: 1));
+    const defaultAdvance = Duration(minutes: 15);
+    if (!candidate.subtract(defaultAdvance).isAfter(wallNow)) {
+      candidate = candidate.add(const Duration(hours: 1));
+    }
+    if (initialDate == null || _sameCivilDate(initialDate, now)) {
+      return candidate;
+    }
+    return DateTime.utc(
+      initialDate.year,
+      initialDate.month,
+      initialDate.day,
+      candidate.hour,
+    );
   }
+
+  static bool _isHistoricalInitialDate(DateTime? initialDate, DateTime now) {
+    if (initialDate == null) return false;
+    return DateTime.utc(
+      initialDate.year,
+      initialDate.month,
+      initialDate.day,
+    ).isBefore(DateTime.utc(now.year, now.month, now.day));
+  }
+
+  static bool _sameCivilDate(DateTime left, DateTime right) =>
+      left.year == right.year &&
+      left.month == right.month &&
+      left.day == right.day;
 
   bool get _canSubmit =>
       _titleController.text.trim().isNotEmpty && !_isSubmitting;

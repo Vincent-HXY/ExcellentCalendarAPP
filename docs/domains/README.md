@@ -15,15 +15,17 @@
 
 ## 当前阶段约定
 
-- 机器 Contract 当前仍把 Calendar Core SQLite Storage v4 标为正式 active writer；Storage v5 与 Habit Store 已在集成候选代码中实现并接入同一数据库事务，但发布状态仍为 planned/blocked。JSON 不再作为可写真相源。
+- 机器 Contract 当前把 Calendar Core SQLite Storage v5 标为唯一正式 active writer；v4 是冻结的相邻迁移输入，v4→v5 只追加 Habit 四个 Store、八个索引和 per-store codec metadata，不重写既有业务行。JSON 不再作为可写真相源。
 - JSON v1/v2/v3 只保留为冻结迁移输入：v1 Event/Reminder/Notification 进入隔离兼容表，v2 先完成 journal recovery 与 v2→v3 转换，v3 严格记录再事务导入 SQLite。迁移成功后原集合保留，但根版本改为 `storage_version=4`，阻止旧 JSON App 静默分叉数据。
-- Native Contract v2 是一次协调发布的 breaking change，已于 2026-08-08 作为同一发行版本激活。Dart DTO/Gateway、Kotlin validator/bridge、JNI、Android 调度与 SQLite Storage v4 当前保持同一发行链路。
+- Native Contract v2 是一次协调发布的 breaking change，已于 2026-08-08 作为同一发行版本激活。Dart DTO/Gateway、Kotlin validator/bridge、JNI、Android 调度与 SQLite Storage v5 当前保持同一发行链路。
+- Calendar View V1 与统一 Search Query/本地 History 已完成 Contract、C++/SQLite、Kotlin/JNI、Flutter 和真实 production composition，并于 2026-09-02 在登记发布后验证债后切换为 `integrated + active`。Calendar View 和 Search Query 都是只读派生投影，不新增业务事实表；SearchIndex/FTS 仍为 `planned/deferred`。
 - 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
 - `AIExtraction`、`SyncOperation` 等模型先作为未来能力预留，字段可先保持文档级设计。
+- Local-first 云同步已完成首轮需求与架构盘点，当前为 `SPECIALIST_SPLIT / DECISION_REQUIRED`；现有 `sync.apply`、`SyncOperation`、`SyncResult`、`UserSyncState` 和 Backend `sync/calendar` 包只证明概念占位，不证明生产同步 Contract 或实现已经存在。
 - 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
 - `Reminder` 作为独立实体保存，不嵌入 `Event`、`Habit`、`Anniversary`。
 - 一个 `Event`、`Habit` 或 `Anniversary` 可以关联多条 `Reminder`。业务上可以理解为“提醒时间列表”，存储上是多条提醒记录。
-- Event occurrence 状态和滚动 Reminder 使用 Event 闭环。Anniversary 使用独立年度规则；Habit V1 使用独立的 date-only `HabitRecurrence`、每日 Reminder occurrence 和通知 action identity。Habit Contract、C++/SQLite v5、Kotlin/JNI、Flutter 和生产 composition 已实现并完成主机集成，本轮 UI/分页反馈已关闭，当前等待真机矩阵与 capability 激活。
+- Event occurrence 状态和滚动 Reminder 使用 Event 闭环。Anniversary 使用独立年度规则；Habit V1 使用独立的 date-only `HabitRecurrence`、每日 Reminder occurrence 和通知 action identity。Habit Contract、C++/SQLite v5、Kotlin/JNI、Flutter 和生产 composition 已实现并激活；尚未执行的系统行为矩阵由 `OPEN-HAB-001` 作为已接受发布验证债持续跟踪。
 
 ## 时区解析与运行时门禁
 
@@ -53,6 +55,8 @@
 | `Category` | 保存分类、颜色和排序 | 配置数据 | 是 |
 | `Recurrence` | 保存 Event 重复规则的不可变 revision | 规则版本数据 | 是 |
 | `ReminderRecoveryBatch` | 保存一次 72 小时恢复计划、摘要范围和幂等状态 | 恢复工作流数据 | 是 |
+| `CalendarView` | 组合 Event、Habit、Anniversary 与 Reminder 的月/周/日只读结果 | 可丢弃查询投影，不持久化 | 是 |
+| `SearchQuery` | 从 canonical Store 生成三类匹配、排序、分页与历史交互结果 | 可丢弃查询投影，不持久化 | 是 |
 | `SearchIndex` | 保存搜索用的冗余文本 | 索引数据 | 可以后置 |
 | `AIExtraction` | 保存 AI 从文本、图片中解析出的候选结果 | 未来预留 | 暂缓实现 |
 | `SyncOperation` | 保存本地与云端同步操作记录 | 未来预留 | 暂缓实现 |
@@ -87,7 +91,8 @@
 | `Recurrence` | [recurrence.md](recurrence.md) |
 | `Notification` | [notification.md](notification.md) |
 | `ReminderRecoveryBatch` | [reminder_recovery_batch.md](reminder_recovery_batch.md) |
-| `SearchIndex` | [search_index.md](search_index.md) |
+| `CalendarView` | [calendar_view.md](calendar_view.md) |
+| `SearchQuery` / `SearchIndex` | [search_index.md](search_index.md) |
 | `AIExtraction` | [ai_extraction.md](ai_extraction.md) |
 | `SyncOperation` | [sync_operation.md](sync_operation.md) |
 | `UserAccount` | [user_account.md](user_account.md) |
@@ -139,8 +144,9 @@
 ## 未来待确认问题
 
 - Event v3 是否需要支持 `interval > 1`、有界 `endAt/count`、Yearly/Custom 或 iCalendar RRULE；这些能力不得静默塞入 v2。
-- Habit V1 的 recurrence、CheckIn、Reminder occurrence、同日 reconciliation 和通知 action 已由领域文档与机器 Contract 冻结，并已在 Flutter、Kotlin/JNI、C++ 与 SQLite v5 集成候选中实现；当前仍待设备验证和正式激活。
+- Habit V1 已激活；剩余问题是 `OPEN-HAB-001` 的真机系统行为矩阵与 `OPEN-HAB-002` 的文档尾项，不得把这些债务倒写成能力尚未实现。
 - Category 的用户归属范围、名称唯一性、系统默认分类及预设生命周期仍待账号/同步架构确认；当前 Flutter Fake 默认项不构成领域决策。
+- Local-first 同步仍需产品侧冻结游客数据归属、退出/换号隔离、同步实体闭包、提醒意图与设备投递边界、冲突 UX、删除恢复窗口、弱网策略和加密边界；这些决定完成前不建立生产 Contract 或 active plan。
 - `DatedMessage` 未来是只做本地投送，还是也需要云端运营投放能力。
 - `AIExtraction.extractedData` 未来是否需要拆成强类型表，还是先以 JSON 保存。
 - 后续加入 MFA 时是否把 V1 的 8 位密码下限提升到单因素认证推荐基线。
@@ -163,8 +169,8 @@
 - Habit Reminder 使用独立 date-only occurrence identity，只在同一当地日期补发；不进入普通 72 小时恢复摘要。occurrence 虽包含 templateKey，但 `(habitId, occurrenceDate)` 跨 template 最多一次 sent 展示，prepared 在配置切换时保守占用当天展示槽。
 - 新的正式 Category writer 使用 UUIDv4；已激活 Event v2 的 `categoryId` 仍按稳定不透明字符串读取，兼容早期 Flutter 已写入的非 UUID 引用。无法解析到活动 Category 时保留原始 ID，并在聚合投影中返回空分类。
 - Category 创建要求名称与颜色，`description/icon/sortOrder` 可空；列表只返回活动记录并使用 `sortOrder(null last) -> createdAt -> id` 的稳定顺序。
-- Category 已随 Calendar Core 迁入 SQLite Storage v4 的独立 `categories` 表，生产入口与机器 Contract 为 `integrated + active`；历史 JSON v2/v3 仅参与迁移和诊断快照，不再是正式 writer。
-- 当前机器 Contract 的正式持久化状态仍是 SQLite v4；Habit 已通过受控 v4→v5 migration 接入同一 SQLite writer 的集成候选，不存在旁路第二 writer。v5 在状态校准前不得描述为 active。
+- Category 的 `categories` 表在 SQLite Storage v4 引入，并由当前 active 的 Storage v5 原样继承；生产入口与机器 Contract 为 `integrated + active`。历史 JSON v2/v3 仅参与迁移和诊断快照，不再是正式 writer。
+- 当前机器 Contract 的正式持久化状态是 SQLite v5 `integrated + active`。受控 v4→v5 migration 将 Habit 四个 Store 接入同一 SQLite writer，不存在旁路第二 writer；v4 继续作为必须先完整校验的冻结迁移输入，而不是并行运行时。
 - 当前先做好本地能力，AI 和云端同步暂缓，但保留相关接口和数据模型。
 - 旧 `UserData` 草案拆分为 `UserAccount`、`UserProfile`、`UserPreferences` 和 `UserSyncState`；认证安全状态使用独立 Backend-only 模型。
 - 登录标识只允许邮箱；用户名只作为大小写不敏感唯一的公开资料标识。
@@ -187,7 +193,7 @@
 | `object` | AI 结果、同步 payload、用户设置等暂未稳定结构 | 当前可预留，核心本地模型尽量少依赖 |
 | `string[]` / `number[]` | 多选提醒方式、周几重复 | 上 SQL 时可能需要拆表或用 JSON |
 
-Habit V1 所需的 `Habit`、`HabitRecurrence`、`HabitCheckIn` 与 `HabitReminderTemplate` 语义及三语言/SQLite v5 生产实现已经落地；本轮黑盒 UI/分页反馈已经关闭，当前缺口是真实设备系统行为矩阵和发布状态校准，而不是继续用通用 Recurrence 或页面状态代替领域模型。
+Habit V1 所需的 `Habit`、`HabitRecurrence`、`HabitCheckIn` 与 `HabitReminderTemplate` 语义及三语言/SQLite v5 生产实现已经落地并激活；本轮黑盒 UI/分页反馈已经关闭，当前缺口是真实设备系统行为矩阵，而不是 capability 状态或继续用通用 Recurrence、页面状态代替领域模型。
 
 ## Reminder 与 Notification 的区别
 
@@ -226,22 +232,23 @@ Native Contract v2 明确拒绝客户端 `rrule` 字段，只执行 interval=1 �
 5. 到点后 C++ `prepare_delivery` 先创建或复用 attempt，Kotlin 再展示系统通知，最后 C++ `finalize_delivery` 原子更新 Notification、当前 Reminder 和 successor。
 6. 领域 transaction 提交后 Android 只执行 reconcile；AlarmManager 不是第二真相源。
 
-## Contract v2、Storage v2 与事务边界
+## Contract v2、历史 JSON 与当前 SQLite v5 事务边界
 
-| 版本域 | v1 reader 读 v2 | v2 reader 读 v1 | 升级策略 |
-| --- | --- | --- | --- |
-| Native Contract | 拒绝 | 拒绝 | Flutter、Kotlin、JNI、C++ 在同一发行版本同步升级 |
-| Calendar Core JSON | 不支持 | 不支持 | 确认 v1 正式目录后清理，创建空 v2；不迁移业务数据 |
-| Backend API | 不受影响 | 不受影响 | 继续使用独立 Backend Contract v1 |
-| 导入/导出/备份 | 不复用 Native 版本 | 不复用 Native 版本 | 后续使用独立文件格式版本和迁移链 |
+| 版本域 | 当前状态 | 升级与兼容策略 |
+| --- | --- | --- |
+| Native Contract | v2 `integrated + active` | v1/v2 双向拒绝；Flutter、Kotlin、JNI、C++ 在同一发行版本同步升级 |
+| Calendar Core JSON | v1/v2/v3 仅作 migration source | v1 按已接受产品决策进入隔离兼容表；v2 先恢复并迁移到 v3；v3 严格导入 SQLite v4，随后进入 v5 |
+| Calendar Core SQLite | v5 `integrated + active` | 既有 v4 必须先通过冻结完整 checker，再在单个事务中迁移到 v5；v5 runtime 不回写 JSON |
+| Backend API | Contract v1 仍为 `planned` | 与 Native Contract 独立版本化；正式发布后至少支持 N-1 |
+| 导入/导出/备份 | 尚无生产格式 | 不复用 Native 或内部 Storage 版本；后续使用独立文件格式版本和迁移链 |
 
 首次升级只允许对解析并确认属于 v1 Calendar Core 的正式目录执行清理；确认或新目录初始化任一步失败都返回错误且不得删除、覆盖或部分迁移数据。v1 数据不归档、不保留，回滚到旧 App 会失去本地数据（已接受）；旧 App 仍禁止打开 v2 目录。
 
-每个 v2 JSON store 根对象必须显式包含 `storage_version = 2` 和该 store 的唯一集合字段；未知版本、未知根字段或任一损坏记录都使整个 store 加载失败。Storage record 使用独立 codec，不得直接把 Contract Response Schema 当作数据库实体。
+历史 v2 JSON store 根对象必须显式包含 `storage_version = 2` 和该 store 的唯一集合字段；未知版本、未知根字段或任一损坏记录都使迁移加载失败。Storage record 使用独立 codec，不得直接把 Contract Response Schema 当作数据库实体。当前 runtime 只写 `calendar_core.sqlite3`，不会把这些 JSON 根恢复成 live writer。
 
-`workflow_transactions.json` 的 prepared 记录至少保存 `transactionId/operation/intentVersion/intent/affectedStores/state/preparedAt/committedAt`。每个 `operation + intentVersion` 必须选择严格的内部 codec；当前 intent v1 对所有已声明 operation 使用同一个精确的完整 after-state codec，`afterStores/affectedStores` 只允许六个逻辑 store 名，不允许文件名。完整验证后的 after-state 与外层 transaction/operation/Clock 字段共同支持幂等重放；未知字段、operation 或版本不得用默认值恢复。
+历史 `workflow_transactions.json` 的 prepared 记录至少保存 `transactionId/operation/intentVersion/intent/affectedStores/state/preparedAt/committedAt`。每个 `operation + intentVersion` 必须选择严格的内部 codec；intent v1 对所有已声明 operation 使用同一个精确的完整 after-state codec，`afterStores/affectedStores` 只允许声明的逻辑 store 名，不允许文件名。该 journal 只在 JSON→SQLite 迁移前恢复；当前 SQLite v5 runtime 不再把它作为事务真相源。
 
-以下操作必须是单个 C++ workflow transaction，并通过 `prepare -> 幂等应用各 Repository -> commit` journal 在启动时重放未完成事务：
+以下操作仍必须是单个 C++ workflow transaction。当前 SQLite v5 通过同一数据库事务原子提交；只有历史 JSON 输入才在迁移前通过 `prepare -> 幂等应用各 Repository -> commit` journal 恢复未完成事务：
 
 - Event + Recurrence revision + 首个滚动 Reminder 的创建或系列更新；
 - occurrence 状态变化 + Reminder 取消/恢复 + successor 创建；

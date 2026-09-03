@@ -1,0 +1,181 @@
+version: 1
+contract_version: 2
+implementation_status: integrated
+release_status: active
+
+projection:
+  kind: read_only_composite
+  persists_calendar_view_state: false
+  localized_text_on_wire: false
+  source_domains:
+    - event
+    - event_recurrence
+    - event_occurrence_state
+    - habit
+    - habit_check_in
+    - anniversary
+    - anniversary_recurrence
+    - reminder
+
+snapshot:
+  token_prefix: calsnap1
+  token_pattern: '^calsnap1\.[A-Za-z0-9_-]{20,512}$'
+  token_max_length: 521
+  token_payload:
+    - contributing_store_generations
+    - evaluation_clock_utc
+  contributing_stores:
+    - events
+    - recurrence_versions
+    - event_occurrence_states
+    - habits
+    - habit_recurrences
+    - habit_check_ins
+    - anniversaries
+    - anniversary_recurrences
+    - reminders
+  validation_support_stores:
+    - reminder_recovery_batches
+  protocol:
+    - range_summary_captures_one_clock_and_returns_current_token
+    - list_day_items_requires_range_token
+    - each_query_uses_one_sqlite_read_transaction
+    - token_checked_inside_read_transaction
+    - every_list_page_uses_token_evaluation_clock
+    - changed_generation_returns_calendar_snapshot_expired
+    - wall_clock_advance_alone_does_not_expire_token
+    - flutter_invalidates_at_requested_timezone_local_day_change
+    - flutter_atomically_accepts_only_one_token
+    - recovery_batch_identity_is_read_in_same_transaction_but_does_not_contribute_output_or_token_generation
+    - every_reminder_recovery_batch_reference_is_validated_before_target_filtering
+
+range_summary:
+  interval: half_open_local_date
+  maximum_natural_days: 42
+  one_item_per_requested_date: true
+  order: [date_asc]
+  conservation:
+    has_open_event: visible_event_item_with_status_other_than_completed_exists
+    has_pending_habit: visible_habit_item_with_status_other_than_done_exists
+    has_anniversary: anniversary_item_exists
+
+pagination:
+  default_page_size: 20
+  maximum_page_size: 100
+  cursor_prefix: calcur1
+  cursor_pattern: '^calcur1\.[A-Za-z0-9_-]{20,2048}$'
+  cursor_max_length: 2056
+  cursor_sort_revision: 1
+  cursor_binds:
+    - selected_date
+    - timezone
+    - section
+    - page_size
+    - cursor_sort_revision
+    - complete_last_sort_key
+    - snapshot_token
+  terminal_page_next_cursor: null
+  non_terminal_requires_non_empty_items: true
+  repeated_or_non_advancing_cursor_is_contract_failure: true
+
+sections:
+  order: [event, habit, anniversary]
+  event:
+    hidden_statuses: [cancelled]
+    dot_excluded_statuses: [completed]
+    timed_day_projection:
+      selected_day_window: requested_timezone_half_open_day_instants
+      starts_at: actual_start_at_is_at_or_after_day_start
+      ends_at: actual_start_at_is_before_day_start_and_actual_end_at_is_at_or_before_day_end
+      continues: actual_start_at_is_before_day_start_and_actual_end_at_is_after_day_end
+      starts_at_display_local_time: actual_start_at_in_requested_timezone_hh_mm
+      ends_at_display_local_time: actual_end_at_in_requested_timezone_hh_mm
+      continues_display_local_time: null
+      effective_sort_start: max_actual_start_at_and_selected_day_start_instant
+    all_day_effective_sort_start: selected_day_start_in_requested_timezone
+    completed_recurring_series_cutoff:
+      cutoff: occurrence_anchor_strictly_before_event_completed_at
+      timed_occurrence_anchor: occurrence_start_at
+      all_day_occurrence_anchor: occurrence_start_date_start_of_day_resolved_in_recurrence_timezone
+      occurrence_starting_exactly_at_cutoff_is_excluded: true
+      occurrence_starting_before_cutoff_retains_full_original_interval: true
+      retained_occurrence_projects_as: completed
+    status_projection:
+      clock: snapshot_token_evaluation_clock_utc
+      explicit_occurrence_state_precedence: [completed, skipped]
+      non_recurring_completed_event_projects_as: completed
+      active_timed:
+        pending: query_clock_before_actual_start_at
+        in_progress: query_clock_at_or_after_actual_start_at_and_before_actual_end_at
+        overdue: query_clock_at_or_after_actual_end_at
+      active_all_day:
+        comparison_date: query_clock_converted_to_requested_timezone_local_date
+        pending: comparison_date_before_actual_start_date
+        in_progress: comparison_date_at_or_after_actual_start_date_and_before_actual_end_date
+        overdue: comparison_date_at_or_after_actual_end_date
+      comparison_intervals_are_half_open: true
+    sort:
+      - is_all_day_desc
+      - completion_bucket_asc
+      - requested_day_effective_start_instant_asc
+      - title_unicode_codepoint_asc
+      - event_id_asc
+      - recurrence_revision_null_first_asc
+      - occurrence_key_null_first_asc
+    completion_bucket:
+      pending: 0
+      in_progress: 0
+      overdue: 0
+      skipped: 0
+      completed: 1
+  habit:
+    dot_excluded_statuses: [done]
+    quantity_status_projection:
+      partial: 0_lt_completed_count_hundredths_lt_target_count_hundredths
+      done: completed_count_hundredths_gte_target_count_hundredths
+      binary_done_fields: [completed_count_hundredths_null, target_count_hundredths_null, unit_null]
+      skipped_fields: [completed_count_hundredths_null]
+      no_check_in_statuses: [upcoming, absent, missed]
+    sort:
+      - status_bucket_asc
+      - active_reminder_local_time_null_last_asc
+      - created_at_asc
+      - habit_id_asc
+    status_bucket:
+      absent: 0
+      partial: 0
+      done: 1
+      skipped: 2
+      missed: 3
+      upcoming: 4
+  anniversary:
+    sort:
+      - importance_rank_asc
+      - title_unicode_codepoint_asc
+      - anniversary_id_asc
+      - occurrence_key_asc
+    importance_rank:
+      important_urgent: 0
+      important_noturgent: 1
+      unimportant_urgent: 2
+      unimportant_noturgent: 3
+      null: 4
+
+active_reminder:
+  authoritative_source: reminder
+  requires_is_enabled: true
+  requires_deleted_at_null: true
+  open_statuses: [pending, scheduled]
+  android_alarm_is_source: false
+
+errors:
+  empty_or_reversed_range: CALENDAR_RANGE_INVALID
+  range_over_42_days: CALENDAR_RANGE_TOO_LARGE
+  malformed_snapshot_token: CALENDAR_SNAPSHOT_INVALID
+  changed_snapshot_generation: CALENDAR_SNAPSHOT_EXPIRED
+  malformed_cursor: CALENDAR_CURSOR_INVALID
+  cursor_query_mismatch: CALENDAR_CURSOR_QUERY_MISMATCH
+  invalid_timezone: TIMEZONE_ID_INVALID
+  invalid_date_section_or_page_size: CONTRACT_VALIDATION_FAILED
+  sqlite_failure: STORAGE_IO_ERROR
+  malformed_stored_data: STORAGE_DATA_CORRUPTED

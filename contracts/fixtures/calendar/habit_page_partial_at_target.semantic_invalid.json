@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-01",
+  "timezone": "Asia/Shanghai",
+  "section": "habit",
+  "snapshot_token": "calsnap1.ABCDEFGHIJKLMNOPQRST",
+  "page_size": 20,
+  "items": [
+    {
+      "habit_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "date": "2026-09-01",
+      "title": "边界进度",
+      "status": "partial",
+      "check_in_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "completed_count_hundredths": 3000,
+      "target_count_hundredths": 3000,
+      "unit": "分钟",
+      "has_active_reminder": false
+    }
+  ],
+  "has_more": false,
+  "next_cursor": null
+}

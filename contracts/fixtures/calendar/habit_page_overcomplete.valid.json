@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-01",
+  "timezone": "Asia/Shanghai",
+  "section": "habit",
+  "snapshot_token": "calsnap1.ABCDEFGHIJKLMNOPQRST",
+  "page_size": 20,
+  "items": [
+    {
+      "habit_id": "88888888-8888-4888-8888-888888888888",
+      "date": "2026-09-01",
+      "title": "超额阅读",
+      "status": "done",
+      "check_in_id": "99999999-9999-4999-8999-999999999999",
+      "completed_count_hundredths": 4500,
+      "target_count_hundredths": 3000,
+      "unit": "分钟",
+      "has_active_reminder": false
+    }
+  ],
+  "has_more": false,
+  "next_cursor": null
+}

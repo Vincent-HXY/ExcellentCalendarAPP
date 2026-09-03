@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.os.Bundle
 import android.util.Log
+import com.excellentcalendar.excellent_calendar.android.search.SearchHistoryDeviceSmokeRunner
 
 /** ADB entry point for selectable native bridge smoke runners; Anniversary remains the default target. */
 class AnniversaryJniSmokeInstrumentation : Instrumentation() {
@@ -21,6 +22,11 @@ class AnniversaryJniSmokeInstrumentation : Instrumentation() {
                 null, AnniversaryTarget -> AnniversaryJniSmokeRunner.run(targetContext)
                 CategoryTarget -> CategoryNativeBridgeSmokeRunner.run(targetContext)
                 HabitTarget -> HabitJniSmokeRunner.run(targetContext)
+                CalendarTarget -> CalendarJniSmokeRunner.run(targetContext)
+                CalendarSeededTarget -> CalendarSeededIntegrationSmokeRunner.run(targetContext)
+                SearchSeededTarget -> SearchSeededIntegrationSmokeRunner.run(targetContext)
+                SearchHistoryPrepareTarget -> SearchHistoryDeviceSmokeRunner.prepareInterruptedWrite(targetContext)
+                SearchHistoryVerifyTarget -> SearchHistoryDeviceSmokeRunner.verifyRestartRecovery(targetContext)
                 RingTarget -> RingDeviceAcceptanceSmokeRunner.runQuick(targetContext)
                 RingFiveMinuteTarget -> RingDeviceAcceptanceSmokeRunner.runFiveMinute(targetContext)
                 RingRestartPrepareTarget -> RingDeviceAcceptanceSmokeRunner.prepareRestart(targetContext)
@@ -54,6 +60,11 @@ class AnniversaryJniSmokeInstrumentation : Instrumentation() {
         const val AnniversaryTarget = "anniversary"
         const val CategoryTarget = "category"
         const val HabitTarget = "habit"
+        const val CalendarTarget = "calendar"
+        const val CalendarSeededTarget = "calendar_seeded"
+        const val SearchSeededTarget = "search_seeded"
+        const val SearchHistoryPrepareTarget = "search_history_prepare"
+        const val SearchHistoryVerifyTarget = "search_history_verify"
         const val RingTarget = "ring"
         const val RingFiveMinuteTarget = "ring_five_minute"
         const val RingRestartPrepareTarget = "ring_restart_prepare"

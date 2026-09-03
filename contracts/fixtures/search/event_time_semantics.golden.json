@@ -1,0 +1,74 @@
+{
+  "local_midnight_resolution_vectors": [
+    {
+      "name": "midnight gap moves to first valid local instant",
+      "timezone": "America/Havana",
+      "local_date": "2026-03-08",
+      "expected_classification": "gap",
+      "expected_resolved_local": "2026-03-08T01:00:00",
+      "expected_instant": "2026-03-08T05:00:00Z"
+    },
+    {
+      "name": "midnight fold selects earlier instant",
+      "timezone": "America/Havana",
+      "local_date": "2026-11-01",
+      "expected_classification": "fold",
+      "expected_resolved_local": "2026-11-01T00:00:00",
+      "expected_instant": "2026-11-01T04:00:00Z"
+    }
+  ],
+  "timed_window_vectors": [
+    {
+      "name": "spring DST local day is 23 hours",
+      "timezone": "Europe/Berlin",
+      "date_from": "2026-03-29",
+      "date_to_exclusive": "2026-03-30",
+      "expected_start_at": "2026-03-28T23:00:00Z",
+      "expected_end_at": "2026-03-29T22:00:00Z",
+      "expected_duration_seconds": 82800,
+      "intervals": [
+        {"start_at": "2026-03-28T22:00:00Z", "end_at": "2026-03-28T23:00:00Z", "overlaps": false},
+        {"start_at": "2026-03-28T22:59:59Z", "end_at": "2026-03-28T23:00:01Z", "overlaps": true},
+        {"start_at": "2026-03-29T21:30:00Z", "end_at": "2026-03-29T22:00:00Z", "overlaps": true},
+        {"start_at": "2026-03-29T22:00:00Z", "end_at": "2026-03-29T23:00:00Z", "overlaps": false}
+      ]
+    },
+    {
+      "name": "fall DST local day is 25 hours",
+      "timezone": "Europe/Berlin",
+      "date_from": "2026-10-25",
+      "date_to_exclusive": "2026-10-26",
+      "expected_start_at": "2026-10-24T22:00:00Z",
+      "expected_end_at": "2026-10-25T23:00:00Z",
+      "expected_duration_seconds": 90000,
+      "intervals": [
+        {"start_at": "2026-10-24T21:00:00Z", "end_at": "2026-10-24T22:00:00Z", "overlaps": false},
+        {"start_at": "2026-10-24T22:00:00Z", "end_at": "2026-10-25T23:00:00Z", "overlaps": true}
+      ]
+    }
+  ],
+  "all_day_overlap_vectors": [
+    {"date_from": "2026-08-31", "date_to_exclusive": "2026-09-02", "start_date": "2026-08-30", "end_date": "2026-08-31", "overlaps": false},
+    {"date_from": "2026-08-31", "date_to_exclusive": "2026-09-02", "start_date": "2026-08-30", "end_date": "2026-09-01", "overlaps": true},
+    {"date_from": "2026-08-31", "date_to_exclusive": "2026-09-02", "start_date": "2026-09-02", "end_date": "2026-09-03", "overlaps": false},
+    {"date_from": "2026-08-31", "date_to_exclusive": "2026-09-02", "start_date": "2026-08-01", "end_date": "2026-10-01", "overlaps": true}
+  ],
+  "status_vectors": [
+    {"kind": "timed", "is_recurring": false, "event_status": "active", "occurrence_state": null, "evaluated_at": "2026-08-31T07:59:59Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_status": "pending"},
+    {"kind": "timed", "is_recurring": false, "event_status": "active", "occurrence_state": null, "evaluated_at": "2026-08-31T08:00:00Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_status": "in_progress"},
+    {"kind": "timed", "is_recurring": true, "event_status": "active", "occurrence_state": "scheduled", "evaluated_at": "2026-08-31T08:30:00Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_status": "in_progress"},
+    {"kind": "timed", "is_recurring": true, "event_status": "active", "occurrence_state": "completed", "evaluated_at": "2026-08-31T07:00:00Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_status": "completed"},
+    {"kind": "timed", "is_recurring": true, "event_status": "active", "occurrence_state": "skipped", "evaluated_at": "2026-08-31T07:00:00Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_status": "skipped"},
+    {"kind": "timed", "is_recurring": false, "event_status": "completed", "occurrence_state": null, "evaluated_at": "2026-08-31T07:00:00Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_status": "completed"},
+    {"kind": "all_day", "is_recurring": false, "event_status": "active", "occurrence_state": null, "timezone": "Asia/Shanghai", "evaluated_at": "2026-08-31T16:00:00Z", "start_date": "2026-09-01", "end_date": "2026-09-03", "expected_status": "in_progress"},
+    {"kind": "all_day", "is_recurring": false, "event_status": "active", "occurrence_state": null, "timezone": "Asia/Shanghai", "evaluated_at": "2026-09-02T16:00:00Z", "start_date": "2026-09-01", "end_date": "2026-09-03", "expected_status": "overdue"}
+  ],
+  "temporal_vectors": [
+    {"kind": "timed", "evaluated_at": "2026-08-31T08:30:00Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_bucket": 0, "expected_distance": 0},
+    {"kind": "timed", "evaluated_at": "2026-08-31T07:00:00Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_bucket": 0, "expected_distance": 3600},
+    {"kind": "timed", "evaluated_at": "2026-08-31T10:00:00Z", "start_at": "2026-08-31T08:00:00Z", "end_at": "2026-08-31T09:00:00Z", "expected_bucket": 1, "expected_distance": 3600},
+    {"kind": "all_day", "today": "2026-09-02", "start_date": "2026-09-01", "end_date": "2026-09-03", "expected_bucket": 0, "expected_distance": 0},
+    {"kind": "all_day", "today": "2026-08-31", "start_date": "2026-09-02", "end_date": "2026-09-04", "expected_bucket": 0, "expected_distance": 2},
+    {"kind": "all_day", "today": "2026-09-05", "start_date": "2026-09-01", "end_date": "2026-09-03", "expected_bucket": 1, "expected_distance": 3}
+  ]
+}

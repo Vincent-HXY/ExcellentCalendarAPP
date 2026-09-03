@@ -28,9 +28,8 @@ class BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected
-        ? const Color(0xFF24AFC0)
-        : const Color(0xFF515B61);
+    final colors = Theme.of(context).colorScheme;
+    final color = isSelected ? colors.primary : colors.onSurfaceVariant;
     return Semantics(
       button: true,
       selected: isSelected,
@@ -50,7 +49,9 @@ class BottomNavItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 160),
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 160),
                   style: TextStyle(
                     color: color,
                     fontSize: 12,

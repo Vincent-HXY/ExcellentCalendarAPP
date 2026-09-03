@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../app/bootstrap/notification_permission_controller.dart';
+import '../../../app/routing/app_router.dart';
 import '../../../application/habit/habit_detail_controller.dart';
 import '../../../application/habit/habit_form_controller.dart';
 import '../../../application/habit/habit_models.dart';
@@ -22,10 +23,12 @@ class HabitDetailPage extends StatefulWidget {
     required this.categoryRepository,
     this.permissionController,
     this.focusOccurrenceKey,
+    this.focusDate,
     super.key,
   });
   final String habitId;
   final String? focusOccurrenceKey;
+  final String? focusDate;
   final HabitGateway gateway;
   final String Function() timezoneProvider;
   final CategoryRepository categoryRepository;
@@ -40,6 +43,8 @@ class _HabitDetailPageState extends State<HabitDetailPage>
   late final HabitDetailController _controller;
   final List<HabitDailyStatusResponseDto> _earlier = [];
   bool _loadingEarlier = false;
+  bool _changed = false;
+  bool _isPopping = false;
   HabitScheduleCapabilityResponseDto? _latestScheduleCapability;
 
   @override
@@ -70,8 +75,8 @@ class _HabitDetailPageState extends State<HabitDetailPage>
   }
 
   Future<void> _openDay(String date) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) => HabitDayPage(
           habitId: widget.habitId,
           date: date,
@@ -80,6 +85,7 @@ class _HabitDetailPageState extends State<HabitDetailPage>
         ),
       ),
     );
+    if (changed != false) _changed = true;
     if (mounted) unawaited(_controller.load(preserve: true));
   }
 
@@ -100,6 +106,7 @@ class _HabitDetailPageState extends State<HabitDetailPage>
     if (mounted) {
       final submitted = outcome;
       if (submitted != null) {
+        _changed = true;
         setState(() => _latestScheduleCapability = submitted.capability);
       }
       unawaited(_controller.load(preserve: true));
@@ -117,7 +124,7 @@ class _HabitDetailPageState extends State<HabitDetailPage>
           : formatHundredths(detail.habit.targetCountHundredths!),
       unit: detail.habit.unit ?? '',
     );
-    await Navigator.of(context).push<bool>(
+    final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => HabitFormPage(
           gateway: widget.gateway,
@@ -128,6 +135,7 @@ class _HabitDetailPageState extends State<HabitDetailPage>
         ),
       ),
     );
+    if (changed == true) _changed = true;
   }
 
   Future<void> _end() async {
@@ -136,7 +144,7 @@ class _HabitDetailPageState extends State<HabitDetailPage>
       body: '结束后不可恢复，历史会保留并变为只读。',
       action: '结束挑战',
     );
-    if (confirmed) await _controller.endEarly();
+    if (confirmed && await _controller.endEarly()) _changed = true;
   }
 
   Future<void> _skipToday(HabitDetailViewData detail) async {
@@ -151,6 +159,7 @@ class _HabitDetailPageState extends State<HabitDetailPage>
       status: HabitCheckInStatusContract.skipped,
     );
     if (skipped && mounted) {
+      _changed = true;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('今天已跳过')));
@@ -165,7 +174,9 @@ class _HabitDetailPageState extends State<HabitDetailPage>
     );
     if (!confirmed) return;
     final deleted = await _controller.delete();
-    if (deleted && mounted) Navigator.of(context).pop(true);
+    if (deleted && mounted) {
+      Navigator.of(context).pop(ContentDetailRouteOutcome.deleted);
+    }
   }
 
   Future<bool> _confirm({
@@ -192,6 +203,16 @@ class _HabitDetailPageState extends State<HabitDetailPage>
       ) ??
       false;
 
+  void _popWithResult() {
+    if (_isPopping) return;
+    _isPopping = true;
+    Navigator.of(context).pop(
+      _changed
+          ? ContentDetailRouteOutcome.changed
+          : ContentDetailRouteOutcome.unchanged,
+    );
+  }
+
   Future<void> _loadEarlier() async {
     if (_loadingEarlier) return;
     setState(() => _loadingEarlier = true);
@@ -212,24 +233,35 @@ class _HabitDetailPageState extends State<HabitDetailPage>
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: _controller,
-    builder: (context, _) => Scaffold(
-      backgroundColor: HabitDesign.background(context),
-      appBar: AppBar(
+  Widget build(BuildContext context) => PopScope<Object?>(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) _popWithResult();
+    },
+    child: ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) => Scaffold(
         backgroundColor: HabitDesign.background(context),
-        title: const Text('习惯详情'),
-        actions: [
-          if (_controller.detail != null)
-            IconButton(
-              tooltip: '删除习惯',
-              onPressed: _controller.isMutating ? null : _delete,
-              icon: const Icon(Icons.delete_outline_rounded),
-              color: HabitDesign.danger(context),
-            ),
-        ],
+        appBar: AppBar(
+          backgroundColor: HabitDesign.background(context),
+          leading: IconButton(
+            tooltip: '返回',
+            onPressed: _popWithResult,
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          title: const Text('习惯详情'),
+          actions: [
+            if (_controller.detail != null)
+              IconButton(
+                tooltip: '删除习惯',
+                onPressed: _controller.isMutating ? null : _delete,
+                icon: const Icon(Icons.delete_outline_rounded),
+                color: HabitDesign.danger(context),
+              ),
+          ],
+        ),
+        body: _body(),
       ),
-      body: _body(),
     ),
   );
 

@@ -1,0 +1,16 @@
+{
+  "sort_revision": 1,
+  "required_bindings": [
+    "selected_date",
+    "timezone",
+    "section",
+    "page_size",
+    "cursor_sort_revision",
+    "complete_last_sort_key",
+    "snapshot_token"
+  ],
+  "mismatch_error": "CALENDAR_CURSOR_QUERY_MISMATCH",
+  "changed_generation_error": "CALENDAR_SNAPSHOT_EXPIRED",
+  "malformed_cursor_error": "CALENDAR_CURSOR_INVALID",
+  "malformed_snapshot_error": "CALENDAR_SNAPSHOT_INVALID"
+}

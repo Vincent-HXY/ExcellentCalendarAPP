@@ -3,6 +3,7 @@
 #include <picojson/picojson.h>
 #include <sqlite3.h>
 
+#include <algorithm>
 #include <array>
 #include <cerrno>
 #include <cctype>
@@ -307,6 +308,56 @@ constexpr std::array<const char*, 4> kAnniversaryStoreFiles{{
     "anniversary_reminder_templates.json",
     "reminders.json",
 }};
+
+// CalendarView deliberately reads nine generation-contributing stores. Keep
+// this positional mapping aligned with
+// kCalendarQueryContributingStores so the token vector and the facts are
+// captured by the same SQLite snapshot. Recovery batch identities are read
+// separately in that transaction only to validate Reminder references; they
+// do not own a Calendar output field or contribute a token generation.
+constexpr std::array<const char*,
+                     repository::kCalendarQueryContributingStores.size()>
+    kCalendarQueryStoreFiles{{
+        "events.json",
+        "recurrence_versions.json",
+        "event_occurrence_states.json",
+        "habits.json",
+        "habit_recurrences.json",
+        "habit_check_ins.json",
+        "anniversaries.json",
+        "anniversary_recurrences.json",
+        "reminders.json",
+    }};
+
+constexpr std::array<const char*,
+                     repository::kSearchQueryContributingStores.size()>
+    kSearchQueryStoreFiles{{
+        "events.json",
+        "recurrence_versions.json",
+        "event_occurrence_states.json",
+        "categories.json",
+        "habits.json",
+        "habit_recurrences.json",
+        "anniversaries.json",
+        "anniversary_recurrences.json",
+    }};
+
+std::array<bool, repository::kSearchQueryContributingStores.size()>
+search_store_mask(
+    const std::vector<domain::SearchTargetType>& requested_targets) {
+  std::array<bool, repository::kSearchQueryContributingStores.size()> mask{};
+  for (const auto target : requested_targets) {
+    mask[3] = true;
+    if (target == domain::SearchTargetType::event) {
+      mask[0] = mask[1] = mask[2] = true;
+    } else if (target == domain::SearchTargetType::habit) {
+      mask[4] = mask[5] = true;
+    } else if (target == domain::SearchTargetType::anniversary) {
+      mask[6] = mask[7] = true;
+    }
+  }
+  return mask;
+}
 
 const StoreSpec* find_store(std::string_view file_name) {
   for (const auto& spec : kV4StoreSpecs) {
@@ -2852,6 +2903,237 @@ SqliteCalendarDatabase::load_habit_state_locked() {
   return valid.ok()
              ? common::Result<repository::HabitState>::success(std::move(state))
              : common::Result<repository::HabitState>::failure(valid.error());
+}
+
+common::Result<repository::CalendarQuerySnapshot>
+SqliteCalendarDatabase::load_calendar_query_snapshot(
+    const std::optional<std::array<
+        std::int64_t,
+        repository::kCalendarQueryContributingStores.size()>>&
+        expected_generations) {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  const bool owns_transaction = transaction_depth_ == 0U;
+  if (owns_transaction) {
+    auto begun = execute_sql(database_, "BEGIN", "begin_calendar_read_transaction");
+    if (!begun.ok()) {
+      return common::Result<repository::CalendarQuerySnapshot>::failure(
+          begun.error());
+    }
+    transaction_depth_ = 1U;
+  }
+  const auto fail_read = [&](const common::Error& error) {
+    if (owns_transaction) {
+      transaction_depth_ = 0U;
+      execute_sql(database_, "ROLLBACK", "rollback_calendar_read_transaction");
+    }
+    return common::Result<repository::CalendarQuerySnapshot>::failure(error);
+  };
+
+  repository::CalendarQuerySnapshot snapshot;
+  repository::RecurringEventState shared;
+  repository::HabitState habits;
+  for (std::size_t index = 0; index < kCalendarQueryStoreFiles.size();
+       ++index) {
+    const auto* spec = find_store(kCalendarQueryStoreFiles[index]);
+    if (spec == nullptr ||
+        repository::kCalendarQueryContributingStores[index] !=
+            spec->logical_name) {
+      return fail_read(corrupted(
+          "SQLite Calendar query Store mapping is missing or misordered",
+          kCalendarQueryStoreFiles[index]));
+    }
+    auto root = read_store_root(database_, *spec);
+    if (!root.ok()) return fail_read(root.error());
+    common::Result<common::Unit> decoded =
+        index >= 3U && index <= 5U
+            ? storage::json::decode_habit_store(spec->file_name, root.value(),
+                                                 habits)
+            : storage::json::decode_recurring_event_store(
+                  spec->file_name, root.value(), shared);
+    if (!decoded.ok()) return fail_read(decoded.error());
+  }
+
+  const auto* recovery_spec = find_store("reminder_recovery_batches.json");
+  if (recovery_spec == nullptr) {
+    return fail_read(corrupted(
+        "SQLite Calendar recovery validation Store mapping is missing",
+        "reminder_recovery_batches.json"));
+  }
+  auto recovery_root = read_store_root(database_, *recovery_spec);
+  if (!recovery_root.ok()) return fail_read(recovery_root.error());
+  auto recovery_decoded = storage::json::decode_recurring_event_store(
+      recovery_spec->file_name, recovery_root.value(), shared);
+  if (!recovery_decoded.ok()) return fail_read(recovery_decoded.error());
+
+  // The full runtime validates all stores on open and every write validates
+  // its complete transaction state. Revalidate only relationships that can be
+  // proven from Calendar's deliberately narrow projection plus recovery batch
+  // identities here. Recovery ownership is checked against the unfiltered
+  // Reminder slice because it applies equally to Event and Anniversary
+  // reminders; Event structural validation then uses its target-specific
+  // subset. Reminder template/notification facts are intentionally not loaded
+  // because they neither contribute to the Calendar token nor own any Calendar
+  // output field.
+  auto valid =
+      storage::json::validate_calendar_reminder_recovery_references(shared);
+  if (!valid.ok()) return fail_read(valid.error());
+  auto event_validation = shared;
+  event_validation.reminders.erase(
+      std::remove_if(event_validation.reminders.begin(),
+                     event_validation.reminders.end(), [](const auto& value) {
+                       return value.target_type != domain::kReminderTargetEvent;
+                     }),
+      event_validation.reminders.end());
+  valid = storage::json::validate_calendar_recurring_event_slice(
+      event_validation);
+  if (!valid.ok()) return fail_read(valid.error());
+  valid = storage::json::validate_habit_state(habits);
+  if (!valid.ok()) return fail_read(valid.error());
+
+  for (std::size_t index = 0; index < snapshot.generations.size(); ++index) {
+    auto generation = generation_for(
+        database_, repository::kCalendarQueryContributingStores[index]);
+    if (!generation.ok()) return fail_read(generation.error());
+    snapshot.generations[index] = generation.value();
+  }
+  if (expected_generations.has_value() &&
+      *expected_generations != snapshot.generations) {
+    return fail_read(common::make_error(
+        "CALENDAR_SNAPSHOT_EXPIRED",
+        "Calendar snapshot no longer matches the authoritative data generations",
+        {}, true));
+  }
+
+  snapshot.events = std::move(shared.events);
+  snapshot.event_recurrences = std::move(shared.recurrences);
+  snapshot.event_occurrence_states =
+      std::move(shared.occurrence_states);
+  snapshot.habits = std::move(habits.habits);
+  snapshot.habit_recurrences = std::move(habits.recurrences);
+  snapshot.habit_check_ins = std::move(habits.check_ins);
+  snapshot.anniversaries = std::move(shared.anniversaries);
+  snapshot.anniversary_recurrences =
+      std::move(shared.anniversary_recurrences);
+  snapshot.reminders = std::move(shared.reminders);
+
+  if (owns_transaction) {
+    transaction_depth_ = 0U;
+    auto committed =
+        execute_sql(database_, "COMMIT", "commit_calendar_read_transaction");
+    if (!committed.ok()) {
+      execute_sql(database_, "ROLLBACK",
+                  "rollback_failed_calendar_read_commit");
+      return common::Result<repository::CalendarQuerySnapshot>::failure(
+          committed.error());
+    }
+  }
+  return common::Result<repository::CalendarQuerySnapshot>::success(
+      std::move(snapshot));
+}
+
+common::Result<repository::SearchQuerySnapshot>
+SqliteCalendarDatabase::load_search_query_snapshot(
+    const std::vector<domain::SearchTargetType>& requested_targets,
+    const std::optional<std::array<
+        std::int64_t, repository::kSearchQueryContributingStores.size()>>&
+        expected_generations) {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  if (requested_targets.empty()) {
+    return common::Result<repository::SearchQuerySnapshot>::failure(
+        common::make_error("SEARCH_QUERY_INVALID",
+                           "Search target types must not be empty"));
+  }
+  const auto mask = search_store_mask(requested_targets);
+  const bool owns_transaction = transaction_depth_ == 0U;
+  std::size_t sql_statements_executed = 0U;
+  if (owns_transaction) {
+    auto begun = execute_sql(database_, "BEGIN", "begin_search_read_transaction");
+    if (!begun.ok()) {
+      return common::Result<repository::SearchQuerySnapshot>::failure(
+          begun.error());
+    }
+    ++sql_statements_executed;
+    transaction_depth_ = 1U;
+  }
+  const auto fail_read = [&](const common::Error& error) {
+    if (owns_transaction) {
+      transaction_depth_ = 0U;
+      execute_sql(database_, "ROLLBACK", "rollback_search_read_transaction");
+    }
+    return common::Result<repository::SearchQuerySnapshot>::failure(error);
+  };
+
+  repository::SearchQuerySnapshot snapshot;
+  repository::RecurringEventState shared;
+  repository::HabitState habits;
+  repository::CategoryState categories;
+  for (std::size_t index = 0; index < kSearchQueryStoreFiles.size(); ++index) {
+    if (!mask[index]) continue;
+    const auto* spec = find_store(kSearchQueryStoreFiles[index]);
+    if (spec == nullptr ||
+        repository::kSearchQueryContributingStores[index] !=
+            spec->logical_name) {
+      return fail_read(corrupted(
+          "SQLite Search query Store mapping is missing or misordered",
+          kSearchQueryStoreFiles[index]));
+    }
+    auto root = read_store_root(database_, *spec);
+    if (!root.ok()) return fail_read(root.error());
+    ++sql_statements_executed;
+    if (index == 3U) {
+      auto records = storage::json::decode_category_store(root.value(), 3);
+      if (!records.ok()) return fail_read(records.error());
+      auto decoded =
+          storage::json::category_state_from_storage_records(records.value());
+      if (!decoded.ok()) return fail_read(decoded.error());
+      categories = std::move(decoded.value());
+    } else if (index == 4U || index == 5U) {
+      auto decoded = storage::json::decode_habit_store(
+          spec->file_name, root.value(), habits);
+      if (!decoded.ok()) return fail_read(decoded.error());
+    } else {
+      auto decoded = storage::json::decode_recurring_event_store(
+          spec->file_name, root.value(), shared);
+      if (!decoded.ok()) return fail_read(decoded.error());
+    }
+    auto generation = generation_for(
+        database_, repository::kSearchQueryContributingStores[index]);
+    if (!generation.ok()) return fail_read(generation.error());
+    ++sql_statements_executed;
+    snapshot.generations[index] = generation.value();
+    if (expected_generations.has_value() &&
+        (*expected_generations)[index] != snapshot.generations[index]) {
+      return fail_read(common::make_error(
+          "SEARCH_CURSOR_EXPIRED",
+          "Search cursor no longer matches canonical Store generations",
+          {}, true));
+    }
+  }
+
+  snapshot.events = std::move(shared.events);
+  snapshot.event_recurrences = std::move(shared.recurrences);
+  snapshot.event_occurrence_states = std::move(shared.occurrence_states);
+  snapshot.categories = std::move(categories.categories);
+  snapshot.habits = std::move(habits.habits);
+  snapshot.habit_recurrences = std::move(habits.recurrences);
+  snapshot.anniversaries = std::move(shared.anniversaries);
+  snapshot.anniversary_recurrences =
+      std::move(shared.anniversary_recurrences);
+
+  if (owns_transaction) {
+    transaction_depth_ = 0U;
+    auto committed =
+        execute_sql(database_, "COMMIT", "commit_search_read_transaction");
+    if (!committed.ok()) {
+      execute_sql(database_, "ROLLBACK", "rollback_failed_search_read_commit");
+      return common::Result<repository::SearchQuerySnapshot>::failure(
+          committed.error());
+    }
+    ++sql_statements_executed;
+  }
+  snapshot.sql_statements_executed = sql_statements_executed;
+  return common::Result<repository::SearchQuerySnapshot>::success(
+      std::move(snapshot));
 }
 
 common::Result<std::vector<domain::Event>>

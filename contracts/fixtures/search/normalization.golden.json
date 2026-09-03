@@ -1,0 +1,35 @@
+{
+  "vectors": [
+    {
+      "raw": "  项目　MEETING  ",
+      "normalized": "项目 MEETING",
+      "tokens": ["项目", "MEETING"],
+      "comparison_tokens": ["项目", "meeting"]
+    },
+    {
+      "raw": "Cafe\t计划\nA",
+      "normalized": "Cafe 计划 A",
+      "tokens": ["Cafe", "计划", "A"],
+      "comparison_tokens": ["cafe", "计划", "a"]
+    },
+    {
+      "raw": "😀  庆祝",
+      "normalized": "😀 庆祝",
+      "tokens": ["😀", "庆祝"],
+      "comparison_tokens": ["😀", "庆祝"]
+    },
+    {
+      "raw": "Straße STRASSE",
+      "normalized": "Straße STRASSE",
+      "tokens": ["Straße", "STRASSE"],
+      "comparison_tokens": ["straße", "strasse"]
+    },
+    {
+      "raw": "  ",
+      "normalized": "",
+      "tokens": [],
+      "comparison_tokens": [],
+      "expected_error": "SEARCH_QUERY_INVALID"
+    }
+  ]
+}

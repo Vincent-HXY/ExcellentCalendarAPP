@@ -1,0 +1,16 @@
+{
+  "query_generation": 7,
+  "normalized_keyword": "项目 MEETING",
+  "timezone": "Asia/Shanghai",
+  "evaluated_at": "2026-08-31T08:00:00Z",
+  "snapshot_token": "srchsnap1.ABCDEFGHIJKLMNOPQRST",
+  "sections": [
+    {
+      "target_type": "event",
+      "items": [],
+      "total_count": 0,
+      "has_more": false,
+      "next_cursor": null
+    }
+  ]
+}

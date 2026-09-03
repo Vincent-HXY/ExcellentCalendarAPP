@@ -3,6 +3,7 @@ import 'package:excellent_calendar/application/anniversary/app_clock.dart';
 import 'package:excellent_calendar/application/category/category_models.dart';
 import 'package:excellent_calendar/data/auth/dio_auth_gateway.dart';
 import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_channel_refresh_token_secure_store.dart';
+import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_channel_calendar_adapter.dart';
 import 'package:excellent_calendar/data/category/native_category_repository.dart';
 import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_channel_ring_adapter.dart';
 import 'package:excellent_calendar/data/user/dio_user_gateway.dart';
@@ -27,6 +28,7 @@ void main() {
     expect(app.anniversaryClock, isA<SystemAppClock>());
     expect(app.anniversaryClock, isNot(isA<FixedAppClock>()));
     expect(app.ringGateway, isA<MethodChannelRingAdapter>());
+    expect(app.calendarGateway, isA<MethodChannelCalendarAdapter>());
   });
 
   test('production auth composition wires the real stack', () {

@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-01",
+  "timezone": "Asia/Shanghai",
+  "section": "anniversary",
+  "snapshot_token": "calsnap1.ABCDEFGHIJKLMNOPQRST",
+  "page_size": 20,
+  "items": [
+    {
+      "anniversary_id": "88888888-8888-4888-8888-888888888888",
+      "occurrence_key": "99999999-9999-4999-8999-999999999999",
+      "occurrence_date": "2026-09-01",
+      "source_date": "2020-09-01",
+      "title": "项目成立",
+      "is_repeating": true,
+      "years_elapsed": 6,
+      "importance": "important_urgent",
+      "has_active_reminder": true
+    },
+    {
+      "anniversary_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "occurrence_key": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "occurrence_date": "2026-09-01",
+      "source_date": "2026-09-01",
+      "title": "一次性纪念",
+      "is_repeating": false,
+      "years_elapsed": 0,
+      "importance": null,
+      "has_active_reminder": false
+    }
+  ],
+  "has_more": false,
+  "next_cursor": null
+}
+

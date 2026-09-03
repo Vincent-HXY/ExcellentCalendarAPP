@@ -1,0 +1,65 @@
+{
+  "vectors": [
+    {
+      "name": "nearest eligible occurrence wins regardless of open state",
+      "reference_date": "2026-08-31",
+      "include_completed": true,
+      "date_from": "2026-08-25",
+      "date_to_exclusive": "2026-09-10",
+      "candidates": [
+        {"identity": "closed-near", "occur_date": "2026-08-30", "state": "completed"},
+        {"identity": "open-future", "occur_date": "2026-09-03", "state": "open"},
+        {"identity": "open-far", "occur_date": "2026-09-06", "state": "open"}
+      ],
+      "expected_identity": "closed-near"
+    },
+    {
+      "name": "closed fallback uses nearest date",
+      "reference_date": "2026-08-31",
+      "include_completed": true,
+      "date_from": "2026-08-01",
+      "date_to_exclusive": "2026-09-01",
+      "candidates": [
+        {"identity": "old", "occur_date": "2026-08-01", "state": "completed"},
+        {"identity": "recent", "occur_date": "2026-08-30", "state": "skipped"}
+      ],
+      "expected_identity": "recent"
+    },
+    {
+      "name": "closed excluded when include completed is false",
+      "reference_date": "2026-08-31",
+      "include_completed": false,
+      "date_from": "2026-08-01",
+      "date_to_exclusive": "2026-09-10",
+      "candidates": [
+        {"identity": "closed", "occur_date": "2026-08-31", "state": "completed"},
+        {"identity": "open", "occur_date": "2026-09-02", "state": "open"}
+      ],
+      "expected_identity": "open"
+    },
+    {
+      "name": "equal-distance tie prefers current or future interval",
+      "reference_date": "2026-08-31",
+      "include_completed": true,
+      "date_from": "2026-08-01",
+      "date_to_exclusive": "2026-10-01",
+      "candidates": [
+        {"identity": "past", "occur_date": "2026-08-30", "state": "completed"},
+        {"identity": "future", "occur_date": "2026-09-01", "state": "open"}
+      ],
+      "expected_identity": "future"
+    },
+    {
+      "name": "stable identity breaks equal-distance tie",
+      "reference_date": "2026-08-31",
+      "include_completed": true,
+      "date_from": "2026-08-01",
+      "date_to_exclusive": "2026-10-01",
+      "candidates": [
+        {"identity": "b", "occur_date": "2026-09-01", "state": "open"},
+        {"identity": "a", "occur_date": "2026-09-01", "state": "open"}
+      ],
+      "expected_identity": "a"
+    }
+  ]
+}

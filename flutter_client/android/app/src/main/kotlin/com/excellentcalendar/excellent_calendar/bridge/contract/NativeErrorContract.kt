@@ -81,8 +81,19 @@ object NativeErrorCodes {
     const val AnniversaryOccurrenceStale = "ANNIVERSARY_OCCURRENCE_STALE"
     const val AnniversaryReminderOccurrenceExpired = "ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED"
     const val AnniversaryAggregateMembershipConflict = "ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT"
+    const val CalendarRangeInvalid = "CALENDAR_RANGE_INVALID"
+    const val CalendarRangeTooLarge = "CALENDAR_RANGE_TOO_LARGE"
+    const val CalendarSnapshotInvalid = "CALENDAR_SNAPSHOT_INVALID"
+    const val CalendarSnapshotExpired = "CALENDAR_SNAPSHOT_EXPIRED"
+    const val CalendarCursorInvalid = "CALENDAR_CURSOR_INVALID"
+    const val CalendarCursorQueryMismatch = "CALENDAR_CURSOR_QUERY_MISMATCH"
     const val SchedulerReconciliationPending = "SCHEDULER_RECONCILIATION_PENDING"
     const val SearchQueryInvalid = "SEARCH_QUERY_INVALID"
+    const val SearchCursorInvalid = "SEARCH_CURSOR_INVALID"
+    const val SearchCursorQueryMismatch = "SEARCH_CURSOR_QUERY_MISMATCH"
+    const val SearchCursorExpired = "SEARCH_CURSOR_EXPIRED"
+    const val SearchHistoryConflict = "SEARCH_HISTORY_CONFLICT"
+    const val SearchHistoryStorageFailed = "SEARCH_HISTORY_STORAGE_FAILED"
     const val AiExtractionFailed = "AI_EXTRACTION_FAILED"
     const val SyncConflict = "SYNC_CONFLICT"
     const val SyncOperationInvalid = "SYNC_OPERATION_INVALID"
@@ -187,8 +198,19 @@ object NativeErrorCodes {
         AnniversaryOccurrenceStale,
         AnniversaryReminderOccurrenceExpired,
         AnniversaryAggregateMembershipConflict,
+        CalendarRangeInvalid,
+        CalendarRangeTooLarge,
+        CalendarSnapshotInvalid,
+        CalendarSnapshotExpired,
+        CalendarCursorInvalid,
+        CalendarCursorQueryMismatch,
         SchedulerReconciliationPending,
         SearchQueryInvalid,
+        SearchCursorInvalid,
+        SearchCursorQueryMismatch,
+        SearchCursorExpired,
+        SearchHistoryConflict,
+        SearchHistoryStorageFailed,
         AiExtractionFailed,
         SyncConflict,
         SyncOperationInvalid,

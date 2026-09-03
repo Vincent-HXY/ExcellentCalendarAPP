@@ -1,0 +1,15 @@
+{
+  "query_generation": 9,
+  "keyword": "项目",
+  "timezone": "Asia/Shanghai",
+  "target_types": ["event"],
+  "date_from": "2026-09-08",
+  "date_to_exclusive": "2026-09-01",
+  "category_ids": null,
+  "include_uncategorized": false,
+  "include_completed": true,
+  "sort_by": "relevance",
+  "sections": [
+    {"target_type": "event", "page_size": 20, "cursor": null}
+  ]
+}

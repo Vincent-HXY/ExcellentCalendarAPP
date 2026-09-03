@@ -1,0 +1,24 @@
+{
+  "target_type": "event",
+  "items": [
+    {
+      "target_type": "habit",
+      "target_id": "55555555-5555-4555-8555-555555555555",
+      "title": "晨间复盘",
+      "match": {"primary_field": "title", "matched_fields": ["title"], "snippet": null},
+      "category": null,
+      "updated_at": "2026-08-31T06:00:00Z",
+      "lifecycle_status": "active",
+      "occur_date": "2026-08-31",
+      "challenge_start_date": "2026-08-01",
+      "challenge_end_date": "2026-09-30",
+      "ended_date": null,
+      "remaining_days": 31,
+      "target_count_hundredths": null,
+      "unit": null
+    }
+  ],
+  "total_count": 1,
+  "has_more": false,
+  "next_cursor": null
+}

@@ -37,13 +37,14 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0x0D111827))),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainer,
+        border: Border(top: BorderSide(color: colors.outlineVariant)),
         boxShadow: [
           BoxShadow(
-            color: Color(0x0D111827),
+            color: colors.shadow.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: Offset(0, -2),
           ),

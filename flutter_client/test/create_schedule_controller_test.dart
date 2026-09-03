@@ -2,6 +2,9 @@ import 'package:excellent_calendar/application/event/create_event_use_case.dart'
 import 'package:excellent_calendar/application/event/create_schedule_controller.dart';
 import 'package:excellent_calendar/application/timezone/timezone_application_service.dart';
 import 'package:excellent_calendar/gateway_interfaces/event_native_gateway.dart';
+import 'package:excellent_calendar/native_contract/common/native_error_codes.dart';
+import 'package:excellent_calendar/native_contract/common/native_error_dto.dart';
+import 'package:excellent_calendar/native_contract/common/native_result_dto.dart';
 import 'package:excellent_calendar/native_contract/event/create_event_request_dto.dart';
 import 'package:excellent_calendar/native_contract/event/event_response_dto.dart';
 import 'package:excellent_calendar/native_contract/runtime/local_wall_date_time.dart';
@@ -132,6 +135,7 @@ void main() {
         createEventUseCase: CreateEventUseCase(eventGateway),
         timezoneService: TimezoneApplicationService(FakeTimezoneGateway()),
         ringGateway: ringGateway,
+        nowProvider: () => DateTime.utc(2026, 8, 1),
       );
 
       final toggleCheck = await controller.checkRingCapability();
@@ -169,6 +173,7 @@ void main() {
         createEventUseCase: CreateEventUseCase(eventGateway),
         timezoneService: TimezoneApplicationService(timezoneGateway),
         ringGateway: ringGateway,
+        nowProvider: () => DateTime.utc(2026, 8, 1),
       );
 
       final result = await controller.submit(_ringDraft());
@@ -194,6 +199,7 @@ void main() {
         createEventUseCase: CreateEventUseCase(eventGateway),
         timezoneService: TimezoneApplicationService(FakeTimezoneGateway()),
         ringGateway: ringGateway,
+        nowProvider: () => DateTime.utc(2026, 8, 1),
       );
       final base = _ringDraft();
 
@@ -216,6 +222,267 @@ void main() {
       expect(ringCalls, isEmpty);
       expect(eventGateway.createRequests, isEmpty);
       await ringGateway.eventController.close();
+    },
+  );
+
+  test(
+    'expired one-off reminder fails locally before Event creation',
+    () async {
+      final eventGateway = _RecordingEventGateway();
+      final controller = CreateScheduleController(
+        createEventUseCase: CreateEventUseCase(eventGateway),
+        timezoneService: TimezoneApplicationService(FakeTimezoneGateway()),
+        nowProvider: () => DateTime.utc(2026, 9, 1, 8),
+      );
+
+      final result = await controller.submit(
+        const CreateScheduleDraft(
+          title: '历史复盘',
+          note: '',
+          location: '',
+          start: LocalWallDateTime(
+            year: 2026,
+            month: 8,
+            day: 31,
+            hour: 9,
+            minute: 0,
+            second: 0,
+          ),
+          end: LocalWallDateTime(
+            year: 2026,
+            month: 8,
+            day: 31,
+            hour: 10,
+            minute: 0,
+            second: 0,
+          ),
+          isAllDay: false,
+          recurrence: CreateScheduleRecurrence.once,
+          reminderAdvanceMinutes: [15],
+          isRingingReminderEnabled: false,
+        ),
+      );
+
+      expect(result.outcome, CreateScheduleSubmitOutcome.validationFailure);
+      expect(result.message, '提醒时间已经失效，请调整日程时间或关闭提醒');
+      expect(eventGateway.createRequests, isEmpty);
+    },
+  );
+
+  test(
+    'expired all-day one-off reminder fails locally before Event creation',
+    () async {
+      final eventGateway = _RecordingEventGateway();
+      final timezoneGateway = FakeTimezoneGateway();
+      final controller = CreateScheduleController(
+        createEventUseCase: CreateEventUseCase(eventGateway),
+        timezoneService: TimezoneApplicationService(timezoneGateway),
+        nowProvider: () => DateTime.utc(2026, 9, 1, 8),
+      );
+
+      final result = await controller.submit(
+        const CreateScheduleDraft(
+          title: '历史全天复盘',
+          note: '',
+          location: '',
+          start: LocalWallDateTime(
+            year: 2026,
+            month: 8,
+            day: 31,
+            hour: 0,
+            minute: 0,
+            second: 0,
+          ),
+          end: LocalWallDateTime(
+            year: 2026,
+            month: 9,
+            day: 1,
+            hour: 0,
+            minute: 0,
+            second: 0,
+          ),
+          isAllDay: true,
+          recurrence: CreateScheduleRecurrence.once,
+          reminderAdvanceMinutes: [15],
+          isRingingReminderEnabled: false,
+        ),
+      );
+
+      expect(result.outcome, CreateScheduleSubmitOutcome.validationFailure);
+      expect(result.message, '提醒时间已经失效，请调整日程时间或关闭提醒');
+      expect(timezoneGateway.resolveRequests, hasLength(1));
+      expect(eventGateway.createRequests, isEmpty);
+    },
+  );
+
+  test('all-day one-off reminder submits an absolute UTC instant', () async {
+    final eventGateway = _RecordingEventGateway();
+    final timezoneGateway = FakeTimezoneGateway();
+    final controller = CreateScheduleController(
+      createEventUseCase: CreateEventUseCase(eventGateway),
+      timezoneService: TimezoneApplicationService(timezoneGateway),
+      nowProvider: () => DateTime.utc(2026, 8, 1),
+    );
+
+    final result = await controller.submit(
+      const CreateScheduleDraft(
+        title: '全天纪要',
+        note: '',
+        location: '',
+        start: LocalWallDateTime(
+          year: 2026,
+          month: 8,
+          day: 22,
+          hour: 0,
+          minute: 0,
+          second: 0,
+        ),
+        end: LocalWallDateTime(
+          year: 2026,
+          month: 8,
+          day: 23,
+          hour: 0,
+          minute: 0,
+          second: 0,
+        ),
+        isAllDay: true,
+        recurrence: CreateScheduleRecurrence.once,
+        reminderAdvanceMinutes: [15],
+        isRingingReminderEnabled: false,
+      ),
+    );
+
+    expect(result.succeeded, isTrue);
+    expect(timezoneGateway.resolveRequests, hasLength(1));
+    expect(
+      timezoneGateway.resolveRequests.single.localDateTime,
+      const LocalWallDateTime(
+        year: 2026,
+        month: 8,
+        day: 22,
+        hour: 0,
+        minute: 0,
+        second: 0,
+      ),
+    );
+    expect(
+      eventGateway.createRequests.single.reminders.single.toEventJson(
+        recurring: false,
+      ),
+      containsPair('remind_at', '2026-08-21T23:45:00.000Z'),
+    );
+    expect(
+      eventGateway.createRequests.single.reminders.single.toEventJson(
+        recurring: false,
+      ),
+      containsPair('advance_minutes', null),
+    );
+  });
+
+  test('timezone read failure is localized without Native details', () async {
+    final controller = CreateScheduleController(
+      createEventUseCase: CreateEventUseCase(_RecordingEventGateway()),
+      timezoneService: TimezoneApplicationService(
+        FakeTimezoneGateway(
+          deviceFailure: failureInvocation(
+            code: NativeErrorCodes.timezoneDatabaseUnavailable,
+            message: 'native timezone detail',
+          ),
+        ),
+      ),
+    );
+
+    final result = await controller.refreshDeviceTimezone();
+
+    expect(result.succeeded, isFalse);
+    expect(result.errorMessage, '系统时区数据暂不可用，请稍后重试');
+    expect(
+      result.errorMessage,
+      isNot(contains('TIMEZONE_DATABASE_UNAVAILABLE')),
+    );
+    expect(result.errorMessage, isNot(contains('native timezone detail')));
+  });
+
+  test(
+    'timezone resolution failure is localized without Native details',
+    () async {
+      final eventGateway = _RecordingEventGateway();
+      final controller = CreateScheduleController(
+        createEventUseCase: CreateEventUseCase(eventGateway),
+        timezoneService: TimezoneApplicationService(
+          FakeTimezoneGateway(
+            resolveFailure: failureInvocation(
+              code: NativeErrorCodes.timezoneIdInvalid,
+              message: 'native resolution detail',
+            ),
+          ),
+        ),
+        nowProvider: () => DateTime.utc(2026, 8, 1),
+      );
+
+      final result = await controller.submit(_popupDraft());
+
+      expect(result.outcome, CreateScheduleSubmitOutcome.timezoneFailure);
+      expect(result.message, '设备时区无效，请检查系统时区设置');
+      expect(result.message, isNot(contains('TIMEZONE_ID_INVALID')));
+      expect(result.message, isNot(contains('native resolution detail')));
+      expect(eventGateway.createRequests, isEmpty);
+    },
+  );
+
+  test('ring capability failure is localized without Native details', () async {
+    final ringGateway = FakeRingGateway(
+      onGetState: () async => failureInvocation(
+        code: NativeErrorCodes.ringCapabilityUnavailable,
+        message: 'native ring detail',
+      ),
+    );
+    final controller = CreateScheduleController(
+      createEventUseCase: CreateEventUseCase(_RecordingEventGateway()),
+      timezoneService: TimezoneApplicationService(FakeTimezoneGateway()),
+      ringGateway: ringGateway,
+    );
+
+    final result = await controller.checkRingCapability();
+
+    expect(result.canEnable, isFalse);
+    expect(result.message, '当前设备暂时无法启用响铃提醒');
+    expect(result.message, isNot(contains('RING_CAPABILITY_UNAVAILABLE')));
+    expect(result.message, isNot(contains('native ring detail')));
+    await ringGateway.eventController.close();
+  });
+
+  test(
+    'Native reminder failure is localized without code or request id',
+    () async {
+      final eventGateway = _RecordingEventGateway(
+        failure: NativeInvocation<EventResponseDto>(
+          rawResponse: const {},
+          result: const NativeResultDto<EventResponseDto>(
+            ok: false,
+            data: null,
+            error: NativeErrorDto(
+              code: NativeErrorCodes.reminderTimeInvalid,
+              message: 'Reminder time is invalid',
+            ),
+            contractVersion: 2,
+            requestId: 'native-request-secret',
+          ),
+          isNativeResult: true,
+        ),
+      );
+      final controller = CreateScheduleController(
+        createEventUseCase: CreateEventUseCase(eventGateway),
+        timezoneService: TimezoneApplicationService(FakeTimezoneGateway()),
+        nowProvider: () => DateTime.utc(2026, 8, 1),
+      );
+
+      final result = await controller.submit(_popupDraft());
+
+      expect(result.outcome, CreateScheduleSubmitOutcome.nativeFailure);
+      expect(result.message, '提醒时间已经失效，请调整日程时间或关闭提醒');
+      expect(result.message, isNot(contains('REMINDER_TIME_INVALID')));
+      expect(result.message, isNot(contains('native-request-secret')));
     },
   );
 }
@@ -246,7 +513,36 @@ CreateScheduleDraft _ringDraft() => const CreateScheduleDraft(
   isRingingReminderEnabled: true,
 );
 
+CreateScheduleDraft _popupDraft() => const CreateScheduleDraft(
+  title: '未来安排',
+  note: '',
+  location: '',
+  start: LocalWallDateTime(
+    year: 2026,
+    month: 8,
+    day: 22,
+    hour: 9,
+    minute: 0,
+    second: 0,
+  ),
+  end: LocalWallDateTime(
+    year: 2026,
+    month: 8,
+    day: 22,
+    hour: 10,
+    minute: 0,
+    second: 0,
+  ),
+  isAllDay: false,
+  recurrence: CreateScheduleRecurrence.once,
+  reminderAdvanceMinutes: [15],
+  isRingingReminderEnabled: false,
+);
+
 class _RecordingEventGateway implements EventNativeGateway {
+  _RecordingEventGateway({this.failure});
+
+  final NativeInvocation<EventResponseDto>? failure;
   final List<CreateEventRequestDto> createRequests = [];
 
   @override
@@ -254,6 +550,7 @@ class _RecordingEventGateway implements EventNativeGateway {
     CreateEventRequestDto request,
   ) async {
     createRequests.add(request);
+    if (failure != null) return failure!;
     return successInvocation(
       EventResponseDto(
         id: 'event-created',

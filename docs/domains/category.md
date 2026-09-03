@@ -39,12 +39,12 @@
 - Category 归属于设备、本地资料还是具体云端用户，以及系统默认分类的初始化/隐藏/复制规则，
   仍待账号与同步架构冻结后另行设计；本轮不得据此新增字段或预设写入。
 
-### Category Storage v4 映射（integrated / active）
+### Category Storage 映射（v4 引入，v5 integrated / active）
 
-Category 使用 Calendar Core SQLite v4 的独立 `categories` 表。每行由 `record_key`、稳定且连续的
+Category 的独立 `categories` 表在 Calendar Core SQLite v4 引入，并由当前 active 的 v5 原样继承。每行由 `record_key`、稳定且连续的
 `position` 与 `payload_json` 组成；`record_key` 是主键，完整业务字段仍由冻结的 Category v3
 storage codec 严格编解码。SQLite schema、迁移和索引的权威定义位于
-`contracts/storage/calendar_core_storage.yaml` 的 `calendar_core_v4`。
+`contracts/storage/calendar_core_storage.yaml`：当前 runtime 读取 `calendar_core_v5`，继承结构由冻结的 `calendar_core_v4` 节点定义。
 
 - `CategoryStorageRecord` 与 Create Request、Response DTO、领域对象分离，但使用同一组稳定事实字段：
   `id/name/description/color/icon/sort_order/created_at/updated_at/deleted_at`。所有 nullable 字段也必须
@@ -64,7 +64,7 @@ storage codec 严格编解码。SQLite schema、迁移和索引的权威定义�
 - 已有 Event/Habit/Anniversary 的 `categoryId` 是弱引用：Category 加载不扫描、不清空也不规范化其他实体
   的引用。缺失或软删除 Category 时保留原 ID，聚合投影可以返回空 Category；因此实体行之间不建立级联外键。
 - 历史 `categories.json` v2/v3 是迁移输入。v2 的缺失文件仍只可补精确空根，已有文件必须严格校验；v2→v3
-  与 v3→SQLite v4 逐字段保留记录。迁移完成后 JSON 集合保留且 envelope 标成 v4 guard，不再参与运行时读写。
+  与 v3→SQLite v4 逐字段保留记录，随后 v4→v5 必须逐字节保留 Category 行、位置和 generation。迁移完成后 JSON 集合保留且 envelope 标成 v4 guard，不再参与运行时读写。
 - 没有正式 Category v1 Store，也禁止把 Flutter Fake、“默认日程”fixture 或 owner 文案迁入正式存储。
 
 Category 的 C++ Domain/Repository/SQLite adapter、bootstrap、JNI export 与真实磁盘读写已经接入生产链，

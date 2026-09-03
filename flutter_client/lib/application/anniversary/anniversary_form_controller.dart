@@ -18,12 +18,15 @@ class AnniversaryFormController extends ChangeNotifier {
   AnniversaryFormController({
     required AnniversaryGateway gateway,
     AnniversaryDetail? initialDetail,
+    DateTime? initialDate,
     NotificationPermissionController? permissionController,
   }) : _gateway = gateway,
        _initialDetail = initialDetail,
        _permissionController = permissionController,
        _title = initialDetail?.anniversary.title ?? '',
-       _date = initialDetail?.anniversary.date,
+       _date =
+           initialDetail?.anniversary.date ??
+           (initialDate == null ? null : anniversaryDateOnly(initialDate)),
        _calendarType =
            initialDetail?.anniversary.calendarType ??
            AnniversaryCalendarType.solar,

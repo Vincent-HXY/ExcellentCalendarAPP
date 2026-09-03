@@ -62,6 +62,157 @@ common::Result<std::string> occurrence_key(const std::string& event_id,
       kOccurrenceNamespace, canonical_occurrence_name(event_id, revision, local_start));
 }
 
+struct PreparedRecurrenceExpansion {
+  bool is_all_day = false;
+  domain::LocalDate original_start_date;
+  domain::LocalDate original_end_date;
+  domain::LocalDateTime original_start_local;
+  domain::LocalDateTime original_end_local;
+};
+
+common::Result<PreparedRecurrenceExpansion> prepare_expansion(
+    const domain::RecurringEventSchedule& event,
+    const domain::Recurrence& recurrence,
+    const domain::LocalTimeResolver& time_resolver) {
+  const bool daily_shape = recurrence.frequency == domain::kRecurrenceDaily &&
+                           recurrence.days_of_week.empty() &&
+                           !recurrence.day_of_month.has_value();
+  const bool weekly_shape = recurrence.frequency == domain::kRecurrenceWeekly &&
+                            recurrence.days_of_week.size() == 1U &&
+                            !recurrence.day_of_month.has_value();
+  const bool monthly_shape =
+      recurrence.frequency == domain::kRecurrenceMonthly &&
+      recurrence.days_of_week.empty() && recurrence.day_of_month.has_value() &&
+      *recurrence.day_of_month >= 1 && *recurrence.day_of_month <= 31;
+  if (recurrence.interval != 1 ||
+      !domain::is_supported_recurrence_frequency(recurrence.frequency) ||
+      (!daily_shape && !weekly_shape && !monthly_shape) ||
+      recurrence.end_at.has_value() || recurrence.count.has_value() ||
+      recurrence.month_of_year.has_value() || recurrence.id.empty() ||
+      recurrence.revision < 1 || recurrence.timezone != event.timezone) {
+    return common::Result<PreparedRecurrenceExpansion>::failure(
+        recurrence_invalid("stored recurrence is invalid"));
+  }
+
+  PreparedRecurrenceExpansion prepared;
+  prepared.is_all_day = event.is_all_day;
+  if (event.is_all_day) {
+    if (!event.start_date.has_value() || !event.end_date.has_value() ||
+        !recurrence.start_date.has_value() || recurrence.start_at.has_value() ||
+        recurrence.start_date != event.start_date) {
+      return common::Result<PreparedRecurrenceExpansion>::failure(
+          recurrence_invalid("all-day recurrence shape is invalid"));
+    }
+    auto original_start = domain::parse_local_date(*event.start_date);
+    auto original_end = domain::parse_local_date(*event.end_date);
+    if (!original_start.ok()) {
+      return common::Result<PreparedRecurrenceExpansion>::failure(
+          original_start.error());
+    }
+    if (!original_end.ok()) {
+      return common::Result<PreparedRecurrenceExpansion>::failure(
+          original_end.error());
+    }
+    if ((weekly_shape &&
+         recurrence.days_of_week.front() !=
+             domain::iso_weekday(original_start.value())) ||
+        (monthly_shape &&
+         *recurrence.day_of_month != original_start.value().day)) {
+      return common::Result<PreparedRecurrenceExpansion>::failure(
+          recurrence_invalid(
+              "stored recurrence derived fields conflict with Event start"));
+    }
+    prepared.original_start_date = original_start.value();
+    prepared.original_end_date = original_end.value();
+    return common::Result<PreparedRecurrenceExpansion>::success(
+        std::move(prepared));
+  }
+
+  if (!event.start_at.has_value() || !event.end_at.has_value() ||
+      !recurrence.start_at.has_value() || recurrence.start_date.has_value() ||
+      recurrence.start_at != event.start_at) {
+    return common::Result<PreparedRecurrenceExpansion>::failure(
+        recurrence_invalid("timed recurrence shape is invalid"));
+  }
+  auto original_start =
+      time_resolver.to_local(*event.start_at, event.timezone);
+  auto original_end = time_resolver.to_local(*event.end_at, event.timezone);
+  if (!original_start.ok()) {
+    return common::Result<PreparedRecurrenceExpansion>::failure(
+        original_start.error());
+  }
+  if (!original_end.ok()) {
+    return common::Result<PreparedRecurrenceExpansion>::failure(
+        original_end.error());
+  }
+  if ((weekly_shape &&
+       recurrence.days_of_week.front() !=
+           domain::iso_weekday(date_part(original_start.value()))) ||
+      (monthly_shape &&
+       *recurrence.day_of_month != original_start.value().day)) {
+    return common::Result<PreparedRecurrenceExpansion>::failure(
+        recurrence_invalid(
+            "stored recurrence derived fields conflict with Event start"));
+  }
+  prepared.original_start_local = original_start.value();
+  prepared.original_end_local = original_end.value();
+  prepared.original_start_date = date_part(original_start.value());
+  prepared.original_end_date = date_part(original_end.value());
+  return common::Result<PreparedRecurrenceExpansion>::success(
+      std::move(prepared));
+}
+
+common::Result<domain::EventOccurrence> occurrence_from_prepared(
+    const domain::RecurringEventSchedule& event,
+    const domain::Recurrence& recurrence,
+    const PreparedRecurrenceExpansion& prepared,
+    int index,
+    const domain::LocalTimeResolver& time_resolver) {
+  if (index < 0 || index >= kMaximumExpansionCount) {
+    return common::Result<domain::EventOccurrence>::failure(
+        recurrence_invalid("stored recurrence is invalid"));
+  }
+  domain::EventOccurrence occurrence;
+  occurrence.event_id = event.event_id;
+  occurrence.recurrence_revision = recurrence.revision;
+  occurrence.timezone = recurrence.timezone;
+  const auto start_date = occurrence_date(prepared.original_start_date,
+                                          recurrence, index);
+  const auto end_date = domain::add_local_days(
+      start_date,
+      domain::local_days_between(prepared.original_start_date,
+                                 prepared.original_end_date));
+  if (prepared.is_all_day) {
+    occurrence.original_local_start = domain::format_local_date(start_date);
+    occurrence.occurrence_start_date = occurrence.original_local_start;
+    occurrence.occurrence_end_date = domain::format_local_date(end_date);
+  } else {
+    const auto local_start = combine(start_date, prepared.original_start_local);
+    const auto local_end = combine(end_date, prepared.original_end_local);
+    occurrence.original_local_start =
+        domain::format_local_date_time(local_start);
+    auto start_at = time_resolver.to_utc(local_start, event.timezone);
+    auto end_at = time_resolver.to_utc(local_end, event.timezone);
+    if (!start_at.ok()) {
+      return common::Result<domain::EventOccurrence>::failure(
+          start_at.error());
+    }
+    if (!end_at.ok()) {
+      return common::Result<domain::EventOccurrence>::failure(end_at.error());
+    }
+    occurrence.occurrence_start_at = start_at.value();
+    occurrence.occurrence_end_at = end_at.value();
+  }
+  auto key = occurrence_key(event.event_id, recurrence.revision,
+                            occurrence.original_local_start);
+  if (!key.ok()) {
+    return common::Result<domain::EventOccurrence>::failure(key.error());
+  }
+  occurrence.occurrence_key = key.value();
+  return common::Result<domain::EventOccurrence>::success(
+      std::move(occurrence));
+}
+
 }  // namespace
 
 RecurrenceService::RecurrenceService(std::shared_ptr<domain::LocalTimeResolver> time_resolver)
@@ -163,90 +314,12 @@ common::Result<domain::EventOccurrence> RecurrenceService::occurrence_at(
     const domain::RecurringEventSchedule& event,
     const domain::Recurrence& recurrence,
     int index) const {
-  const bool daily_shape = recurrence.frequency == domain::kRecurrenceDaily &&
-                           recurrence.days_of_week.empty() &&
-                           !recurrence.day_of_month.has_value();
-  const bool weekly_shape = recurrence.frequency == domain::kRecurrenceWeekly &&
-                            recurrence.days_of_week.size() == 1U &&
-                            !recurrence.day_of_month.has_value();
-  const bool monthly_shape = recurrence.frequency == domain::kRecurrenceMonthly &&
-                             recurrence.days_of_week.empty() &&
-                             recurrence.day_of_month.has_value() &&
-                             *recurrence.day_of_month >= 1 &&
-                             *recurrence.day_of_month <= 31;
-  if (index < 0 || index >= kMaximumExpansionCount || recurrence.interval != 1 ||
-      !domain::is_supported_recurrence_frequency(recurrence.frequency) ||
-      (!daily_shape && !weekly_shape && !monthly_shape) || recurrence.end_at.has_value() ||
-      recurrence.count.has_value() || recurrence.month_of_year.has_value() ||
-      recurrence.id.empty() || recurrence.revision < 1 || recurrence.timezone != event.timezone) {
-    return common::Result<domain::EventOccurrence>::failure(
-        recurrence_invalid("stored recurrence is invalid"));
-  }
-
-  domain::EventOccurrence occurrence;
-  occurrence.event_id = event.event_id;
-  occurrence.recurrence_revision = recurrence.revision;
-  occurrence.timezone = recurrence.timezone;
-
-  if (event.is_all_day) {
-    if (!event.start_date.has_value() || !event.end_date.has_value() ||
-        !recurrence.start_date.has_value() || recurrence.start_at.has_value() ||
-        recurrence.start_date != event.start_date) {
-      return common::Result<domain::EventOccurrence>::failure(
-          recurrence_invalid("all-day recurrence shape is invalid"));
-    }
-    auto original_start = domain::parse_local_date(*event.start_date);
-    auto original_end = domain::parse_local_date(*event.end_date);
-    if (!original_start.ok()) return common::Result<domain::EventOccurrence>::failure(original_start.error());
-    if (!original_end.ok()) return common::Result<domain::EventOccurrence>::failure(original_end.error());
-    if ((weekly_shape && recurrence.days_of_week.front() !=
-                             domain::iso_weekday(original_start.value())) ||
-        (monthly_shape && *recurrence.day_of_month != original_start.value().day)) {
-      return common::Result<domain::EventOccurrence>::failure(
-          recurrence_invalid("stored recurrence derived fields conflict with Event start"));
-    }
-    const auto start = occurrence_date(original_start.value(), recurrence, index);
-    const auto end = domain::add_local_days(
-        start, domain::local_days_between(original_start.value(), original_end.value()));
-    occurrence.original_local_start = domain::format_local_date(start);
-    occurrence.occurrence_start_date = occurrence.original_local_start;
-    occurrence.occurrence_end_date = domain::format_local_date(end);
-  } else {
-    if (!event.start_at.has_value() || !event.end_at.has_value() ||
-        !recurrence.start_at.has_value() || recurrence.start_date.has_value() ||
-        recurrence.start_at != event.start_at) {
-      return common::Result<domain::EventOccurrence>::failure(
-          recurrence_invalid("timed recurrence shape is invalid"));
-    }
-    auto original_start = time_resolver_->to_local(*event.start_at, event.timezone);
-    auto original_end = time_resolver_->to_local(*event.end_at, event.timezone);
-    if (!original_start.ok()) return common::Result<domain::EventOccurrence>::failure(original_start.error());
-    if (!original_end.ok()) return common::Result<domain::EventOccurrence>::failure(original_end.error());
-    if ((weekly_shape && recurrence.days_of_week.front() !=
-                             domain::iso_weekday(date_part(original_start.value()))) ||
-        (monthly_shape && *recurrence.day_of_month != original_start.value().day)) {
-      return common::Result<domain::EventOccurrence>::failure(
-          recurrence_invalid("stored recurrence derived fields conflict with Event start"));
-    }
-    const auto start_date = occurrence_date(date_part(original_start.value()), recurrence, index);
-    const auto end_date = domain::add_local_days(
-        start_date,
-        domain::local_days_between(date_part(original_start.value()), date_part(original_end.value())));
-    const auto local_start = combine(start_date, original_start.value());
-    const auto local_end = combine(end_date, original_end.value());
-    occurrence.original_local_start = domain::format_local_date_time(local_start);
-    auto start_at = time_resolver_->to_utc(local_start, event.timezone);
-    auto end_at = time_resolver_->to_utc(local_end, event.timezone);
-    if (!start_at.ok()) return common::Result<domain::EventOccurrence>::failure(start_at.error());
-    if (!end_at.ok()) return common::Result<domain::EventOccurrence>::failure(end_at.error());
-    occurrence.occurrence_start_at = start_at.value();
-    occurrence.occurrence_end_at = end_at.value();
-  }
-
-  auto key = occurrence_key(event.event_id, recurrence.revision, occurrence.original_local_start);
-  if (!key.ok()) return common::Result<domain::EventOccurrence>::failure(key.error());
-  occurrence.occurrence_key = key.value();
-  return common::Result<domain::EventOccurrence>::success(std::move(occurrence));
+  auto prepared = prepare_expansion(event, recurrence, *time_resolver_);
+  return prepared.ok()
+             ? occurrence_from_prepared(event, recurrence, prepared.value(),
+                                        index, *time_resolver_)
+             : common::Result<domain::EventOccurrence>::failure(
+                   prepared.error());
 }
 
 common::Result<std::vector<domain::EventOccurrence>> RecurrenceService::list_timed_occurrences(
@@ -262,9 +335,15 @@ common::Result<std::vector<domain::EventOccurrence>> RecurrenceService::list_tim
     return common::Result<std::vector<domain::EventOccurrence>>::failure(
         recurrence_invalid("timed occurrence range is invalid", "range"));
   }
+  auto prepared = prepare_expansion(event, recurrence, *time_resolver_);
+  if (!prepared.ok()) {
+    return common::Result<std::vector<domain::EventOccurrence>>::failure(
+        prepared.error());
+  }
   std::vector<domain::EventOccurrence> result;
   for (int index = 0; index < kMaximumExpansionCount && static_cast<int>(result.size()) < limit; ++index) {
-    auto occurrence = occurrence_at(event, recurrence, index);
+    auto occurrence = occurrence_from_prepared(
+        event, recurrence, prepared.value(), index, *time_resolver_);
     if (!occurrence.ok()) return common::Result<std::vector<domain::EventOccurrence>>::failure(occurrence.error());
     const auto start = common::parse_iso8601_utc_epoch_seconds(*occurrence.value().occurrence_start_at);
     if (!start.has_value()) {
@@ -290,9 +369,15 @@ common::Result<std::vector<domain::EventOccurrence>> RecurrenceService::list_all
     return common::Result<std::vector<domain::EventOccurrence>>::failure(
         recurrence_invalid("all-day occurrence range is invalid", "range"));
   }
+  auto prepared = prepare_expansion(event, recurrence, *time_resolver_);
+  if (!prepared.ok()) {
+    return common::Result<std::vector<domain::EventOccurrence>>::failure(
+        prepared.error());
+  }
   std::vector<domain::EventOccurrence> result;
   for (int index = 0; index < kMaximumExpansionCount && static_cast<int>(result.size()) < limit; ++index) {
-    auto occurrence = occurrence_at(event, recurrence, index);
+    auto occurrence = occurrence_from_prepared(
+        event, recurrence, prepared.value(), index, *time_resolver_);
     if (!occurrence.ok()) return common::Result<std::vector<domain::EventOccurrence>>::failure(occurrence.error());
     auto start = domain::parse_local_date(*occurrence.value().occurrence_start_date);
     if (!start.ok()) return common::Result<std::vector<domain::EventOccurrence>>::failure(start.error());
@@ -300,6 +385,91 @@ common::Result<std::vector<domain::EventOccurrence>> RecurrenceService::list_all
     if (!(start.value() < range_start.value())) result.push_back(occurrence.value());
   }
   return common::Result<std::vector<domain::EventOccurrence>>::success(std::move(result));
+}
+
+common::Result<std::vector<domain::EventOccurrence>>
+RecurrenceService::list_timed_occurrences_from_index(
+    const domain::RecurringEventSchedule& event,
+    const domain::Recurrence& recurrence,
+    int first_index,
+    std::string_view exclusive_range_end_at) const {
+  const auto range_end =
+      common::parse_iso8601_utc_epoch_seconds(exclusive_range_end_at);
+  if (event.is_all_day || first_index < 0 ||
+      first_index >= kMaximumExpansionCount || !range_end.has_value()) {
+    return common::Result<std::vector<domain::EventOccurrence>>::failure(
+        recurrence_invalid("timed occurrence range is invalid", "range"));
+  }
+  auto prepared = prepare_expansion(event, recurrence, *time_resolver_);
+  if (!prepared.ok()) {
+    return common::Result<std::vector<domain::EventOccurrence>>::failure(
+        prepared.error());
+  }
+  std::vector<domain::EventOccurrence> result;
+  result.reserve(64U);
+  for (int index = first_index; index < kMaximumExpansionCount; ++index) {
+    auto occurrence = occurrence_from_prepared(
+        event, recurrence, prepared.value(), index, *time_resolver_);
+    if (!occurrence.ok()) {
+      return common::Result<std::vector<domain::EventOccurrence>>::failure(
+          occurrence.error());
+    }
+    const auto start = common::parse_iso8601_utc_epoch_seconds(
+        *occurrence.value().occurrence_start_at);
+    if (!start.has_value()) {
+      return common::Result<std::vector<domain::EventOccurrence>>::failure(
+          recurrence_invalid("expanded occurrence instant is invalid"));
+    }
+    if (*start >= *range_end) {
+      return common::Result<std::vector<domain::EventOccurrence>>::success(
+          std::move(result));
+    }
+    result.push_back(std::move(occurrence.value()));
+  }
+  return common::Result<std::vector<domain::EventOccurrence>>::failure(
+      recurrence_invalid("occurrence expansion exceeded safe bound"));
+}
+
+common::Result<std::vector<domain::EventOccurrence>>
+RecurrenceService::list_all_day_occurrences_from_index(
+    const domain::RecurringEventSchedule& event,
+    const domain::Recurrence& recurrence,
+    int first_index,
+    std::string_view exclusive_range_end_date) const {
+  auto range_end = domain::parse_local_date(exclusive_range_end_date);
+  if (!event.is_all_day || first_index < 0 ||
+      first_index >= kMaximumExpansionCount || !range_end.ok()) {
+    return common::Result<std::vector<domain::EventOccurrence>>::failure(
+        recurrence_invalid("all-day occurrence range is invalid", "range"));
+  }
+  auto prepared = prepare_expansion(event, recurrence, *time_resolver_);
+  if (!prepared.ok()) {
+    return common::Result<std::vector<domain::EventOccurrence>>::failure(
+        prepared.error());
+  }
+  std::vector<domain::EventOccurrence> result;
+  result.reserve(64U);
+  for (int index = first_index; index < kMaximumExpansionCount; ++index) {
+    auto occurrence = occurrence_from_prepared(
+        event, recurrence, prepared.value(), index, *time_resolver_);
+    if (!occurrence.ok()) {
+      return common::Result<std::vector<domain::EventOccurrence>>::failure(
+          occurrence.error());
+    }
+    auto start =
+        domain::parse_local_date(*occurrence.value().occurrence_start_date);
+    if (!start.ok()) {
+      return common::Result<std::vector<domain::EventOccurrence>>::failure(
+          start.error());
+    }
+    if (!(start.value() < range_end.value())) {
+      return common::Result<std::vector<domain::EventOccurrence>>::success(
+          std::move(result));
+    }
+    result.push_back(std::move(occurrence.value()));
+  }
+  return common::Result<std::vector<domain::EventOccurrence>>::failure(
+      recurrence_invalid("occurrence expansion exceeded safe bound"));
 }
 
 common::Result<domain::EventOccurrence>
@@ -313,8 +483,13 @@ RecurrenceService::first_timed_occurrence_with_reminder_after(
     return common::Result<domain::EventOccurrence>::failure(
         recurrence_invalid("rolling reminder search is invalid"));
   }
+  auto prepared = prepare_expansion(event, recurrence, *time_resolver_);
+  if (!prepared.ok()) {
+    return common::Result<domain::EventOccurrence>::failure(prepared.error());
+  }
   for (int index = 0; index < kMaximumExpansionCount; ++index) {
-    auto occurrence = occurrence_at(event, recurrence, index);
+    auto occurrence = occurrence_from_prepared(
+        event, recurrence, prepared.value(), index, *time_resolver_);
     if (!occurrence.ok()) return occurrence;
     const auto start = common::parse_iso8601_utc_epoch_seconds(*occurrence.value().occurrence_start_at);
     if (start.has_value() && *start - static_cast<std::int64_t>(advance_minutes) * 60 > *after) {

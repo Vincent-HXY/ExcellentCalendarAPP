@@ -1,4 +1,5 @@
 import '../../native_contract/event/create_event_request_dto.dart';
+import '../../native_contract/common/native_error_codes.dart';
 import '../../native_contract/recurrence/recurrence_rule_dto.dart';
 import '../../native_contract/reminder/reminder_draft_request_dto.dart';
 import '../../native_contract/runtime/local_wall_date_time.dart';
@@ -137,26 +138,32 @@ class CreateScheduleController {
     required CreateEventUseCase createEventUseCase,
     required TimezoneApplicationService timezoneService,
     RingNativeGateway? ringGateway,
+    DateTime Function()? nowProvider,
   }) : _createEventUseCase = createEventUseCase,
        _timezoneService = timezoneService,
-       _ringGateway = ringGateway;
+       _ringGateway = ringGateway,
+       _nowProvider = nowProvider ?? _systemNowUtc;
 
   final CreateEventUseCase _createEventUseCase;
   final TimezoneApplicationService _timezoneService;
   final RingNativeGateway? _ringGateway;
+  final DateTime Function() _nowProvider;
   bool _isSubmitting = false;
 
   Future<CreateScheduleTimezoneResult> refreshDeviceTimezone() async {
-    final invocation = await _timezoneService.getDeviceTimezone();
-    if (!invocation.result.ok || invocation.result.data == null) {
-      final error = invocation.result.error;
-      return CreateScheduleTimezoneResult.failure(
-        error == null ? '无法读取设备时区' : '${error.code}: ${error.message}',
+    try {
+      final invocation = await _timezoneService.getDeviceTimezone();
+      if (!invocation.result.ok || invocation.result.data == null) {
+        return CreateScheduleTimezoneResult.failure(
+          _timezoneReadFailureMessage(invocation.result.error?.code),
+        );
+      }
+      return CreateScheduleTimezoneResult.success(
+        invocation.result.data!.timezone,
       );
+    } catch (_) {
+      return const CreateScheduleTimezoneResult.failure('无法读取设备时区，请稍后重试');
     }
-    return CreateScheduleTimezoneResult.success(
-      invocation.result.data!.timezone,
-    );
   }
 
   Future<CreateScheduleSubmitResult> submit(CreateScheduleDraft draft) async {
@@ -199,6 +206,7 @@ class CreateScheduleController {
 
       DateTime? resolvedStartAt;
       DateTime? resolvedEndAt;
+      DateTime? allDayReminderAnchorUtc;
       if (!draft.isAllDay) {
         final resolutions = await Future.wait([
           _timezoneService.resolveLocalDateTime(
@@ -210,14 +218,15 @@ class CreateScheduleController {
             timezone: timezone,
           ),
         ]);
-        final failed = resolutions.where((item) => !item.result.ok).firstOrNull;
+        final failed = resolutions
+            .where((item) => !item.result.ok || item.result.data == null)
+            .firstOrNull;
         if (failed != null) {
-          final error = failed.result.error;
           return CreateScheduleSubmitResult.failure(
             outcome: CreateScheduleSubmitOutcome.timezoneFailure,
-            message: error == null
-                ? '时区解析失败'
-                : '${error.code}: ${error.message}',
+            message: _timezoneResolutionFailureMessage(
+              failed.result.error?.code,
+            ),
             timezone: timezone,
             timezoneChanged: timezoneChanged,
           );
@@ -235,6 +244,49 @@ class CreateScheduleController {
         }
         resolvedStartAt = startResolution.utcInstant;
         resolvedEndAt = endResolution.utcInstant;
+      } else if (draft.reminderAdvanceMinutes.isNotEmpty) {
+        final invocation = await _timezoneService.resolveLocalDateTime(
+          localDateTime: LocalWallDateTime(
+            year: draft.start.year,
+            month: draft.start.month,
+            day: draft.start.day,
+            hour: 0,
+            minute: 0,
+            second: 0,
+          ),
+          timezone: timezone,
+        );
+        if (!invocation.result.ok || invocation.result.data == null) {
+          return CreateScheduleSubmitResult.failure(
+            outcome: CreateScheduleSubmitOutcome.timezoneFailure,
+            message: _timezoneResolutionFailureMessage(
+              invocation.result.error?.code,
+            ),
+            timezone: timezone,
+            timezoneChanged: timezoneChanged,
+          );
+        }
+        allDayReminderAnchorUtc = invocation.result.data!.utcInstant;
+      }
+
+      if (draft.recurrence == CreateScheduleRecurrence.once &&
+          draft.reminderAdvanceMinutes.isNotEmpty) {
+        final reminderAnchorUtc = draft.isAllDay
+            ? allDayReminderAnchorUtc!
+            : resolvedStartAt!;
+        final nowUtc = _nowProvider().toUtc();
+        if (draft.reminderAdvanceMinutes.any(
+          (advanceMinutes) => !reminderAnchorUtc
+              .subtract(Duration(minutes: advanceMinutes))
+              .isAfter(nowUtc),
+        )) {
+          return CreateScheduleSubmitResult.failure(
+            outcome: CreateScheduleSubmitOutcome.validationFailure,
+            message: '提醒时间已经失效，请调整日程时间或关闭提醒',
+            timezone: timezone,
+            timezoneChanged: timezoneChanged,
+          );
+        }
       }
 
       final allDayStart = DateTime.utc(
@@ -271,7 +323,12 @@ class CreateScheduleController {
           for (final advanceMinutes in draft.reminderAdvanceMinutes)
             ReminderDraftRequestDto(
               targetType: 'event',
-              advanceMinutes: advanceMinutes,
+              remindAt: draft.isAllDay
+                  ? allDayReminderAnchorUtc!.subtract(
+                      Duration(minutes: advanceMinutes),
+                    )
+                  : null,
+              advanceMinutes: draft.isAllDay ? null : advanceMinutes,
               methods: methods,
               source: 'manual',
             ),
@@ -287,9 +344,7 @@ class CreateScheduleController {
       final error = invocation.result.error;
       return CreateScheduleSubmitResult.failure(
         outcome: CreateScheduleSubmitOutcome.nativeFailure,
-        message: error == null
-            ? '创建失败'
-            : '${error.code}: ${error.message} request_id=${invocation.result.requestId ?? '-'}',
+        message: _nativeFailureMessage(error?.code),
         timezone: timezone,
         timezoneChanged: timezoneChanged,
       );
@@ -336,26 +391,62 @@ class CreateScheduleController {
     return null;
   }
 
+  static DateTime _systemNowUtc() => DateTime.now().toUtc();
+
+  static String _nativeFailureMessage(String? code) => switch (code) {
+    NativeErrorCodes.reminderTimeInvalid => '提醒时间已经失效，请调整日程时间或关闭提醒',
+    NativeErrorCodes.eventTitleEmpty => '请输入日程标题',
+    NativeErrorCodes.eventTimeInvalid => '日程时间无效，请重新选择开始和结束时间',
+    NativeErrorCodes.timezoneIdInvalid => '设备时区无效，请检查系统时区设置',
+    NativeErrorCodes.allDayRecurringReminderNotSupported => '全天重复日程暂不支持提醒',
+    _ => '创建失败，请稍后重试',
+  };
+
+  static String _timezoneReadFailureMessage(String? code) => switch (code) {
+    NativeErrorCodes.timezoneIdInvalid => '设备时区无效，请检查系统时区设置',
+    NativeErrorCodes.timezoneDatabaseUnavailable => '系统时区数据暂不可用，请稍后重试',
+    _ => '无法读取设备时区，请稍后重试',
+  };
+
+  static String _timezoneResolutionFailureMessage(String? code) =>
+      switch (code) {
+        NativeErrorCodes.timezoneIdInvalid => '设备时区无效，请检查系统时区设置',
+        NativeErrorCodes.timezoneDatabaseUnavailable => '系统时区数据暂不可用，请稍后重试',
+        NativeErrorCodes.contractValidationFailed => '所选时间无效，请重新选择',
+        _ => '无法解析所选时间，请重新选择',
+      };
+
+  static String _ringCapabilityFailureMessage(String? code) => switch (code) {
+    NativeErrorCodes.notificationPermissionDenied => '通知权限不可用，请在系统设置中开启',
+    NativeErrorCodes.exactAlarmPermissionDenied => '精确闹钟权限不可用，请在系统设置中开启',
+    NativeErrorCodes.ringCapabilityUnavailable ||
+    NativeErrorCodes.ringOutputUnavailable => '当前设备暂时无法启用响铃提醒',
+    _ => '无法检查响铃能力，请稍后重试',
+  };
+
   Future<RingCapabilityCheckResult> checkRingCapability() async {
     final gateway = _ringGateway;
     if (gateway == null) {
       return const RingCapabilityCheckResult.unavailable('响铃能力尚未连接');
     }
-    final invocation = await gateway.getState();
-    final state = invocation.result.data;
-    if (!invocation.result.ok || state == null) {
-      final error = invocation.result.error;
+    try {
+      final invocation = await gateway.getState();
+      final state = invocation.result.data;
+      if (!invocation.result.ok || state == null) {
+        return RingCapabilityCheckResult.unavailable(
+          _ringCapabilityFailureMessage(invocation.result.error?.code),
+        );
+      }
+      final capability = state.capability;
+      if (capability.canEnableRing) {
+        return const RingCapabilityCheckResult.available();
+      }
       return RingCapabilityCheckResult.unavailable(
-        error == null ? '无法检查响铃权限' : '${error.code}: ${error.message}',
+        _blockingReasonMessage(capability.blockingReasons),
       );
+    } catch (_) {
+      return const RingCapabilityCheckResult.unavailable('无法检查响铃能力，请稍后重试');
     }
-    final capability = state.capability;
-    if (capability.canEnableRing) {
-      return const RingCapabilityCheckResult.available();
-    }
-    return RingCapabilityCheckResult.unavailable(
-      _blockingReasonMessage(capability.blockingReasons),
-    );
   }
 
   static String _blockingReasonMessage(

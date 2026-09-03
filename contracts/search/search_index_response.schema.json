@@ -2,8 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/search/search_index_response.schema.json",
   "title": "SearchIndexResponse",
-  "description": "Transport representation of a search index record. Field names are the snake_case mapping of DATA_MODEL.md SearchIndex.",
+  "description": "Planned transport representation of a rebuildable search acceleration record. This is not the Search Query result contract and does not prove that a production index writer or FTS store exists.",
   "x-contract-version": 2,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "planned",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -68,9 +70,28 @@
       ],
       "format": "date-time"
     },
+    "occur_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date",
+      "description": "Derived user-local date. It is never encoded as a UTC-midnight occur_at value."
+    },
     "updated_at": {
       "type": "string",
       "format": "date-time"
     }
-  }
+  },
+  "allOf": [
+    {
+      "not": {
+        "properties": {
+          "occur_at": {"type": "string"},
+          "occur_date": {"type": "string"}
+        },
+        "required": ["occur_at", "occur_date"]
+      }
+    }
+  ]
 }

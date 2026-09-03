@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-01",
+  "timezone": "Asia/Shanghai",
+  "section": "habit",
+  "snapshot_token": "calsnap1.ABCDEFGHIJKLMNOPQRST",
+  "page_size": 20,
+  "items": [
+    {
+      "habit_id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "date": "2026-09-01",
+      "title": "不足进度",
+      "status": "done",
+      "check_in_id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "completed_count_hundredths": 2999,
+      "target_count_hundredths": 3000,
+      "unit": "分钟",
+      "has_active_reminder": false
+    }
+  ],
+  "has_more": false,
+  "next_cursor": null
+}

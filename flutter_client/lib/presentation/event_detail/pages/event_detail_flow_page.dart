@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import '../../../app/routing/app_router.dart';
 import 'package:flutter/services.dart';
 
 import '../../../application/event/complete_event_use_case.dart';
@@ -167,6 +169,8 @@ class RecurringEventDetailPage extends StatefulWidget {
 class _RecurringEventDetailPageState extends State<RecurringEventDetailPage> {
   final _focusedOccurrenceKey = GlobalKey();
   var _didRevealFocusedOccurrence = false;
+  var _changed = false;
+  var _isPopping = false;
 
   @override
   void didUpdateWidget(covariant RecurringEventDetailPage oldWidget) {
@@ -201,143 +205,163 @@ class _RecurringEventDetailPageState extends State<RecurringEventDetailPage> {
     final isBusy = widget.state.hasMutationInProgress;
     final isActive = event.status == 'active';
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark.copyWith(
-        statusBarColor: Colors.transparent,
-        systemNavigationBarColor: Colors.transparent,
-      ),
-      child: Scaffold(
-        backgroundColor: EventDetailColors.backgroundMiddle,
-        appBar: AppBar(
-          backgroundColor: EventDetailColors.backgroundStart,
-          surfaceTintColor: Colors.transparent,
-          centerTitle: true,
-          title: const Text('重复日程详情'),
-          leading: IconButton(
-            tooltip: '返回',
-            onPressed: () => Navigator.maybePop(context),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          ),
-          actions: [
-            IconButton(
-              key: const ValueKey('manage-series-top'),
-              tooltip: '管理整个系列',
-              onPressed: isBusy ? null : _showSeriesActions,
-              icon: const Icon(Icons.more_horiz_rounded),
-            ),
-          ],
+    return PopScope<Object?>(
+      canPop: _isPopping,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _popCurrent();
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.dark.copyWith(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
         ),
-        body: Stack(
-          children: [
-            const Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      EventDetailColors.backgroundStart,
-                      EventDetailColors.backgroundMiddle,
-                      EventDetailColors.backgroundEnd,
-                    ],
-                  ),
-                ),
-              ),
+        child: Scaffold(
+          backgroundColor: EventDetailColors.backgroundMiddle,
+          appBar: AppBar(
+            backgroundColor: EventDetailColors.backgroundStart,
+            surfaceTintColor: Colors.transparent,
+            centerTitle: true,
+            title: const Text('重复日程详情'),
+            leading: IconButton(
+              tooltip: '返回',
+              onPressed: _popCurrent,
+              icon: const Icon(Icons.arrow_back_ios_new_rounded),
             ),
-            RefreshIndicator(
-              onRefresh: widget.controller.refresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  EventDetailSpacing.pageHorizontal,
-                  12,
-                  EventDetailSpacing.pageHorizontal,
-                  28,
-                ),
-                children: [
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: EventDetailSpacing.contentMaxWidth,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (widget.state.isRefreshing)
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 10),
-                              child: LinearProgressIndicator(
-                                minHeight: 2,
-                                color: EventDetailColors.primaryTeal,
-                              ),
-                            ),
-                          if (widget.state.loadFailure != null)
-                            _InlineFailureCard(
-                              message: widget.state.loadFailure!.message,
-                              onRetry: widget.controller.refresh,
-                            ),
-                          EventSummaryCard(state: uiState),
-                          const _SectionTitle('重复规则'),
-                          _RecurrenceRuleCard(
-                            recurrence: detail.recurrence!,
-                            status: event.status,
-                          ),
-                          const _SectionTitle('时间安排'),
-                          EventScheduleCard(
-                            state: uiState,
-                            onEditField: isActive && !isBusy
-                                ? (_) => _openSeriesEditor()
-                                : null,
-                          ),
-                          if ((event.content ?? '').isNotEmpty) ...[
-                            const _SectionTitle('详情与备注'),
-                            EventNoteCard(
-                              state: uiState,
-                              onTap: isActive && !isBusy
-                                  ? _openSeriesEditor
-                                  : null,
-                            ),
-                          ],
-                          const _SectionTitle('系列状态'),
-                          EventMetaGridCard(state: uiState),
-                          const _SectionTitle('最近与即将发生'),
-                          _OccurrenceList(
-                            state: widget.state,
-                            seriesIsActive: isActive,
-                            focusedOccurrenceKey: _focusedOccurrenceKey,
-                            onComplete: (key) => _runOccurrenceAction(
-                              () => widget.controller.completeOccurrence(key),
-                              successMessage: '已完成本次日程',
-                            ),
-                            onReopen: (key) => _runOccurrenceAction(
-                              () => widget.controller.reopenOccurrence(key),
-                              successMessage: '已重新打开本次日程',
-                            ),
-                            onSkip: (key) => _runOccurrenceAction(
-                              () => widget.controller.skipOccurrence(key),
-                              successMessage: '已跳过本次日程',
-                            ),
-                            onCancel: (key) =>
-                                _confirmOccurrenceCancellation(key),
-                            onLoadMore: widget.controller.loadMore,
-                          ),
-                        ],
-                      ),
+            actions: [
+              IconButton(
+                key: const ValueKey('manage-series-top'),
+                tooltip: '管理整个系列',
+                onPressed: isBusy ? null : _showSeriesActions,
+                icon: const Icon(Icons.more_horiz_rounded),
+              ),
+            ],
+          ),
+          body: Stack(
+            children: [
+              const Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        EventDetailColors.backgroundStart,
+                        EventDetailColors.backgroundMiddle,
+                        EventDetailColors.backgroundEnd,
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: _SeriesActionBar(
-          isBusy: isBusy,
-          canEdit: isActive,
-          onEdit: _openSeriesEditor,
-          onManage: _showSeriesActions,
+              RefreshIndicator(
+                onRefresh: widget.controller.refresh,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    EventDetailSpacing.pageHorizontal,
+                    12,
+                    EventDetailSpacing.pageHorizontal,
+                    28,
+                  ),
+                  children: [
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: EventDetailSpacing.contentMaxWidth,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (widget.state.isRefreshing)
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 10),
+                                child: LinearProgressIndicator(
+                                  minHeight: 2,
+                                  color: EventDetailColors.primaryTeal,
+                                ),
+                              ),
+                            if (widget.state.loadFailure != null)
+                              _InlineFailureCard(
+                                message: widget.state.loadFailure!.message,
+                                onRetry: widget.controller.refresh,
+                              ),
+                            EventSummaryCard(state: uiState),
+                            const _SectionTitle('重复规则'),
+                            _RecurrenceRuleCard(
+                              recurrence: detail.recurrence!,
+                              status: event.status,
+                            ),
+                            const _SectionTitle('时间安排'),
+                            EventScheduleCard(
+                              state: uiState,
+                              onEditField: isActive && !isBusy
+                                  ? (_) => _openSeriesEditor()
+                                  : null,
+                            ),
+                            if ((event.content ?? '').isNotEmpty) ...[
+                              const _SectionTitle('详情与备注'),
+                              EventNoteCard(
+                                state: uiState,
+                                onTap: isActive && !isBusy
+                                    ? _openSeriesEditor
+                                    : null,
+                              ),
+                            ],
+                            const _SectionTitle('系列状态'),
+                            EventMetaGridCard(state: uiState),
+                            const _SectionTitle('最近与即将发生'),
+                            _OccurrenceList(
+                              state: widget.state,
+                              seriesIsActive: isActive,
+                              focusedOccurrenceKey: _focusedOccurrenceKey,
+                              onComplete: (key) => _runOccurrenceAction(
+                                () => widget.controller.completeOccurrence(key),
+                                successMessage: '已完成本次日程',
+                              ),
+                              onReopen: (key) => _runOccurrenceAction(
+                                () => widget.controller.reopenOccurrence(key),
+                                successMessage: '已重新打开本次日程',
+                              ),
+                              onSkip: (key) => _runOccurrenceAction(
+                                () => widget.controller.skipOccurrence(key),
+                                successMessage: '已跳过本次日程',
+                              ),
+                              onCancel: (key) =>
+                                  _confirmOccurrenceCancellation(key),
+                              onLoadMore: widget.controller.loadMore,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: _SeriesActionBar(
+            isBusy: isBusy,
+            canEdit: isActive,
+            onEdit: _openSeriesEditor,
+            onManage: _showSeriesActions,
+          ),
         ),
       ),
     );
+  }
+
+  void _popCurrent() => _popWith(
+    _changed
+        ? ContentDetailRouteOutcome.changed
+        : ContentDetailRouteOutcome.unchanged,
+  );
+
+  void _popWith(ContentDetailRouteOutcome outcome) {
+    if (_isPopping || !mounted) return;
+    setState(() => _isPopping = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop(outcome);
+    });
   }
 
   void _scheduleRevealFocusedOccurrence() {
@@ -380,6 +404,7 @@ class _RecurringEventDetailPageState extends State<RecurringEventDetailPage> {
       ),
     );
     if (!mounted || updated != true) return;
+    _changed = true;
     await widget.controller.refresh();
     if (!mounted) return;
     final failure = widget.controller.state.loadFailure;
@@ -392,6 +417,7 @@ class _RecurringEventDetailPageState extends State<RecurringEventDetailPage> {
   }) async {
     final result = await action();
     if (!mounted) return;
+    if (result.succeeded) _changed = true;
     _showActionResult(result, successMessage: successMessage);
   }
 
@@ -518,7 +544,7 @@ class _RecurringEventDetailPageState extends State<RecurringEventDetailPage> {
     if (!mounted) return;
     if (result.succeeded && command == _SeriesCommand.delete) {
       _showActionResult(result, successMessage: '整个重复系列已删除');
-      await Navigator.maybePop(context, true);
+      _popWith(ContentDetailRouteOutcome.deleted);
       return;
     }
     final successMessage = switch (command) {
@@ -527,6 +553,7 @@ class _RecurringEventDetailPageState extends State<RecurringEventDetailPage> {
       _SeriesCommand.cancel => '整个重复系列已取消',
       _SeriesCommand.delete => '整个重复系列已删除',
     };
+    if (result.succeeded) _changed = true;
     _showActionResult(result, successMessage: successMessage);
   }
 

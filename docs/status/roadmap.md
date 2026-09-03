@@ -1,6 +1,6 @@
 # ExcellentCalendarAPP 产品路线图
 
-> 阶段基线：2026-08-31。R0 已完成，R1 主体完成并转入维护轨，**R2 为当前开发阶段**。
+> 阶段基线：2026-09-02 22:31（Asia/Shanghai）。R0 已完成，R1 主体完成并转入维护轨，**R2 为当前开发阶段**。
 >
 > 阶段切换不等于历史债务清零；能力是否可发布仍以机器 Contract、active plan 和实际验证为准。
 
@@ -39,21 +39,25 @@
 - **发布后验证债**：重新授权自动 reconcile、跨午夜、杀进程/重启、时区/系统时间变化、数量型/重复/陈旧通知 action、真实详情导航和完整 TalkBack 继续由 `OPEN-HAB-001` 跟踪，不得描述为已验证通过；
 - **发布状态**：产品负责人于 2026-08-31 接受上述矩阵为非阻断发布债后，Habit/Appearance capability 与 Storage v5 已统一切换为 `integrated + active`；
 - 支持打卡型与数量型、有效期内补签、严格 streak/rate、同日提醒补发和通知快捷完成；
-- 总入口为 `docs/plan/active/习惯-01-Habit与HabitCheckIn闭环开发计划.md`；`习惯-03-CPP层开发计划.md`、`习惯-04-Kotlin层开发计划.md`、`习惯-05-Flutter层开发计划.md` 作为已实施并已发布、等待统一文档归档的交付记录，状态清理见 `OPEN-HAB-002`；Contract 完成证据归档于 `docs/plan/completed/习惯-02-Contracts层开发计划.md`。
+- 总入口为 `docs/plan/completed/习惯-01-Habit与HabitCheckIn闭环开发计划.md`；`习惯-02/03/04/05` 均已归档于 `docs/plan/completed/`。剩余设备验证见 `OPEN-HAB-001`，active Review 与 ADR 的状态清理见 `OPEN-HAB-002`。
 
 ### R2-B｜日历、四象限与搜索
 
-- 实现月/周/日历视图，统一聚合 Event occurrence、Anniversary occurrence 与 Habit 日状态；
+- **Calendar V1 已发布并进入维护轨**：月/周分类视图统一聚合 Event occurrence、Anniversary occurrence 与 Habit 日状态，Contract、C++/SQLite、Kotlin/JNI、Flutter 与 production composition 已接通；
+- **Calendar 发布状态**：独立返修复验未发现七项已知债务以外的新硬缺陷；产品负责人于 2026-09-02 接受 `OPEN-CAL-001` 的正式签名/商店上传、时区/DST、TalkBack、200% 字体/减少动画、强杀恢复、升级回滚/密钥恢复和正式 Release UI 全链为非阻断债，`calendar.*` 已切换为 `integrated + active`。Release 签名已 fail-closed 并通过一次性非生产密钥的 APK/AAB 验签，但尚无生产密钥产物或商店证据；
+- Calendar 总计划、四份分层计划和 Review 已分别归档到 `docs/plan/completed/` 与 `docs/reviews/archive/`；
 - 实现四象限视图，复用既有领域字段完成筛选和状态变更；
-- 建立独立搜索页、设备本地历史和三类筛选；V1 先基于 canonical 数据完成统一查询与性能基线，只有门禁不达标时才冻结索引重建、tokenizer 与迁移规则并接入 SQLite FTS；
-- 月/周分类日历已建立 active 主计划并冻结产品范围；下一步建立统一 Calendar range/day projection Contract，再按 C++/SQLite、Kotlin/JNI、Flutter Fake 并行、真实三类集成和独立 Review 收口。
-- 独立搜索已建立 active 主计划 `docs/plan/active/搜索-01-三类聚合搜索与本地历史开发计划.md`，冻结 1s debounce、三类分组、中文原文/ASCII case-insensitive/token AND、业务日期筛选、完成映射、20 条分组分页、右上筛选浮层和本地 20 条历史；下一步建立 Search Contract/数据投影，并按 C++/SQLite、Kotlin/JNI/历史、Flutter、真实集成/性能和独立 Review 收口。四象限仍需建立 active plan、数据源边界和验收门禁。
+- **Search V1 已发布并进入维护轨**：统一三类 canonical 查询、独立分页、AtomicFile 本地历史、Flutter 页面与 production composition 已接通，并完成主机及 Android 13 设备门禁；
+- **Search 发布状态**：产品负责人于 2026-09-02 接受 `OPEN-SEA-001` 的搜索框 TalkBack 语义和正式签名链为非阻断发布债，`search.*` 已切换为 `integrated + active`。SearchIndex/FTS 因 canonical 查询达到性能基线而继续 deferred/planned；
+- Search 总计划和四份分层计划已归档到 `docs/plan/completed/`。后续优先偿还 `OPEN-SEA-001`，四象限仍需建立 active plan、数据源边界和验收门禁。
 
 ### R2-C｜Local-first 云同步
 
-- 先冻结客户端操作日志、变更序列、设备身份、删除语义和冲突策略；
-- 再实现增量上传/拉取、幂等、游标、离线重试、设备管理和备份边界；
-- 同步开发前必须解决 Backend/Auth Contract planned 状态，并补齐服务端日历数据模型和正式迁移；
+- **当前状态**：2026-09-03 已完成产品决策并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，当前为 `ACTIVE PLAN / CONTRACT PENDING`；尚无生产同步 Contract 或实现代码，不得把 `sync.apply`、`SyncOperation`、`SyncResult` 和 Backend 空包视为已开始开发；
+- **产品基线**：游客/账号 workspace 分离、退出后账号缓存加密隐藏 30 天、字段级自动合并与“我的→冲突管理”、180 天 tombstone、本机提醒执行、无 FCM 机会同步、个人数据闭包和小规模内测边界已经冻结；
+- **Contract/数据门禁**：解决 Backend/Auth Contract `planned` 状态，定义与本地写同事务的 Outbox、变更序列、幂等键、设备身份、增量游标、实体版本、删除 tombstone、服务端日历数据模型与正式迁移；
+- **实施顺序**：Contract/数据 → C++/SQLite → Backend API/存储 → Kotlin/Android 调度与设备能力 → Flutter 同步状态/冲突 UX → 真实多设备、弱网、恢复和备份验收；
+- Appearance 当前仍为 Kotlin 本机配置；计划要求通过显式 Contract revision 将账号 workspace 的可移植白名单设置纳入同步，游客和设备能力继续本机所有；
 - 不允许后端复制或绕过 C++ Core 的领域规则。
 
 ## R3｜日程与纪念日增强

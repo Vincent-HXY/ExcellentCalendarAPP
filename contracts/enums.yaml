@@ -290,6 +290,56 @@ HabitReminderReconciliationTriggerSource:
     - permission_restored
     - manual_retry
 
+CalendarSection:
+  values:
+    - event
+    - habit
+    - anniversary
+
+CalendarEventItemStatus:
+  values:
+    - pending
+    - in_progress
+    - overdue
+    - completed
+    - skipped
+
+CalendarEventDayDisplay:
+  values:
+    - all_day
+    - starts_at
+    - continues
+    - ends_at
+
+SearchTargetType:
+  values:
+    - event
+    - habit
+    - anniversary
+
+SearchSortBy:
+  values:
+    - relevance
+    - occur_time
+    - updated_at
+
+SearchMatchedField:
+  values:
+    - title
+    - content
+    - description
+    - note
+    - location
+    - category_name
+
+SearchEventItemStatus:
+  values:
+    - pending
+    - in_progress
+    - overdue
+    - completed
+    - skipped
+
 SyncOperationType:
   values:
     - create

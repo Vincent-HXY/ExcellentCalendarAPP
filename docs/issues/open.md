@@ -1,6 +1,6 @@
 # ExcellentCalendarAPP 开放问题登记册
 
-> 最近整理：2026-08-31
+> 最近整理：2026-09-02
 > 来源：`A:\calendar\ExcellentCalendarAPP\docs\problems.md`  
 > 状态依据：同文件后续关闭记录、`docs/develop_record.md`（2026-08-14）以及关键 Contract/运行时代码的只读核对。
 
@@ -81,7 +81,34 @@
 - 发布决定：产品负责人于 2026-08-31 明确接受上述项目作为 Habit V1 发布后的非阻断验证债，并批准在其尚未闭环时激活 Habit V1 与 Storage v5。该决定只解除本版本发布门禁，不得把未执行场景描述为已验证通过。
 - 影响：不同 Android 生命周期、时间边界、权限恢复和无障碍环境下仍可能暴露主机测试及本轮实机路径未覆盖的调度、幂等、导航或可访问性问题。
 - 关闭条件：在隔离测试 Store 中逐项完成上述真机矩阵，保存系统通知、SQLite、action 幂等、详情导航与 TalkBack 证据；发现缺陷时单独建项并完成回归。
-- 证据位置：`docs/plan/active/习惯-01-Habit与HabitCheckIn闭环开发计划.md` 的发布矩阵，以及 `contracts/storage/calendar_core_storage.yaml` 的 v5 激活证据与发布例外。
+- 证据位置：`docs/plan/completed/习惯-01-Habit与HabitCheckIn闭环开发计划.md` 的发布矩阵，以及 `contracts/storage/calendar_core_storage.yaml` 的 v5 激活证据与发布例外。
+
+### OPEN-CAL-001 Calendar V1 正式签名、设备与发布恢复矩阵仍需补齐
+
+- 类型：已接受的发布例外 / 正式分发与设备验证风险
+- 现状：Calendar V1 的 Contract、C++/SQLite、Kotlin/JNI、Flutter 与 production composition 已接通；独立复审已确认此前 Reminder recovery、历史日期 Event、全天提醒、新建默认时间、错误映射和按钮遮挡等代码问题完成返修，主机 Contract/C++/Flutter/Android/Debug 与一台 Android 13 设备上的隔离 JNI、SQLite 和基础 UI 路径已通过。仍未完成以下七项：
+  1. 使用真正的生产签名密钥构建 APK/AAB，并执行签名证书、Play/AppGallery 等目标商店上传校验。代码层已改为 fail-closed：缺少五项私密配置、使用 Debug 证书或指纹不匹配都会拒绝构建；一次性非生产密钥已证明 APK/AAB 验签门禁可用，但尚无生产密钥产物或商店上传证据。
+  2. 真机切换 IANA 时区并覆盖 DST gap/fold、跨日和已存在数据后的重新投影。
+  3. TalkBack 人工验证焦点顺序、按钮/日期/状态听读和可操作性。
+  4. 200% 字体与系统“减少动画”下的真机布局、滚动、折叠和交互验证。
+  5. 前后台、强杀、进程回收、冷启动和状态/缓存恢复。
+  6. 完整升级、降级/回滚、签名密钥丢失与恢复演练矩阵；不得以应用内数据兼容测试替代签名恢复演练。
+  7. 使用正式 Release 包执行 Event、Habit、Anniversary 三类真实数据、详情回跳、新建、分页、刷新和错误恢复的 UI 全链验证。
+- 发布决定：产品负责人于 2026-09-02 明确接受以上七项作为 Calendar V1 发布后的非阻断债务，并批准将 `calendar.*` 切换为 `integrated + active`。这是有记录的产品发布例外，不代表上述场景已通过；当前仓库没有可上传商店的生产签名 APK/AAB。
+- 影响：能力可在当前产品版本中正式启用，但正式商店分发、密钥灾备、时区/DST、无障碍、大字体、减少动画和进程恢复仍可能暴露主机及单机 smoke 未覆盖的问题。
+- 关闭条件：在隔离测试账号和 Store 中逐项完成七项矩阵，保存签名证书指纹、AAB/APK 上传结果、设备/系统版本、时区与 DST 证据、TalkBack/字体/动画记录、强杀恢复结果、升级/回滚/密钥恢复记录及 Release UI 全链证据；发现代码缺陷时另建缺陷并完成回归。
+- 证据位置：`docs/reviews/archive/日历-01-月周分类视图-review计划.md` 的 2026-09-02 发布例外记录、`docs/status/current.md` 和 `contracts/calendar/calendar_query_invariants.yaml`。
+
+### OPEN-SEA-001 Search V1 搜索框无障碍语义与正式签名链仍需补齐
+
+- 类型：已接受的发布例外 / 无障碍与正式分发风险
+- 现状：Search V1 的 Contract、C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 页面与 production composition 已接通，并已在 Android 13 真机通过三类型 Unicode 搜索、历史强杀恢复、中文输入法 composing、横竖屏、中文日期选择和代表设备性能门禁。仍有两项已知债务：
+  1. Search 顶部标题、输入框和筛选按钮当前在 Flutter Semantics 树中被合并；父节点同时具有 `isButton` 与 `isTextField`，Android 将整块区域导出为 `android.widget.Button`，筛选又作为子按钮重复出现。需要拆分 semantics boundary，使输入框成为独立 `EditText`、筛选成为唯一独立 Button，并补齐真实 TalkBack 焦点顺序和听读回归。
+  2. Android Release 构建已经 fail-closed，但仓库和当前环境未配置正式生产 keystore、证书 SHA-256 及五项私密签名参数；尚未生成正式签名 APK/AAB，也未完成目标商店验签、上传及密钥保管/恢复演练。
+- 发布决定：产品负责人于 2026-09-02 明确要求将以上两项写入开放问题并作为 Search V1 发布后的非阻断债务，批准把统一 Search Query、设备本地 History 及其跨层能力切换为 `integrated + active`。该决定不表示搜索框 TalkBack 语义或正式签名分发已经验证通过；SearchIndex/FTS 仍为独立的 deferred/planned 加速方向，不随本次激活。
+- 影响：普通触控、键盘和可见界面的搜索主链可作为正式能力使用；TalkBack 用户可能无法准确区分搜索输入与筛选控件，且在正式签名链完成前仍不能生成可上传商店的生产安装包。
+- 关闭条件：按上述独立控件角色修复并在真机完成 TalkBack 焦点/听读验收；由发布负责人配置受控生产密钥，构建并验证 APK/AAB 内嵌证书，完成目标商店校验及至少一次隔离恢复演练。
+- 证据位置：`docs/log.md` 的“2026-09-02 16:15 Search 最终真机复审与发布门禁检查”、`flutter_client/lib/presentation/search/widgets/search_header.dart`、`flutter_client/android/RELEASE_SIGNING.md` 与 `contracts/search/search_query_invariants.yaml`。
 
 ## P2：中优先级
 

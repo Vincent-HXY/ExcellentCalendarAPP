@@ -6,7 +6,10 @@ import 'package:excellent_calendar/boundary_adapters/dart_method_channel/method_
 import 'package:excellent_calendar/data/category/fake_category_repository.dart';
 import 'package:excellent_calendar/main.dart' as production;
 import 'package:excellent_calendar/native_contract/appearance/appearance_contract.dart';
+import 'package:excellent_calendar/native_contract/habit/habit_request_dtos.dart';
+import 'package:excellent_calendar/native_contract/habit/habit_response_dtos.dart';
 import 'package:excellent_calendar/presentation/habit/habit_design.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,6 +18,19 @@ import 'fakes/fake_habit_gateway.dart';
 import 'fakes/fake_ring_gateway.dart';
 import 'fixtures/notification_fixtures.dart';
 import 'fixtures/ring_fixtures.dart';
+import 'support/calendar_test_support.dart';
+
+class _RecordingHabitGateway extends FakeHabitGateway {
+  _RecordingHabitGateway() : super(delay: Duration.zero);
+
+  CreateHabitRequestDto? lastCreateRequest;
+
+  @override
+  Future<HabitMutationResponseDto> create(CreateHabitRequestDto request) {
+    lastCreateRequest = request;
+    return super.create(request);
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -161,4 +177,70 @@ void main() {
     expect(find.text('无法读取设备时区，习惯功能暂不可用'), findsNothing);
     expect(find.text('晨间阅读 📚'), findsOneWidget);
   });
+
+  testWidgets(
+    'Calendar Habit creation resolves the current device timezone after change',
+    (tester) async {
+      const nativeChannel = MethodChannel('excellent_calendar/native');
+      var deviceTimezone = 'America/Los_Angeles';
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(nativeChannel, (call) async {
+            if (call.method == 'runtime.device_timezone') {
+              return {
+                'ok': true,
+                'data': {'timezone': deviceTimezone},
+                'error': null,
+                'contract_version': 2,
+                'request_id': 'timezone-change',
+              };
+            }
+            throw PlatformException(
+              code: 'UNEXPECTED_METHOD',
+              message: call.method,
+            );
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(nativeChannel, null),
+      );
+
+      final ringGateway = FakeRingGateway(
+        onGetState: () async => successInvocation(ringSnapshot()),
+      );
+      addTearDown(ringGateway.eventController.close);
+      final habitGateway = _RecordingHabitGateway();
+
+      await tester.pumpWidget(
+        production.ExcellentCalendarApp(
+          anniversaryClock: const SystemAppClock(),
+          categoryRepository: FakeCategoryRepository(),
+          ringGateway: ringGateway,
+          habitGateway: habitGateway,
+          appearanceGateway: FakeAppearancePreferencesGateway(
+            delay: Duration.zero,
+          ),
+          calendarGateway: CallbackCalendarGateway(),
+          initialRoute: '/',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      deviceTimezone = 'Asia/Tokyo';
+      await tester.tap(find.text('日历'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('calendar-create-fab')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('calendar-create-habit')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.widgetWithText(TextField, '习惯名称'), '时区切换回归');
+      final submit = find.text('开始挑战');
+      await tester.ensureVisible(submit);
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+
+      expect(habitGateway.lastCreateRequest, isNotNull);
+      expect(habitGateway.lastCreateRequest!.timezone, 'Asia/Tokyo');
+    },
+  );
 }

@@ -1,20 +1,20 @@
 # 日历月/周分类视图与三类数据聚合 — 独立 Review 计划
 
-Status: Active / Review Not Started / Plan Only
+Status: Archived / Findings Addressed / Product Release Exception / Open Debt Tracked
 
 建立日期：2026-08-31
 
-对应主计划：`docs/plan/active/日历-01-月周分类视图与三类数据聚合开发计划.md`
+对应主计划：`docs/plan/completed/日历-01-月周分类视图与三类数据聚合开发计划.md`
 
 ## 0. 当前结论
 
-本文件只定义未来正式 Review 的范围、方法、阻断标准、独立测试 oracle 和证据要求。
+2026-09-02 最终独立复审确认历次代码 Finding 均已返修，未发现七项已知发布债务以外的新硬缺陷。正式签名/商店上传仍属于分发 P1，设备与恢复矩阵仍未执行，因此本 Review 不倒写为“所有门禁通过”；产品负责人已明确接受这些项目为 `OPEN-CAL-001` 发布后债务并批准发布例外，`calendar.*` 当前为 `integrated + active`。
 
-- 当前尚未开始审查 Calendar 实现，不读取当前在途代码来形成 Calendar Finding。
-- 当前没有 `PASS`、`PASS WITH RISKS`、`CHANGES REQUIRED` 或 `BLOCKED` 结论。
-- 当前工作树内既有 Habit、Contract、C++、Android 和 Flutter 修改不属于本轮评审对象，也不得被本计划覆盖、整理或回滚。
-- 正式 Review 只在 Calendar Contract 冻结、各分层实现和真实 production composition 完成，并建立清晰 baseline 后启动。
-- 开发期可以使用本文做自检，但开发者自检不能替代完工后的独立 Review。
+- Calendar Contract、C++/SQLite、Kotlin/JNI、Dart/Flutter 和 production composition 已完成白盒闭包复读。
+- 审查期发现的 Flutter Habit 数量关系、civil-date DST、卡片区手势范围、inactive 跨午夜/时区复位及状态文档漂移均已返修并复核。
+- 正式签名/商店上传、完整 Release UI、TalkBack、200% 字体/减少动画、强杀恢复、时区/DST 和升级回滚/签名密钥恢复尚未完成，统一见 `OPEN-CAL-001`。
+- `calendar.*` 的 `integrated + active` 来自产品负责人对残余风险的显式接受，不表示这些场景已经通过。
+- 工作树内并行 Search 与用户 Habit 计划归档修改不属于 Calendar Finding，均已保留且未被整理或回滚。
 
 ## 1. 审查目标与最终判定对象
 
@@ -595,3 +595,63 @@ Calendar 是只读消费者，但为了聚合可能修改共享查询、DTO、ru
 11. 最终 diff 无无关重构、调试代码、依赖升级、用户修改覆盖或审查临时文件残留。
 
 Review 阻断项关闭并完成复核后，才将本文件与主计划、分层计划一并归档。
+
+## 20. 正式 Review 执行结果（2026-08-31，已被后续 Review 取代）
+
+结论：`PASS WITH RISKS`。当前快照没有开放 P0、P1、P2 或 P3 Finding；该结论允许代码进入后续发布门禁，不代表 capability 已发布。
+
+审查期间发现并关闭：
+
+1. Flutter Habit quantity `partial/done` 关系未在不可信边界完整校验；已补严格关系与 Unicode code-point 长度测试。
+2. Flutter 曾以本机 local `DateTime` 计算自然日，在 DST 周可能误判 42/43 天；已改为 Calendar 专属 civil-date 坐标，并锁定 Los Angeles spring/fall 回归。
+3. 原始 pointer observer 只覆盖日期网格，从 section card 起手无法折叠/展开；已提升到整个滚动主体，且仍不加入 gesture arena。
+4. Calendar Tab inactive 跨午夜或时区变化后重激活可能沿用旧 today/token；已在 activation 先 probe temporal context，统一推进 generation、清缓存并只重取一次。
+5. `docs/status/current.md` 残留“Calendar 仍为占位”的旧结论；已与真实四层实现和 blocked 发布状态统一。
+
+独立证据：
+
+- Calendar validator：`213 schemas / 19 fixtures / 2 public / 2 native`，状态 `implemented_unintegrated + blocked`；Anniversary 与 Habit 共享 validator 回归通过。
+- Flutter Calendar 定向 76 项通过；实现方全量 535 项、`flutter analyze` 与 Debug APK 通过。
+- Android Calendar 三个 JVM 测试类 16 项通过；三 ABI/JNI、Debug 主/测试 APK 与既有只读设备 smoke 证据有效。
+- C++ Calendar Query 独立测试 1/1 通过；实现方构建后 `excellent_calendar_check` 11/11 通过。
+- `git diff --check` 无 whitespace error，仅有既有 LF/CRLF 提示。
+
+保留风险与发布阻断：
+
+- `adb devices -l` 无设备；新安全 `CalendarSeededIntegrationSmokeRunner` 的真实三类“只读 → seeded → 只读”序列未执行。
+- 同一 APK 的真实三类 UI、真机滚动手感、TalkBack、200%/动态主题、进程恢复、设备时区/DST 与 Android 16 参考设备性能未闭环。
+- Release 的 Flutter/native 三 ABI 已编译，最终 Java 打包仍被既有 release classpath 缺少 `integration_test` plugin 阻塞。
+- Contract bootstrap runner 因本机代理无法重装已清理的临时依赖；使用仓库现存隔离验证环境直接执行同一 validator 已通过。
+
+Capability 维持 `implementation_status: implemented_unintegrated`、`release_status: blocked`。上述门禁关闭并复审前，本文件、主计划和四份分层计划继续留在 active，不归档。
+
+## 21. 后续 Finding 与开发侧返修（2026-09-01）
+
+后续独立 Review 结论为 `CHANGES REQUIRED`，确认两项 Finding：
+
+1. P1：completed 重复系列仍继续展开 `completed_at` 之后的未来 occurrence。
+2. P2：Calendar 已感知设备时区变化后，新建 Habit 仍复用应用启动时缓存的时区。
+
+开发侧没有直接接受报告结论，而是先补失败回归复现。两项均能在修复前稳定失败，因此判定为真实缺陷，并按下列冻结边界返修：
+
+- completed 重复系列只保留 occurrence 锚点严格早于 `completed_at` 的实例；timed 锚点为 `occurrence_start_at`，all-day 锚点为 recurrence timezone 当地日初。锚点等于截止时刻时排除；截止前已开始的跨时/多日实例保留完整区间。
+- 同一过滤同时进入 `range_summary` 与 `list_day_items`，避免摘要和日列表分叉；保留实例继续遵守显式 occurrence state 优先级，否则显示为 completed 且不产生圆点。
+- Calendar 新建 Habit 不再读取 `_habitTimezoneFuture`，而是在进入创建页前重新调用真实设备 timezone provider；表单提交使用这次刷新得到的值。
+
+开发侧验证：Calendar validator `213/19/2/2` 通过；重新 configure 后 `excellent_calendar_check` 13/13 通过；新增 C++ 回归覆盖未来实例、精确截止、跨越截止和 all-day 当日边界；Flutter 新增真实 composition widget 回归，修复前提交 `America/Los_Angeles`、修复后提交 `Asia/Tokyo`；`flutter analyze` 无问题、全量 575/575、Debug APK 构建通过。正式结论仍等待独立复审，设备与 Release 阻断保持不变。
+
+## 22. 最终独立复审与产品发布例外（2026-09-02）
+
+最终独立复审确认历次代码问题真实存在且均已返修，包括 Reminder recovery 引用校验、历史日期 Event 默认提醒、全天一次性提醒 UTC 锚点、23 点默认时间跨日、Native 错误中文映射、创建按钮布局，以及更早的 completed-series cutoff 与 Calendar→Habit 时区刷新。复验未发现下列七项之外的新硬缺陷：
+
+1. 正式生产签名 APK/AAB 与目标商店上传校验；旧 Release-mode APK 的 Debug signer Finding 已通过 fail-closed 配置和固定证书指纹门禁修复，并以一次性非生产密钥验证 APK/AAB，但尚无生产密钥产物或商店证据。
+2. 真机时区切换与 DST gap/fold。
+3. TalkBack 人工焦点顺序与听读。
+4. 200% 字体和减少动画真机验证。
+5. 强杀、进程回收与冷启动恢复。
+6. 完整升级、回滚及签名密钥恢复矩阵。
+7. 正式 Release 包的三类真实数据 UI 全链验证。
+
+独立证据包括：Calendar Contract `213 schemas / 19 fixtures / 2 public methods / 2 native calls`；C++ 构建后测试 `13/13`；Flutter 全量 `592/592`、`flutter analyze` 0 issue；Android unit、Lint、三 ABI androidTest APK、Debug 构建；realme RMX3687 / Android 13 上隔离 `.device_test` 的真实 JNI/SQLite 三类数据与周/月、今天、未支持入口基础 UI 路径。签名复审先确认旧 Release-mode APK 为 `CN=Android Debug`，后续返修已移除 Debug fallback、建立生产密钥/固定指纹的构建前后门禁，并以一次性非生产密钥验证 APK/AAB；该临时密钥和产物均已删除。
+
+按本 Review 原规则，生产密钥保管/恢复、正式产物和商店上传缺口仍属于发布运营 P1，不能把 Review 历史改写成完整 `PASS`。产品负责人于 2026-09-02 明确接受上述七项为 Calendar V1 发布后的非阻断债务并批准例外激活；因此机器 capability 切换为 `integrated + active`，但所有未执行项继续以“未验证”表述，统一由 `OPEN-CAL-001` 跟踪。本文件随主计划和四份分层计划归档。

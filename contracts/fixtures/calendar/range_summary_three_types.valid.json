@@ -1,0 +1,27 @@
+{
+  "range_start_date": "2026-08-31",
+  "range_end_date": "2026-09-03",
+  "timezone": "Asia/Shanghai",
+  "snapshot_token": "calsnap1.ABCDEFGHIJKLMNOPQRST",
+  "days": [
+    {
+      "date": "2026-08-31",
+      "has_open_event": true,
+      "has_pending_habit": false,
+      "has_anniversary": false
+    },
+    {
+      "date": "2026-09-01",
+      "has_open_event": false,
+      "has_pending_habit": true,
+      "has_anniversary": false
+    },
+    {
+      "date": "2026-09-02",
+      "has_open_event": false,
+      "has_pending_habit": false,
+      "has_anniversary": true
+    }
+  ]
+}
+

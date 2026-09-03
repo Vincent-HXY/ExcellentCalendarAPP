@@ -78,6 +78,21 @@ class NativeHabitMethods {
   static const setReminder = 'habit.set_reminder';
 }
 
+class NativeCalendarMethods {
+  const NativeCalendarMethods._();
+
+  static const rangeSummary = 'calendar.range_summary';
+  static const listDayItems = 'calendar.list_day_items';
+}
+
+class NativeSearchMethods {
+  const NativeSearchMethods._();
+
+  static const query = 'search.query';
+  static const getLocalHistory = 'search.get_local_history';
+  static const replaceLocalHistory = 'search.replace_local_history';
+}
+
 class NativeAppearanceMethods {
   const NativeAppearanceMethods._();
 

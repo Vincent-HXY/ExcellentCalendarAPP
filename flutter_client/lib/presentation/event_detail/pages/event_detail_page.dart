@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app/routing/app_router.dart';
 import '../event_detail_design_tokens.dart';
 import '../models/event_detail_ui_state.dart';
 import '../widgets/event_detail_action_bar.dart';
@@ -91,7 +92,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
         );
         return;
       }
-      await Navigator.maybePop(context, true);
+      await Navigator.maybePop(context, ContentDetailRouteOutcome.changed);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -227,7 +228,10 @@ class _EventDetailTopBar extends StatelessWidget {
               child: IconButton(
                 tooltip: '\u8fd4\u56de',
                 padding: EdgeInsets.zero,
-                onPressed: () => Navigator.maybePop(context),
+                onPressed: () => Navigator.maybePop(
+                  context,
+                  ContentDetailRouteOutcome.unchanged,
+                ),
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 22),
                 color: EventDetailColors.primaryText,
               ),

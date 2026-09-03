@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/search/search_habit_item.schema.json",
+  "title": "SearchHabitItem",
+  "description": "One logical Habit result. occur_date is selected from the effective challenge interval; daily CheckIn status never changes lifecycle filtering.",
+  "x-contract-version": 2,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "target_type",
+    "target_id",
+    "title",
+    "match",
+    "category",
+    "updated_at",
+    "lifecycle_status",
+    "occur_date",
+    "challenge_start_date",
+    "challenge_end_date",
+    "ended_date",
+    "remaining_days",
+    "target_count_hundredths",
+    "unit"
+  ],
+  "properties": {
+    "target_type": {"const": "habit"},
+    "target_id": {"type": "string", "format": "uuid"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 80},
+    "match": {"$ref": "./search_match_projection.schema.json"},
+    "category": {
+      "oneOf": [
+        {"$ref": "./search_category_projection.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "lifecycle_status": {
+      "type": "string",
+      "enum": ["upcoming", "active", "completed", "ended_early"]
+    },
+    "occur_date": {"type": "string", "format": "date"},
+    "challenge_start_date": {"type": "string", "format": "date"},
+    "challenge_end_date": {"type": "string", "format": "date"},
+    "ended_date": {"type": ["string", "null"], "format": "date"},
+    "remaining_days": {"type": "integer", "minimum": 0, "maximum": 400},
+    "target_count_hundredths": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "unit": {"type": ["string", "null"], "minLength": 1, "maxLength": 32}
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {
+          "properties": {
+            "target_count_hundredths": {"type": "null"},
+            "unit": {"type": "null"}
+          }
+        },
+        {
+          "properties": {
+            "target_count_hundredths": {"type": "integer", "minimum": 1},
+            "unit": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    },
+    {
+      "if": {
+        "properties": {"lifecycle_status": {"enum": ["completed", "ended_early"]}},
+        "required": ["lifecycle_status"]
+      },
+      "then": {"properties": {"remaining_days": {"const": 0}}}
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "query_generation": 8,
+  "keyword": "晨间",
+  "timezone": "Asia/Shanghai",
+  "target_types": ["habit"],
+  "date_from": "2026-08-31",
+  "date_to_exclusive": "2026-09-08",
+  "category_ids": [],
+  "include_uncategorized": true,
+  "include_completed": false,
+  "sort_by": "occur_time",
+  "sections": [
+    {"target_type": "habit", "page_size": 20, "cursor": null}
+  ]
+}

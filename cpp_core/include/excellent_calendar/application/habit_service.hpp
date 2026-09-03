@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "excellent_calendar/common/result.hpp"
@@ -87,6 +88,33 @@ struct HabitDailyStatus {
   bool is_final = false;
   std::optional<domain::HabitCheckIn> check_in;
   std::optional<double> completion_ratio;
+};
+
+/** Shared read projection used by Habit and CalendarView. */
+HabitDailyStatus project_habit_daily_status(
+    const repository::HabitState& state,
+    const domain::Habit& habit,
+    const domain::LocalDate& date,
+    const domain::LocalDate& today);
+
+/**
+ * Request-scoped authoritative Habit daily-status projector.
+ *
+ * The supplied CheckIn vector must outlive the projector. Active CheckIns are
+ * indexed once so multi-day consumers do not repeatedly scan the full store.
+ */
+class HabitDailyStatusProjector {
+ public:
+  explicit HabitDailyStatusProjector(
+      const std::vector<domain::HabitCheckIn>& check_ins);
+
+  HabitDailyStatus project(const domain::Habit& habit,
+                           const domain::LocalDate& date,
+                           const domain::LocalDate& today) const;
+
+ private:
+  std::unordered_map<std::string, const domain::HabitCheckIn*>
+      active_check_ins_;
 };
 
 struct HabitStatistics {

@@ -54,6 +54,7 @@
 | 过去已完成的开发计划               | `docs/plan/completed/`             | 只作为历史证据；现行资料不足时有限查阅                 |
 | 当前项目真实状态                   | `docs/status/current.md`           | 判断能力是否已完成、部分完成、未验证或未开始           |
 | 后续方向和阶段规划                 | `docs/status/roadmap.md`           | 讨论未来工作、优先级和依赖顺序时读取                   |
+| Local-first 云同步现状与设计入口   | `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；`docs/status/current.md`；`docs/domains/sync_operation.md`；`contracts/sync/`；`contracts/backend_api.yaml` | 先执行 active 总计划的 ADR、加密 spike 与 Contract 门禁；现有同步 Schema 仍是 planned 占位 |
 | 当前正在进行的评审                 | `docs/reviews/active/`             | Review 任务优先读取与目标变更相关的内容                |
 | 过去相似模块的评审经验             | `docs/reviews/archive/`            | 仅检索相同失败模式、架构问题或历史回归                 |
 | 开发日志                           | `docs/log.md`                      | 每个任务结束时追加；正常开发不全文读取                 |
@@ -209,23 +210,25 @@ rg -n -i "<keyword>" <file>
 
 项目当前处于 R2 开发阶段，阶段基线见 `docs/status/current.md`，路线与并行维护债务见 `docs/status/roadmap.md`。
 
-当前 active 计划入口包括 `docs/plan/active/习惯-01-Habit与HabitCheckIn闭环开发计划.md`、`docs/plan/active/日历-01-月周分类视图与三类数据聚合开发计划.md` 和 `docs/plan/active/搜索-01-三类聚合搜索与本地历史开发计划.md`。Habit 的 Contract、C++/SQLite v5、Kotlin/JNI/Android、Flutter/Appearance 和真实 production composition 已实现、验证并于 2026-08-31 激活；当前执行拓扑已转入“已发布能力维护 + 开放验证债收口”：
+Habit、Calendar 与 Search 的主计划及分层计划均已移入 `docs/plan/completed/`，当前执行拓扑已转入“已发布能力维护 + 开放验证债收口”。Habit 的 Contract、C++/SQLite v5、Kotlin/JNI/Android、Flutter/Appearance 和真实 production composition 已实现、验证并于 2026-08-31 激活：
 
-1. 已完成的 Contract 基线：`docs/plan/completed/习惯-02-Contracts层开发计划.md`；
-2. C++ 交付记录：`docs/plan/active/习惯-03-CPP层开发计划.md`，Core/SQLite v5/Boundary 已完成并接入真实 JNI；
-3. Kotlin 交付记录：`docs/plan/active/习惯-04-Kotlin层开发计划.md`，MethodChannel/JNI/调度/通知动作/Appearance 已完成并接入生产组合；
-4. Flutter 交付记录：`docs/plan/active/习惯-05-Flutter层开发计划.md`，Application/UI/真实 MethodChannel composition 已完成，运行时 preview/Fake 已删除；
+1. 总计划：`docs/plan/completed/习惯-01-Habit与HabitCheckIn闭环开发计划.md`；
+2. Contract 基线：`docs/plan/completed/习惯-02-Contracts层开发计划.md`；
+3. C++ 交付记录：`docs/plan/completed/习惯-03-CPP层开发计划.md`，Core/SQLite v5/Boundary 已完成并接入真实 JNI；
+4. Kotlin 与 Flutter 交付记录：`docs/plan/completed/习惯-04-Kotlin层开发计划.md`、`docs/plan/completed/习惯-05-Flutter层开发计划.md`，MethodChannel/JNI/调度/通知动作/Appearance/Application/UI 已接入生产组合，运行时 preview/Fake 已删除；
 5. 2026-08-31 已关闭黑盒确认的卡片完成率背景、101+ 列表分页、数量型圆圈剩余量、occurrence 技术文本和默认 30 天问题；Habit/Appearance 与 Storage v5 已为 `integrated + active`，剩余真机矩阵由 `OPEN-HAB-001` 跟踪，测试专用 Fake 保留为回归资产；
 6. 领域与决策真相源：`docs/domains/habit.md`、`docs/domains/habit_check_in.md`、`docs/domains/habit_recurrence.md`、`docs/domains/habit_reminder_template.md`、`docs/architecture/decisions/ADR-Habit-01-Habit与HabitCheckIn分离.md`、`docs/architecture/decisions/ADR-Habit-02-每日挑战与Reminder-Occurrence工作流.md`、`docs/architecture/decisions/ADR-Habit-03-跨层真相源与Storage-v5同包激活.md`；
 7. 生命周期机器矩阵：`contracts/habit/habit_lifecycle_operation_matrix.yaml`；
 8. 机器验证入口：`contracts/run_habit_v1_validation.py` 与 `contracts/fixtures/habit/manifest.json`。
 9. 发布版本的白盒审阅记录：`docs/reviews/active/习惯-01-Habit与HabitCheckIn闭环-review计划.md`；白盒阻断项和本轮黑盒 UI/分页项已返修并完成复核，Review/ADR/计划的局部状态与归档清理由 `OPEN-HAB-002` 跟踪，不影响机器发布态。
 
-日历月/周分类视图的正式实现尚未开始，提前审查规范位于 `docs/reviews/active/日历-01-月周分类视图-review计划.md`。该文档当前仅冻结未来 Review 的高风险项、独立测试 oracle、证据与放行门槛，不代表已经审查或通过；开发 Calendar Contract、跨日/重复投影、cursor/snapshot、Flutter 手势和最终真实集成时均应以此做 readiness 自检，完工后再执行独立正式 Review。
+日历月/周分类视图已完成 Contract、C++/SQLite、Kotlin/JNI、Flutter 与 production composition 实现；总计划和 `日历-02/03/04/05` 分层计划均位于 `docs/plan/completed/`，Review 归档于 `docs/reviews/archive/日历-01-月周分类视图-review计划.md`。机器入口为 `contracts/calendar/calendar_query_invariants.yaml` 与 `contracts/run_calendar_v1_validation.py`。独立复审确认此前代码 Finding 已返修，除 `OPEN-CAL-001` 登记的七项正式签名、设备和恢复矩阵外未发现新的硬缺陷；产品负责人于 2026-09-02 明确接受这些项目为非阻断发布债，两个 `calendar.*` capability 已切换为 `integrated + active`。Release 签名已 fail-closed 并以一次性非生产密钥验证 APK/AAB，但当前仍没有生产密钥签名或商店校验过的正式产物。
 
-Habit 当前可以描述为正式能力已激活，但必须同时保留边界：`OPEN-HAB-001` 中未执行的设备场景仍是未验证发布债，不能由主机结果替代；`习惯-03/04/05` 暂留 active 仅是 `OPEN-HAB-002` 记录的文档归档尾项，不表示 capability 仍被阻断。
+Habit 当前可以描述为正式能力已激活，但必须同时保留边界：`OPEN-HAB-001` 中未执行的设备场景仍是未验证发布债，不能由主机结果替代；计划已归档不表示设备矩阵已经通过，active Habit Review 的剩余文档状态仍由 `OPEN-HAB-002` 跟踪。
 
-开发 Habit、HabitCheckIn、Habit recurrence、统计、每日提醒或 Habit 页面时，应先读取 Habit 主计划，再按所属层读取对应分计划和最小相关真相源。开发月/周分类日历和 Event occurrence、Anniversary occurrence、Habit 日状态聚合时，先读取日历主计划，并按其中 `SPECIALIST_SPLIT` 建立 Contract/数据、C++/SQLite、Kotlin/JNI、Flutter 和最终 Review 子计划；当前不得绕过 Calendar Contract 由 Flutter 临时拼装。开发独立搜索、SearchIndex、中文匹配、搜索历史、三类筛选或 FTS 时，先读取搜索主计划；搜索同样判定为 `SPECIALIST_SPLIT / Contract Pending`，必须先冻结统一 Search Contract 和 date/datetime/occurrence 语义，不得由 Flutter 分别查询三类后临时拼装，也不得在性能门禁前擅自迁移 FTS。四象限与 Local-first 同步仍没有 active 实施计划。
+开发 Habit、HabitCheckIn、Habit recurrence、统计、每日提醒或 Habit 页面时，应先读取 `docs/plan/completed/` 中的 Habit 主计划，再按所属层读取对应分计划和最小相关真相源。开发月/周分类日历和 Event occurrence、Anniversary occurrence、Habit 日状态聚合时，先读取 `docs/plan/completed/` 中的日历主计划、已冻结的日历-02 Contract 计划和所属的日历-03/04/05 分层计划；不得绕过 `contracts/calendar/` 由 Flutter 临时拼装。开发独立搜索、SearchIndex、中文匹配、搜索历史、三类筛选或 FTS 时，先读取 `docs/plan/completed/` 中的搜索主计划，再按层读取搜索-02/03/04/05 分层计划。Search V1 Contract Revision 2 已冻结并完成发布前 cutoff amendment；C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 页面、production composition、主机与 Android 13 设备门禁已闭环。产品负责人于 2026-09-02 接受 `OPEN-SEA-001` 两项为非阻断发布债，统一 Search Query/History 能力为 `integrated + active`；SearchIndex/FTS 继续 deferred/planned。机器入口为 `contracts/search/search_query_invariants.yaml` 与 `contracts/run_search_v1_validation.py`，审查证据见 `docs/log.md`。不得由 Flutter 分别查询三类后临时拼装，也不得把 SearchIndex/FTS 误报为已发布。四象限仍没有 active 实施计划。
+
+Local-first 云同步于 2026-09-03 完成产品决策并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，当前状态为 `ACTIVE PLAN / CONTRACT PENDING`。讨论、规划或实施同步时先读取该计划，再读取 `docs/status/current.md` 的 R2-C、`docs/domains/sync_operation.md`、`docs/domains/user_sync_state.md`、`contracts/sync/`、`contracts/method_channels.yaml` 中的 `sync.apply`、`contracts/backend_api.yaml`、`cloud_backend/docs/implementation-status.md` 以及 Backend `sync/calendar` 包说明。现有 Schema 和空包仍只证明概念占位和账号基座；必须先完成 ADR、账号数据库加密 spike 与 Contract 冻结，再按 Contract/数据、C++/SQLite、Backend、Kotlin/Android、Flutter 和多设备验收分层推进。
 
 开始修改代码前，Codex 应能够明确回答：
 

@@ -24,6 +24,8 @@ add_library(
     SHARED
     boundary/adapter/jni/event_jni.cpp
     boundary/adapter/jni/habit_jni.cpp
+    boundary/adapter/jni/calendar_view_jni.cpp
+    boundary/adapter/jni/search_jni.cpp
 )
 
 target_compile_features(excellent_calendar_native PRIVATE cxx_std_17)

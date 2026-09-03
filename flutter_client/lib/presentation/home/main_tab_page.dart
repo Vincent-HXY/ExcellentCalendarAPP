@@ -8,11 +8,17 @@ class MainTabPage extends StatefulWidget {
   const MainTabPage({
     required this.scheduleBuilder,
     required this.profileBuilder,
+    this.calendarBuilder,
+    this.searchBuilder,
+    this.onTabChanged,
     super.key,
   });
 
   final MainTabBuilder scheduleBuilder;
+  final MainTabBuilder? calendarBuilder;
+  final MainTabBuilder? searchBuilder;
   final MainTabBuilder profileBuilder;
+  final ValueChanged<int>? onTabChanged;
 
   @override
   State<MainTabPage> createState() => _MainTabPageState();
@@ -33,18 +39,23 @@ class _MainTabPageState extends State<MainTabPage> {
   void _selectTab(int index) {
     if (index == _selectedIndex) return;
     _pages[index] ??= switch (index) {
-      1 => const DevelopmentPlaceholderPage(
-        icon: Icons.calendar_month_outlined,
-        title: '日历板块正在开发中',
-      ),
-      2 => const DevelopmentPlaceholderPage(
-        icon: Icons.search_rounded,
-        title: '搜索板块正在开发中',
-      ),
+      1 =>
+        widget.calendarBuilder?.call(context) ??
+            const DevelopmentPlaceholderPage(
+              icon: Icons.calendar_month_outlined,
+              title: '日历板块正在开发中',
+            ),
+      2 =>
+        widget.searchBuilder?.call(context) ??
+            const DevelopmentPlaceholderPage(
+              icon: Icons.search_rounded,
+              title: '搜索板块正在开发中',
+            ),
       3 => widget.profileBuilder(context),
       _ => widget.scheduleBuilder(context),
     };
     setState(() => _selectedIndex = index);
+    widget.onTabChanged?.call(index);
   }
 
   @override

@@ -95,12 +95,23 @@ class NativeErrorCodes {
       'ANNIVERSARY_REMINDER_OCCURRENCE_EXPIRED';
   static const anniversaryAggregateMembershipConflict =
       'ANNIVERSARY_AGGREGATE_MEMBERSHIP_CONFLICT';
+  static const calendarRangeInvalid = 'CALENDAR_RANGE_INVALID';
+  static const calendarRangeTooLarge = 'CALENDAR_RANGE_TOO_LARGE';
+  static const calendarSnapshotInvalid = 'CALENDAR_SNAPSHOT_INVALID';
+  static const calendarSnapshotExpired = 'CALENDAR_SNAPSHOT_EXPIRED';
+  static const calendarCursorInvalid = 'CALENDAR_CURSOR_INVALID';
+  static const calendarCursorQueryMismatch = 'CALENDAR_CURSOR_QUERY_MISMATCH';
   static const calendarWorkflowCommitFailed = 'CALENDAR_WORKFLOW_COMMIT_FAILED';
   static const calendarWorkflowRecoveryFailed =
       'CALENDAR_WORKFLOW_RECOVERY_FAILED';
   static const schedulerReconciliationPending =
       'SCHEDULER_RECONCILIATION_PENDING';
   static const searchQueryInvalid = 'SEARCH_QUERY_INVALID';
+  static const searchCursorInvalid = 'SEARCH_CURSOR_INVALID';
+  static const searchCursorQueryMismatch = 'SEARCH_CURSOR_QUERY_MISMATCH';
+  static const searchCursorExpired = 'SEARCH_CURSOR_EXPIRED';
+  static const searchHistoryConflict = 'SEARCH_HISTORY_CONFLICT';
+  static const searchHistoryStorageFailed = 'SEARCH_HISTORY_STORAGE_FAILED';
   static const aiExtractionFailed = 'AI_EXTRACTION_FAILED';
   static const syncConflict = 'SYNC_CONFLICT';
   static const syncOperationInvalid = 'SYNC_OPERATION_INVALID';
@@ -205,10 +216,21 @@ class NativeErrorCodes {
     anniversaryOccurrenceStale,
     anniversaryReminderOccurrenceExpired,
     anniversaryAggregateMembershipConflict,
+    calendarRangeInvalid,
+    calendarRangeTooLarge,
+    calendarSnapshotInvalid,
+    calendarSnapshotExpired,
+    calendarCursorInvalid,
+    calendarCursorQueryMismatch,
     calendarWorkflowCommitFailed,
     calendarWorkflowRecoveryFailed,
     schedulerReconciliationPending,
     searchQueryInvalid,
+    searchCursorInvalid,
+    searchCursorQueryMismatch,
+    searchCursorExpired,
+    searchHistoryConflict,
+    searchHistoryStorageFailed,
     aiExtractionFailed,
     syncConflict,
     syncOperationInvalid,

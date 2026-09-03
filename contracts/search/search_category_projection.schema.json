@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/search/search_category_projection.schema.json",
+  "title": "SearchCategoryProjection",
+  "description": "Current active Category display projection. A missing or soft-deleted Category is represented by a null category on the containing result; stale names are never returned.",
+  "x-contract-version": 2,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "integrated",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "color", "icon"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "name": {"type": "string", "minLength": 1, "maxLength": 40},
+    "color": {
+      "type": ["string", "null"],
+      "pattern": "^#[0-9A-F]{6}$"
+    },
+    "icon": {"type": ["string", "null"], "minLength": 1, "maxLength": 64}
+  }
+}

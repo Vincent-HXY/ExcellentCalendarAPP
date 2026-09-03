@@ -48,6 +48,32 @@ void main() {
     expect(received?.occurrenceKey, isNull);
   });
 
+  testWidgets('calendar event route preserves revision and timed anchor', (
+    tester,
+  ) async {
+    EventDetailRouteData? received;
+    final route = AppRouter.onGenerateRoute(
+      const RouteSettings(
+        name:
+            '/event/detail/event-1?occurrence_key=occurrence-1'
+            '&recurrence_revision=7'
+            '&occurrence_start_at=2026-08-31T01%3A02%3A03Z',
+      ),
+      todayBuilder: (_) => const Text('today'),
+      eventDetailBuilder: (context, routeData) {
+        received = routeData;
+        return const Scaffold(body: Text('calendar event detail'));
+      },
+    );
+
+    await _pushRoute(tester, route);
+
+    expect(received?.occurrenceKey, 'occurrence-1');
+    expect(received?.recurrenceRevision, 7);
+    expect(received?.occurrenceStartAt, DateTime.utc(2026, 8, 31, 1, 2, 3));
+    expect(received?.occurrenceStartDate, isNull);
+  });
+
   testWidgets('legacy EventDetailPageArguments remain supported', (
     tester,
   ) async {
@@ -168,15 +194,36 @@ void main() {
     expect(received?.occurrenceKey, 'occurrence-1');
   });
 
+  testWidgets('calendar Habit route preserves selected natural date', (
+    tester,
+  ) async {
+    HabitDetailRouteData? received;
+    final route = AppRouter.onGenerateRoute(
+      const RouteSettings(
+        name: '/habit/detail/habit-1?selected_date=2026-08-31',
+      ),
+      todayBuilder: (_) => const Text('today'),
+      habitDetailBuilder: (context, routeData) {
+        received = routeData;
+        return const Scaffold(body: Text('calendar habit detail'));
+      },
+    );
+
+    await _pushRoute(tester, route);
+
+    expect(received?.habitId, 'habit-1');
+    expect(received?.selectedDate, '2026-08-31');
+  });
+
   testWidgets('anniversary detail route passes the decoded id', (tester) async {
-    String? receivedId;
+    AnniversaryDetailRouteData? received;
     final route = AppRouter.onGenerateRoute(
       const RouteSettings(
         name: '/anniversary/detail/promise%2F2026%3Fsource%3Dtap',
       ),
       todayBuilder: (_) => const Text('today'),
-      anniversaryDetailBuilder: (context, anniversaryId) {
-        receivedId = anniversaryId;
+      anniversaryDetailBuilder: (context, routeData) {
+        received = routeData;
         return const Scaffold(body: Text('anniversary detail loaded'));
       },
     );
@@ -184,7 +231,52 @@ void main() {
     await _pushRoute(tester, route);
 
     expect(find.text('anniversary detail loaded'), findsOneWidget);
-    expect(receivedId, 'promise/2026?source=tap');
+    expect(received?.anniversaryId, 'promise/2026?source=tap');
+  });
+
+  testWidgets('calendar Anniversary route preserves occurrence identity', (
+    tester,
+  ) async {
+    AnniversaryDetailRouteData? received;
+    final route = AppRouter.onGenerateRoute(
+      const RouteSettings(
+        name:
+            '/anniversary/detail/anniversary-1'
+            '?occurrence_key=occurrence-1&occurrence_date=2026-08-31',
+      ),
+      todayBuilder: (_) => const Text('today'),
+      anniversaryDetailBuilder: (context, routeData) {
+        received = routeData;
+        return const Scaffold(body: Text('calendar anniversary detail'));
+      },
+    );
+
+    await _pushRoute(tester, route);
+
+    expect(received?.anniversaryId, 'anniversary-1');
+    expect(received?.occurrenceKey, 'occurrence-1');
+    expect(received?.occurrenceDate, '2026-08-31');
+  });
+
+  testWidgets('malformed calendar anchors fail safe to today', (tester) async {
+    for (final name in [
+      '/event/detail/event-1?recurrence_revision=0',
+      '/event/detail/event-1?occurrence_start_at=2026-08-31T01%3A02%3A03.100Z',
+      '/habit/detail/habit-1?selected_date=2026-02-30',
+      '/anniversary/detail/anniversary-1?occurrence_key=occurrence-1',
+      '/anniversary/detail/anniversary-1?occurrence_date=2026-08-31',
+    ]) {
+      final route = AppRouter.onGenerateRoute(
+        RouteSettings(name: name),
+        todayBuilder: (_) => const Scaffold(body: Text('calendar fallback')),
+        eventDetailBuilder: (_, _) => const Text('event detail'),
+        habitDetailBuilder: (_, _) => const Text('habit detail'),
+        anniversaryDetailBuilder: (_, _) => const Text('anniversary detail'),
+      );
+
+      await _pushRoute(tester, route);
+      expect(find.text('calendar fallback'), findsOneWidget);
+    }
   });
 
   testWidgets('ring settings and active session use configured builders', (
