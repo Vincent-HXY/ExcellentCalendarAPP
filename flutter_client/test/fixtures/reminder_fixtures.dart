@@ -7,7 +7,7 @@ import 'package:excellent_calendar/native_contract/shared/native_invocation.dart
 
 // 构造 ReminderResponse 的线格式 Map，可通过参数覆盖当前场景关心的字段。
 Map<String, dynamic> reminderResponseJson({
-  String id = 'reminder-1',
+  String id = '11111111-1111-4111-8111-111111111111',
   String status = 'scheduled',
   bool isEnabled = true,
   String? failureReason,
@@ -15,14 +15,20 @@ Map<String, dynamic> reminderResponseJson({
   String? deletedAt,
 }) {
   return {
+    'advance_days': null,
     'reminder_id': id,
     'target_type': 'event',
-    'target_id': 'event-1',
+    'target_id': '22222222-2222-4222-8222-222222222222',
     'recurrence_revision': null,
     'occurrence_key': null,
     'occurrence_start_at': null,
+    'template_key': null,
+    'occurrence_date': null,
+    'local_time': null,
+    'timezone_mode': null,
+    'fulfillment_delivery_id': null,
     'remind_at': '2026-06-15T02:00:00.000Z',
-    'methods': ['ring', 'popup'],
+    'methods': ['ring'],
     'advance_minutes': 15,
     'message': 'Meeting reminder',
     'is_enabled': isEnabled,

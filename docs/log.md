@@ -1536,3 +1536,19 @@
 - 关键停止条件：账号缓存加密依赖需先完成 ADR、许可证/三 ABI/迁移/性能 spike；后台同步前必须统一 Refresh Token 刷新所有权；生产同步 Contract 冻结前不得开始各层业务实现。
 - 验证状态：计划文件存在，共 982 行、209 个清单项、无行尾空白；相关状态文档未再命中“同步尚无 active plan / DECISION_REQUIRED”；目标 tracked 文档 `git diff --check` 通过，仅有仓库既有 LF/CRLF 提示。由于本任务只建立计划和文档，未执行 C++、Backend、Flutter、Android 构建、测试或真机验证。
 - 开发时间：2026-09-03 20:41 +08:00（Asia/Shanghai）。
+
+## 2026-09-04 00:09 +08:00 Flutter 启动入口目录误用诊断
+
+- 使用 Skill：`debug`。按证据驱动流程核对运行目录、Flutter 包名和 Dart 入口；未修改产品代码或构建配置。
+- 负责模块：Flutter 启动入口与本地真机运行命令。
+- 任务目标：确认从 `A:\calendar\Flutter_test` 执行 `flutter run -d 3L1F96E8NZVEBNH2` 是否错误启动了学习工程，以及 ExcellentCalendarAPP 的正确入口。
+- 任务结果：确认当前目录的 `pubspec.yaml` 声明包名 `beginner_flutter_app`，其 `lib/main.dart` 启动 `BeginnerFlutterApp`；正式客户端位于 `A:\calendar\ExcellentCalendarAPP\flutter_client`，包名为 `excellent_calendar`，入口 `lib/main.dart` 启动 `buildProductionApp()`。根因是运行目录选错，不是 `-d` 设备参数选错。
+- 验证状态：完成静态路径、包名、入口函数、Android applicationId/label 与项目运行指南核对；未实际执行 `flutter run`，未对真机安装状态作变更。
+
+## 2026-09-04 00:29 +08:00 ReminderResponse `advance_days` 协议漂移修复
+
+- 使用 Skill：`debug`、`calendar-data-contracts`。按证据驱动流程复现报错，并核对 Reminder 领域文档、Accepted ADR、Contract、C++ writer、Kotlin validator 与 Dart reader。
+- 负责模块：Flutter Dart Gateway/DTO 边界及 ReminderResponse 契约回归测试。
+- 任务目标：修复创建含提醒日程后，合法 Native v2 ReminderResponse 因 `advance_days` 被 Dart 误判为未知字段的问题，并检查同一共享响应中的相邻字段与枚举漂移。
+- 任务结果：确认 2026-08-23 起 Anniversary/Habit 扩展已同步到 JSON Schema、C++ 与 Kotlin，但 Dart `ReminderResponseDto` 和测试 fixture 仍停留在旧字段集。现已补齐 6 个 target-specific 字段、Anniversary/Habit 取消与过期枚举、UUID/单方法/目标互斥分支校验；Event 分支继续要求这些字段存在且为 `null`。Contract、C++、Kotlin、Storage 与版本号均未变更，无数据迁移。
+- 验证状态：修复前聚焦测试稳定复现 `ReminderResponse contains unknown field: advance_days`；修复后 Reminder DTO 9/9、相关 Event/Reminder 测试、Flutter 全量 593/593、`flutter analyze`、定向格式检查、Calendar/Anniversary/Habit 机器 Contract 校验、Android Debug APK 构建和 C++ build-after-test 13/13 全部通过。RMX5100 Android 16 真机端到端用例已通过真实 Flutter → Kotlin → JNI → C++ → SQLite 创建带 popup Reminder 的日程、读取并解析 Event Detail/ReminderResponse，并在 `finally` 中成功软删除测试日程。

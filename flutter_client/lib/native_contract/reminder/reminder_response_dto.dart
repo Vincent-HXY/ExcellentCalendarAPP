@@ -9,6 +9,12 @@ class ReminderResponseDto {
     required this.recurrenceRevision,
     required this.occurrenceKey,
     required this.occurrenceStartAt,
+    required this.templateKey,
+    required this.occurrenceDate,
+    required this.advanceDays,
+    required this.localTime,
+    required this.timezoneMode,
+    required this.fulfillmentDeliveryId,
     required this.remindAt,
     required this.methods,
     required this.isEnabled,
@@ -36,6 +42,12 @@ class ReminderResponseDto {
     'recurrence_revision',
     'occurrence_key',
     'occurrence_start_at',
+    'template_key',
+    'occurrence_date',
+    'advance_days',
+    'local_time',
+    'timezone_mode',
+    'fulfillment_delivery_id',
     'remind_at',
     'advance_minutes',
     'methods',
@@ -62,6 +74,12 @@ class ReminderResponseDto {
   final int? recurrenceRevision;
   final String? occurrenceKey;
   final DateTime? occurrenceStartAt;
+  final String? templateKey;
+  final String? occurrenceDate;
+  final int? advanceDays;
+  final String? localTime;
+  final String? timezoneMode;
+  final String? fulfillmentDeliveryId;
   final DateTime remindAt;
   final List<ReminderMethod> methods;
   final int? advanceMinutes;
@@ -86,16 +104,28 @@ class ReminderResponseDto {
 
   bool get isRecurring => recurrenceRevision != null;
 
+  static final RegExp _localTimePattern = RegExp(
+    r'^(?:[01][0-9]|2[0-3]):[0-5][0-9]$',
+  );
+
   factory ReminderResponseDto.fromJson(Map<String, dynamic> json) {
     ContractValue.requireExactKeys(json, _keys, 'ReminderResponse');
     final methodValues = ContractValue.stringList(
       json,
       'methods',
       'ReminderResponse',
-      allowed: ReminderMethod.values.map((value) => value.wireValue).toSet(),
+      allowed: const {
+        ReminderMethod.ring,
+        ReminderMethod.popup,
+      }.map((value) => value.wireValue).toSet(),
       unique: true,
       nonEmpty: true,
     );
+    if (methodValues.length != 1) {
+      throw const FormatException(
+        'ReminderResponse.methods must contain exactly one supported method.',
+      );
+    }
     final methods = List<ReminderMethod>.unmodifiable(
       methodValues.map(ReminderMethod.fromWireValue),
     );
@@ -108,7 +138,7 @@ class ReminderResponseDto {
       'ReminderResponse',
       minimum: 1,
     );
-    final occurrenceKey = ContractValue.optionalString(
+    final occurrenceKey = ContractValue.optionalUuid(
       json,
       'occurrence_key',
       'ReminderResponse',
@@ -128,24 +158,46 @@ class ReminderResponseDto {
     final targetType = ReminderTargetType.fromWireValue(
       ContractValue.nonEmptyString(json, 'target_type', 'ReminderResponse'),
     );
-    final recurringIdentity =
-        recurrenceRevision != null &&
-        occurrenceKey != null &&
-        occurrenceStartAt != null;
-    final ordinaryIdentity =
-        recurrenceRevision == null &&
-        occurrenceKey == null &&
-        occurrenceStartAt == null;
-    if (!(recurringIdentity || ordinaryIdentity) ||
-        (recurringIdentity &&
-            (targetType != ReminderTargetType.event ||
-                advanceMinutes == null ||
-                methods.length != 1 ||
-                methods.single != ReminderMethod.popup))) {
+    final templateKey = ContractValue.optionalUuid(
+      json,
+      'template_key',
+      'ReminderResponse',
+    );
+    final occurrenceDate = ContractValue.optionalLocalDate(
+      json,
+      'occurrence_date',
+      'ReminderResponse',
+    );
+    final advanceDays = ContractValue.optionalInteger(
+      json,
+      'advance_days',
+      'ReminderResponse',
+      minimum: 0,
+      maximum: 365,
+    );
+    final localTime = ContractValue.optionalString(
+      json,
+      'local_time',
+      'ReminderResponse',
+    );
+    if (localTime != null && !_localTimePattern.hasMatch(localTime)) {
       throw const FormatException(
-        'ReminderResponse recurrence identity is invalid.',
+        'ReminderResponse.local_time must use HH:mm.',
       );
     }
+    final timezoneMode = ContractValue.optionalString(
+      json,
+      'timezone_mode',
+      'ReminderResponse',
+    );
+    if (timezoneMode != null && timezoneMode != 'follow_device') {
+      throw const FormatException('ReminderResponse.timezone_mode is invalid.');
+    }
+    final fulfillmentDeliveryId = ContractValue.optionalUuid(
+      json,
+      'fulfillment_delivery_id',
+      'ReminderResponse',
+    );
 
     final isEnabled = ContractValue.boolean(
       json,
@@ -165,10 +217,15 @@ class ReminderResponseDto {
       'expired_at',
       'ReminderResponse',
     );
+    final scheduledAt = ContractValue.optionalUtcDateTime(
+      json,
+      'scheduled_at',
+      'ReminderResponse',
+    );
     if (status == ReminderStatus.expired) {
       if (isEnabled ||
-          json['scheduled_at'] != null ||
-          expirationReason != ReminderExpirationReason.recoveryWindowElapsed ||
+          scheduledAt != null ||
+          expirationReason == null ||
           expiredAt == null) {
         throw const FormatException(
           'Expired ReminderResponse fields are inconsistent.',
@@ -180,26 +237,41 @@ class ReminderResponseDto {
       );
     }
 
+    _validateTargetShape(
+      targetType: targetType,
+      recurrenceRevision: recurrenceRevision,
+      occurrenceKey: occurrenceKey,
+      occurrenceStartAt: occurrenceStartAt,
+      templateKey: templateKey,
+      occurrenceDate: occurrenceDate,
+      advanceDays: advanceDays,
+      localTime: localTime,
+      timezoneMode: timezoneMode,
+      fulfillmentDeliveryId: fulfillmentDeliveryId,
+      advanceMinutes: advanceMinutes,
+      methods: methods,
+      status: status,
+      expirationReason: expirationReason,
+    );
+
     final rawCancellationReason = ContractValue.optionalString(
       json,
       'last_cancellation_reason',
       'ReminderResponse',
     );
     return ReminderResponseDto(
-      reminderId: ContractValue.nonEmptyString(
-        json,
-        'reminder_id',
-        'ReminderResponse',
-      ),
+      reminderId: ContractValue.uuid(json, 'reminder_id', 'ReminderResponse'),
       targetType: targetType,
-      targetId: ContractValue.nonEmptyString(
-        json,
-        'target_id',
-        'ReminderResponse',
-      ),
+      targetId: ContractValue.uuid(json, 'target_id', 'ReminderResponse'),
       recurrenceRevision: recurrenceRevision,
       occurrenceKey: occurrenceKey,
       occurrenceStartAt: occurrenceStartAt,
+      templateKey: templateKey,
+      occurrenceDate: occurrenceDate,
+      advanceDays: advanceDays,
+      localTime: localTime,
+      timezoneMode: timezoneMode,
+      fulfillmentDeliveryId: fulfillmentDeliveryId,
       remindAt: ContractValue.utcDateTime(
         json,
         'remind_at',
@@ -214,11 +286,7 @@ class ReminderResponseDto {
       ),
       isEnabled: isEnabled,
       status: status,
-      scheduledAt: ContractValue.optionalUtcDateTime(
-        json,
-        'scheduled_at',
-        'ReminderResponse',
-      ),
+      scheduledAt: scheduledAt,
       lastTriggeredAt: ContractValue.optionalUtcDateTime(
         json,
         'last_triggered_at',
@@ -266,5 +334,99 @@ class ReminderResponseDto {
         'ReminderResponse',
       ),
     );
+  }
+
+  static void _validateTargetShape({
+    required ReminderTargetType targetType,
+    required int? recurrenceRevision,
+    required String? occurrenceKey,
+    required DateTime? occurrenceStartAt,
+    required String? templateKey,
+    required String? occurrenceDate,
+    required int? advanceDays,
+    required String? localTime,
+    required String? timezoneMode,
+    required String? fulfillmentDeliveryId,
+    required int? advanceMinutes,
+    required List<ReminderMethod> methods,
+    required ReminderStatus status,
+    required ReminderExpirationReason? expirationReason,
+  }) {
+    final method = methods.single;
+    switch (targetType) {
+      case ReminderTargetType.event:
+        final recurringIdentity =
+            recurrenceRevision != null &&
+            occurrenceKey != null &&
+            occurrenceStartAt != null;
+        final ordinaryIdentity =
+            recurrenceRevision == null &&
+            occurrenceKey == null &&
+            occurrenceStartAt == null;
+        final hasTargetSpecificField =
+            templateKey != null ||
+            occurrenceDate != null ||
+            advanceDays != null ||
+            localTime != null ||
+            timezoneMode != null ||
+            fulfillmentDeliveryId != null;
+        if (!(recurringIdentity || ordinaryIdentity) ||
+            hasTargetSpecificField ||
+            (expirationReason != null &&
+                expirationReason !=
+                    ReminderExpirationReason.recoveryWindowElapsed) ||
+            (recurringIdentity &&
+                (advanceMinutes == null || method != ReminderMethod.popup))) {
+          throw const FormatException(
+            'ReminderResponse Event target fields are inconsistent.',
+          );
+        }
+        break;
+      case ReminderTargetType.anniversary:
+        final validShape =
+            recurrenceRevision == null &&
+            occurrenceKey != null &&
+            occurrenceStartAt == null &&
+            templateKey != null &&
+            occurrenceDate != null &&
+            advanceDays != null &&
+            localTime != null &&
+            timezoneMode == 'follow_device' &&
+            advanceMinutes == null &&
+            method == ReminderMethod.popup &&
+            (expirationReason == null ||
+                expirationReason ==
+                    ReminderExpirationReason.anniversaryOccurrenceElapsed) &&
+            ((status == ReminderStatus.sent) ==
+                (fulfillmentDeliveryId != null));
+        if (!validShape) {
+          throw const FormatException(
+            'ReminderResponse Anniversary target fields are inconsistent.',
+          );
+        }
+        break;
+      case ReminderTargetType.habit:
+        final validShape =
+            recurrenceRevision == null &&
+            occurrenceKey != null &&
+            occurrenceStartAt == null &&
+            templateKey != null &&
+            occurrenceDate != null &&
+            advanceDays == null &&
+            localTime != null &&
+            timezoneMode == 'follow_device' &&
+            fulfillmentDeliveryId == null &&
+            advanceMinutes == null &&
+            method == ReminderMethod.popup &&
+            (expirationReason == null ||
+                expirationReason ==
+                    ReminderExpirationReason.habitOccurrenceElapsed);
+        if (!validShape) {
+          throw const FormatException(
+            'ReminderResponse Habit target fields are inconsistent.',
+          );
+        }
+        break;
+    }
   }
 }

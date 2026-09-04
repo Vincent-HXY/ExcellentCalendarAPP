@@ -63,7 +63,18 @@ enum ReminderCancellationReason {
   seriesCompleted('series_completed'),
   seriesCancelled('series_cancelled'),
   seriesDeleted('series_deleted'),
-  seriesUpdated('series_updated');
+  seriesUpdated('series_updated'),
+  anniversaryPaused('anniversary_paused'),
+  anniversaryTemplateDisabled('anniversary_template_disabled'),
+  anniversaryUpdated('anniversary_updated'),
+  anniversaryTemplateReplaced('anniversary_template_replaced'),
+  anniversaryDeleted('anniversary_deleted'),
+  habitCompleted('habit_completed'),
+  habitSkipped('habit_skipped'),
+  habitEnded('habit_ended'),
+  habitDeleted('habit_deleted'),
+  habitTemplateDisabled('habit_template_disabled'),
+  habitTemplateReplaced('habit_template_replaced');
 
   const ReminderCancellationReason(this.wireValue);
   final String wireValue;
@@ -78,7 +89,9 @@ enum ReminderCancellationReason {
 }
 
 enum ReminderExpirationReason {
-  recoveryWindowElapsed('recovery_window_elapsed');
+  recoveryWindowElapsed('recovery_window_elapsed'),
+  anniversaryOccurrenceElapsed('anniversary_occurrence_elapsed'),
+  habitOccurrenceElapsed('habit_occurrence_elapsed');
 
   const ReminderExpirationReason(this.wireValue);
   final String wireValue;
