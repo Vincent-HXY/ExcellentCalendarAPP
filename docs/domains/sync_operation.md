@@ -2,7 +2,7 @@
 
 同步操作记录本地与云端之间的数据变更，用于冲突处理和增量同步。
 
-> 当前状态（2026-09-03）：产品决策已经冻结，并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；本模型与 `contracts/sync/`、`sync.apply` 仍是概念占位，尚无生产同步 Contract、本地 Outbox、服务端 change feed 或客户端同步引擎。下列字段必须由 Contract 分计划重新设计，不能直接作为生产语义。
+> 当前状态（2026-09-04）：已建立 active 云同步总计划，产品与架构方向仅作为待冻结目标；ADR、机器 Contract 和 fixtures 尚未冻结，整体状态为 `ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED`。本模型与 `contracts/sync/`、`sync.apply` 仍是概念占位，尚无生产同步 Contract、本地 Outbox、服务端 change feed 或客户端同步引擎。下列字段必须由 Contract 分计划重新设计，不能直接作为生产语义。
 
 进入实现前必须先确定游客数据归属、退出/换号后的本地隔离、同步实体闭包、提醒用户意图与每设备投递状态的边界、冲突 UX、删除 tombstone/恢复窗口、设备身份、增量游标、弱网后台策略和加密边界。Outbox 必须与本地业务写处于同一 SQLite 事务，不能在 Flutter、Kotlin 或 Backend 事后拼接操作日志。
 

@@ -1,6 +1,6 @@
 ## UserSyncState：用户同步状态
 
-> 当前状态（2026-09-03）：产品决策已经冻结，并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；仍无生产 Schema、Repository、SQLite Store、设备注册、服务端游标或客户端同步引擎。字段必须由同步 Contract 分计划重新审查，不能直接据此实现。
+> 当前状态（2026-09-04）：已建立 active 云同步总计划，产品与架构方向仅作为待冻结目标；ADR、机器 Contract 和 fixtures 尚未冻结，整体状态为 `ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED`。仍无生产 Schema、Repository、SQLite Store、设备注册、服务端游标或客户端同步引擎。字段必须由同步 Contract 分计划重新审查，不能直接据此实现。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |

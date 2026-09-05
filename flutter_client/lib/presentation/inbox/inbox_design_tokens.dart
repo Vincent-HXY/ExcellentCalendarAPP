@@ -9,7 +9,7 @@ class InboxColors {
 
   // 数据块作用：Inbox 页面使用的固定颜色集合，避免颜色散落在各组件中。
   // 关键视觉：页面背景和主强调色决定当前首页的整体品牌观感。
-  static const pageBackground = Color(0xFFE6F8FA);
+  static const pageBackground = AppColors.lightPageBackground;
   static const surface = Colors.white;
   static const title = Color(0xFF111518);
   static const titleSoft = Color(0xFF111827);

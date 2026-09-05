@@ -53,8 +53,8 @@
 
 ### R2-C｜Local-first 云同步
 
-- **当前状态**：2026-09-03 已完成产品决策并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，当前为 `ACTIVE PLAN / CONTRACT PENDING`；尚无生产同步 Contract 或实现代码，不得把 `sync.apply`、`SyncOperation`、`SyncResult` 和 Backend 空包视为已开始开发；
-- **产品基线**：游客/账号 workspace 分离、退出后账号缓存加密隐藏 30 天、字段级自动合并与“我的→冲突管理”、180 天 tombstone、本机提醒执行、无 FCM 机会同步、个人数据闭包和小规模内测边界已经冻结；
+- **当前状态**：2026-09-03 已形成产品/架构基线并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，当前为 `ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED`；ADR与机器Contract尚未冻结，尚无生产同步实现，不得把 `sync.apply`、`SyncOperation`、`SyncResult` 和 Backend 空包视为已开始开发；
+- **产品基线**：游客/账号 workspace 分离、退出缓存目标窗口、字段级自动合并与“我的→冲突管理”、180 天 tombstone、本机提醒执行、无 FCM 机会同步、个人数据闭包和小规模内测边界已记录为计划目标；它们须经对应ADR、领域文档、机器Contract与fixture关闭门禁后才可称为冻结；
 - **Contract/数据门禁**：解决 Backend/Auth Contract `planned` 状态，定义与本地写同事务的 Outbox、变更序列、幂等键、设备身份、增量游标、实体版本、删除 tombstone、服务端日历数据模型与正式迁移；
 - **实施顺序**：Contract/数据 → C++/SQLite → Backend API/存储 → Kotlin/Android 调度与设备能力 → Flutter 同步状态/冲突 UX → 真实多设备、弱网、恢复和备份验收；
 - Appearance 当前仍为 Kotlin 本机配置；计划要求通过显式 Contract revision 将账号 workspace 的可移植白名单设置纳入同步，游客和设备能力继续本机所有；

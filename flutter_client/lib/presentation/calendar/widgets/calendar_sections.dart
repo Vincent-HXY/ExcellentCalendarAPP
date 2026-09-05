@@ -4,9 +4,10 @@ import '../../../application/calendar/calendar_date_math.dart';
 import '../../../application/calendar/calendar_models.dart';
 import '../../../native_contract/calendar/calendar_contract_enums.dart';
 import '../../../native_contract/calendar/calendar_response_dtos.dart';
+import '../../app_design_tokens.dart';
 import '../calendar_design_tokens.dart';
 
-class CalendarSections extends StatelessWidget {
+class CalendarSections extends StatefulWidget {
   const CalendarSections({
     required this.state,
     required this.onOpenEvent,
@@ -14,7 +15,6 @@ class CalendarSections extends StatelessWidget {
     required this.onOpenAnniversary,
     required this.onLoadMore,
     required this.onRetryFull,
-    required this.onCreate,
     super.key,
   });
 
@@ -24,15 +24,25 @@ class CalendarSections extends StatelessWidget {
   final ValueChanged<CalendarAnniversaryItemDto> onOpenAnniversary;
   final ValueChanged<CalendarSection> onLoadMore;
   final VoidCallback onRetryFull;
-  final VoidCallback onCreate;
+
+  @override
+  State<CalendarSections> createState() => _CalendarSectionsState();
+}
+
+class _CalendarSectionsState extends State<CalendarSections> {
+  bool _completedExpanded = false;
+  bool _eventExpanded = true;
+  bool _habitExpanded = true;
+  bool _anniversaryExpanded = true;
 
   @override
   Widget build(BuildContext context) {
+    final state = widget.state;
     if (state.rangePhase == CalendarRangePhase.error &&
         state.rangeDays.isEmpty) {
       return _FullError(
         message: state.errorMessage ?? '日历加载失败，请稍后重试',
-        onRetry: onRetryFull,
+        onRetry: widget.onRetryFull,
       );
     }
     final sections = [
@@ -57,10 +67,108 @@ class CalendarSections extends StatelessWidget {
     final anniversaryItems = state.anniversarySection.items
         .whereType<CalendarAnniversaryItemDto>()
         .toList(growable: false);
+    final completedItems = <CalendarDayItemDto>[
+      ...eventItems.where(
+        (item) => item.status == CalendarEventItemStatus.completed,
+      ),
+      ...habitItems.where(
+        (item) => item.status == CalendarHabitItemStatus.done,
+      ),
+    ];
+    final openEventItems = eventItems
+        .where((item) => item.status != CalendarEventItemStatus.completed)
+        .toList(growable: false);
+    final openHabitItems = habitItems
+        .where((item) => item.status != CalendarHabitItemStatus.done)
+        .toList(growable: false);
+    final groupCards = <Widget>[
+      if (completedItems.isNotEmpty)
+        _SectionGroup<CalendarDayItemDto>(
+          key: const ValueKey('calendar-section-card-completed'),
+          groupId: 'completed',
+          title: '已完成',
+          items: completedItems,
+          isExpanded: _completedExpanded,
+          emptyMessage: '今天还没有已完成事项',
+          onToggle: () =>
+              setState(() => _completedExpanded = !_completedExpanded),
+          itemBuilder: (item, showDivider) => switch (item) {
+            CalendarEventItemDto event => _EventCard(
+              item: event,
+              showDivider: showDivider,
+              onTap: () => widget.onOpenEvent(event),
+            ),
+            CalendarHabitItemDto habit => _HabitCard(
+              item: habit,
+              showDivider: showDivider,
+              onTap: () => widget.onOpenHabit(habit),
+            ),
+            _ => const SizedBox.shrink(),
+          },
+        ),
+      if (_shouldShowSection(state.eventSection, openEventItems))
+        _SectionGroup<CalendarEventItemDto>(
+          key: const ValueKey('calendar-section-card-event'),
+          groupId: CalendarSection.event.wireValue,
+          section: CalendarSection.event,
+          title: '日程',
+          items: openEventItems,
+          state: state.eventSection,
+          isExpanded: _eventExpanded,
+          emptyMessage: '今天暂无日程',
+          onToggle: () => setState(() => _eventExpanded = !_eventExpanded),
+          itemBuilder: (item, showDivider) => _EventCard(
+            item: item,
+            showDivider: showDivider,
+            onTap: () => widget.onOpenEvent(item),
+          ),
+          onLoadMore: () => widget.onLoadMore(CalendarSection.event),
+        ),
+      if (_shouldShowSection(state.habitSection, openHabitItems))
+        _SectionGroup<CalendarHabitItemDto>(
+          key: const ValueKey('calendar-section-card-habit'),
+          groupId: CalendarSection.habit.wireValue,
+          section: CalendarSection.habit,
+          title: '习惯',
+          items: openHabitItems,
+          state: state.habitSection,
+          isExpanded: _habitExpanded,
+          emptyMessage: '今天暂无习惯',
+          onToggle: () => setState(() => _habitExpanded = !_habitExpanded),
+          itemBuilder: (item, showDivider) => _HabitCard(
+            item: item,
+            showDivider: showDivider,
+            onTap: () => widget.onOpenHabit(item),
+          ),
+          onLoadMore: () => widget.onLoadMore(CalendarSection.habit),
+        ),
+      if (_shouldShowSection(state.anniversarySection, anniversaryItems))
+        _SectionGroup<CalendarAnniversaryItemDto>(
+          key: const ValueKey('calendar-section-card-anniversary'),
+          groupId: CalendarSection.anniversary.wireValue,
+          section: CalendarSection.anniversary,
+          title: '纪念日',
+          items: anniversaryItems,
+          state: state.anniversarySection,
+          isExpanded: _anniversaryExpanded,
+          emptyMessage: '今天暂无纪念日',
+          onToggle: () =>
+              setState(() => _anniversaryExpanded = !_anniversaryExpanded),
+          itemBuilder: (item, showDivider) => _AnniversaryCard(
+            item: item,
+            showDivider: showDivider,
+            onTap: () => widget.onOpenAnniversary(item),
+          ),
+          onLoadMore: () => widget.onLoadMore(CalendarSection.anniversary),
+        ),
+    ];
     final animationKey = ValueKey(
-      '${CalendarDateMath.formatDate(state.selectedDate)}:'
-      '${state.snapshotToken ?? 'stale'}:'
-      '${eventItems.length}:${habitItems.length}:${anniversaryItems.length}',
+      <String>[
+        CalendarDateMath.formatDate(state.selectedDate),
+        for (final item in eventItems) item.identityKey,
+        for (final item in habitItems) item.identityKey,
+        for (final item in anniversaryItems) item.identityKey,
+      ].join(':'),
     );
     return AnimatedSwitcher(
       duration: CalendarMotion.effective(context, CalendarMotion.section),
@@ -83,59 +191,28 @@ class CalendarSections extends StatelessWidget {
           if (state.rangePhase == CalendarRangePhase.error)
             _InlineError(
               message: state.errorMessage ?? '刷新失败，当前仍显示上次内容',
-              onRetry: onRetryFull,
+              onRetry: widget.onRetryFull,
             ),
-          if (eventItems.isNotEmpty) ...[
-            _SectionGroup<CalendarEventItemDto>(
-              section: CalendarSection.event,
-              title: '日程',
-              icon: Icons.schedule_rounded,
-              color: CalendarPalette.of(context).event,
-              items: eventItems,
-              state: state.eventSection,
-              itemBuilder: (item) =>
-                  _EventCard(item: item, onTap: () => onOpenEvent(item)),
-              onLoadMore: () => onLoadMore(CalendarSection.event),
-            ),
-            const SizedBox(height: CalendarSpacing.sectionGap),
-          ],
-          if (habitItems.isNotEmpty) ...[
-            _SectionGroup<CalendarHabitItemDto>(
-              section: CalendarSection.habit,
-              title: '习惯',
-              icon: Icons.track_changes_rounded,
-              color: CalendarPalette.of(context).habit,
-              items: habitItems,
-              state: state.habitSection,
-              itemBuilder: (item) =>
-                  _HabitCard(item: item, onTap: () => onOpenHabit(item)),
-              onLoadMore: () => onLoadMore(CalendarSection.habit),
-            ),
-            const SizedBox(height: CalendarSpacing.sectionGap),
-          ],
-          if (anniversaryItems.isNotEmpty) ...[
-            _SectionGroup<CalendarAnniversaryItemDto>(
-              section: CalendarSection.anniversary,
-              title: '纪念日',
-              icon: Icons.celebration_rounded,
-              color: CalendarPalette.of(context).anniversary,
-              items: anniversaryItems,
-              state: state.anniversarySection,
-              itemBuilder: (item) => _AnniversaryCard(
-                item: item,
-                onTap: () => onOpenAnniversary(item),
-              ),
-              onLoadMore: () => onLoadMore(CalendarSection.anniversary),
-            ),
-          ],
-          if (eventItems.isEmpty &&
-              habitItems.isEmpty &&
-              anniversaryItems.isEmpty)
-            _EmptyState(onCreate: onCreate),
+          if (groupCards.isEmpty)
+            const _CalendarEmptyState()
+          else
+            for (var index = 0; index < groupCards.length; index++) ...[
+              if (index > 0) const SizedBox(height: CalendarSpacing.sectionGap),
+              groupCards[index],
+            ],
         ],
       ),
     );
   }
+
+  bool _shouldShowSection<T extends CalendarDayItemDto>(
+    CalendarSectionState state,
+    List<T> items,
+  ) =>
+      items.isNotEmpty ||
+      state.hasMore ||
+      state.phase == CalendarSectionPhase.loadingMore ||
+      state.phase == CalendarSectionPhase.error;
 }
 
 class _SelectedDateHeading extends StatelessWidget {
@@ -172,71 +249,157 @@ class _SelectedDateHeading extends StatelessWidget {
 
 class _SectionGroup<T extends CalendarDayItemDto> extends StatelessWidget {
   const _SectionGroup({
-    required this.section,
+    required this.groupId,
     required this.title,
-    required this.icon,
-    required this.color,
     required this.items,
-    required this.state,
+    required this.isExpanded,
+    required this.emptyMessage,
+    required this.onToggle,
     required this.itemBuilder,
-    required this.onLoadMore,
+    this.section,
+    this.state,
+    this.onLoadMore,
+    super.key,
   });
 
-  final CalendarSection section;
+  final String groupId;
+  final CalendarSection? section;
   final String title;
-  final IconData icon;
-  final Color color;
   final List<T> items;
-  final CalendarSectionState state;
-  final Widget Function(T item) itemBuilder;
-  final VoidCallback onLoadMore;
+  final CalendarSectionState? state;
+  final bool isExpanded;
+  final String emptyMessage;
+  final VoidCallback onToggle;
+  final Widget Function(T item, bool showDivider) itemBuilder;
+  final VoidCallback? onLoadMore;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    container: true,
-    label: '$title分组，共${items.length}项',
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
+  Widget build(BuildContext context) {
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final expandDuration = disableAnimations
+        ? Duration.zero
+        : AppMotion.sectionExpand;
+    final collapseDuration = disableAnimations
+        ? Duration.zero
+        : AppMotion.sectionCollapse;
+    final arrowDuration = disableAnimations
+        ? Duration.zero
+        : AppMotion.arrowRotation;
+    final palette = CalendarPalette.of(context);
+    return Semantics(
+      container: true,
+      label: '$title分组，共${items.length}项，${isExpanded ? '已展开' : '已折叠'}',
+      child: Container(
+        decoration: BoxDecoration(
+          color: palette.card,
+          borderRadius: BorderRadius.circular(AppRadius.sectionCard),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+            Semantics(
+              button: true,
+              label: '${isExpanded ? '折叠' : '展开'}$title',
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: ValueKey('calendar-section-toggle-$groupId'),
+                  onTap: onToggle,
+                  child: SizedBox(
+                    height: 48,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Text(
+                            '${items.length}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: palette.mutedText),
+                          ),
+                          const SizedBox(width: 10),
+                          AnimatedRotation(
+                            turns: isExpanded ? 0.25 : 0,
+                            duration: arrowDuration,
+                            curve: AppMotion.standard,
+                            child: Icon(
+                              Icons.chevron_right_rounded,
+                              color: palette.mutedText,
+                              size: 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              child: Icon(icon, color: color, size: 19),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            Text(
-              '${items.length}',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            AnimatedSize(
+              duration: expandDuration,
+              reverseDuration: collapseDuration,
+              curve: AppMotion.standard,
+              alignment: Alignment.topCenter,
+              child: ClipRect(
+                child: isExpanded
+                    ? Padding(
+                        key: ValueKey('calendar-section-body-$groupId'),
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _buildBody(context),
+                      )
+                    : const SizedBox.shrink(),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    final currentState = state;
+    if (items.isEmpty &&
+        currentState != null &&
+        (currentState.phase == CalendarSectionPhase.initial ||
+            currentState.phase == CalendarSectionPhase.loading)) {
+      return const SizedBox(
+        height: 44,
+        child: Center(
+          child: SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    if (items.isEmpty &&
+        currentState?.phase == CalendarSectionPhase.error &&
+        currentState?.errorMessage != null) {
+      return _SectionMessage(message: currentState!.errorMessage!);
+    }
+    final hasMore = currentState?.hasMore == true;
+    final loadingMore = currentState?.phase == CalendarSectionPhase.loadingMore;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (items.isEmpty) _SectionMessage(message: emptyMessage),
         for (var index = 0; index < items.length; index++) ...[
-          itemBuilder(items[index]),
-          if (index != items.length - 1)
-            const SizedBox(height: CalendarSpacing.cardGap),
+          itemBuilder(items[index], index != items.length - 1),
         ],
-        if (state.hasMore || state.phase == CalendarSectionPhase.loadingMore)
+        if (hasMore || loadingMore)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: 4),
             child: Center(
-              child: state.phase == CalendarSectionPhase.loadingMore
+              child: loadingMore
                   ? const Padding(
                       padding: EdgeInsets.all(12),
                       child: SizedBox.square(
@@ -245,23 +408,23 @@ class _SectionGroup<T extends CalendarDayItemDto> extends StatelessWidget {
                       ),
                     )
                   : TextButton.icon(
-                      key: ValueKey('calendar-load-more-${section.wireValue}'),
+                      key: ValueKey('calendar-load-more-${section!.wireValue}'),
                       onPressed: onLoadMore,
                       icon: const Icon(Icons.expand_more_rounded),
                       label: const Text('加载更多'),
                     ),
             ),
           ),
-        if (state.phase == CalendarSectionPhase.error &&
-            state.errorMessage != null &&
-            state.hasMore)
+        if (currentState?.phase == CalendarSectionPhase.error &&
+            currentState?.errorMessage != null &&
+            hasMore)
           Padding(
-            padding: const EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.fromLTRB(22, 6, 10, 0),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    state.errorMessage!,
+                    currentState!.errorMessage!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -272,14 +435,40 @@ class _SectionGroup<T extends CalendarDayItemDto> extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _SectionMessage extends StatelessWidget {
+  const _SectionMessage({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 44,
+    child: Center(
+      child: Text(
+        message,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: CalendarPalette.of(context).mutedText,
+        ),
+      ),
     ),
   );
 }
 
 class _EventCard extends StatelessWidget {
-  const _EventCard({required this.item, required this.onTap});
+  const _EventCard({
+    required this.item,
+    required this.showDivider,
+    required this.onTap,
+  });
 
   final CalendarEventItemDto item;
+  final bool showDivider;
   final VoidCallback onTap;
 
   @override
@@ -296,8 +485,7 @@ class _EventCard extends StatelessWidget {
     };
     return _CalendarItemShell(
       key: ValueKey(item.identityKey),
-      color: palette.event,
-      background: palette.eventContainer,
+      showDivider: showDivider,
       semanticsLabel:
           '日程，${item.title}，$time，$status'
           '${item.hasActiveReminder ? '，有提醒' : ''}',
@@ -306,6 +494,7 @@ class _EventCard extends StatelessWidget {
         opacity: skipped ? 0.70 : 1,
         child: _ItemContent(
           icon: Icons.schedule_rounded,
+          iconColor: palette.event,
           title: item.title,
           titleDecoration: completed ? TextDecoration.lineThrough : null,
           subtitle: '$time · $status',
@@ -318,9 +507,14 @@ class _EventCard extends StatelessWidget {
 }
 
 class _HabitCard extends StatelessWidget {
-  const _HabitCard({required this.item, required this.onTap});
+  const _HabitCard({
+    required this.item,
+    required this.showDivider,
+    required this.onTap,
+  });
 
   final CalendarHabitItemDto item;
+  final bool showDivider;
   final VoidCallback onTap;
 
   @override
@@ -330,8 +524,7 @@ class _HabitCard extends StatelessWidget {
     final progress = _habitProgress(item);
     return _CalendarItemShell(
       key: ValueKey(item.identityKey),
-      color: palette.habit,
-      background: palette.habitContainer,
+      showDivider: showDivider,
       semanticsLabel:
           '习惯，${item.title}，$status'
           '${progress == null ? '' : '，$progress'}'
@@ -341,6 +534,7 @@ class _HabitCard extends StatelessWidget {
         icon: item.status == CalendarHabitItemStatus.done
             ? Icons.check_circle_rounded
             : Icons.track_changes_rounded,
+        iconColor: palette.habit,
         title: item.title,
         subtitle: progress == null ? status : '$status · $progress',
         badge: status,
@@ -351,9 +545,14 @@ class _HabitCard extends StatelessWidget {
 }
 
 class _AnniversaryCard extends StatelessWidget {
-  const _AnniversaryCard({required this.item, required this.onTap});
+  const _AnniversaryCard({
+    required this.item,
+    required this.showDivider,
+    required this.onTap,
+  });
 
   final CalendarAnniversaryItemDto item;
+  final bool showDivider;
   final VoidCallback onTap;
 
   @override
@@ -366,14 +565,14 @@ class _AnniversaryCard extends StatelessWidget {
         : '一次性纪念日';
     return _CalendarItemShell(
       key: ValueKey(item.identityKey),
-      color: palette.anniversary,
-      background: palette.anniversaryContainer,
+      showDivider: showDivider,
       semanticsLabel:
           '纪念日，${item.title}，$relation'
           '${item.hasActiveReminder ? '，有提醒' : ''}',
       onTap: onTap,
       child: _ItemContent(
         icon: Icons.celebration_rounded,
+        iconColor: palette.anniversary,
         title: item.title,
         subtitle: relation,
         badge: item.importance == CalendarAnniversaryImportance.importantUrgent
@@ -387,16 +586,14 @@ class _AnniversaryCard extends StatelessWidget {
 
 class _CalendarItemShell extends StatelessWidget {
   const _CalendarItemShell({
-    required this.color,
-    required this.background,
+    required this.showDivider,
     required this.semanticsLabel,
     required this.onTap,
     required this.child,
     super.key,
   });
 
-  final Color color;
-  final Color background;
+  final bool showDivider;
   final String semanticsLabel;
   final VoidCallback onTap;
   final Widget child;
@@ -407,26 +604,24 @@ class _CalendarItemShell extends StatelessWidget {
     label: semanticsLabel,
     excludeSemantics: true,
     child: Material(
-      color: background,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(CalendarRadius.card),
-        side: BorderSide(color: color.withValues(alpha: 0.24)),
-      ),
-      clipBehavior: Clip.antiAlias,
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              left: 0,
-              right: null,
-              child: ColoredBox(color: color, child: const SizedBox(width: 4)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(15, 13, 14, 13),
-              child: child,
-            ),
-          ],
+        child: Container(
+          decoration: BoxDecoration(
+            border: showDivider
+                ? Border(
+                    bottom: BorderSide(
+                      color: CalendarPalette.of(
+                        context,
+                      ).outline.withValues(alpha: 0.55),
+                      width: 0.75,
+                    ),
+                  )
+                : null,
+          ),
+          padding: const EdgeInsets.fromLTRB(22, 12, 18, 12),
+          child: child,
         ),
       ),
     ),
@@ -436,6 +631,7 @@ class _CalendarItemShell extends StatelessWidget {
 class _ItemContent extends StatelessWidget {
   const _ItemContent({
     required this.icon,
+    required this.iconColor,
     required this.title,
     required this.subtitle,
     required this.hasReminder,
@@ -444,6 +640,7 @@ class _ItemContent extends StatelessWidget {
   });
 
   final IconData icon;
+  final Color iconColor;
   final String title;
   final String subtitle;
   final String? badge;
@@ -456,11 +653,7 @@ class _ItemContent extends StatelessWidget {
     children: [
       Padding(
         padding: const EdgeInsets.only(top: 2),
-        child: Icon(
-          icon,
-          size: 21,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        child: Icon(icon, size: 21, color: iconColor),
       ),
       const SizedBox(width: 11),
       Expanded(
@@ -594,59 +787,138 @@ class _FullError extends StatelessWidget {
   );
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onCreate});
-
-  final VoidCallback onCreate;
+class _CalendarEmptyState extends StatelessWidget {
+  const _CalendarEmptyState();
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 18),
-    child: Column(
-      children: [
-        SizedBox(
-          width: 76,
-          height: 64,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 50,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              Positioned(
-                right: 2,
-                bottom: 1,
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 22,
-                  color: Theme.of(context).colorScheme.tertiary,
+  Widget build(BuildContext context) {
+    final palette = CalendarPalette.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      key: const ValueKey('calendar-empty-state'),
+      padding: const EdgeInsets.fromLTRB(12, 30, 12, 52),
+      child: Column(
+        children: [
+          Semantics(
+            image: true,
+            label: '没有待办任务的日历插画',
+            child: ExcludeSemantics(
+              child: SizedBox(
+                width: 168,
+                height: 118,
+                child: CustomPaint(
+                  painter: _EmptyTaskPainter(
+                    accent: scheme.primary,
+                    secondary: palette.habit,
+                    paper: palette.card,
+                    outline: palette.mutedText,
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-        const SizedBox(height: 15),
-        Text('这一天还没有安排', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 7),
-        Text(
-          '添加一项日程、习惯或纪念日，让计划从这里开始。',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          const SizedBox(height: 16),
+          Text(
+            '空空如也的任务',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          key: const ValueKey('calendar-empty-create'),
-          onPressed: onCreate,
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('新建安排'),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyTaskPainter extends CustomPainter {
+  const _EmptyTaskPainter({
+    required this.accent,
+    required this.secondary,
+    required this.paper,
+    required this.outline,
+  });
+
+  final Color accent;
+  final Color secondary;
+  final Color paper;
+  final Color outline;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    canvas.drawOval(
+      Rect.fromCenter(center: center, width: 150, height: 94),
+      Paint()..color = accent.withValues(alpha: 0.08),
+    );
+
+    final sheet = RRect.fromRectAndRadius(
+      Rect.fromLTWH(38, 15, 92, 88),
+      const Radius.circular(14),
+    );
+    canvas.drawRRect(
+      sheet.shift(const Offset(0, 5)),
+      Paint()..color = outline.withValues(alpha: 0.10),
+    );
+    canvas.drawRRect(sheet, Paint()..color = paper);
+    canvas.drawRRect(
+      sheet,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = outline.withValues(alpha: 0.22),
+    );
+
+    final linePaint = Paint()
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..color = outline.withValues(alpha: 0.30);
+    final checkPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = secondary;
+    for (var index = 0; index < 3; index++) {
+      final y = 40.0 + index * 20;
+      canvas.drawCircle(
+        Offset(57, y),
+        6,
+        Paint()..color = secondary.withValues(alpha: 0.13),
+      );
+      final check = Path()
+        ..moveTo(53.5, y)
+        ..lineTo(56.5, y + 3)
+        ..lineTo(61.5, y - 3);
+      canvas.drawPath(check, checkPaint);
+      canvas.drawLine(Offset(72, y), Offset(111, y), linePaint);
+    }
+
+    canvas.drawCircle(
+      const Offset(128, 24),
+      11,
+      Paint()..color = accent.withValues(alpha: 0.16),
+    );
+    final sparkle = Path()
+      ..moveTo(128, 16)
+      ..lineTo(130.5, 21.5)
+      ..lineTo(136, 24)
+      ..lineTo(130.5, 26.5)
+      ..lineTo(128, 32)
+      ..lineTo(125.5, 26.5)
+      ..lineTo(120, 24)
+      ..lineTo(125.5, 21.5)
+      ..close();
+    canvas.drawPath(sparkle, Paint()..color = accent);
+  }
+
+  @override
+  bool shouldRepaint(covariant _EmptyTaskPainter oldDelegate) =>
+      oldDelegate.accent != accent ||
+      oldDelegate.secondary != secondary ||
+      oldDelegate.paper != paper ||
+      oldDelegate.outline != outline;
 }
 
 class _SectionSkeleton extends StatelessWidget {

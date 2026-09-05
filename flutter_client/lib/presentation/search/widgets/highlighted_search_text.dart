@@ -7,6 +7,7 @@ class HighlightedSearchText extends StatelessWidget {
   const HighlightedSearchText({
     required this.text,
     required this.normalizedKeyword,
+    required this.highlightColor,
     this.style,
     this.maxLines,
     this.overflow = TextOverflow.ellipsis,
@@ -17,6 +18,7 @@ class HighlightedSearchText extends StatelessWidget {
 
   final String text;
   final String normalizedKeyword;
+  final Color highlightColor;
   final TextStyle? style;
   final int? maxLines;
   final TextOverflow overflow;
@@ -30,6 +32,7 @@ class HighlightedSearchText extends StatelessWidget {
     final ranges = visibleSearchMatchRanges(visible, normalizedKeyword);
     final colors = SearchDesignTokens.highlightColors(
       Theme.of(context).colorScheme,
+      highlightColor,
     );
     final spans = <InlineSpan>[];
     var offset = 0;

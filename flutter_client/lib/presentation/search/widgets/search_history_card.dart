@@ -65,7 +65,9 @@ class SearchHistoryCard extends StatelessWidget {
     }
     final managing = state.mode == SearchHistoryMode.managing;
     final theme = Theme.of(context);
+    final palette = SearchPalette.of(context);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
@@ -78,40 +80,31 @@ class SearchHistoryCard extends StatelessWidget {
             const Spacer(),
             TextButton(
               onPressed: managing ? onExitManaging : onClear,
+              style: TextButton.styleFrom(
+                textStyle: theme.textTheme.labelMedium,
+                visualDensity: VisualDensity.compact,
+              ),
               child: Text(managing ? '完成' : '清空'),
             ),
           ],
         ),
-        Card(
-          elevation: 0,
-          color: theme.colorScheme.surfaceContainerLow,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SearchDesignTokens.cardRadius),
-            side: BorderSide(color: theme.colorScheme.outlineVariant),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              for (var index = 0; index < state.items.length; index++) ...[
-                _HistoryRow(
-                  keyword: state.items[index],
-                  managing: managing,
-                  onTap: () => onSelected(state.items[index]),
-                  onLongPress: () {
-                    HapticFeedback.selectionClick();
-                    onEnterManaging();
-                  },
-                  onRemove: () => onRemove(state.items[index]),
-                ),
-                if (index != state.items.length - 1)
-                  Divider(
-                    height: 1,
-                    indent: 56,
-                    color: theme.colorScheme.outlineVariant,
-                  ),
-              ],
-            ],
-          ),
+        Wrap(
+          spacing: 6,
+          runSpacing: 0,
+          children: [
+            for (final keyword in state.items)
+              _HistoryChip(
+                keyword: keyword,
+                managing: managing,
+                palette: palette,
+                onTap: () => onSelected(keyword),
+                onLongPress: () {
+                  HapticFeedback.selectionClick();
+                  onEnterManaging();
+                },
+                onRemove: () => onRemove(keyword),
+              ),
+          ],
         ),
         if (state.writePhase == SearchHistoryWritePhase.writing)
           const Padding(
@@ -147,16 +140,18 @@ class SearchHistoryCard extends StatelessWidget {
   }
 }
 
-class _HistoryRow extends StatelessWidget {
-  const _HistoryRow({
+class _HistoryChip extends StatelessWidget {
+  const _HistoryChip({
     required this.keyword,
     required this.managing,
+    required this.palette,
     required this.onTap,
     required this.onLongPress,
     required this.onRemove,
   });
   final String keyword;
   final bool managing;
+  final SearchPalette palette;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final VoidCallback onRemove;
@@ -165,36 +160,53 @@ class _HistoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final longClick = CustomSemanticsAction(label: '管理搜索历史');
     return Semantics(
-      customSemanticsActions: {longClick: onLongPress},
-      child: InkWell(
-        onTap: managing ? null : onTap,
-        onLongPress: onLongPress,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 56),
-          child: Row(
-            children: [
-              const SizedBox(width: 18),
-              const Icon(Icons.history_rounded, size: 20),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  keyword,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+      button: true,
+      label: managing ? '$keyword，点按删除' : keyword,
+      customSemanticsActions: managing ? null : {longClick: onLongPress},
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: managing ? onRemove : onTap,
+        onLongPress: managing ? null : onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Container(
+            key: ValueKey('search-history-chip-$keyword'),
+            height: SearchDesignTokens.historyChipHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 11),
+            decoration: BoxDecoration(
+              color: palette.historyChip,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: palette.historyChipOutline),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 152),
+                  child: Text(
+                    keyword,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontSize: SearchDesignTokens.historyChipFontSize,
+                      color: palette.historyChipForeground,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ),
-              AnimatedSwitcher(
-                duration: SearchDesignTokens.motion(context, 160),
-                child: managing
-                    ? IconButton(
-                        key: const ValueKey('delete'),
-                        tooltip: '删除 $keyword',
-                        onPressed: onRemove,
-                        icon: const Icon(Icons.remove_circle_outline_rounded),
-                      )
-                    : const SizedBox(key: ValueKey('none'), width: 48),
-              ),
-            ],
+                if (managing) ...[
+                  const SizedBox(width: 5),
+                  Tooltip(
+                    message: '删除 $keyword',
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 14,
+                      color: palette.historyChipForeground,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),

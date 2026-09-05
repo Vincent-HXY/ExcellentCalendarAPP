@@ -4,9 +4,14 @@ import '../../app_design_tokens.dart';
 import '../inbox_design_tokens.dart';
 
 class AddTaskButton extends StatefulWidget {
-  const AddTaskButton({required this.onPressed, super.key});
+  const AddTaskButton({
+    required this.onPressed,
+    this.semanticLabel = '新建日程',
+    super.key,
+  });
 
   final Future<void> Function() onPressed;
+  final String semanticLabel;
 
   @override
   State<AddTaskButton> createState() => _AddTaskButtonState();
@@ -88,7 +93,7 @@ class _AddTaskButtonState extends State<AddTaskButton>
 
     return Semantics(
       button: true,
-      label: '新建日程',
+      label: widget.semanticLabel,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: disableAnimations ? null : (_) => _shrink(),

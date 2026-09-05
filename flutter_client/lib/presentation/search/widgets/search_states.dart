@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../search_design_tokens.dart';
+
 class SearchLoadingSkeleton extends StatelessWidget {
   const SearchLoadingSkeleton({super.key});
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.surfaceContainerHigh;
+    final palette = SearchPalette.of(context);
     return Semantics(
       label: '正在搜索',
       liveRegion: true,
@@ -15,8 +17,17 @@ class SearchLoadingSkeleton extends StatelessWidget {
             height: 132,
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(22),
+              color: palette.card,
+              borderRadius: BorderRadius.circular(
+                SearchDesignTokens.cardRadius,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: palette.shadow,
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
           ),
         ),

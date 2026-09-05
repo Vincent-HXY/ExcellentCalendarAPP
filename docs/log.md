@@ -1552,3 +1552,158 @@
 - 任务目标：修复创建含提醒日程后，合法 Native v2 ReminderResponse 因 `advance_days` 被 Dart 误判为未知字段的问题，并检查同一共享响应中的相邻字段与枚举漂移。
 - 任务结果：确认 2026-08-23 起 Anniversary/Habit 扩展已同步到 JSON Schema、C++ 与 Kotlin，但 Dart `ReminderResponseDto` 和测试 fixture 仍停留在旧字段集。现已补齐 6 个 target-specific 字段、Anniversary/Habit 取消与过期枚举、UUID/单方法/目标互斥分支校验；Event 分支继续要求这些字段存在且为 `null`。Contract、C++、Kotlin、Storage 与版本号均未变更，无数据迁移。
 - 验证状态：修复前聚焦测试稳定复现 `ReminderResponse contains unknown field: advance_days`；修复后 Reminder DTO 9/9、相关 Event/Reminder 测试、Flutter 全量 593/593、`flutter analyze`、定向格式检查、Calendar/Anniversary/Habit 机器 Contract 校验、Android Debug APK 构建和 C++ build-after-test 13/13 全部通过。RMX5100 Android 16 真机端到端用例已通过真实 Flutter → Kotlin → JNI → C++ → SQLite 创建带 popup Reminder 的日程、读取并解析 Event Detail/ReminderResponse，并在 `finally` 中成功软删除测试日程。
+
+## 2026-09-04 01:xx +08:00 Tool calling 工程学习说明
+
+- 使用 Skill：`self-learning`、`openai-docs`。
+- 负责模块：AI Pipeline / AI Extraction 架构理解。
+- 任务目标：说明应用接入自定义 AI tool calling 的实现步骤、生产环境风险与需掌握的底层原理。
+- 任务结果：核对当前 AI 提取 Contract、候选结果边界与官方 Function Calling 文档；未修改任何运行时代码或协议。
+- 验证状态：完成文档与只读代码/Contract 核对；无构建或测试需要执行。
+
+## 2026-09-04 15:26 +08:00 日历页 Presentation 视觉统一
+
+- 使用 Skill：`frontend-flutter-feature`。按参考图收敛日历页背景与顶部栏，仅修改 Flutter Presentation、视觉 token 和 Widget 测试；未新增依赖，未修改 Application、Gateway、Contract、Native 或领域逻辑。
+- 负责模块：共享页面背景 token、Inbox 日程页背景引用、Calendar 页面背景、CalendarHeader 顶部月份与三个工具按钮、日历页回归测试。
+- 任务目标：使浅色模式下日历背景与日程页统一；年月标题改为“一月”至“十二月”的纯中文月份，字号缩为原来的 2/3；顶部按参考图保留视图、时间线、更多三个自然融入背景的图标按钮，同时保留年月选择、横滑翻页、周/月切换和“今天”返回能力。
+- 任务结果：新增共享浅蓝灰页面背景 token；日历浅色背景与日程页统一为 `#E6F8FA`，深色模式继续使用 Theme surface 以保持对比度；标题移除年份、数字月份、下拉箭头和显式前后翻页按钮，标准 360dp 宽度下与三个工具按钮同行；工具按钮改为透明表面、28dp 现代图标和纵向更多菜单样式。现有控制器、数据状态与回调语义未变。
+- 验证状态：目标 6 个 Dart 文件格式检查通过；日历页定向测试 28/28、Flutter 全量测试 594/594、`flutter analyze`、`flutter build apk --debug` 和目标 diff check 均通过。仓库级全量格式检查另发现本轮未修改的 `test/create_schedule_controller_test.dart` 既有格式差异，未越界改动；未执行真机视觉、TalkBack 或不同厂商字体渲染验证。
+
+## 2026-09-04 17:27 +08:00 云同步 active 分计划一致性审阅
+
+- 使用 Skill：`calendar-data-contracts`。按总计划、当前状态/路线图、领域真相源、Contracts 分计划及四层实现分计划的顺序进行只读交叉审阅；未修改任何计划正文、Contract 或产品代码。
+- 负责模块：`docs/plan/active/` 中云同步 01–06 总计划与分计划，以及相关同步、提醒、偏好、重复日程和数据迁移边界。
+- 任务目标：检查分计划缺陷、相对总计划/路线图的偏差、分计划间冲突，以及冗长和重复表述。
+- 任务结果：确认存在 Source of Truth 顺序、Android run intent 闭包、冲突解决后的提醒 reconcile、通配 `_count` 上限规则等直接口径冲突；发现 WorkManager 机会调度、30 天缓存计时、timezone/follow-device、默认提醒方式、导入后本机审计数据、Search History 处置等未闭合设计；同时确认重复抄写已造成语义漂移，工作量估算与分计划实际范围不匹配。问题明细已在本次审阅回复中按严重度和文件行号列出。
+- 验证状态：完成 6 份 active 云同步计划（合计约 5,150 行、439.5 KiB）与相关架构、状态、路线图、领域文档和现有同步占位 Contract 的静态核对；执行行长/重复度统计和定向关键词交叉检查。由于本次仅审阅文档，未运行 C++、Backend、Flutter、Android 构建、测试或真机验证。
+
+## 2026-09-04 17:39 +08:00 日历画布与折叠分组卡片美化
+
+- 使用 Skill：`frontend-flutter-feature`。依据参考图调整 Calendar Presentation，复用 Inbox 日程页的加号组件与折叠动效；未修改 Application、Gateway、Contract、Kotlin、C++ 或持久化逻辑，未新增依赖。
+- 负责模块：CalendarGrid 日历画布、CalendarSections 日期内容分组、CalendarPage 新建入口、Inbox AddTaskButton 可访问标签复用及日历 Widget 测试。
+- 任务目标：移除日历网格的灰色卡片外框并融入页面背景；在日期标题下按“已完成、日程、习惯、纪念日”展示与日程页一致的白色折叠卡片；将当天完成日程与完成习惯聚合到第一组且避免重复；将扩展 FAB 替换为日程页同款圆形加号。
+- 任务结果：网格移除 tonal panel、outline 与阴影，保留日期选中态、圆点和手势；四张卡片固定显示并提供数量、空态、右侧旋转箭头和 AnimatedSize 展开/折叠，已完成组默认折叠、其余组默认展开；完成 Event/Habit 仅在已完成组展示，原分页、详情回跳、错误/加载状态及创建底部面板继续使用现有回调；右下角直接复用 58dp AddTaskButton，并使用日历专属 Semantics 标签。
+- 验证状态：本轮目标 5 个 Dart 文件格式检查通过；日历页定向测试 30/30、Flutter 全量测试 596/596、`flutter analyze`、`flutter build apk --debug` 和 `git diff --check` 均通过。仓库级全量格式检查仍仅报告本轮未修改的 `test/create_schedule_controller_test.dart` 既有格式差异，未越界修改；未执行真机视觉、TalkBack 或不同厂商字体渲染验证。
+
+## 2026-09-04 17:57 +08:00 日历动态空态与跟手月份滑动
+
+- 使用 Skill：`frontend-flutter-feature`。仅调整 Calendar Presentation 和 Widget 测试；未修改 Application、Gateway、Contract、Kotlin、C++、持久化或第三方依赖。
+- 负责模块：CalendarSections 动态分组可见性与无任务插画、CalendarGrid 前后月份预览和横向跟手分页、CalendarPage 手势归属、日历页面回归测试。
+- 任务目标：无待处理日程、习惯或纪念日时隐藏对应卡片；全部类别均为空且已完成也为零时，直接在背景显示插画及“空空如也的任务”；横滑日历时同步露出灰色相邻月份，越过中点后自然完成翻页。
+- 任务结果：已完成组仅在存在完成日程或完成习惯时显示，其余三组仅在存在对应未完成内容或仍需承载分页/错误状态时显示；全空状态使用主题色 CustomPainter 绘制轻量清单插画，文字置于图下且没有卡片背景。日历新增前一页/当前页/后一页三页轨道，拖动实时跟随手指，相邻页降为 46% 不透明度，50% 位移或快速甩动触发 360ms 缓出归位/翻页；实际月份与数据仍由既有 CalendarController 切换。
+- 验证状态：修改文件定向格式检查、日历页测试 31/31、Flutter 全量测试 597/597、`flutter analyze`、Android Debug APK 构建和目标 diff check 均通过。仓库级格式检查仍只报告未修改的 `test/create_schedule_controller_test.dart` 既有格式差异，未越界处理；未执行真机触控、视觉或 TalkBack 验证。
+
+## 2026-09-04 18:24 +08:00 日历分页流畅度与上下分区拖动修正
+
+- 使用 Skill：`debug`、`frontend-flutter-feature`。先根据现有实现和 Widget 场景定位卡顿领先原因，再仅修改 Flutter Calendar Presentation 与对应测试；未修改 Application、Gateway、Contract、Native、持久化或依赖。
+- 负责模块：CalendarGrid 横向分页绘制与固定六行布局、CalendarPage 上下分区和展开进度、分隔拖柄、下方日程独立滚动、手势回归测试。
+- 任务目标：改善左右滑动不自然和月份行数变化导致的上下跳动；加入可拖动短横线，使上方日历可跟手收起到选中日期所在的一周；上方日历纵向手势提供同样效果，下方日程只滚动自身。
+- 任务结果：确认上一版横滑在每一帧 `setState` 重建三页日期网格，并按相邻月份行数插值改变高度，这是卡顿与垂直抖动的高置信度代码原因；现改为由轻量位移监听器只更新三页轨道 Transform，并用 RepaintBoundary 隔离日期网格，余程决定 240ms 内的缓出时间。月历 Presentation 固定生成 42 个日期位置和六行高度，相邻月继续弱化，加载条预留固定高度。页面拆成上方日历、28dp 可点击/可拖动短横线、下方独立 RefreshIndicator/CustomScrollView；日历或拖柄纵向拖动时连续更新 1–6 行高度，并同步平移网格使选中日所在周始终留在裁剪窗口，结束后才调用既有 Controller 提交 week/month 状态。CalendarState 的 selectedDate 始终必填，冷启动已由既有 Controller 设为 today，因此无需新增“无选中日期”业务分支。
+- 验证状态：日历页测试 30/30、Flutter 全量测试 596/596、`flutter analyze`、Android Debug APK 构建、目标文件格式和 `git diff --check` 均通过；新增覆盖固定六行、相邻月灰显、上方直接拖动、拖柄跟手且保留选中周、下方独立滚动、水平预览与翻页。仓库级格式检查仍只报告未修改的 `test/create_schedule_controller_test.dart` 既有格式差异。未执行真机帧时间 profiling、触控手感、TalkBack 或厂商字体验证，因此“主观手感改善”仍需设备确认。
+
+## 2026-09-04 18:41 +08:00 云同步计划外部审阅问题复核与协调修订
+
+- 使用 Skill：`calendar-data-contracts`。逐项对照云同步01–06、当前领域不变量、Accepted ADR/路线图、机器Contract占位状态、现有分层架构与Android官方后台任务/时钟语义；未实施产品代码、机器Contract、数据库或服务端接口。
+- 负责模块：云同步总计划、Contracts/数据、C++/SQLite v6、CloudBackend、Kotlin/Android、Flutter五份分计划，以及`docs/index.md`、`docs/status/current.md`、`docs/status/roadmap.md`中的计划状态口径。
+- 任务目标：验证外部审阅提出的15项问题是否真实存在，只修订成立或部分成立的内容，并重新校准五层之间及其与总计划、现有架构/路线图的关系。
+- 研判结果：12项成立，3项部分成立，0项完全不成立。部分成立的是30天缓存的严格物理删除承诺、本机导入后审计/搜索历史问题、`PLAN COMPLETE`等状态标签；其核心风险真实，但审阅中的“可以构造精确跨重启本地时钟”“Search History具有业务对象/标题引用（实际只存规范化关键词，文本仍可能与标题相同）”及“PLAN COMPLETE必然等于能力完成”等推论不完整。
+- 修订结果：统一双阶段Source of Truth裁决；补齐五态run intent；禁止本地冲突提交提前reconcile；把checked increment限制到机器counter registry；固定WorkManager `APPEND_OR_REPLACE`与耐久补排；冻结workspace/OS timezone双轴、默认提醒目标矩阵、workspace-scoped Search History方案和guest导入后的live/执行/审计处置；将locale移出同步白名单并保留注册固定`zh-CN`兼容；把重复Event三作用域退回R3；统一六份计划状态，重做早期ROM、M0拆分与重估门禁，并把自审结论降为Contract冻结前的计划级目标。
+- 验证状态：18项定向跨计划一致性断言全部通过；六份计划均为合法UTF-8、无冲突标记，tracked `git diff --check`通过，02–06逐文件no-index检查仅在清理前发现标题区Markdown硬换行尾空格并已移除。由于本任务只审阅和修订计划，未运行C++、Backend、Flutter、Android构建、测试或真机验证；ADR、机器Contract、fixture和生产实现仍为待办。
+- 开发时间：2026-09-04 18:41 +08:00（Asia/Shanghai）。
+
+## 2026-09-04 19:31 +08:00 搜索页方案 C 视觉美化
+
+- 使用 Skill：`frontend-flutter-feature`。仅修改 Search Presentation、Widget 测试与既有 Golden；未修改 Application、Gateway、Contract、Kotlin、C++、持久化、依赖或工具链。
+- 负责模块：SearchPage 页面背景与焦点状态桥接、SearchHeader 标题/搜索框过渡、SearchHistoryCard 紧凑历史标签、SearchSectionCard 三类结果卡片、SearchLoadingSkeleton 和搜索页面视觉回归测试。
+- 任务目标：采用用户确认的方案 C；页面背景与日程/日历统一；历史按钮及文字缩小到参考稿约 2/3；“搜索”标题缩小到原来的 3/4；点击输入框后标题自然消失并让搜索框缓慢上移到顶部；结果尽量贴近参考稿的柔和卡片风格。
+- 任务结果：浅色 Search 使用共享 `AppColors.lightPageBackground`；标题按 0.75 比例呈现，搜索框获得焦点时通过 300ms 淡出/尺寸过渡收起标题并同步上移；筛选入口并入白色胶囊搜索框；历史由整块列表卡改为 28dp 高、12sp 字体的轻量胶囊标签，同时保留长按管理、删除、清空与撤销；日程/习惯/纪念日结果改为白色圆角卡片、蓝/绿/粉侧边强调和轻阴影，深色主题继续由 Theme 派生。
+- 验证状态：搜索页定向测试 9/9、Flutter 全量测试 598/598、`flutter analyze`、Android Debug APK 构建、目标文件格式与目标 diff check 均通过；4 张 Search Golden 已更新并人工检查布局/颜色。仓库级格式检查仍仅报告本轮未修改的 `test/create_schedule_controller_test.dart` 既有格式差异，未越界修改；未执行真机触控手感、输入法、TalkBack 或厂商字体渲染验证。
+
+## 2026-09-04 19:55 +08:00 搜索分组计数与模块色高亮调整
+
+- 使用 Skill：`frontend-flutter-feature`。仅调整 Search Presentation、Widget 测试和既有 Golden；未修改搜索状态、查询、排序、分页、Gateway、Contract 或 Native。
+- 负责模块：SearchSectionCard 分组标题/计数、SearchResultRow 模块色传递、HighlightedSearchText 命中样式、SearchDesignTokens 同系高亮色和 Search 页面视觉测试。
+- 任务目标：把结果分组标题改为“日程（数量）/习惯（数量）/纪念日（数量）”；标题与数量使用模块色；移除偏黄色的命中高亮并改为对应模块色。
+- 任务结果：分组标题与数量合并为一个紧邻文本，日程使用蓝色、习惯按参考图和模块既有语义使用绿色、纪念日使用粉色；标题与摘要中的关键词改为对应模块色文字叠加 16% 浅色背景，深色模式使用 24% 同系背景，不再使用黄色 token；同一卡片只计算一次模块色并传给所有结果行，未复制业务逻辑。
+- 验证状态：搜索页定向测试 9/9、Flutter 全量测试 598/598、`flutter analyze`、Android Debug APK 构建、Search 目标格式检查与 Golden 更新/人工检查均通过。仓库级格式检查仍只报告未修改的 `test/create_schedule_controller_test.dart` 既有差异；未执行真机颜色、TalkBack 或厂商字体渲染验证。
+
+## 2026-09-04 20:07 +08:00 搜索历史浅蓝标签与结果密度调整
+
+- 使用 Skill：`frontend-flutter-feature`。仅修改 Search Presentation、Widget 测试和既有 Golden；未修改 Application、Gateway、Contract、Native、持久化或依赖。
+- 负责模块：SearchPalette 历史标签颜色 token、SearchHistoryCard 标签绘制、SearchResultRow 字号与垂直密度、Search 页面行为/视觉回归测试。
+- 任务目标：历史按钮使用参考图中的浅蓝色而非灰色；搜索结果标题字号缩为分组标题约 3/4；同卡片内相邻搜索结果的纵向距离缩为当前约 2/3。
+- 任务结果：浅色历史标签固定为浅蓝底、淡蓝描边和蓝色文字，深色模式提供同系适配；结果标题由 16sp 缩至 12sp；结果行上下 padding 由 15dp 缩至 10dp，标题、元数据、摘要和状态之间的间隔同步缩小，常规结果行仍高于最小触控高度；业务点击范围和数据逻辑保持不变。
+- 验证状态：搜索页定向测试 9/9、Flutter 全量测试 598/598、`flutter analyze`、Android Debug APK 构建、Search 目标格式检查和 4 张 Search Golden 更新/人工检查均通过。仓库级格式检查仍只报告未修改的 `test/create_schedule_controller_test.dart` 既有差异；未执行真机字体、触控密度或 TalkBack 验证。
+
+## 2026-09-04 20:19 +08:00 搜索结果卡片细节对齐参考图
+
+- 使用 Skill：`frontend-flutter-feature`。仅修改 Search Presentation、Widget 测试和既有 Golden；未修改查询、分页状态、Gateway、Contract、Native 或依赖。
+- 负责模块：SearchSectionCard 分隔线/更多结果行、SearchResultRow 对齐/尾部信息、SearchDesignTokens 卡片内容间距，以及 Search 页面布局和大字体回归测试。
+- 任务目标：在保持现有字体大小和模块颜色不变的前提下，对齐参考图中的卡片空白、文字基线、分隔线与箭头细节。
+- 任务结果：结果正文左侧缩进改为与分组标题文字对齐；移除标题下方整行分隔线、普通结果之间的分隔线以及每条结果右侧的重复箭头；仅在存在更多分页结果时显示一条从正文缩进开始的分隔线，并提供“还有 N 个日程/习惯/纪念日”与右箭头，继续调用原有 loadMore；Event 开始时间和 Anniversary 相对天数移到行尾，Anniversary 左侧元数据仅保留日期；未添加缺少真实导航行为的装饰性“查看全部”按钮。
+- 验证状态：搜索页定向测试 11/11、Flutter 全量测试 600/600、`flutter analyze`、Android Debug APK 构建、Search 目标格式检查和 4 张 Search Golden 更新/人工检查均通过；新增覆盖唯一分页箭头、仅一条分页分隔线、正文/标题对齐及 360dp + 200% 字号结果卡无溢出。仓库级格式检查仍只报告未修改的 `test/create_schedule_controller_test.dart` 既有差异；未执行真机触控、TalkBack 或厂商字体渲染验证。
+
+## 2026-09-04 19:10 +08:00 云同步 15 项返修结果独立复核
+
+- 使用 Skill：`review-worktree-architecture`。按当前架构、状态、领域规则、机器 Contract 与云同步 01–06 active 计划建立独立判据，只读复核返修说明；未修改计划正文、Contract 或产品代码。
+- 负责模块：Local-first 云同步计划、状态口径、WorkManager 唤醒、退出缓存保留、提醒偏好、冲突生命周期、测试服务器网络边界。
+- 任务目标：判断外部返修给出的 15 项结论是否合理，确认当前真实状态、用户仍需决定的事项和返修后残留的不一致。
+- 任务结果：确认五态 run intent、服务端 resolved/effect apply 后才产生 affected identities、counter registry、timezone 双轴、Reminder 适用矩阵、重复 Event 三作用域延后、计划状态与早期 ROM 等主体修订方向成立；识别出 `APPEND_OR_REPLACE` 每次 writer 均追加可能造成无界 Worker 链、force-local 无可信时间锚时缓存可能无限期隐藏、IP 证书与 DNS-only 公网要求冲突、提醒偏好“只影响未来设备”与字段命名/首设备例外未完全闭合，以及同步领域页/旧 `sync.apply`/Auth status/Contracts-02 真相源表述仍未完全校准。导入后的审计 anchor 仍须由 ADR/机器 Contract 唯一冻结，不能视为已经可实现。
+- 验证状态：完成六份计划状态、关键枚举、旧估算/状态标签、locale、重复编辑范围和跨层关键语义的定向静态断言；六份计划本地 Markdown 链接检查为 0 个缺失，`git diff --check` 无空白错误（仅既有 LF/CRLF 提示）。依据 Android 官方文档复核 WorkManager policy、`elapsedRealtime` 与后台执行时点；依据官方资料复核 CentOS 7 EOL、Docker 当前支持范围及公网 IP 证书可用性。任务为文档审阅，未运行 C++、Backend、Flutter、Android 构建、测试或真机验证。
+- 开发时间：2026-09-04 19:10 +08:00（Asia/Shanghai）。
+
+## 2026-09-04 19:07 +08:00 搜索页面视觉方向调研
+
+- 使用 Skill：`frontend-flutter-feature`、`imagegen`。结合现有 Search Presentation、公开的 Android Material、Apple 搜索规范与成熟产品搜索范式，制作三种仅用于方向选择的界面概念稿。
+- 负责模块：Search 页面视觉层次、背景、搜索框、筛选入口、历史记录与三类结果分组的展示方案；未修改 Flutter 页面、Application、Gateway、Contract、Native、持久化或依赖。
+- 任务目标：统一日程/日历页浅蓝背景，并在需求尚未具体化时提供可直观比较的轻盈聚焦、效率优先、柔和卡片三种现代搜索页方向。
+- 任务结果：完成 A/B/C 三方案对比与适用场景分析；基于用户既有“减少灰色卡片、融入背景”的偏好，建议以 A 轻盈聚焦为主体，并在结果较多时吸收 B 的类型筛选标签和紧凑结果行。等待用户确认方向后再实施 Presentation 修改。
+- 验证状态：本轮未修改产品代码，因此未运行 Flutter 格式化、静态分析、测试、构建或真机验证；生成图仅为视觉沟通稿，不作为最终像素规格。
+
+## 2026-09-04 19:19 +08:00 云同步分计划返修说明二次审阅
+
+- 使用 Skill：`calendar-data-contracts`。只读对照云同步 01–06、同步/提醒/偏好领域文档、当前机器 Contract 与状态文档，并复核 Android 官方 WorkManager、`SystemClock` 和后台执行时点说明；未修改计划正文、Contract 或产品代码。
+- 负责模块：Local-first 云同步总计划、Contracts/数据、C++/SQLite v6、CloudBackend、Kotlin/Android、Flutter 五份分计划及相关状态/领域口径。
+- 任务目标：独立判断返修方对 15 项审阅意见的判断与处理是否合理，确认哪些问题已关闭、哪些仍需产品负责人决策，以及是否出现新的跨计划缺口或冗余。
+- 任务结果：确认 1–4、6–7、12、14–15 已在计划层基本闭合，9 的事实纠正成立且其审计表示仍受 ADR/Contract 冻结门禁，10–11 的方案技术上可行但属于产品取舍；5 的 `KEEP` 丢唤醒判断成立，但 `APPEND_OR_REPLACE` 不提供请求去重，现有“unique chain 去重”表述会留下高频写入下的冗余 Worker 链；8 将严格 30 天改为目标窗口符合 Android 能力边界，但离线 force-local 无可信锚时允许缓存无限期隐藏，仍需产品负责人明确接受或改为隐私优先销毁。另发现同 boot 证明所需 `boot_id` 没有冻结来源/轮换规则、总计划仍写“IP 证书”而 Backend/Android 分计划只允许 DNS hostname、两个同步领域页仍写“产品决策已经冻结”，与当前 `CONTRACT PENDING` 状态冲突。六份计划共 5,223 行，293 行超过 300 字、28 行超过 800 字，长句和跨计划重复仍是明确审阅债。
+- 验证状态：完成关键枚举、状态标签、时区/提醒矩阵、locale、重复 Event 范围、Search History、导入审计、WorkManager 队列、保留时钟和公网入口的定向静态核验；未运行代码构建、测试或真机验证，因为本次为文档审阅。工作区存在用户/其他任务的既有修改与未跟踪计划文件，均保持原状。
+
+## 2026-09-04 20:31 +08:00 搜索结果标题字号微调
+
+- 使用 Skill：`frontend-flutter-feature`。仅修改 Search Presentation 的字号令牌、对应 Widget 测试和既有 Golden；未修改搜索业务逻辑、状态、Gateway、Contract、Native 或依赖。
+- 负责模块：SearchResultRow 搜索结果标题展示与搜索页视觉回归。
+- 任务目标：将日程、习惯和纪念日栏目内的搜索结果标题，调整为原结果标题字号与栏目标题字号的中间值。
+- 任务结果：结果标题比例由 0.75 调整为 0.875；当前主题下由 12sp 调整为 14sp，正好位于结果原字号 12sp 和栏目标题 16sp 之间；卡片间距、颜色、分隔线、箭头与搜索行为保持不变。
+- 验证状态：搜索页定向测试 11/11、Search Golden 4/4、Flutter 全量测试 600/600、`flutter analyze`、Android Debug APK 构建和 Search 目标格式检查均通过；视觉基准已更新并人工检查。仓库级格式检查仍只报告未修改的 `test/create_schedule_controller_test.dart` 既有差异；未执行真机厂商字体渲染验证。
+
+## 2026-09-04 20:42 +08:00 日历分界线拖动触发下半区闪刷修复
+
+- 使用 Skill：`debug`。按分界线拖动 → 视图模式提交 → CalendarController 状态切换 → CalendarSections 动画链路复现并修复；未修改 Contract、Gateway、Native、持久化或领域数据规则。
+- 负责模块：Flutter CalendarController 视图模式状态过渡、CalendarSections 内容切换动画与 CalendarPage 手势回归测试。
+- 任务目标：上下拖动日历与日程分界线时，只改变布局，不让已经显示的选中日内容清空、出现骨架屏或因快照编号变化整块重新淡入。
+- 任务结果：确认根因是 `setViewMode` 在布局模式切换时立即丢弃完整快照并把三个栏目重置为 loading，且结果区动画 Key 包含 snapshot token；现改为在月/周范围后台更新期间保留当前完整日内容，并仅在选中日期或可见条目标识真实变化时切换结果区。范围摘要与快照一致性校验仍保留，真实数据变化仍会正常更新。
+- 验证状态：新增回归测试在修复前稳定失败、修复后通过；Calendar Controller + Page 定向测试 66/66、Flutter 全量测试 601/601、`flutter analyze`、Android Debug APK 构建、目标格式检查和 `git diff --check` 均通过。仓库级格式检查仍只报告未修改的 `test/create_schedule_controller_test.dart` 既有格式差异；未执行真机手势录屏或厂商帧率验证。
+
+## 2026-09-04 20:47 +08:00 云同步分计划语义去重与锚点收口
+
+- 使用 Skill：`calendar-data-contracts`。按 Contract 唯一语义、跨层字段闭包和迁移可追踪原则审阅并精简计划；未修改机器 Contract、Schema、产品代码或数据库。
+- 负责模块：云同步-02 Contracts、云同步-03 C++/SQLite、云同步-04 CloudBackend、云同步-05 Kotlin/Android、云同步-06 Flutter 五份分计划；用户明确排除的云同步-01 总计划本轮未修改。
+- 任务目标：独立判断外部审阅所称的重复啰嗦是否真实存在，区分必要的接口追踪与危险的语义重定义，只修改成立或部分成立的问题。
+- 研判结果：Contracts、C++、Backend、Android 的后段阶段/测试/交接/DoD 确有对前段算法换词重述的问题，Flutter 仅测试与 DoD 部分成立；方法签名、字段映射、层级职责和测试消费关系虽会重复出现，但承担可追踪性，不应删除。长行数量只能作为可读性信号，不能单独证明语义重复。
+- 修订结果：为 02–06 增加文内语义锚点；Contracts 将导入唯一收口为 `IMP-01`–`IMP-12`，将跨层测试唯一登记为 20 个 `FX-*` fixture 族；03–06 的阶段、测试、交接和完成定义改为引用规范章节与 fixture，不再另写算法；C++ 约 2,045 字符的错误所有权段改为职责表，并校准压缩后阶段/测试表的章节引用。五份分计划由 4,104 行、623,223 bytes 精简为 3,797 行、555,157 bytes，超过 800 字符的行由 28 降为 0。
+- 验证状态：137 项状态、Source of Truth、导入锚点、fixture 闭包、五态 run intent、冲突 reconcile、WorkManager policy、UTF-8、代码围栏、冲突标记和本地链接断言通过；02–06 全局不存在长度至少 80 字符的完全重复行，281 个长段落的 8 字符 shingle 检查未发现相似度至少 0.45 的同文件近重复。`git diff --check` 通过，未跟踪的 02–06 逐文件无空白错误；仅有仓库既有的 LF→CRLF 提示。本任务只修改计划，未运行 C++、Backend、Flutter、Android 构建、测试或真机验证，机器 Contract 与实现仍为待办。
+
+## 2026-09-04 21:38 +08:00 云同步队列、保留时钟与公网口径复审修订
+
+- 使用 Skill：`calendar-data-contracts`。按领域→Contract→Android/Flutter映射顺序审阅计划与当前实现，并以Android官方WorkManager、SystemClock和BOOT_COUNT语义校准平台约束。
+- 负责模块：云同步-01总计划、云同步-02 Contracts、云同步-04 CloudBackend、云同步-05 Kotlin/Android、云同步-06 Flutter，以及`sync_operation`、`user_sync_state`两份领域状态说明；未修改产品代码或现有机器Contract。
+- 任务目标：独立判断外部审阅提出的APPEND去重、无可信时间锚的30天保留、`boot_id`生成、公网入口和状态标签五项问题，并只修正确实存在的缺口。
+- 研判与结果：五项均真实存在。APPEND_OR_REPLACE只串行追加而不去重，现冻结Application级`SyncWakePump`、稳定WorkRequest id、每workspace最多一个running加一个successor及10,000次触发门禁；30天产品分支按隐私优先收口，无同boot可信锚的force-local只能destroy-now或取消/重试，retain返回`RETENTION_TRUSTED_TIME_REQUIRED`且零终止；新增`allowed_cache_policies`跨层闭包。`boot_id`固定为Kotlin-local UUIDv4，由API24+ BOOT_COUNT与elapsed校验、API23 process-only降级、no-backup AEAD记录及异常fail-closed共同定义。公网入口统一为受控DNS hostname/SAN，IP literal/IP证书退出目标状态；两份领域页恢复为`ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED`。
+- 验证状态：定向检索确认当前仓库没有SyncCoordinator/SyncWorker/RetentionDeadline/BootEpoch实现，现有APPEND_OR_REPLACE只属于Reminder队列且WorkManager依赖为2.11.2；新旧口径静态断言、UTF-8、代码围栏、≤800字符行与目标文件尾随空白检查通过，`git diff --check`无空白错误（仅既有LF→CRLF提示）。本任务为计划修订，未运行C++、Backend、Flutter、Android构建、测试或真机验证；受控公网域名/DNS权限、机器Contract与实现仍为待办。
+
+## 2026-09-05 11:44 +08:00 云同步五项返修最终复核
+
+- 使用 Skill：`calendar-data-contracts`；负责模块：云同步总计划、Contracts、Android、Backend、Flutter与同步领域状态说明。
+- 任务目标：复核工程师五项修订的实际落点与平台依据，判断是否存在阻碍进入下一阶段的重大问题。
+- 任务结果：五项在计划层基本闭合；唤醒合并已明确串行owner、两节点上限、稳定WorkRequest身份和崩溃恢复验收；无可信锚force-local不允许retain且错误请求不自动删除；boot identity来源、存储、降级和异常路径已明确；DNS与领域状态口径已统一。本轮定向复核未发现新增重大阻断，可推进M0 ADR/spike与M1 Contract冻结；既定加密/协议实验、机器Contract/fixture和实现验收仍须执行，受控域名与DNS权限仍是公网验收前置条件。
+- 验证状态：只读检查实际计划、相关领域状态与Android生产代码，并通过Android官方文档确认setId自WorkManager 2.8.0提供、BOOT_COUNT自API 24提供且值类型为int。实际WorkManager依赖为2.11.2；未运行代码构建、压力测试、故障注入或真机验证，不能将计划中的10,000次触发等验收条目描述为已经通过。本轮仅追加此日志，保留用户既有修改。

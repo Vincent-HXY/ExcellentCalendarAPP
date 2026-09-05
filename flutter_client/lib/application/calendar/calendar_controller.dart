@@ -199,6 +199,7 @@ class CalendarController extends ChangeNotifier {
   Future<void> setViewMode(CalendarViewMode mode) async {
     if (!_canInteract || mode == _state.viewMode) return;
     final range = CalendarDateMath.visibleRange(_state.selectedDate, mode);
+    final preserveCurrent = _state.hasCompleteSnapshot;
     final generation = _nextGeneration();
     _setState(
       _state.copyWith(
@@ -207,17 +208,29 @@ class CalendarController extends ChangeNotifier {
         isCollapsed: mode == CalendarViewMode.week,
         visibleRangeStart: range.start,
         visibleRangeEnd: range.end,
-        rangePhase: CalendarRangePhase.loading,
-        rangeDays: const [],
-        snapshotToken: null,
-        eventSection: _loadingSection(CalendarSection.event),
-        habitSection: _loadingSection(CalendarSection.habit),
-        anniversarySection: _loadingSection(CalendarSection.anniversary),
+        rangePhase: preserveCurrent
+            ? CalendarRangePhase.refreshing
+            : CalendarRangePhase.loading,
+        rangeDays: preserveCurrent ? _state.rangeDays : const [],
+        snapshotToken: preserveCurrent ? _state.snapshotToken : null,
+        eventSection: preserveCurrent
+            ? _state.eventSection
+            : _loadingSection(CalendarSection.event),
+        habitSection: preserveCurrent
+            ? _state.habitSection
+            : _loadingSection(CalendarSection.habit),
+        anniversarySection: preserveCurrent
+            ? _state.anniversarySection
+            : _loadingSection(CalendarSection.anniversary),
         errorMessage: null,
         generation: generation,
       ),
     );
-    await _loadFull(generation: generation, allowCache: true);
+    await _loadFull(
+      generation: generation,
+      allowCache: true,
+      preserveCurrent: preserveCurrent,
+    );
   }
 
   Future<void> navigatePeriod(int delta) async {

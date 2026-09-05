@@ -6,8 +6,8 @@ import '../../application/calendar/calendar_controller.dart';
 import '../../application/calendar/calendar_date_math.dart';
 import '../../gateway_interfaces/calendar_gateway.dart';
 import '../../native_contract/calendar/calendar_response_dtos.dart';
+import '../inbox/components/add_task_button.dart';
 import 'calendar_design_tokens.dart';
-import 'calendar_gesture_state_machine.dart';
 import 'widgets/calendar_grid.dart';
 import 'widgets/calendar_header.dart';
 import 'widgets/calendar_sections.dart';
@@ -62,21 +62,26 @@ class CalendarPage extends StatefulWidget {
 }
 
 class _CalendarPageState extends State<CalendarPage>
-    with RestorationMixin, WidgetsBindingObserver {
+    with
+        RestorationMixin,
+        WidgetsBindingObserver,
+        SingleTickerProviderStateMixin {
+  static const _calendarDragExtent = 260.0;
+  static const _verticalVelocityThreshold = 650.0;
+
   final RestorableInt _restoredViewMode = RestorableInt(
     CalendarViewMode.week.index,
   );
-  final ScrollController _scrollController = ScrollController();
-  final CalendarGestureStateMachine _gesture = CalendarGestureStateMachine();
+  final ScrollController _scheduleScrollController = ScrollController();
 
   late final CalendarController _controller;
   late final bool _ownsController;
   late final CalendarNowProvider _nowProvider;
+  late final AnimationController _calendarExpansion;
   Timer? _midnightTimer;
   bool _started = false;
-  bool _fabExtended = true;
-  int _transitionDirection = 1;
-  int? _gesturePointer;
+  bool _calendarDragActive = false;
+  bool _committingCalendarMode = false;
 
   @override
   String? get restorationId => 'calendar-page';
@@ -95,7 +100,10 @@ class _CalendarPageState extends State<CalendarPage>
           nowProvider: _nowProvider,
         );
     _ownsController = injected == null || widget.disposeInjectedController;
-    _scrollController.addListener(_handleScroll);
+    _calendarExpansion = AnimationController(
+      vsync: this,
+      value: _controller.state.viewMode == CalendarViewMode.month ? 1 : 0,
+    );
   }
 
   @override
@@ -119,13 +127,11 @@ class _CalendarPageState extends State<CalendarPage>
   void _syncRestorableViewMode() {
     final value = _controller.state.viewMode.index;
     if (_restoredViewMode.value != value) _restoredViewMode.value = value;
-  }
-
-  void _handleScroll() {
-    final extended =
-        !_scrollController.hasClients || _scrollController.offset < 120;
-    if (extended != _fabExtended && mounted) {
-      setState(() => _fabExtended = extended);
+    if (!_calendarDragActive &&
+        !_calendarExpansion.isAnimating &&
+        !_committingCalendarMode) {
+      _calendarExpansion.value =
+          _controller.state.viewMode == CalendarViewMode.month ? 1 : 0;
     }
   }
 
@@ -155,9 +161,8 @@ class _CalendarPageState extends State<CalendarPage>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _midnightTimer?.cancel();
-    _scrollController
-      ..removeListener(_handleScroll)
-      ..dispose();
+    _scheduleScrollController.dispose();
+    _calendarExpansion.dispose();
     if (_started) _controller.removeListener(_syncRestorableViewMode);
     if (_ownsController) _controller.dispose();
     _restoredViewMode.dispose();
@@ -167,169 +172,188 @@ class _CalendarPageState extends State<CalendarPage>
   @override
   Widget build(BuildContext context) {
     final palette = CalendarPalette.of(context);
-    final compactForAccessibility =
-        MediaQuery.textScalerOf(context).scale(1) > 1.35;
-    final createAction = _buildCreateAction(
-      extended: _fabExtended && !compactForAccessibility,
-    );
     return Scaffold(
       key: const ValueKey('calendar-page'),
       backgroundColor: palette.background,
-      bottomNavigationBar: Material(
-        key: const ValueKey('calendar-create-action-bar'),
-        color: palette.background,
-        child: SafeArea(
-          top: false,
-          minimum: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: SizedBox(
-            height: 60,
-            child: Align(alignment: Alignment.centerRight, child: createAction),
-          ),
-        ),
-      ),
       body: SafeArea(
-        bottom: false,
-        child: ListenableBuilder(
-          listenable: _controller,
-          builder: (context, _) => LayoutBuilder(
-            builder: (context, constraints) {
-              final horizontal = calendarPageHorizontalPadding(
-                constraints.maxWidth,
-              );
-              final state = _controller.state;
-              return Listener(
-                key: const ValueKey('calendar-gesture-surface'),
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: (event) {
-                  if (_gesturePointer != null) return;
-                  _gesturePointer = event.pointer;
-                  _gesture.start(
-                    mode: state.viewMode,
-                    atContentTop:
-                        !_scrollController.hasClients ||
-                        _scrollController.offset <= 0,
+        child: Stack(
+          children: [
+            ListenableBuilder(
+              listenable: _controller,
+              builder: (context, _) => LayoutBuilder(
+                builder: (context, constraints) {
+                  final horizontal = calendarPageHorizontalPadding(
+                    constraints.maxWidth,
                   );
-                },
-                onPointerMove: (event) {
-                  if (_gesturePointer != event.pointer) return;
-                  _gesture.update(dx: event.delta.dx, dy: event.delta.dy);
-                },
-                onPointerUp: (event) {
-                  if (_gesturePointer != event.pointer) return;
-                  _gesturePointer = null;
-                  unawaited(_handleGestureEnd());
-                },
-                onPointerCancel: (event) {
-                  if (_gesturePointer != event.pointer) return;
-                  _gesturePointer = null;
-                  _gesture.cancel();
-                },
-                child: CustomScrollView(
-                  key: const PageStorageKey('calendar-content-scroll'),
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontal,
-                        10,
-                        horizontal,
-                        CalendarSpacing.contentBottom,
-                      ),
-                      sliver: SliverList.list(
-                        children: [
-                          CalendarHeader(
-                            anchorDate: state.anchorDate,
-                            viewMode: state.viewMode,
-                            onPrevious: () => _navigate(-1),
-                            onNext: () => _navigate(1),
-                            onChooseMonth: _showYearMonthPanel,
-                            showToday: !CalendarDateMath.isSameDate(
-                              state.selectedDate,
-                              state.today,
-                            ),
-                            onToday: () => unawaited(_controller.goToToday()),
-                            onToggleMode: () => unawaited(
-                              _controller.setViewMode(
-                                state.viewMode == CalendarViewMode.week
-                                    ? CalendarViewMode.month
-                                    : CalendarViewMode.week,
-                              ),
-                            ),
-                            onTimeline: _showTimelineUnavailable,
-                            onSettings: _showSettingsUnavailable,
+                  final state = _controller.state;
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontal,
+                          10,
+                          horizontal,
+                          0,
+                        ),
+                        child: CalendarHeader(
+                          anchorDate: state.anchorDate,
+                          viewMode: state.viewMode,
+                          onChooseMonth: _showYearMonthPanel,
+                          showToday: !CalendarDateMath.isSameDate(
+                            state.selectedDate,
+                            state.today,
                           ),
-                          const SizedBox(height: 12),
-                          CalendarGrid(
+                          onToday: () => unawaited(_controller.goToToday()),
+                          onToggleMode: _toggleCalendarMode,
+                          onTimeline: _showTimelineUnavailable,
+                          onSettings: _showSettingsUnavailable,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: horizontal),
+                        child: GestureDetector(
+                          key: const ValueKey('calendar-upper-gesture-surface'),
+                          behavior: HitTestBehavior.opaque,
+                          onVerticalDragStart: _handleCalendarDragStart,
+                          onVerticalDragUpdate: _handleCalendarDragUpdate,
+                          onVerticalDragEnd: _handleCalendarDragEnd,
+                          onVerticalDragCancel: _handleCalendarDragCancel,
+                          child: CalendarGrid(
                             state: state,
-                            transitionDirection: _transitionDirection,
+                            expansion: _calendarExpansion,
                             onSelectDate: (date) =>
                                 unawaited(_controller.selectDate(date)),
+                            onNavigatePeriod: _controller.navigatePeriod,
                           ),
-                          CalendarSections(
-                            state: state,
-                            onOpenEvent: _openEvent,
-                            onOpenHabit: _openHabit,
-                            onOpenAnniversary: _openAnniversary,
-                            onLoadMore: (section) =>
-                                unawaited(_controller.loadMore(section)),
-                            onRetryFull: () => unawaited(_controller.refresh()),
-                            onCreate: _showCreateSheet,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                      _CalendarResizeHandle(
+                        expansion: _calendarExpansion,
+                        onTap: _toggleCalendarMode,
+                        onVerticalDragStart: _handleCalendarDragStart,
+                        onVerticalDragUpdate: _handleCalendarDragUpdate,
+                        onVerticalDragEnd: _handleCalendarDragEnd,
+                        onVerticalDragCancel: _handleCalendarDragCancel,
+                      ),
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: _controller.refresh,
+                          child: CustomScrollView(
+                            key: const PageStorageKey(
+                              'calendar-schedule-scroll',
+                            ),
+                            controller: _scheduleScrollController,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            slivers: [
+                              SliverPadding(
+                                padding: EdgeInsets.fromLTRB(
+                                  horizontal,
+                                  0,
+                                  horizontal,
+                                  CalendarSpacing.contentBottom,
+                                ),
+                                sliver: SliverToBoxAdapter(
+                                  child: CalendarSections(
+                                    state: state,
+                                    onOpenEvent: _openEvent,
+                                    onOpenHabit: _openHabit,
+                                    onOpenAnniversary: _openAnniversary,
+                                    onLoadMore: (section) => unawaited(
+                                      _controller.loadMore(section),
+                                    ),
+                                    onRetryFull: () =>
+                                        unawaited(_controller.refresh()),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              right: 36,
+              bottom: 24,
+              child: AddTaskButton(
+                key: const ValueKey('calendar-create-fab'),
+                semanticLabel: '新建日程、习惯或纪念日',
+                onPressed: _showCreateSheet,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildCreateAction({required bool extended}) => Semantics(
-    button: true,
-    label: '新建日程、习惯或纪念日',
-    child: extended
-        ? FloatingActionButton.extended(
-            key: const ValueKey('calendar-create-fab'),
-            onPressed: _showCreateSheet,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('新建'),
-          )
-        : FloatingActionButton(
-            key: const ValueKey('calendar-create-fab'),
-            tooltip: '新建安排',
-            onPressed: _showCreateSheet,
-            child: const Icon(Icons.add_rounded),
-          ),
-  );
-
-  void _navigate(int delta) {
-    setState(() => _transitionDirection = delta.sign);
-    unawaited(_controller.navigatePeriod(delta));
+  void _handleCalendarDragStart(DragStartDetails details) {
+    if (_committingCalendarMode) return;
+    _calendarDragActive = true;
+    _calendarExpansion.stop();
   }
 
-  Future<void> _handleGestureEnd() async {
-    final action = _gesture.end();
-    switch (action) {
-      case CalendarGestureAction.previousPeriod:
-        _navigate(-1);
-      case CalendarGestureAction.nextPeriod:
-        _navigate(1);
-      case CalendarGestureAction.collapse:
-        await _controller.setViewMode(CalendarViewMode.week);
-      case CalendarGestureAction.expand:
-        await _controller.setViewMode(CalendarViewMode.month);
-      case CalendarGestureAction.refresh:
-        _gesture.markRefreshing();
-        await _controller.refresh();
-      case null:
-        break;
+  void _handleCalendarDragUpdate(DragUpdateDetails details) {
+    if (_committingCalendarMode) return;
+    final next =
+        _calendarExpansion.value + details.delta.dy / _calendarDragExtent;
+    _calendarExpansion.value = next.clamp(0.0, 1.0);
+  }
+
+  void _handleCalendarDragEnd(DragEndDetails details) {
+    if (_committingCalendarMode) return;
+    final velocity = details.primaryVelocity ?? 0;
+    final target = velocity.abs() >= _verticalVelocityThreshold
+        ? (velocity > 0 ? 1.0 : 0.0)
+        : (_calendarExpansion.value >= 0.5 ? 1.0 : 0.0);
+    unawaited(_settleCalendarExpansion(target));
+  }
+
+  void _handleCalendarDragCancel() {
+    if (_committingCalendarMode) return;
+    final target = _controller.state.viewMode == CalendarViewMode.month
+        ? 1.0
+        : 0.0;
+    unawaited(_settleCalendarExpansion(target));
+  }
+
+  void _toggleCalendarMode() {
+    if (_committingCalendarMode) return;
+    final target = _calendarExpansion.value >= 0.5 ? 0.0 : 1.0;
+    unawaited(_settleCalendarExpansion(target));
+  }
+
+  Future<void> _settleCalendarExpansion(double target) async {
+    _calendarDragActive = false;
+    final reducedMotion = CalendarMotion.isReduced(context);
+    if (reducedMotion) {
+      _calendarExpansion.value = target;
+    } else {
+      final remaining = (target - _calendarExpansion.value).abs();
+      final milliseconds = (CalendarMotion.collapse.inMilliseconds * remaining)
+          .round()
+          .clamp(120, CalendarMotion.collapse.inMilliseconds);
+      await _calendarExpansion.animateTo(
+        target,
+        duration: Duration(milliseconds: milliseconds),
+        curve: CalendarMotion.standard,
+      );
     }
-    _gesture.settle();
+    if (!mounted) return;
+    final mode = target == 1 ? CalendarViewMode.month : CalendarViewMode.week;
+    _committingCalendarMode = true;
+    try {
+      await _controller.setViewMode(mode);
+    } finally {
+      _committingCalendarMode = false;
+    }
+    if (!mounted || _controller.state.viewMode == mode) return;
+    _calendarExpansion.value =
+        _controller.state.viewMode == CalendarViewMode.month ? 1 : 0;
   }
 
   Future<void> _showYearMonthPanel() async {
@@ -490,6 +514,59 @@ class _CalendarPageState extends State<CalendarPage>
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
+}
+
+class _CalendarResizeHandle extends StatelessWidget {
+  const _CalendarResizeHandle({
+    required this.expansion,
+    required this.onTap,
+    required this.onVerticalDragStart,
+    required this.onVerticalDragUpdate,
+    required this.onVerticalDragEnd,
+    required this.onVerticalDragCancel,
+  });
+
+  final Animation<double> expansion;
+  final VoidCallback onTap;
+  final GestureDragStartCallback onVerticalDragStart;
+  final GestureDragUpdateCallback onVerticalDragUpdate;
+  final GestureDragEndCallback onVerticalDragEnd;
+  final GestureDragCancelCallback onVerticalDragCancel;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: expansion,
+    builder: (context, _) => Semantics(
+      button: true,
+      label: '调整日历高度',
+      value: expansion.value >= 0.5 ? '已展开' : '已收起',
+      hint: '上下拖动，或双击切换日历高度',
+      child: GestureDetector(
+        key: const ValueKey('calendar-resize-handle'),
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        onVerticalDragStart: onVerticalDragStart,
+        onVerticalDragUpdate: onVerticalDragUpdate,
+        onVerticalDragEnd: onVerticalDragEnd,
+        onVerticalDragCancel: onVerticalDragCancel,
+        child: SizedBox(
+          height: 28,
+          child: Center(
+            child: Container(
+              width: 38,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.34),
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _CreateChoice extends StatelessWidget {

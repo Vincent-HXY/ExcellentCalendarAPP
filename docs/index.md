@@ -54,7 +54,7 @@
 | 过去已完成的开发计划               | `docs/plan/completed/`             | 只作为历史证据；现行资料不足时有限查阅                 |
 | 当前项目真实状态                   | `docs/status/current.md`           | 判断能力是否已完成、部分完成、未验证或未开始           |
 | 后续方向和阶段规划                 | `docs/status/roadmap.md`           | 讨论未来工作、优先级和依赖顺序时读取                   |
-| Local-first 云同步现状与设计入口   | `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；`docs/status/current.md`；`docs/domains/sync_operation.md`；`contracts/sync/`；`contracts/backend_api.yaml` | 先执行 active 总计划的 ADR、加密 spike 与 Contract 门禁；现有同步 Schema 仍是 planned 占位 |
+| Local-first 云同步现状与设计入口   | 总计划 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；分计划 `云同步-02-Contracts与数据模型开发计划.md`、`云同步-03-CPP与SQLite-v6开发计划.md`、`云同步-04-CloudBackend开发计划.md`、`云同步-05-Kotlin-Android与会话调度开发计划.md`、`云同步-06-Flutter产品界面开发计划.md`（均位于同一 active 目录）；另见 `docs/status/current.md`、`docs/domains/sync_operation.md`、`contracts/sync/`、`contracts/backend_api.yaml` | 先读 01 §1.1 确认统一裁决顺序，再读 02 的目标协议；02 在 `CONTRACT FROZEN` 前只是跨层协调草案，冻结后的机器 Contract 才是 03–06 的直接接口真相源。ADR、加密 spike 与 Contract 冻结前不进入实现，现有同步 Schema 仍是 planned 占位 |
 | 当前正在进行的评审                 | `docs/reviews/active/`             | Review 任务优先读取与目标变更相关的内容                |
 | 过去相似模块的评审经验             | `docs/reviews/archive/`            | 仅检索相同失败模式、架构问题或历史回归                 |
 | 开发日志                           | `docs/log.md`                      | 每个任务结束时追加；正常开发不全文读取                 |
@@ -228,7 +228,7 @@ Habit 当前可以描述为正式能力已激活，但必须同时保留边界�
 
 开发 Habit、HabitCheckIn、Habit recurrence、统计、每日提醒或 Habit 页面时，应先读取 `docs/plan/completed/` 中的 Habit 主计划，再按所属层读取对应分计划和最小相关真相源。开发月/周分类日历和 Event occurrence、Anniversary occurrence、Habit 日状态聚合时，先读取 `docs/plan/completed/` 中的日历主计划、已冻结的日历-02 Contract 计划和所属的日历-03/04/05 分层计划；不得绕过 `contracts/calendar/` 由 Flutter 临时拼装。开发独立搜索、SearchIndex、中文匹配、搜索历史、三类筛选或 FTS 时，先读取 `docs/plan/completed/` 中的搜索主计划，再按层读取搜索-02/03/04/05 分层计划。Search V1 Contract Revision 2 已冻结并完成发布前 cutoff amendment；C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 页面、production composition、主机与 Android 13 设备门禁已闭环。产品负责人于 2026-09-02 接受 `OPEN-SEA-001` 两项为非阻断发布债，统一 Search Query/History 能力为 `integrated + active`；SearchIndex/FTS 继续 deferred/planned。机器入口为 `contracts/search/search_query_invariants.yaml` 与 `contracts/run_search_v1_validation.py`，审查证据见 `docs/log.md`。不得由 Flutter 分别查询三类后临时拼装，也不得把 SearchIndex/FTS 误报为已发布。四象限仍没有 active 实施计划。
 
-Local-first 云同步于 2026-09-03 完成产品决策并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，当前状态为 `ACTIVE PLAN / CONTRACT PENDING`。讨论、规划或实施同步时先读取该计划，再读取 `docs/status/current.md` 的 R2-C、`docs/domains/sync_operation.md`、`docs/domains/user_sync_state.md`、`contracts/sync/`、`contracts/method_channels.yaml` 中的 `sync.apply`、`contracts/backend_api.yaml`、`cloud_backend/docs/implementation-status.md` 以及 Backend `sync/calendar` 包说明。现有 Schema 和空包仍只证明概念占位和账号基座；必须先完成 ADR、账号数据库加密 spike 与 Contract 冻结，再按 Contract/数据、C++/SQLite、Backend、Kotlin/Android、Flutter 和多设备验收分层推进。
+Local-first 云同步于 2026-09-03 形成产品与架构基线并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，当前状态为 `ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED`，不能表述为产品决策、Contract或能力已经冻结/完成。讨论、规划或实施同步时先读取该计划及§1.1裁决顺序，再读取 `docs/status/current.md` 的 R2-C、`docs/domains/sync_operation.md`、`docs/domains/user_sync_state.md`、`contracts/sync/`、`contracts/method_channels.yaml` 中的 `sync.apply`、`contracts/backend_api.yaml`、`cloud_backend/docs/implementation-status.md` 以及 Backend `sync/calendar` 包说明。现有 Schema 和空包仍只证明概念占位和账号基座；必须先完成 ADR、账号数据库加密 spike 与 Contract 冻结，再按 Contract/数据、C++/SQLite、Backend、Kotlin/Android、Flutter 和多设备验收分层推进。
 
 开始修改代码前，Codex 应能够明确回答：
 

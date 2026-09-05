@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:excellent_calendar/application/calendar/calendar_controller.dart';
 import 'package:excellent_calendar/application/calendar/calendar_date_math.dart';
 import 'package:excellent_calendar/native_contract/calendar/calendar_contract_enums.dart';
 import 'package:excellent_calendar/native_contract/calendar/calendar_response_dtos.dart';
 import 'package:excellent_calendar/presentation/calendar/calendar_page.dart';
 import 'package:excellent_calendar/presentation/calendar/widgets/calendar_grid.dart';
+import 'package:excellent_calendar/presentation/calendar/widgets/calendar_header.dart';
+import 'package:excellent_calendar/presentation/inbox/inbox_design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,6 +34,58 @@ void main() {
       }
     });
 
+    testWidgets(
+      'uses the schedule background and compact Chinese month header',
+      (tester) async {
+        await _setScreen(tester);
+        await _pumpCalendar(tester);
+
+        final scaffold = tester.widget<Scaffold>(
+          find.byKey(const ValueKey('calendar-page')),
+        );
+        expect(scaffold.backgroundColor, InboxColors.pageBackground);
+        expect(find.text('八月'), findsOneWidget);
+        expect(find.text('2026年8月'), findsNothing);
+
+        final title = tester.widget<Text>(find.text('八月'));
+        expect(title.style?.fontSize, 16);
+        expect(
+          find.descendant(
+            of: find.byType(CalendarHeader),
+            matching: find.byIcon(Icons.chevron_left_rounded),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(CalendarHeader),
+            matching: find.byIcon(Icons.chevron_right_rounded),
+          ),
+          findsNothing,
+        );
+        expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.view_agenda_outlined), findsOneWidget);
+        expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget);
+        expect(
+          tester
+              .getCenter(
+                find.byKey(const ValueKey('calendar-year-month-button')),
+              )
+              .dy,
+          tester
+              .getCenter(find.byKey(const ValueKey('calendar-mode-button')))
+              .dy,
+        );
+
+        final harness = await _pumpCalendar(tester);
+        await harness.controller.navigatePeriod(1);
+        await tester.pumpAndSettle();
+        expect(find.text('九月'), findsOneWidget);
+        expect(find.text('2026年9月'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('renders at 200 percent text scale without overflow', (
       tester,
     ) async {
@@ -49,23 +105,24 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('日程 1'), findsOneWidget);
-      final fab = tester.widget<FloatingActionButton>(
+      final fabRect = tester.getRect(
         find.byKey(const ValueKey('calendar-create-fab')),
       );
-      expect(fab.isExtended, isFalse);
+      expect(fabRect.size, const Size.square(58));
       expect(
         find.byKey(const ValueKey('calendar-create-action-bar')),
-        findsOneWidget,
+        findsNothing,
       );
       final bodyRect = tester.getRect(find.byType(CustomScrollView));
+      await tester.ensureVisible(
+        find.byKey(ValueKey(calendarHabit(1, '2026-08-31').identityKey)),
+      );
+      await tester.pumpAndSettle();
       final habitRect = tester
           .getRect(
             find.byKey(ValueKey(calendarHabit(1, '2026-08-31').identityKey)),
           )
           .intersect(bodyRect);
-      final fabRect = tester.getRect(
-        find.byKey(const ValueKey('calendar-create-fab')),
-      );
       expect(fabRect.overlaps(habitRect), isFalse);
       expect(tester.takeException(), isNull);
     });
@@ -99,7 +156,9 @@ void main() {
           onPage: (request) async =>
               calendarPageResponse(request: request, items: const []),
         );
-        await expectVisibleWithoutFabOverlap(find.text('这一天还没有安排'));
+        await expectVisibleWithoutFabOverlap(
+          find.byKey(const ValueKey('calendar-empty-state')),
+        );
 
         await _pumpCalendar(
           tester,
@@ -118,6 +177,160 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('calendar grid blends into the page background', (
+      tester,
+    ) async {
+      await _setScreen(tester);
+      await _pumpCalendar(tester);
+
+      expect(
+        find.byKey(const ValueKey('calendar-grid-canvas')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<Padding>(find.byKey(const ValueKey('calendar-grid-canvas')))
+            .padding,
+        const EdgeInsets.fromLTRB(4, 4, 4, 2),
+      );
+    });
+
+    testWidgets('completed items lead four collapsible schedule-style cards', (
+      tester,
+    ) async {
+      await _setScreen(tester, height: 1000);
+      await _pumpCalendar(
+        tester,
+        onPage: (request) async => calendarPageResponse(
+          request: request,
+          items: switch (request.section) {
+            CalendarSection.event => [
+              _eventWithStatus(
+                91,
+                title: '已完成日程',
+                status: CalendarEventItemStatus.completed,
+              ),
+              calendarEvent(1),
+            ],
+            CalendarSection.habit => [
+              _habitWithStatus(
+                92,
+                request.date,
+                CalendarHabitItemStatus.done,
+                checkInId: calendarUuid(592),
+                completed: 100,
+                target: 100,
+                unit: '页',
+              ),
+              calendarHabit(1, request.date),
+            ],
+            CalendarSection.anniversary => [
+              calendarAnniversary(1, request.date),
+            ],
+          },
+        ),
+      );
+
+      const cardKeys = [
+        'calendar-section-card-completed',
+        'calendar-section-card-event',
+        'calendar-section-card-habit',
+        'calendar-section-card-anniversary',
+      ];
+      final tops = [
+        for (final key in cardKeys)
+          tester.getTopLeft(find.byKey(ValueKey(key))).dy,
+      ];
+      expect(tops, orderedEquals(tops.toList()..sort()));
+      for (final key in cardKeys) {
+        final cards = tester.widgetList<Container>(
+          find.descendant(
+            of: find.byKey(ValueKey(key)),
+            matching: find.byType(Container),
+          ),
+        );
+        expect(
+          cards.any(
+            (card) =>
+                card.decoration is BoxDecoration &&
+                (card.decoration! as BoxDecoration).color ==
+                    InboxColors.surface,
+          ),
+          isTrue,
+        );
+      }
+
+      expect(find.text('已完成日程'), findsNothing);
+      expect(find.text('习惯状态 92'), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey('calendar-section-toggle-completed')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('已完成日程'), findsOneWidget);
+      expect(find.text('习惯状态 92'), findsOneWidget);
+      expect(find.text('日程 1'), findsOneWidget);
+      expect(find.text('习惯 1'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('calendar-section-toggle-event')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('日程 1'), findsNothing);
+      expect(find.text('已完成日程'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('hides empty groups after all remaining work is completed', (
+      tester,
+    ) async {
+      await _setScreen(tester, height: 900);
+      await _pumpCalendar(
+        tester,
+        onPage: (request) async => calendarPageResponse(
+          request: request,
+          items: switch (request.section) {
+            CalendarSection.event => [
+              _eventWithStatus(
+                93,
+                title: '刚完成的日程',
+                status: CalendarEventItemStatus.completed,
+              ),
+            ],
+            CalendarSection.habit => [
+              _habitWithStatus(
+                94,
+                request.date,
+                CalendarHabitItemStatus.done,
+                checkInId: calendarUuid(594),
+                completed: 1,
+                target: 1,
+                unit: '次',
+              ),
+            ],
+            CalendarSection.anniversary => const [],
+          },
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('calendar-section-card-completed')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('calendar-section-card-event')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('calendar-section-card-habit')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('calendar-section-card-anniversary')),
+        findsNothing,
+      );
+      expect(find.byKey(const ValueKey('calendar-empty-state')), findsNothing);
+    });
 
     testWidgets('reduce-motion makes Calendar transitions immediate', (
       tester,
@@ -161,74 +374,196 @@ void main() {
   });
 
   group('CalendarPage gesture arbitration', () {
-    testWidgets('ordinary vertical drag from grid advances parent scroll', (
-      tester,
-    ) async {
-      await _setScreen(tester, height: 640);
-      await _pumpCalendar(tester, itemCount: 8);
-      final surface = find.byKey(const ValueKey('calendar-gesture-surface'));
-      final scrollable = Scrollable.of(
-        tester.element(find.byType(CalendarGrid)),
-      );
-      final before = scrollable.position.pixels;
-
-      await tester.drag(surface, const Offset(0, -180));
+    testWidgets('month view always reserves six stable rows', (tester) async {
+      await _setScreen(tester);
+      final harness = await _pumpCalendar(tester);
+      await tester.tap(find.byKey(const ValueKey('calendar-mode-button')));
+      await tester.pumpAndSettle();
+      await harness.controller.navigatePeriod(1);
       await tester.pumpAndSettle();
 
-      expect(scrollable.position.pixels, greaterThan(before + 20));
-      expect(tester.takeException(), isNull);
+      final surface = find.byKey(
+        const ValueKey('calendar-period-drag-surface'),
+      );
+      expect(tester.getSize(surface).height, 52 * 6);
+      final sixthRowDate = find.byKey(
+        const ValueKey('calendar-date-2026-10-05'),
+      );
+      expect(sixthRowDate, findsOneWidget);
+      expect(
+        tester
+            .widget<Opacity>(
+              find.descendant(of: sixthRowDate, matching: find.byType(Opacity)),
+            )
+            .opacity,
+        0.58,
+      );
     });
 
-    testWidgets('month upward gesture from a section card collapses to week', (
+    testWidgets('vertical drag on the upper calendar expands it naturally', (
+      tester,
+    ) async {
+      await _setScreen(tester);
+      final harness = await _pumpCalendar(tester);
+      final surface = find.byKey(
+        const ValueKey('calendar-period-drag-surface'),
+      );
+      final beforeHandle = tester.getCenter(
+        find.byKey(const ValueKey('calendar-resize-handle')),
+      );
+      expect(tester.getSize(surface).height, 52);
+
+      await tester.drag(
+        find.byKey(const ValueKey('calendar-upper-gesture-surface')),
+        const Offset(0, 190),
+      );
+      await tester.pumpAndSettle();
+
+      expect(harness.controller.state.viewMode, CalendarViewMode.month);
+      expect(tester.getSize(surface).height, 52 * 6);
+      expect(
+        tester
+            .getCenter(find.byKey(const ValueKey('calendar-resize-handle')))
+            .dy,
+        greaterThan(beforeHandle.dy + 200),
+      );
+    });
+
+    testWidgets('divider drag keeps the selected week visible while folding', (
       tester,
     ) async {
       await _setScreen(tester);
       final harness = await _pumpCalendar(tester);
       await tester.tap(find.byKey(const ValueKey('calendar-mode-button')));
       await tester.pumpAndSettle();
-      expect(harness.controller.state.viewMode, CalendarViewMode.month);
-
-      await tester.drag(
-        find.byKey(ValueKey(calendarEvent(1).identityKey)),
-        const Offset(0, -80),
-      );
+      await harness.controller.navigatePeriod(1);
       await tester.pumpAndSettle();
 
+      final handle = find.byKey(const ValueKey('calendar-resize-handle'));
+      final gesture = await tester.startGesture(tester.getCenter(handle));
+      await gesture.moveBy(const Offset(0, -30));
+      await tester.pump();
+      await gesture.moveBy(const Offset(0, -170));
+      await tester.pump();
+
+      final surfaceRect = tester.getRect(
+        find.byKey(const ValueKey('calendar-period-drag-surface')),
+      );
+      final selectedRect = tester.getRect(
+        find.byKey(const ValueKey('calendar-date-2026-09-30')),
+      );
+      expect(surfaceRect.height, inExclusiveRange(52, 52 * 6));
+      expect(selectedRect.intersect(surfaceRect).isEmpty, isFalse);
+
+      await gesture.up();
+      await tester.pumpAndSettle();
       expect(harness.controller.state.viewMode, CalendarViewMode.week);
-    });
-
-    testWidgets('week downward gesture expands to month', (tester) async {
-      await _setScreen(tester);
-      final harness = await _pumpCalendar(tester);
-
-      await tester.drag(
-        find.byKey(const ValueKey('calendar-gesture-surface')),
-        const Offset(0, 80),
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey('calendar-period-drag-surface')))
+            .height,
+        52,
       );
-      await tester.pumpAndSettle();
-
-      expect(harness.controller.state.viewMode, CalendarViewMode.month);
+      expect(
+        find.byKey(const ValueKey('calendar-date-2026-09-30')),
+        findsOneWidget,
+      );
     });
 
     testWidgets(
-      'expanded month downward gesture refreshes without collapsing',
+      'divider drag keeps selected-day content visible while the range changes',
       (tester) async {
         await _setScreen(tester);
-        final harness = await _pumpCalendar(tester);
-        await tester.tap(find.byKey(const ValueKey('calendar-mode-button')));
-        await tester.pumpAndSettle();
-        final before = harness.gateway.rangeRequests.length;
+        final rangeReload = Completer<CalendarRangeSummaryResponseDto>();
+        final pageReloads = {
+          for (final section in CalendarSection.values)
+            section: Completer<CalendarDayItemPageDto>(),
+        };
+        var rangeCalls = 0;
+        final harness = await _pumpCalendar(
+          tester,
+          onRange: (request) {
+            rangeCalls += 1;
+            if (rangeCalls == 1) {
+              return Future.value(calendarRangeResponse(request: request));
+            }
+            return rangeReload.future;
+          },
+          onPage: (request) {
+            if (request.snapshotToken == calendarSnapshotA) {
+              return Future.value(calendarPageResponse(request: request));
+            }
+            return pageReloads[request.section]!.future;
+          },
+        );
+        expect(find.text('日程 1'), findsOneWidget);
+        expect(harness.gateway.pageRequests, hasLength(3));
 
         await tester.drag(
-          find.byKey(const ValueKey('calendar-gesture-surface')),
-          const Offset(0, 100),
+          find.byKey(const ValueKey('calendar-resize-handle')),
+          const Offset(0, 190),
         );
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
 
         expect(harness.controller.state.viewMode, CalendarViewMode.month);
-        expect(harness.gateway.rangeRequests.length, before + 1);
+        expect(find.text('日程 1'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('calendar-section-skeleton')),
+          findsNothing,
+        );
+        expect(harness.gateway.pageRequests, hasLength(3));
+
+        rangeReload.complete(
+          calendarRangeResponse(
+            request: harness.gateway.rangeRequests.last,
+            snapshotToken: calendarSnapshotB,
+          ),
+        );
+        await tester.pump();
+        expect(harness.gateway.pageRequests, hasLength(6));
+        expect(find.text('日程 1'), findsOneWidget);
+
+        for (final request in harness.gateway.pageRequests.skip(3)) {
+          pageReloads[request.section]!.complete(
+            calendarPageResponse(request: request),
+          );
+        }
+        await tester.pump();
+        expect(find.text('日程 1'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('calendar-section-skeleton')),
+          findsNothing,
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('日程 1'), findsOneWidget);
       },
     );
+
+    testWidgets('lower schedule scroll does not resize the calendar', (
+      tester,
+    ) async {
+      await _setScreen(tester, height: 640);
+      final harness = await _pumpCalendar(tester, itemCount: 8);
+      final item = find.byKey(ValueKey(calendarEvent(1).identityKey));
+      final scrollable = Scrollable.of(tester.element(item));
+      final beforeHeight = tester
+          .getSize(find.byKey(const ValueKey('calendar-period-drag-surface')))
+          .height;
+
+      await tester.drag(item, const Offset(0, -180));
+      await tester.pumpAndSettle();
+
+      expect(scrollable.position.pixels, greaterThan(20));
+      expect(harness.controller.state.viewMode, CalendarViewMode.week);
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey('calendar-period-drag-surface')))
+            .height,
+        beforeHeight,
+      );
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('horizontal drag pages exactly one visible period', (
       tester,
@@ -237,8 +572,8 @@ void main() {
       final harness = await _pumpCalendar(tester);
 
       await tester.drag(
-        find.byKey(const ValueKey('calendar-gesture-surface')),
-        const Offset(-100, 4),
+        find.byKey(const ValueKey('calendar-period-drag-surface')),
+        const Offset(-190, 4),
       );
       await tester.pumpAndSettle();
 
@@ -248,44 +583,56 @@ void main() {
       );
     });
 
-    testWidgets('reversing a locked horizontal drag uses its final direction', (
+    testWidgets('month page follows the finger and previews muted next month', (
       tester,
     ) async {
       await _setScreen(tester);
       final harness = await _pumpCalendar(tester);
-      final surface = find.byKey(const ValueKey('calendar-gesture-surface'));
-      final gesture = await tester.startGesture(tester.getCenter(surface));
-      await gesture.moveBy(const Offset(-70, 2));
-      await gesture.moveBy(const Offset(140, -2));
-      await gesture.up();
+      await tester.tap(find.byKey(const ValueKey('calendar-mode-button')));
       await tester.pumpAndSettle();
 
-      expect(
-        CalendarDateMath.formatDate(harness.controller.state.selectedDate),
-        '2026-08-24',
+      final surface = find.byKey(
+        const ValueKey('calendar-period-drag-surface'),
       );
+      final surfaceRect = tester.getRect(surface);
+      final gesture = await tester.startGesture(tester.getCenter(surface));
+      await gesture.moveBy(Offset(-surfaceRect.width * 0.12, 0));
+      await tester.pump();
+      await gesture.moveBy(Offset(-surfaceRect.width * 0.56, 0));
+      await tester.pump();
+
+      final currentRect = tester.getRect(
+        find.byKey(const ValueKey('calendar-period-current')),
+      );
+      final nextRect = tester.getRect(
+        find.byKey(const ValueKey('calendar-period-next')),
+      );
+      expect(
+        currentRect.intersect(surfaceRect).isEmpty,
+        isFalse,
+        reason: 'surface=$surfaceRect current=$currentRect next=$nextRect',
+      );
+      expect(
+        nextRect.intersect(surfaceRect).isEmpty,
+        isFalse,
+        reason: 'surface=$surfaceRect current=$currentRect next=$nextRect',
+      );
+      expect(
+        tester
+            .widget<Opacity>(
+              find.byKey(const ValueKey('calendar-preview-next-date-opacity')),
+            )
+            .opacity,
+        0.46,
+      );
+
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(harness.controller.state.anchorDate.month, 8);
+      await tester.pumpAndSettle();
+
+      expect(harness.controller.state.anchorDate.month, 9);
     });
-
-    testWidgets(
-      'section card pull at top expands before a new pull refreshes',
-      (tester) async {
-        await _setScreen(tester);
-        final harness = await _pumpCalendar(tester);
-        final eventCard = find.byKey(ValueKey(calendarEvent(1).identityKey));
-        final beforeExpand = harness.gateway.rangeRequests.length;
-
-        await tester.drag(eventCard, const Offset(0, 100));
-        await tester.pumpAndSettle();
-        expect(harness.controller.state.viewMode, CalendarViewMode.month);
-        expect(harness.gateway.rangeRequests.length, beforeExpand + 1);
-        final beforeRefresh = harness.gateway.rangeRequests.length;
-
-        await tester.drag(eventCard, const Offset(0, 100));
-        await tester.pumpAndSettle();
-        expect(harness.controller.state.viewMode, CalendarViewMode.month);
-        expect(harness.gateway.rangeRequests.length, beforeRefresh + 1);
-      },
-    );
   });
 
   group('CalendarPage frozen controls and return semantics', () {
@@ -480,7 +827,27 @@ void main() {
         onPage: (request) async =>
             calendarPageResponse(request: request, items: const []),
       );
-      expect(find.text('这一天还没有安排'), findsOneWidget);
+      expect(find.text('空空如也的任务'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('calendar-empty-state')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('calendar-section-card-completed')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('calendar-section-card-event')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('calendar-section-card-habit')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('calendar-section-card-anniversary')),
+        findsNothing,
+      );
 
       await _pumpCalendar(
         tester,
@@ -498,6 +865,10 @@ void main() {
       expect(find.text('待完成'), findsWidgets);
       expect(find.text('未完成'), findsWidgets);
       expect(find.text('进行中 · 0.5 / 1 页'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('calendar-section-toggle-completed')),
+      );
+      await tester.pumpAndSettle();
       expect(find.text('已完成 · 1 / 1 页'), findsOneWidget);
       expect(find.text('已跳过'), findsWidgets);
       expect(tester.takeException(), isNull);
@@ -522,9 +893,11 @@ Future<_CalendarHarness> _pumpCalendar(
   CalendarOpenHabit? onOpenHabit,
   CalendarOpenAnniversary? onOpenAnniversary,
   CalendarCreateItem? onCreateItem,
+  CalendarRangeHandler? onRange,
   CalendarPageHandler? onPage,
 }) async {
   final gateway = CallbackCalendarGateway(
+    onRange: onRange,
     onPage:
         onPage ??
         (request) async => calendarPageResponse(
@@ -588,6 +961,29 @@ CalendarEventItemDto _continuingEvent() => CalendarEventItemDto(
   dayDisplay: CalendarEventDayDisplay.continues,
   displayLocalTime: null,
   status: CalendarEventItemStatus.inProgress,
+  hasActiveReminder: false,
+);
+
+CalendarEventItemDto _eventWithStatus(
+  int index, {
+  required String title,
+  required CalendarEventItemStatus status,
+}) => CalendarEventItemDto(
+  eventId: calendarUuid(index),
+  title: title,
+  isAllDay: false,
+  isRecurring: false,
+  recurrenceRevision: null,
+  occurrenceKey: null,
+  occurrenceStartAt: null,
+  occurrenceStartDate: null,
+  startAt: DateTime.utc(2026, 8, 31, 1),
+  endAt: DateTime.utc(2026, 8, 31, 2),
+  startDate: null,
+  endDate: null,
+  dayDisplay: CalendarEventDayDisplay.startsAt,
+  displayLocalTime: '09:00',
+  status: status,
   hasActiveReminder: false,
 );
 

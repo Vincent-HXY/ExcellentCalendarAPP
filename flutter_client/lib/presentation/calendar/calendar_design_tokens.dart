@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../app_design_tokens.dart';
+
 @immutable
 class CalendarPalette {
   const CalendarPalette({
@@ -27,7 +29,9 @@ class CalendarPalette {
       brightness,
     );
     return CalendarPalette(
-      background: scheme.surface,
+      background: brightness == Brightness.light
+          ? AppColors.lightPageBackground
+          : scheme.surface,
       panel: scheme.surfaceContainerLow,
       card: scheme.surfaceContainerLowest,
       outline: scheme.outlineVariant.withValues(alpha: 0.72),

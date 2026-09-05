@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+abstract final class AppColors {
+  static const lightPageBackground = Color(0xFFE6F8FA);
+}
+
 abstract final class AppMotion {
   static const segmentedControl = Duration(milliseconds: 280);
   static const sectionExpand = Duration(milliseconds: 420);

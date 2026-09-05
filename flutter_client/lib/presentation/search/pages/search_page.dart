@@ -52,6 +52,7 @@ class _SearchPageState extends State<SearchPage> with WidgetsBindingObserver {
       text: widget.controller.state.rawKeyword,
     );
     _focusNode = FocusNode();
+    _focusNode.addListener(_handleFocusChanged);
     _scrollController = ScrollController();
     unawaited(
       widget.controller.initialize().then((_) async {
@@ -84,7 +85,7 @@ class _SearchPageState extends State<SearchPage> with WidgetsBindingObserver {
         if (!didPop) widget.controller.exitHistoryManaging();
       },
       child: Material(
-        color: Theme.of(context).colorScheme.surface,
+        color: SearchPalette.of(context).background,
         child: SafeArea(
           bottom: false,
           child: ListenableBuilder(
@@ -122,9 +123,11 @@ class _SearchPageState extends State<SearchPage> with WidgetsBindingObserver {
                               SearchHeader(
                                 textController: _textController,
                                 focusNode: _focusNode,
-                                showLargeTitle: SearchTextContract.isBlank(
-                                  state.rawKeyword,
-                                ),
+                                showLargeTitle:
+                                    SearchTextContract.isBlank(
+                                      state.rawKeyword,
+                                    ) &&
+                                    !_focusNode.hasFocus,
                                 filterCount: state.filters.activeGroupCount,
                                 onChanged: _onTextChanged,
                                 onSubmitted: (_) =>
@@ -278,6 +281,10 @@ class _SearchPageState extends State<SearchPage> with WidgetsBindingObserver {
     setState(() {});
   }
 
+  void _handleFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
   void _clear() {
     _textController.clear();
     widget.controller.clearKeyword();
@@ -365,6 +372,7 @@ class _SearchPageState extends State<SearchPage> with WidgetsBindingObserver {
       unawaited(widget.controller.setActive(false));
     }
     _textController.dispose();
+    _focusNode.removeListener(_handleFocusChanged);
     _focusNode.dispose();
     _scrollController.dispose();
     if (widget.disposeController) widget.controller.dispose();

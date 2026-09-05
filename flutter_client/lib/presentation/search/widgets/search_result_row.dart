@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 
 import '../../../native_contract/search/search_contract_enums.dart';
 import '../../../native_contract/search/search_response_dtos.dart';
+import '../search_design_tokens.dart';
 import 'highlighted_search_text.dart';
 
 class SearchResultRow extends StatelessWidget {
   const SearchResultRow({
     required this.item,
     required this.normalizedKeyword,
+    required this.highlightColor,
     required this.enabled,
     required this.onTap,
     super.key,
   });
   final SearchItemDto item;
   final String normalizedKeyword;
+  final Color highlightColor;
   final bool enabled;
   final VoidCallback onTap;
 
@@ -22,17 +25,23 @@ class SearchResultRow extends StatelessWidget {
     final theme = Theme.of(context);
     final snippet = item.match.snippet;
     final status = _status(item);
+    final trailing = _trailing(item);
     return Opacity(
       opacity: enabled ? 1 : 0.55,
       child: Semantics(
         button: true,
         enabled: enabled,
         label:
-            '${item.title}，${_metadata(item)}${status == null ? '' : '，$status'}',
+            '${item.title}，${_metadata(item)}${trailing == null ? '' : '，$trailing'}${status == null ? '' : '，$status'}',
         child: InkWell(
           onTap: enabled ? onTap : null,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+            padding: const EdgeInsets.fromLTRB(
+              SearchDesignTokens.resultContentIndent,
+              SearchDesignTokens.resultRowVerticalPadding,
+              SearchDesignTokens.resultRightPadding,
+              SearchDesignTokens.resultRowVerticalPadding,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -43,13 +52,19 @@ class SearchResultRow extends StatelessWidget {
                       HighlightedSearchText(
                         text: item.title,
                         normalizedKeyword: normalizedKeyword,
+                        highlightColor: highlightColor,
                         maxLines: 2,
                         style: theme.textTheme.titleMedium?.copyWith(
+                          fontSize:
+                              (theme.textTheme.titleMedium?.fontSize ?? 16) *
+                              SearchDesignTokens.resultTitleScale,
                           fontWeight: FontWeight.w700,
                           color: theme.colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(
+                        height: SearchDesignTokens.resultContentGap,
+                      ),
                       Text(
                         _metadata(item),
                         maxLines: 2,
@@ -59,10 +74,13 @@ class SearchResultRow extends StatelessWidget {
                         ),
                       ),
                       if (snippet != null) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(
+                          height: SearchDesignTokens.resultContentGap,
+                        ),
                         HighlightedSearchText(
                           text: snippet.text,
                           normalizedKeyword: normalizedKeyword,
+                          highlightColor: highlightColor,
                           prefixTruncated: snippet.prefixTruncated,
                           suffixTruncated: snippet.suffixTruncated,
                           maxLines: 2,
@@ -72,7 +90,9 @@ class SearchResultRow extends StatelessWidget {
                         ),
                       ],
                       if (status != null) ...[
-                        const SizedBox(height: 7),
+                        const SizedBox(
+                          height: SearchDesignTokens.resultStatusGap,
+                        ),
                         Row(
                           children: [
                             Icon(
@@ -93,11 +113,18 @@ class SearchResultRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    trailing,
+                    textAlign: TextAlign.end,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: item is SearchAnniversaryItemDto
+                          ? highlightColor
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -116,8 +143,7 @@ String _metadata(SearchItemDto item) {
           : '${_dateTime(value.occurAt!)}${value.location == null ? '' : ' · ${value.location}'}',
     SearchHabitItemDto value =>
       '${value.occurDate} · 剩余 ${value.remainingDays} 天',
-    SearchAnniversaryItemDto value =>
-      '${value.occurDate} · ${_anniversaryRelation(value)}',
+    SearchAnniversaryItemDto value => value.occurDate,
   };
   return category == null ? detail : '$detail · $category';
 }
@@ -149,6 +175,18 @@ IconData _statusIcon(SearchItemDto item) => switch (item) {
     Icons.verified_outlined,
   _ => Icons.info_outline_rounded,
 };
+
+String? _trailing(SearchItemDto item) => switch (item) {
+  SearchEventItemDto value => value.isAllDay ? '全天' : _time(value.occurAt!),
+  SearchHabitItemDto() => null,
+  SearchAnniversaryItemDto value => _anniversaryRelation(value),
+};
+
+String _time(DateTime value) {
+  final local = value.toLocal();
+  String two(int number) => number.toString().padLeft(2, '0');
+  return '${two(local.hour)}:${two(local.minute)}';
+}
 
 String _dateTime(DateTime value) {
   final local = value.toLocal();
