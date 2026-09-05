@@ -1,0 +1,861 @@
+{
+  "audit_version": 1,
+  "rule_anchor": "cloud-sync-02/3",
+  "scope": "Static route, top-level DTO field, error enum and idempotency source inventory; nested constraints and actual HTTP results remain unverified",
+  "endpoints": [
+    {
+      "operation": "auth.register",
+      "method": "POST",
+      "path": "/api/v1/auth/register",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/registration_request.schema.json",
+      "response_schema": "auth/registration_pending_response.schema.json",
+      "request_schema_fields": [
+        "agreement_accepted",
+        "agreement_version",
+        "display_name",
+        "email",
+        "locale",
+        "password",
+        "timezone",
+        "username"
+      ],
+      "response_schema_fields": [
+        "account_id",
+        "challenge"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_EMAIL_ALREADY_EXISTS": 409,
+        "AUTH_USERNAME_ALREADY_EXISTS": 409,
+        "AUTH_PASSWORD_POLICY_VIOLATION": 400
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegistrationController.java",
+      "handler": "register",
+      "request_dto": "RegisterRequestDto",
+      "response_dto": "RegistrationPendingResponseDto",
+      "request_dto_fields": [
+        "agreement_accepted",
+        "agreement_version",
+        "display_name",
+        "email",
+        "locale",
+        "password",
+        "timezone",
+        "username"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "account_id",
+        "challenge"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.registration.verify",
+      "method": "POST",
+      "path": "/api/v1/auth/registration/verify",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/verify_registration_request.schema.json",
+      "response_schema": "auth/authentication_response.schema.json",
+      "request_schema_fields": [
+        "challenge_id",
+        "credential"
+      ],
+      "response_schema_fields": [
+        "current_user",
+        "tokens"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_VERIFICATION_INVALID": 400,
+        "AUTH_VERIFICATION_EXPIRED": 400,
+        "AUTH_VERIFICATION_USED": 400,
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED": null
+      },
+      "declared_errors_missing_backend_enum": [
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED"
+      ],
+      "idempotency": {
+        "required": false,
+        "behavior": "one_time_challenge"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegistrationController.java",
+      "handler": "verify",
+      "request_dto": "VerifyRegistrationRequestDto",
+      "response_dto": "AuthenticationResponseDto",
+      "request_dto_fields": [
+        "challenge_id",
+        "credential"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "current_user",
+        "tokens"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.registration.resend",
+      "method": "POST",
+      "path": "/api/v1/auth/registration/resend",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/resend_registration_request.schema.json",
+      "response_schema": "auth/email_challenge_response.schema.json",
+      "request_schema_fields": [
+        "challenge_id"
+      ],
+      "response_schema_fields": [
+        "action_id",
+        "challenge_id",
+        "credential_types",
+        "expires_at",
+        "masked_email",
+        "purpose",
+        "resend_available_at"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_VERIFICATION_INVALID": 400,
+        "AUTH_VERIFICATION_EXPIRED": 400,
+        "AUTH_VERIFICATION_USED": 400
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegistrationController.java",
+      "handler": "resend",
+      "request_dto": "ResendRegistrationRequestDto",
+      "response_dto": "EmailChallengeResponseDto",
+      "request_dto_fields": [
+        "challenge_id"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "action_id",
+        "challenge_id",
+        "credential_types",
+        "expires_at",
+        "masked_email",
+        "purpose",
+        "resend_available_at"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.registration.email.update",
+      "method": "PATCH",
+      "path": "/api/v1/auth/registration/email",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_absent",
+      "request_schema": "auth/update_registration_email_request.schema.json",
+      "response_schema": "auth/registration_pending_response.schema.json",
+      "request_schema_fields": [
+        "account_id",
+        "current_password",
+        "new_email"
+      ],
+      "response_schema_fields": [
+        "account_id",
+        "challenge"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_NOT_FOUND": null,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_ACCOUNT_ALREADY_VERIFIED": null,
+        "AUTH_CURRENT_PASSWORD_INVALID": 400,
+        "AUTH_EMAIL_ALREADY_EXISTS": 409
+      },
+      "declared_errors_missing_backend_enum": [
+        "AUTH_ACCOUNT_ALREADY_VERIFIED",
+        "AUTH_ACCOUNT_NOT_FOUND"
+      ],
+      "idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "runtime_verification": "not_run_in_ct0"
+    },
+    {
+      "operation": "auth.login",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/login_request.schema.json",
+      "response_schema": "auth/authentication_response.schema.json",
+      "request_schema_fields": [
+        "email",
+        "password"
+      ],
+      "response_schema_fields": [
+        "current_user",
+        "tokens"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_INVALID_CREDENTIALS": 401,
+        "AUTH_EMAIL_UNVERIFIED": 403,
+        "AUTH_ACCOUNT_DISABLED": 403
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": false
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/SessionController.java",
+      "handler": "login",
+      "request_dto": "LoginRequestDto",
+      "response_dto": "AuthenticationResponseDto",
+      "request_dto_fields": [
+        "email",
+        "password"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "current_user",
+        "tokens"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.token.refresh",
+      "method": "POST",
+      "path": "/api/v1/auth/token/refresh",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/refresh_session_request.schema.json",
+      "response_schema": "auth/token_pair_response.schema.json",
+      "request_schema_fields": [
+        "refresh_token"
+      ],
+      "response_schema_fields": [
+        "access_token",
+        "access_token_expires_at",
+        "refresh_token",
+        "refresh_token_expires_at",
+        "session_id",
+        "token_type"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_REFRESH_TOKEN_INVALID": 401,
+        "AUTH_REFRESH_TOKEN_REUSED": 401,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": false,
+        "behavior": "atomic_refresh_token_rotation"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/SessionController.java",
+      "handler": "refresh",
+      "request_dto": "RefreshSessionRequestDto",
+      "response_dto": "TokenPairResponseDto",
+      "request_dto_fields": [
+        "refresh_token"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "access_token",
+        "access_token_expires_at",
+        "refresh_token",
+        "refresh_token_expires_at",
+        "session_id",
+        "token_type"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.logout",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/logout_request.schema.json",
+      "response_schema": "common/operation_response.schema.json",
+      "request_schema_fields": [
+        "refresh_token"
+      ],
+      "response_schema_fields": [
+        "message",
+        "performed"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_INTERNAL_ERROR": 500
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": false,
+        "behavior": "natural"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/SessionController.java",
+      "handler": "logout",
+      "request_dto": "LogoutRequestDto",
+      "response_dto": "OperationResponseDto",
+      "request_dto_fields": [
+        "refresh_token"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "message",
+        "performed"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.logout_all",
+      "method": "POST",
+      "path": "/api/v1/auth/logout-all",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "common/empty_request.schema.json",
+      "response_schema": "common/operation_response.schema.json",
+      "request_schema_fields": [],
+      "response_schema_fields": [
+        "message",
+        "performed"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": false,
+        "behavior": "natural"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/SessionController.java",
+      "handler": "logoutAll",
+      "request_dto": null,
+      "response_dto": "OperationResponseDto",
+      "request_dto_fields": null,
+      "request_top_level_fields_match": null,
+      "response_dto_fields": [
+        "message",
+        "performed"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.password_reset.request",
+      "method": "POST",
+      "path": "/api/v1/auth/password-reset/request",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/password_reset_request.schema.json",
+      "response_schema": "auth/password_reset_dispatch_response.schema.json",
+      "request_schema_fields": [
+        "email"
+      ],
+      "response_schema_fields": [
+        "accepted",
+        "resend_available_at"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordController.java",
+      "handler": "requestReset",
+      "request_dto": "PasswordResetRequestDto",
+      "response_dto": "PasswordResetDispatchResponseDto",
+      "request_dto_fields": [
+        "email"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "accepted",
+        "resend_available_at"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.password_reset.confirm",
+      "method": "POST",
+      "path": "/api/v1/auth/password-reset/confirm",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/confirm_password_reset_request.schema.json",
+      "response_schema": "common/operation_response.schema.json",
+      "request_schema_fields": [
+        "credential",
+        "email",
+        "new_password"
+      ],
+      "response_schema_fields": [
+        "message",
+        "performed"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_VERIFICATION_INVALID": 400,
+        "AUTH_VERIFICATION_EXPIRED": 400,
+        "AUTH_VERIFICATION_USED": 400,
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED": null,
+        "AUTH_PASSWORD_POLICY_VIOLATION": 400
+      },
+      "declared_errors_missing_backend_enum": [
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED"
+      ],
+      "idempotency": {
+        "required": false,
+        "behavior": "one_time_challenge"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordController.java",
+      "handler": "confirmReset",
+      "request_dto": "ConfirmPasswordResetRequestDto",
+      "response_dto": "OperationResponseDto",
+      "request_dto_fields": [
+        "credential",
+        "email",
+        "new_password"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "message",
+        "performed"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.password.change",
+      "method": "POST",
+      "path": "/api/v1/auth/password/change",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/change_password_request.schema.json",
+      "response_schema": "auth/authentication_response.schema.json",
+      "request_schema_fields": [
+        "current_password",
+        "new_password"
+      ],
+      "response_schema_fields": [
+        "current_user",
+        "tokens"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_CURRENT_PASSWORD_INVALID": 400,
+        "AUTH_PASSWORD_UNCHANGED": 400,
+        "AUTH_PASSWORD_POLICY_VIOLATION": 400,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": false
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordController.java",
+      "handler": "change",
+      "request_dto": "ChangePasswordRequestDto",
+      "response_dto": "AuthenticationResponseDto",
+      "request_dto_fields": [
+        "current_password",
+        "new_password"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "current_user",
+        "tokens"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.email_change.request",
+      "method": "POST",
+      "path": "/api/v1/auth/email-change/request",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/request_email_change_request.schema.json",
+      "response_schema": "auth/email_challenge_response.schema.json",
+      "request_schema_fields": [
+        "current_password",
+        "new_email"
+      ],
+      "response_schema_fields": [
+        "action_id",
+        "challenge_id",
+        "credential_types",
+        "expires_at",
+        "masked_email",
+        "purpose",
+        "resend_available_at"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_CURRENT_PASSWORD_INVALID": 400,
+        "AUTH_EMAIL_ALREADY_EXISTS": 409,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/EmailChangeController.java",
+      "handler": "request",
+      "request_dto": "RequestEmailChangeRequestDto",
+      "response_dto": "EmailChallengeResponseDto",
+      "request_dto_fields": [
+        "current_password",
+        "new_email"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "action_id",
+        "challenge_id",
+        "credential_types",
+        "expires_at",
+        "masked_email",
+        "purpose",
+        "resend_available_at"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "auth.email_change.confirm",
+      "method": "POST",
+      "path": "/api/v1/auth/email-change/confirm",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "auth/confirm_email_change_request.schema.json",
+      "response_schema": "auth/authentication_response.schema.json",
+      "request_schema_fields": [
+        "credential",
+        "email_change_request_id"
+      ],
+      "response_schema_fields": [
+        "current_user",
+        "tokens"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_EMAIL_ALREADY_EXISTS": 409,
+        "AUTH_VERIFICATION_INVALID": 400,
+        "AUTH_VERIFICATION_EXPIRED": 400,
+        "AUTH_VERIFICATION_USED": 400,
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED": null,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declared_errors_missing_backend_enum": [
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED"
+      ],
+      "idempotency": {
+        "required": false,
+        "behavior": "one_time_challenge"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/EmailChangeController.java",
+      "handler": "confirm",
+      "request_dto": "ConfirmEmailChangeRequestDto",
+      "response_dto": "AuthenticationResponseDto",
+      "request_dto_fields": [
+        "credential",
+        "email_change_request_id"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "current_user",
+        "tokens"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "user.get_current",
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "common/empty_request.schema.json",
+      "response_schema": "user/current_user_response.schema.json",
+      "request_schema_fields": [],
+      "response_schema_fields": [
+        "account",
+        "preferences",
+        "profile"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": false,
+        "behavior": "read_only"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UserController.java",
+      "handler": "getCurrent",
+      "request_dto": null,
+      "response_dto": "CurrentUserResponseDto",
+      "request_dto_fields": null,
+      "request_top_level_fields_match": null,
+      "response_dto_fields": [
+        "account",
+        "preferences",
+        "profile"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "user.update_current",
+      "method": "PATCH",
+      "path": "/api/v1/users/me",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "user/update_current_user_request.schema.json",
+      "response_schema": "user/current_user_response.schema.json",
+      "request_schema_fields": [
+        "default_reminder_methods",
+        "display_name",
+        "locale",
+        "settings",
+        "timezone",
+        "username"
+      ],
+      "response_schema_fields": [
+        "account",
+        "preferences",
+        "profile"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_USERNAME_ALREADY_EXISTS": 409,
+        "AUTH_SESSION_EXPIRED": 401,
+        "USER_PROFILE_INVALID": 400
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": false,
+        "behavior": "patch_is_idempotent_for_same_payload"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UserController.java",
+      "handler": "updateCurrent",
+      "request_dto": "UpdateCurrentUserRequestDto",
+      "response_dto": "CurrentUserResponseDto",
+      "request_dto_fields": [
+        "default_reminder_methods",
+        "display_name",
+        "locale",
+        "settings",
+        "timezone",
+        "username"
+      ],
+      "request_top_level_fields_match": true,
+      "response_dto_fields": [
+        "account",
+        "preferences",
+        "profile"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "user.avatar.upload",
+      "method": "POST",
+      "path": "/api/v1/users/me/avatar",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "user/avatar_upload_request.schema.json",
+      "response_schema": "user/current_user_response.schema.json",
+      "request_schema_fields": [
+        "file"
+      ],
+      "response_schema_fields": [
+        "account",
+        "preferences",
+        "profile"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_SESSION_EXPIRED": 401,
+        "AVATAR_TYPE_UNSUPPORTED": 415,
+        "AVATAR_TOO_LARGE": 413,
+        "AVATAR_UPLOAD_FAILED": 500
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/AvatarController.java",
+      "handler": "upload",
+      "request_dto": null,
+      "response_dto": "CurrentUserResponseDto",
+      "request_dto_fields": null,
+      "request_top_level_fields_match": null,
+      "response_dto_fields": [
+        "account",
+        "preferences",
+        "profile"
+      ],
+      "response_top_level_fields_match": true
+    },
+    {
+      "operation": "user.avatar.delete",
+      "method": "DELETE",
+      "path": "/api/v1/users/me/avatar",
+      "declared_implementation_status": "planned",
+      "source_status": "controller_present",
+      "request_schema": "common/empty_request.schema.json",
+      "response_schema": "user/current_user_response.schema.json",
+      "request_schema_fields": [],
+      "response_schema_fields": [
+        "account",
+        "preferences",
+        "profile"
+      ],
+      "declared_business_http_status": 200,
+      "error_statuses_from_backend_enum": {
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declared_errors_missing_backend_enum": [],
+      "idempotency": {
+        "required": false,
+        "behavior": "natural"
+      },
+      "runtime_verification": "not_run_in_ct0",
+      "controller": "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/AvatarController.java",
+      "handler": "delete",
+      "request_dto": null,
+      "response_dto": "CurrentUserResponseDto",
+      "request_dto_fields": null,
+      "request_top_level_fields_match": null,
+      "response_dto_fields": [
+        "account",
+        "preferences",
+        "profile"
+      ],
+      "response_top_level_fields_match": true
+    }
+  ],
+  "source_sha256": {
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/AuthenticationResponseDto.java": "9a7321fff743251db7a164a35b753bc33ee20755983548a5c5a1b0008f7bdfe2",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/ChangePasswordRequestDto.java": "25688702245b5f833c8058c8ce09c30b140a01552f0f3caefc8ba20aeaee13fb",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/ConfirmEmailChangeRequestDto.java": "635b61705bfe19a8f46b3f22a3debed80dc2e931f869276d9d80c9d27dde3cc9",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/ConfirmPasswordResetRequestDto.java": "740c82a2696b3ab5b0af027650c87d8a1ed64b622697f911b630daab8deb6d87",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/EmailChallengeResponseDto.java": "289595c1aa4904092cd0f3b7d25649884c4b725a3c54a7b131ec3ec94bf541d4",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/EmailChangeController.java": "a4bc99253edc101213ca2fadde48c65975a582de874ff130bd242643dbfe529e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/LoginRequestDto.java": "12af13b4c34bcc1afa9eb8cc414dc04aeb6c50a7de71295019a42e9ef07ad65e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/LogoutRequestDto.java": "ffa38839b7b4b21a18aa1249f05d78a8326085b966efa3ebc1e109beaca2745d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/OperationResponseDto.java": "d40f499f4050cefade99d2d53c5de4c516f5c60db2e3fe9b767c18c5cc1b42de",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordController.java": "8a6aaf6f656e5261250c57860059a0496bd5f2ea93220a37832cbb3b1804ce6a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordResetDispatchResponseDto.java": "abf36de6535be2d5932bc81faa2356ceb9cd3dfe443329407285f0b39cf27e6f",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordResetRequestDto.java": "9b17d9a0f603fc56b7f87124f718dfe61ec6438086e85809ee48b3f162e50fcf",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RefreshSessionRequestDto.java": "af7149e28252875ba1428eccfdc147b4b51e9f954d81a32cc04fba99d89fae2b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegisterRequestDto.java": "6915fa6204d12aae634e4d6505bbacbbbd416b06483399f02ae28a27f758af87",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegistrationController.java": "7bf471c1eab82917b19bc921d8132a1aa7328bdfdd1fb21875d95d183bb0eea6",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegistrationPendingResponseDto.java": "d3d4c0b9c5d74375601a72722896a525591fccf15ccc47d99c5c8b4eb7babca6",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RequestEmailChangeRequestDto.java": "6b7b6cbbd044b368caa04251cce0680123a3dd0f2f6ee5d859feb1243c850c40",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/ResendRegistrationRequestDto.java": "3684f0438629e35c2825eb9d05a4d2ddc17356a0e71e73d015695b1ef1473882",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/SessionController.java": "f0ce3c28aeed9a3f1f2e8fa1c602f672e4676f1fe866189076e3f98300744454",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/TokenPairResponseDto.java": "d9f6ee10c68aea47c3b215e0942cc52d74dd2923eb33e8540868e53eb27fc954",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/VerifyRegistrationRequestDto.java": "c9473e23a44987cb94de579fc3bd27eec35883e816e43f3d1bdcf54e6d5f2a00",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/ApiErrorCode.java": "a80ce09b827155b9a90f12681cf9fa6efb08c7762b98693270814987b591ba7d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyConfiguration.java": "5f0f846feef1b124f55f3132a66577f567ba4714f91e5e858f72425f7cf13233",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyFilter.java": "aeda0fe405d60f7a3251653e6af285ce01f951d814d17c379b83f77634351b4a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyProperties.java": "4b70d4a8bc71f71057cdea79453cb06b4928b214d0cc5f3c9ca6c19f67b8461b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyRecordEntity.java": "26f974cff64ba0534cfb646550acae11881c9d33ab43dcb8fdac5489d63485e0",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyRecordRepository.java": "ffc04f0cf5b5fafcbda8a8c63011f6f7264df422bbf7b76b920a5a3dc6e04e3a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyStore.java": "b539350e70b6164eefbdf705d22f72069e16c03c5178ff6c96ec9acc7ab45790",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/AvatarController.java": "367875e744709d846bbcc3d1b0adae92812d5f17b091e45aa9f03ec5f20fac1a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/CurrentUserResponseDto.java": "4777494d03d284377e321114dd2aa18d4fdc19a160bd3ddbfa05239e9339b104",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UpdateCurrentUserRequestDto.java": "86ad0df8f6096b5ef916af372a9bdcbf44e6f5c3ea18d614b6ac638033f68c8e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UserController.java": "0e8a712a185233e8aec7a59915ebd4dda7524c4a7358af0a6e60e5ca3b91fec4"
+  }
+}

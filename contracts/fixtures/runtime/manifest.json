@@ -2,10 +2,22 @@
   "fixture_version": 1,
   "cases": [
     {
-      "name": "Native Contract v2 runtime reports SQLite Storage v4",
+      "name": "Native Contract v2 runtime reports integrated SQLite Storage v5",
       "schema": "../../runtime/initialize_runtime_response.schema.json",
-      "instance": "initialize_runtime_v4.valid.json",
+      "instance": "initialize_runtime_v5.valid.json",
       "expected_valid": true
+    },
+    {
+      "name": "Native Contract v2 runtime rejects obsolete SQLite Storage v4 response",
+      "schema": "../../runtime/initialize_runtime_response.schema.json",
+      "instance": "initialize_runtime_v4.invalid.json",
+      "expected_valid": false
+    },
+    {
+      "name": "Native Contract v2 runtime does not activate planned SQLite Storage v6",
+      "schema": "../../runtime/initialize_runtime_response.schema.json",
+      "instance": "initialize_runtime_v6.invalid.json",
+      "expected_valid": false
     },
     {
       "name": "Native Contract v2 runtime rejects obsolete JSON Storage v3 response",

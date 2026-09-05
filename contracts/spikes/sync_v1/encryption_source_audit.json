@@ -1,0 +1,217 @@
+{
+  "audit_version": 1,
+  "scope": "PINNED_SOURCE_AND_TOP_LEVEL_LICENSE_AUDIT_ONLY",
+  "product_dependency_changed": false,
+  "source_build_passed": false,
+  "full_transitive_license_audit_passed": false,
+  "aar_reproducibility_verified": false,
+  "upstream_tag_observations": [
+    {
+      "repository": "https://github.com/sqlcipher/sqlcipher-android",
+      "tag": "v4.18.0",
+      "tag_object": "cd7c559e3a7ae5d25d55898e4a768961e7ccabf7",
+      "peeled_commit": "e15752c3eb4364e27203185587471aab25b0ca91"
+    },
+    {
+      "repository": "https://github.com/sqlcipher/sqlcipher",
+      "tag": "v4.18.0",
+      "tag_object": "dca3c1ee114fe6bf5d996fc71f3c5380f43cc82c",
+      "peeled_commit": "63697beb0fafcb61faa7a3e6fd267036548ab11b"
+    }
+  ],
+  "android_release_tree": {
+    "url": "https://api.github.com/repos/sqlcipher/sqlcipher-android/git/trees/e15752c3eb4364e27203185587471aab25b0ca91?recursive=1",
+    "git_tree": "e15752c3eb4364e27203185587471aab25b0ca91",
+    "truncated": false,
+    "submodules": [
+      {
+        "path": "sqlcipher/src/main/jni/libtomcrypt/src",
+        "mode": "160000",
+        "type": "commit",
+        "sha": "476a9579ae94f32b9ea9e2747bfb04b302370259"
+      },
+      {
+        "path": "sqlcipher/src/main/jni/sqlcipher/src",
+        "mode": "160000",
+        "type": "commit",
+        "sha": "e2a6040f2ae5cfff2b3e08eb3320007d93cdf3fc"
+      }
+    ]
+  },
+  "source_version_gap": {
+    "core_release_sqlite_version": "3.53.4",
+    "android_pinned_core_sqlite_version": "3.53.1",
+    "same_source_baseline": false,
+    "implication": "Do not infer the Android tag or downloaded AAR is a reproducible build of the selected core v4.18.0 commit. Rebuild and verify exact native sources; do not silently use the older core gitlink."
+  },
+  "license_review": [
+    {
+      "component": "SQLCipher core",
+      "file": "core_tag/LICENSE.md",
+      "observed_terms": "BSD-style three clauses: preserve source notices, reproduce binary distribution notices, no endorsement using author names.",
+      "distribution_action_proposed": "Ship the exact license and copyright in bundled third-party notices accessible offline."
+    },
+    {
+      "component": "SQLite portion",
+      "file": "core_tag/SQLITE_LICENSE.md",
+      "observed_terms": "SQLite runtime source is public domain; build/configure helpers have separately licensed exceptions.",
+      "distribution_action_proposed": "Audit the selected generated amalgamation and any redistributed build helpers separately."
+    },
+    {
+      "component": "LibTomCrypt SQLCipher fork",
+      "file": "ltc/LICENSE",
+      "observed_terms": "Dual choice of public domain or WTFPL v2; candidate chooses the public-domain option and retains the upstream license text.",
+      "distribution_action_proposed": "Preserve exact upstream LICENSE and record the chosen option; audit per-file notices before product inclusion."
+    },
+    {
+      "component": "Android wrapper reference",
+      "file": "android/LICENSE",
+      "observed_terms": "BSD-style root license; the JNI/Android-derived wrapper source has additional per-file provenance.",
+      "distribution_action_proposed": "Native C candidate excludes the wrapper and Gradle/AAR; copying wrapper source would require its additional notice review."
+    }
+  ],
+  "remaining_checks": [
+    "Exact source-build and generated amalgamation hash",
+    "All selected provider/runtime source-file license notices",
+    "AAR source provenance or independent verified native build",
+    "Windows and Android three-ABI runtime and cipher/SQLite version checks",
+    "Product notice presentation approval"
+  ],
+  "retrieved_files": [
+    {
+      "component": "android",
+      "repo": "sqlcipher-android",
+      "commit": "e15752c3eb4364e27203185587471aab25b0ca91",
+      "path": ".gitmodules",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher-android/e15752c3eb4364e27203185587471aab25b0ca91/.gitmodules",
+      "sha256": "4b41c04d112f6de215d9b8dba806a036b50d00b634370ba1e66e8ec12e49d127",
+      "bytes": 290
+    },
+    {
+      "component": "android",
+      "repo": "sqlcipher-android",
+      "commit": "e15752c3eb4364e27203185587471aab25b0ca91",
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher-android/e15752c3eb4364e27203185587471aab25b0ca91/LICENSE",
+      "sha256": "09e4af560ce2e3c9c2aa6b564e35947b03db7d1ae345f22a32793ed46542cc14",
+      "bytes": 1468
+    },
+    {
+      "component": "android",
+      "repo": "sqlcipher-android",
+      "commit": "e15752c3eb4364e27203185587471aab25b0ca91",
+      "path": "sqlcipher/src/main/jni/sqlcipher/Android.mk",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher-android/e15752c3eb4364e27203185587471aab25b0ca91/sqlcipher/src/main/jni/sqlcipher/Android.mk",
+      "sha256": "6161bb1a5e76e3e38ff93016aaeb2da0fa4e0f719cb637201636ee5833c13a7b",
+      "bytes": 3054
+    },
+    {
+      "component": "android",
+      "repo": "sqlcipher-android",
+      "commit": "e15752c3eb4364e27203185587471aab25b0ca91",
+      "path": "sqlcipher/src/main/jni/libtomcrypt/Android.mk",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher-android/e15752c3eb4364e27203185587471aab25b0ca91/sqlcipher/src/main/jni/libtomcrypt/Android.mk",
+      "sha256": "ac530e26a3bff3cbdb717430159096651a75e105b375b29ff1ac91fc84cd86da",
+      "bytes": 16115
+    },
+    {
+      "component": "android",
+      "repo": "sqlcipher-android",
+      "commit": "e15752c3eb4364e27203185587471aab25b0ca91",
+      "path": "sqlcipher/build.gradle",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher-android/e15752c3eb4364e27203185587471aab25b0ca91/sqlcipher/build.gradle",
+      "sha256": "465d6bcd1e638c98e6e84386e368280b94952e2f5ad101b9fa520ef3debabf63",
+      "bytes": 9119
+    },
+    {
+      "component": "core_tag",
+      "repo": "sqlcipher",
+      "commit": "63697beb0fafcb61faa7a3e6fd267036548ab11b",
+      "path": "VERSION",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher/63697beb0fafcb61faa7a3e6fd267036548ab11b/VERSION",
+      "sha256": "632cf989f3b8c2925dc35a67d06535db480cb97d53f78c14bb159f3de4e9bb04",
+      "bytes": 7
+    },
+    {
+      "component": "core_tag",
+      "repo": "sqlcipher",
+      "commit": "63697beb0fafcb61faa7a3e6fd267036548ab11b",
+      "path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher/63697beb0fafcb61faa7a3e6fd267036548ab11b/LICENSE.md",
+      "sha256": "2a2826f6acf46fa650730cf42cbb22a642be33a7ef119c9c4f4bf6daf3bef48e",
+      "bytes": 1463
+    },
+    {
+      "component": "core_tag",
+      "repo": "sqlcipher",
+      "commit": "63697beb0fafcb61faa7a3e6fd267036548ab11b",
+      "path": "SQLITE_LICENSE.md",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher/63697beb0fafcb61faa7a3e6fd267036548ab11b/SQLITE_LICENSE.md",
+      "sha256": "595e823c2ada6c839679e693bee1f4d7f88e2d34ac99a913ae41e3d43fb10c7d",
+      "bytes": 3760
+    },
+    {
+      "component": "core_tag",
+      "repo": "sqlcipher",
+      "commit": "63697beb0fafcb61faa7a3e6fd267036548ab11b",
+      "path": "CHANGELOG.md",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher/63697beb0fafcb61faa7a3e6fd267036548ab11b/CHANGELOG.md",
+      "sha256": "ae63be3b671862ed53aa0c0eaa8c5b467f18a6b5ec754057a045b7313f9a9b92",
+      "bytes": 27863
+    },
+    {
+      "component": "core_tag",
+      "repo": "sqlcipher",
+      "commit": "63697beb0fafcb61faa7a3e6fd267036548ab11b",
+      "path": "src/crypto_libtomcrypt.c",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher/63697beb0fafcb61faa7a3e6fd267036548ab11b/src/crypto_libtomcrypt.c",
+      "sha256": "389c700c0d47bb3a2b79c278893a65f9dbdda329d1ad209932f36c81455af899",
+      "bytes": 14629
+    },
+    {
+      "component": "core_android",
+      "repo": "sqlcipher",
+      "commit": "e2a6040f2ae5cfff2b3e08eb3320007d93cdf3fc",
+      "path": "VERSION",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher/e2a6040f2ae5cfff2b3e08eb3320007d93cdf3fc/VERSION",
+      "sha256": "3a94f8822a99c2e401e894d8f5475a2e1b115d6b291f096cff3e2efa9edb2ecf",
+      "bytes": 7
+    },
+    {
+      "component": "core_android",
+      "repo": "sqlcipher",
+      "commit": "e2a6040f2ae5cfff2b3e08eb3320007d93cdf3fc",
+      "path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher/e2a6040f2ae5cfff2b3e08eb3320007d93cdf3fc/LICENSE.md",
+      "sha256": "2a2826f6acf46fa650730cf42cbb22a642be33a7ef119c9c4f4bf6daf3bef48e",
+      "bytes": 1463
+    },
+    {
+      "component": "core_android",
+      "repo": "sqlcipher",
+      "commit": "e2a6040f2ae5cfff2b3e08eb3320007d93cdf3fc",
+      "path": "CHANGELOG.md",
+      "url": "https://raw.githubusercontent.com/sqlcipher/sqlcipher/e2a6040f2ae5cfff2b3e08eb3320007d93cdf3fc/CHANGELOG.md",
+      "sha256": "942ccf3e6b31b6d9cf4834608abcf5a6941ad796061b6155ef0280b47a40414f",
+      "bytes": 26712
+    },
+    {
+      "component": "ltc",
+      "repo": "libtomcrypt",
+      "commit": "476a9579ae94f32b9ea9e2747bfb04b302370259",
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/sqlcipher/libtomcrypt/476a9579ae94f32b9ea9e2747bfb04b302370259/LICENSE",
+      "sha256": "8f196cb13afd271f5e267fd29543fc454596382ad580e7592709492843996ac8",
+      "bytes": 719
+    },
+    {
+      "component": "ltc",
+      "repo": "libtomcrypt",
+      "commit": "476a9579ae94f32b9ea9e2747bfb04b302370259",
+      "path": "src/headers/tomcrypt.h",
+      "url": "https://raw.githubusercontent.com/sqlcipher/libtomcrypt/476a9579ae94f32b9ea9e2747bfb04b302370259/src/headers/tomcrypt.h",
+      "sha256": "7e53c3f50b984307fe5cd281c4e3647d9531c928b635b0711f725105e3814576",
+      "bytes": 2906
+    }
+  ]
+}

@@ -391,6 +391,21 @@ def validate_update_concurrency_shape(schemas: dict[str, Any]) -> None:
         fail("anniversary.update expected_updated_at shape drift")
 
 
+def validate_runtime_storage_alignment(schemas: dict[str, Any]) -> None:
+    """The success fixture must describe the active storage, not a stale migration source."""
+    storage = yaml.safe_load(
+        (CONTRACTS / "storage/calendar_core_storage.yaml").read_text(encoding="utf-8")
+    )
+    active = storage[storage["active_format_contract"]]
+    response = schemas[
+        "https://excellent-calendar.local/contracts/runtime/initialize_runtime_response.schema.json"
+    ]
+    if response["properties"]["storage_format_version"].get("const") != active["storage_format_version"]:
+        fail("runtime.initialize response must report the active Calendar Core storage version")
+    if response.get("x-contract-version") != 2:
+        fail("Storage calibration must preserve the Native v2 version domain")
+
+
 def validate_manifests(schemas: dict[str, Any], identity: dict[str, Any]) -> int:
     semantic_handlers = {
         "unique_templates": lambda value, case: semantic_unique_templates(value),
@@ -433,6 +448,7 @@ def main() -> int:
     validate_ref_closure(schemas, paths)
     validate_finalize_timezone_shape(schemas)
     validate_update_concurrency_shape(schemas)
+    validate_runtime_storage_alignment(schemas)
     identity = validate_yaml_and_capabilities()
     fixture_count = validate_manifests(schemas, identity)
     print(f"validated schemas={len(schemas)} fixtures={fixture_count} identity_vectors={len(identity['test_vectors'])}")

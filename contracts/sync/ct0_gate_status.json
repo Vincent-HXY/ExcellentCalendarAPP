@@ -1,0 +1,80 @@
+{
+  "audit_version": 1,
+  "rule_anchor": "cloud-sync-02/4",
+  "contract_status": "DECISION REQUIRED",
+  "implementation_allowed": false,
+  "stages": {
+    "CT0": "partial_audit_and_proposals",
+    "CT1": "not_started",
+    "CT2": "not_started",
+    "CT3": "not_started",
+    "CT4": "not_started"
+  },
+  "adrs": [
+    {
+      "path": "docs/architecture/decisions/ADR-Sync-01-协议与保留策略.md",
+      "status": "proposed"
+    },
+    {
+      "path": "docs/architecture/decisions/ADR-Sync-02-Workspace生命周期.md",
+      "status": "proposed"
+    },
+    {
+      "path": "docs/architecture/decisions/ADR-Sync-03-账号SQLite加密候选.md",
+      "status": "proposed"
+    },
+    {
+      "path": "docs/architecture/decisions/ADR-Sync-04-SessionCredentialBroker.md",
+      "status": "proposed"
+    },
+    {
+      "path": "docs/architecture/decisions/ADR-Sync-05-Category生命周期与弱引用.md",
+      "status": "proposed"
+    },
+    {
+      "path": "docs/architecture/decisions/ADR-Sync-06-Backend-HTTP校准.md",
+      "status": "proposed"
+    },
+    {
+      "path": "docs/architecture/decisions/ADR-Sync-07-Android备份与设备迁移.md",
+      "status": "proposed"
+    }
+  ],
+  "open_gates": [
+    {
+      "id": "CT0-ADR",
+      "rule_anchor": "cloud-sync-02/4.1",
+      "status": "not_accepted"
+    },
+    {
+      "id": "CT0-ENCRYPTION",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "status": "pinned_source_top_level_license_audit_and_abi_link_done_runtime_and_rebuild_unverified"
+    },
+    {
+      "id": "CT0-JCS",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "status": "existing_encoders_not_jcs_no_qualified_canonicalizer"
+    },
+    {
+      "id": "CT0-IDENTITY",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "status": "anniversary_opaque_category_reader_conflict"
+    },
+    {
+      "id": "CT0-COUNTER",
+      "rule_anchor": "cloud-sync-02/6.1",
+      "status": "registry_and_executable_golden_not_delivered"
+    },
+    {
+      "id": "CT0-BACKEND",
+      "rule_anchor": "cloud-sync-02/3",
+      "status": "static_inventory_done_http_semantics_and_nested_constraints_unverified"
+    },
+    {
+      "id": "CT0-ANDROID",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "status": "backup_and_three_abi_runtime_matrix_unverified"
+    }
+  ]
+}

@@ -6,6 +6,8 @@
 
 进入实现前必须先确定游客数据归属、退出/换号后的本地隔离、同步实体闭包、提醒用户意图与每设备投递状态的边界、冲突 UX、删除 tombstone/恢复窗口、设备身份、增量游标、弱网后台策略和加密边界。Outbox 必须与本地业务写处于同一 SQLite 事务，不能在 Flutter、Kotlin 或 Backend 事后拼接操作日志。
 
+2026-09-05 CT0执行补充：旧 `sync.apply` 和两个Sync概念Schema已明确封存为deprecated/blocked，保留形状只供兼容墓碑；不允许按下表构造上传。新typed Sync Protocol尚未冻结；参见[CT0审计与决策记录](../plan/active/云同步-02-CT0审计与决策记录.md)，七项ADR为Proposed，当前DECISION REQUIRED。
+
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `id` | `string` | 是 | 同步操作 ID |

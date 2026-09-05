@@ -1,11 +1,12 @@
 # 云同步-02：Contracts 与数据模型开发计划
 
-> 状态：ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED
+> 状态：ACTIVE PLAN / DECISION REQUIRED / CT0 PARTIAL
 > 建立时间：2026-09-04
 > 上位计划：[云同步-01：Local-first 多设备同步开发计划](./云同步-01-Local-first多设备同步开发计划.md)
 > 负责范围：`docs/domains/` 中同步相关语义、`docs/architecture/decisions/` 中同步 ADR、`contracts/**`、跨层 fixture/validator 以及 SQLite v6 / PostgreSQL 逻辑模型冻结
 > 下游计划：云同步-03（C++/SQLite）、云同步-04（Cloud Backend）、云同步-05（Kotlin/Android）、云同步-06（Flutter）
 > 文内语义锚点：第 5–12 节定义版本、协议、方法、模型与错误；第 13–17 节只登记 fixture、执行顺序和冻结证据，不得重新定义前述语义。
+> 2026-09-05 执行记录：[CT0 审计与决策记录](./云同步-02-CT0审计与决策记录.md)。完成安全基线校准、旧协议保护、HTTP静态盘点与部分隔离实验；七项ADR仍为Proposed，加密/JCS/身份兼容等门禁未关闭，CT1–CT4未开始，不代表Contract冻结或下游可实现。
 
 ## 1. 目标与完成口径
 

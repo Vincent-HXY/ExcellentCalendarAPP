@@ -651,6 +651,10 @@ methods:
 
   sync.apply:
     module: sync
+    implementation_status: deprecated
+    release_status: blocked
+    implementation: not_implemented
+    compatibility_policy: notImplemented_tombstone_no_production_handler_or_jni
     request: sync/sync_operation.schema.json
     result:
       envelope: common/native_result.schema.json

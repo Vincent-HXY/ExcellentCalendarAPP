@@ -1,0 +1,330 @@
+{
+  "fixture_version": 1,
+  "contract_status": "DECISION REQUIRED",
+  "scope": "CT0 boundary probe vectors only; not the full Sync V1 fixture package",
+  "families": [
+    {
+      "id": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/7.1-7.3,7.7",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-MERGE",
+      "rule_anchor": "cloud-sync-02/6.2,7.2-7.5",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8,12",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-SEQUENCE",
+      "rule_anchor": "cloud-sync-02/6.1-6.2,12",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-CANONICAL",
+      "rule_anchor": "cloud-sync-02/4.2,6.2",
+      "coverage_status": "partial_ct0_probe_only"
+    },
+    {
+      "id": "FX-COUNTER",
+      "rule_anchor": "cloud-sync-02/6.1",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,8",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-FAILED-LOCAL",
+      "rule_anchor": "cloud-sync-02/6.2,7.5,8",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-CURSOR",
+      "rule_anchor": "cloud-sync-02/6.3,12",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,8,10-11",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,8.3-8.4,10",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-IMPORT-STAGE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-01-IMP-06",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-IMPORT-PUBLISH",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-03-IMP-05",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-IMPORT-RANGE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-07,IMP-08,IMP-12",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-IMPORT-CLEANUP",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-09-IMP-10",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-PREFERENCE",
+      "rule_anchor": "cloud-sync-02/7.7,8,10",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8,12",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-08-IMP-10,8,12",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,8,10,12",
+      "coverage_status": "not_delivered"
+    },
+    {
+      "id": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/9,13.2",
+      "coverage_status": "not_delivered"
+    }
+  ],
+  "cases": [
+    {
+      "id": "FX-CANONICAL-object_order",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/0",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-nested_order",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/1",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-negative_zero",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/2",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-exponents",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/3",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-rounding",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/4",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-safe_integer",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/5",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-utf16_key_order",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/6",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-escaped_names",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/7",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-unicode_preserved",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/8",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-array_order",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/9",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-escaped_controls",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/10",
+      "expected": "exact_canonical_utf8_and_sha256",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": true
+    },
+    {
+      "id": "FX-CANONICAL-duplicate_key",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/11",
+      "expected": "reject",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": false
+    },
+    {
+      "id": "FX-CANONICAL-lone_surrogate",
+      "rule_anchor": "cloud-sync-02/4.2",
+      "input_file": "canonical_vectors.json",
+      "case_pointer": "/cases/12",
+      "expected": "reject",
+      "required_consumers": [
+        "cpp_windows",
+        "cpp_android_arm64",
+        "cpp_android_armv7",
+        "cpp_android_x86_64",
+        "java",
+        "kotlin",
+        "dart"
+      ],
+      "byte_for_byte_required": false
+    }
+  ]
+}

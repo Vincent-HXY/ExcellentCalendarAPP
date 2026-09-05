@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../application/habit/habit_models.dart';
 import '../../../native_contract/habit/habit_contract_enums.dart';
 import '../habit_design.dart';
+import 'habit_page_components.dart';
 
 class HabitCard extends StatelessWidget {
   const HabitCard({
@@ -33,14 +34,21 @@ class HabitCard extends StatelessWidget {
           '${item.title}，$status，连续 ${item.currentStreak} 天，'
           '剩余 ${item.remainingDays} 天${succeeded ? '，操作成功' : ''}',
       child: AnimatedScale(
-        scale: succeeded ? 1.018 : 1,
-        duration: const Duration(milliseconds: 180),
+        scale: succeeded && !HabitDesign.reduceMotion(context) ? 1.012 : 1,
+        duration: HabitDesign.reduceMotion(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 180),
         curve: Curves.easeOutBack,
         child: Material(
-          color: succeeded
-              ? Theme.of(context).colorScheme.primaryContainer
-              : HabitDesign.surface(context),
-          borderRadius: BorderRadius.circular(HabitDesign.radius),
+          color: HabitDesign.surface(context),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(HabitDesign.radius),
+            side: BorderSide(
+              color: succeeded
+                  ? color.withValues(alpha: 0.5)
+                  : HabitDesign.outline(context),
+            ),
+          ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onOpen,
@@ -52,13 +60,15 @@ class HabitCard extends StatelessWidget {
                     child: FractionallySizedBox(
                       key: ValueKey('habit-completion-background-${item.id}'),
                       widthFactor: item.completionRate,
-                      child: ColoredBox(color: color.withValues(alpha: 0.09)),
+                      heightFactor: 1,
+                      child: ColoredBox(color: color.withValues(alpha: 0.07)),
                     ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(18),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (onQuickAction != null) ...[
                         Semantics(
@@ -74,6 +84,7 @@ class HabitCard extends StatelessWidget {
                               : '${item.title} 标记今日完成',
                           child: InkResponse(
                             onTap: mutating ? null : onQuickAction,
+                            onLongPress: mutating ? null : onExactQuantity,
                             radius: 28,
                             child: SizedBox.square(
                               dimension: 48,
@@ -92,7 +103,7 @@ class HabitCard extends StatelessWidget {
                                             key: ValueKey(
                                               'habit-target-met-${item.id}',
                                             ),
-                                            size: 34,
+                                            size: 48,
                                             color: color,
                                           )
                                         : DecoratedBox(
@@ -103,7 +114,7 @@ class HabitCard extends StatelessWidget {
                                               shape: BoxShape.circle,
                                               border: Border.all(
                                                 color: color,
-                                                width: 2.5,
+                                                width: 2,
                                               ),
                                             ),
                                             child: Padding(
@@ -129,7 +140,7 @@ class HabitCard extends StatelessWidget {
                                           ? Icons.check_circle_rounded
                                           : Icons
                                                 .radio_button_unchecked_rounded,
-                                      size: 34,
+                                      size: 48,
                                       color: color,
                                     ),
                             ),
@@ -143,25 +154,31 @@ class HabitCard extends StatelessWidget {
                           children: [
                             Text(
                               item.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 17,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w700,
+                                height: 1.4,
                                 color: HabitDesign.text(context),
                               ),
                             ),
-                            const SizedBox(height: 5),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 4,
-                              children: [
-                                Text(status),
-                                Text('连续 ${item.currentStreak} 天'),
-                                Text('剩余 ${item.remainingDays} 天'),
-                                if (item.reminderEnabled)
-                                  Text('提醒 ${item.reminderLocalTime ?? ''}'),
-                              ],
+                            const SizedBox(height: 8),
+                            HabitLabel(text: status),
+                            const SizedBox(height: 10),
+                            DefaultTextStyle.merge(
+                              style: TextStyle(
+                                color: HabitDesign.muted(context),
+                                fontSize: 12,
+                                height: 1.5,
+                              ),
+                              child: Wrap(
+                                spacing: 10,
+                                runSpacing: 4,
+                                children: [
+                                  Text('剩余 ${item.remainingDays} 天'),
+                                  if (item.reminderEnabled)
+                                    Text('提醒 ${item.reminderLocalTime ?? ''}'),
+                                ],
+                              ),
                             ),
                             if (item.isQuantitative &&
                                 onExactQuantity != null) ...[
@@ -175,19 +192,33 @@ class HabitCard extends StatelessWidget {
                                   onLongPress: mutating
                                       ? null
                                       : onExactQuantity,
+                                  borderRadius: BorderRadius.circular(10),
                                   child: ConstrainedBox(
                                     constraints: const BoxConstraints(
                                       minHeight: 48,
                                     ),
                                     child: Align(
                                       alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        '${formatHundredths(item.completedCountHundredths ?? 0)} / '
-                                        '${formatHundredths(item.targetCountHundredths!)} ${item.unit}',
-                                        style: TextStyle(
-                                          color: color,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              '${formatHundredths(item.completedCountHundredths ?? 0)} / '
+                                              '${formatHundredths(item.targetCountHundredths!)} ${item.unit}',
+                                              style: TextStyle(
+                                                color: color,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Icon(
+                                            Icons.edit_outlined,
+                                            size: 14,
+                                            color: color,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -197,27 +228,59 @@ class HabitCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 12),
                       Semantics(
                         label:
                             '完成率 ${(item.completionRate * 100).round()}%，'
                             '当前连续 ${item.currentStreak} 天',
-                        child: SizedBox.square(
-                          dimension: 48,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              CircularProgressIndicator(
-                                value: item.completionRate,
-                                strokeWidth: 5,
-                                color: color,
-                                backgroundColor: color.withValues(alpha: 0.13),
+                        child: Column(
+                          children: [
+                            SizedBox.square(
+                              dimension: 48,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Positioned.fill(
+                                    child: CircularProgressIndicator(
+                                      value: item.completionRate,
+                                      strokeWidth: 4,
+                                      strokeCap: StrokeCap.round,
+                                      color: color,
+                                      backgroundColor: color.withValues(
+                                        alpha: 0.13,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '${item.currentStreak}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: color,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                '${item.currentStreak}',
-                                style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: 48,
+                              child: Text(
+                                '连续天数',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: HabitDesign.muted(context),
+                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

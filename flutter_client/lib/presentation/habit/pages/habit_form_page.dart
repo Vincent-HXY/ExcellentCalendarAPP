@@ -8,6 +8,7 @@ import '../../../native_contract/habit/habit_response_dtos.dart';
 import '../../category/category_picker_page.dart';
 import '../../category/category_picker_result.dart';
 import '../habit_design.dart';
+import '../widgets/habit_page_components.dart';
 
 class HabitFormPage extends StatefulWidget {
   const HabitFormPage({
@@ -76,6 +77,8 @@ class _HabitFormPageState extends State<HabitFormPage> {
       lastDate: DateTime(2100),
       initialDate: initial,
       helpText: start ? '选择开始日期' : '选择结束日期',
+      builder: (context, child) =>
+          Theme(data: HabitDesign.pageTheme(context), child: child!),
     );
     if (value == null) return;
     start ? _controller.setStartDate(value) : _controller.setEndDate(value);
@@ -99,7 +102,7 @@ class _HabitFormPageState extends State<HabitFormPage> {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (context) => HabitDialog(
         title: const Text('习惯已保存'),
         content: Text(outcome.capabilityMessage),
         actions: [
@@ -117,32 +120,34 @@ class _HabitFormPageState extends State<HabitFormPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: HabitDesign.background(context),
-    appBar: AppBar(
-      backgroundColor: HabitDesign.background(context),
-      title: Text(_controller.isEditing ? '编辑习惯' : '新建习惯'),
-    ),
-    body: SafeArea(
-      top: false,
-      child: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) => _body(),
+  Widget build(BuildContext context) => HabitPageScaffold(
+    title: _controller.isEditing ? '编辑习惯' : '新建习惯',
+    body: ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) => Column(
+        children: [
+          Expanded(child: _body()),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+            child: SizedBox(width: double.infinity, child: _submitButton()),
+          ),
+        ],
       ),
     ),
   );
 
   Widget _body() => SingleChildScrollView(
-    padding: EdgeInsets.fromLTRB(
-      16,
-      8,
-      16,
-      24 + MediaQuery.viewInsetsOf(context).bottom,
-    ),
+    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _section([
+          const HabitSectionHeading(
+            title: '从一件小事开始',
+            subtitle: '把想要的改变，写进每一天。',
+            icon: Icons.spa_outlined,
+          ),
           TextField(
             controller: _title,
             maxLength: 80,
@@ -153,9 +158,11 @@ class _HabitFormPageState extends State<HabitFormPage> {
               errorText: _controller.errors['title'],
             ),
           ),
+          const SizedBox(height: 8),
           TextField(
             controller: _description,
             maxLength: 2000,
+            minLines: 2,
             maxLines: 3,
             onChanged: _controller.setDescription,
             decoration: InputDecoration(
@@ -165,7 +172,7 @@ class _HabitFormPageState extends State<HabitFormPage> {
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.label_outline_rounded),
+            leading: const HabitIconBadge(icon: Icons.label_outline_rounded),
             title: const Text('分类'),
             subtitle: Text(_controller.categoryId == null ? '未分类' : '已选择分类'),
             trailing: const Icon(Icons.chevron_right_rounded),
@@ -174,7 +181,16 @@ class _HabitFormPageState extends State<HabitFormPage> {
         ]),
         const SizedBox(height: 14),
         _section([
+          const HabitSectionHeading(title: '每日目标', icon: Icons.flag_outlined),
           SegmentedButton<bool>(
+            showSelectedIcon: false,
+            style: SegmentedButton.styleFrom(
+              backgroundColor: HabitDesign.tint(context),
+              selectedBackgroundColor: Theme.of(context).colorScheme.primary,
+              selectedForegroundColor: Theme.of(context).colorScheme.onPrimary,
+              side: BorderSide.none,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
             segments: const [
               ButtonSegment(value: false, label: Text('完成型')),
               ButtonSegment(value: true, label: Text('数量型')),
@@ -183,6 +199,17 @@ class _HabitFormPageState extends State<HabitFormPage> {
             onSelectionChanged: _controller.targetLocked
                 ? null
                 : (value) => _controller.setQuantitative(value.single),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _controller.quantitative
+                ? '用数量记录积累，让每一点进步都看得见。'
+                : '每天完成一次，轻轻一点就能打卡。',
+            style: TextStyle(
+              color: HabitDesign.muted(context),
+              fontSize: 12,
+              height: 1.6,
+            ),
           ),
           if (_controller.targetLocked)
             const Padding(
@@ -196,6 +223,11 @@ class _HabitFormPageState extends State<HabitFormPage> {
         ]),
         const SizedBox(height: 14),
         _section([
+          const HabitSectionHeading(
+            title: '挑战周期',
+            subtitle: '选一个适合自己的节奏',
+            icon: Icons.date_range_outlined,
+          ),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -210,27 +242,26 @@ class _HabitFormPageState extends State<HabitFormPage> {
             ],
           ),
           const SizedBox(height: 10),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('开始日期'),
-            trailing: Text(formatHabitDate(_formatDate(_controller.startDate))),
-            onTap: _controller.targetLocked
-                ? null
-                : () => _pickDate(start: true),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('结束日期'),
-            trailing: Text(formatHabitDate(_formatDate(_controller.endDate))),
-            onTap: () => _pickDate(start: false),
-          ),
-          Text(
-            '最终结束日 ${formatHabitDate(_formatDate(_controller.endDate))} · '
-            '共 ${_controller.plannedDays} 个计划日',
-            style: TextStyle(
-              color: _controller.errors.containsKey('dates')
-                  ? Theme.of(context).colorScheme.error
-                  : HabitDesign.muted(context),
+          _dateTile(start: true),
+          const Divider(),
+          _dateTile(start: false),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: HabitDesign.tint(context),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              '最终结束日 ${formatHabitDate(_formatDate(_controller.endDate))} · '
+              '共 ${_controller.plannedDays} 个计划日',
+              style: TextStyle(
+                color: _controller.errors.containsKey('dates')
+                    ? Theme.of(context).colorScheme.error
+                    : HabitDesign.muted(context),
+                fontSize: 12,
+                height: 1.6,
+              ),
             ),
           ),
         ]),
@@ -239,15 +270,17 @@ class _HabitFormPageState extends State<HabitFormPage> {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('每日提醒'),
-            subtitle: const Text('默认关闭；开启后才检查系统权限'),
+            subtitle: const Text('在合适的时间，轻轻提醒你'),
             value: _controller.reminderEnabled,
             onChanged: _controller.setReminderEnabled,
           ),
           if (_controller.reminderEnabled)
             ListTile(
               contentPadding: EdgeInsets.zero,
+              leading: const HabitIconBadge(icon: Icons.schedule_rounded),
               title: const Text('提醒时间'),
-              trailing: Text(_controller.reminderTime ?? '09:00'),
+              subtitle: Text(_controller.reminderTime ?? '09:00'),
+              trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () async {
                 final initial = _controller.reminderTime
                     ?.split(':')
@@ -255,6 +288,10 @@ class _HabitFormPageState extends State<HabitFormPage> {
                     .toList();
                 final time = await showTimePicker(
                   context: context,
+                  builder: (context, child) => Theme(
+                    data: HabitDesign.pageTheme(context),
+                    child: child!,
+                  ),
                   initialTime: TimeOfDay(
                     hour: initial?[0] ?? 9,
                     minute: initial?[1] ?? 0,
@@ -278,31 +315,46 @@ class _HabitFormPageState extends State<HabitFormPage> {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ],
-        const SizedBox(height: 22),
-        FilledButton(
-          onPressed: _controller.isSubmitting ? null : _submit,
-          child: _controller.isSubmitting
-              ? const SizedBox.square(
-                  dimension: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(_controller.isEditing ? '保存修改' : '开始挑战'),
-        ),
       ],
     ),
   );
 
-  Widget _section(List<Widget> children) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: HabitDesign.surface(context),
-      borderRadius: BorderRadius.circular(HabitDesign.radius),
-    ),
+  Widget _submitButton() => FilledButton(
+    onPressed: _controller.isSubmitting ? null : _submit,
+    child: _controller.isSubmitting
+        ? const SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Text(_controller.isEditing ? '保存修改' : '开始挑战'),
+  );
+
+  Widget _section(List<Widget> children) => HabitSectionCard(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: children,
     ),
   );
+
+  Widget _dateTile({required bool start}) {
+    final locked = start && _controller.targetLocked;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: HabitIconBadge(
+        icon: start ? Icons.today_outlined : Icons.event_available_outlined,
+      ),
+      title: Text(start ? '开始日期' : '结束日期'),
+      subtitle: Text(
+        formatHabitDate(
+          _formatDate(start ? _controller.startDate : _controller.endDate),
+        ),
+      ),
+      trailing: Icon(
+        locked ? Icons.lock_outline_rounded : Icons.chevron_right_rounded,
+      ),
+      onTap: locked ? null : () => _pickDate(start: start),
+    );
+  }
 
   Widget _preset(String label, HabitDurationPreset preset) => ActionChip(
     label: Text(label),

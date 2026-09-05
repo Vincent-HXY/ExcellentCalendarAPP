@@ -5,6 +5,7 @@
 > 目标阶段：R2-C
 > 首发范围：Android 多设备、小规模内测，协议保持跨平台中立
 > 计划入口：docs/plan/active/云同步-01-Local-first多设备同步开发计划.md
+> 2026-09-05 M0进展：[Contracts CT0审计](./云同步-02-CT0审计与决策记录.md) 已交付基线校准、七项ADR提案与部分实验；当前DECISION REQUIRED，尚未关闭M0或达到M1 Contract冻结，下游生产实现仍未开始。
 
 ## 1. 计划结论
 

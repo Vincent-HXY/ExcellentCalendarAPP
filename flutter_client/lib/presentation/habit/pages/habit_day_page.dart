@@ -9,6 +9,7 @@ import '../../../gateway_interfaces/habit_gateway.dart';
 import '../../../native_contract/habit/habit_contract_enums.dart';
 import '../../../native_contract/habit/habit_response_dtos.dart';
 import '../habit_design.dart';
+import '../widgets/habit_page_components.dart';
 
 class HabitDayPage extends StatefulWidget {
   const HabitDayPage({
@@ -111,7 +112,7 @@ class _HabitDayPageState extends State<HabitDayPage> {
             status.checkIn!.note != null)) {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => HabitDialog(
           title: const Text('撤销这天的记录？'),
           content: const Text('数量和备注会一起清除。'),
           actions: [
@@ -142,12 +143,8 @@ class _HabitDayPageState extends State<HabitDayPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: HabitDesign.background(context),
-    appBar: AppBar(
-      backgroundColor: HabitDesign.background(context),
-      title: Text(formatHabitDate(widget.date)),
-    ),
+  Widget build(BuildContext context) => HabitPageScaffold(
+    title: formatHabitDate(widget.date),
     body: ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
@@ -155,26 +152,15 @@ class _HabitDayPageState extends State<HabitDayPage> {
         if (_controller.phase == HabitDayPhase.loading || detail == null) {
           if (_controller.phase == HabitDayPhase.error ||
               _controller.phase == HabitDayPhase.missing) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _controller.errorMessage ?? '该习惯不存在或已删除',
-                      textAlign: TextAlign.center,
-                    ),
-                    if (_controller.phase == HabitDayPhase.error) ...[
-                      const SizedBox(height: 12),
-                      FilledButton(
-                        onPressed: _controller.load,
-                        child: const Text('重试'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+            return HabitEmptyState(
+              icon: Icons.event_busy_outlined,
+              title: _controller.phase == HabitDayPhase.missing
+                  ? '该习惯不存在或已删除'
+                  : '记录加载失败',
+              message: _controller.errorMessage ?? '可以返回习惯列表，查看其他记录。',
+              action: _controller.phase == HabitDayPhase.error
+                  ? _controller.load
+                  : null,
             );
           }
           return const Center(child: CircularProgressIndicator());
@@ -182,42 +168,60 @@ class _HabitDayPageState extends State<HabitDayPage> {
         final status = _controller.status;
         final readOnly = !_controller.canMutate;
         return ListView(
-          padding: const EdgeInsets.all(16),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            _DaySummary(status: status),
+            _DaySummary(title: detail.habit.title, status: status),
             const SizedBox(height: 14),
             if (readOnly)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Text(_controller.readOnlyMessage),
+              HabitSectionCard(
+                child: Text(
+                  _controller.readOnlyMessage,
+                  style: TextStyle(
+                    color: HabitDesign.muted(context),
+                    height: 1.6,
+                  ),
                 ),
               )
             else ...[
-              if (detail.habit.isQuantitative)
-                TextField(
-                  controller: _quantity,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: '完成数量',
-                    suffixText: detail.habit.unit,
-                  ),
+              HabitSectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const HabitSectionHeading(
+                      title: '记录这一天',
+                      icon: Icons.edit_note_rounded,
+                    ),
+                    if (detail.habit.isQuantitative)
+                      TextField(
+                        controller: _quantity,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: '完成数量',
+                          suffixText: detail.habit.unit,
+                        ),
+                      ),
+                    if (detail.habit.isQuantitative) ...[
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: _controller.isMutating ? null : _increment,
+                        child: Text('+1 ${detail.habit.unit ?? ''}'.trim()),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                    TextField(
+                      controller: _note,
+                      maxLength: 500,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: '备注（可选）',
+                        hintText: '记下今天的一点感受…',
+                      ),
+                    ),
+                  ],
                 ),
-              if (detail.habit.isQuantitative) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _controller.isMutating ? null : _increment,
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text('+1 ${detail.habit.unit ?? ''}'.trim()),
-                ),
-              ],
-              TextField(
-                controller: _note,
-                maxLength: 500,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: '备注（可选）'),
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
@@ -252,28 +256,55 @@ class _HabitDayPageState extends State<HabitDayPage> {
 }
 
 class _DaySummary extends StatelessWidget {
-  const _DaySummary({required this.status});
+  const _DaySummary({required this.title, required this.status});
+  final String title;
   final HabitDailyStatusResponseDto? status;
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(18),
-      child: Row(
-        children: [
-          Icon(
-            status?.status == HabitDailyStatusContract.done
-                ? Icons.check_circle
-                : Icons.calendar_today,
-            size: 34,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              status == null ? '暂无当日投影' : '状态：${status!.status.wireValue}',
+  Widget build(BuildContext context) => HabitSectionCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            HabitIconBadge(
+              icon: status == null
+                  ? Icons.calendar_today_outlined
+                  : habitDayStatusIcon(status!.status),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        HabitLabel(
+          text: status == null
+              ? '这一天暂无记录'
+              : habitDayStatusLabel(status!.status),
+        ),
+        if (status?.checkIn?.completedCountHundredths case final amount?) ...[
+          const SizedBox(height: 12),
+          Text(
+            '已记录 ${formatHundredths(amount)} ${status!.checkIn!.unitSnapshot ?? ''}',
+            style: TextStyle(color: HabitDesign.muted(context), fontSize: 13),
           ),
         ],
-      ),
+        if (status?.checkIn?.note case final note?) ...[
+          const SizedBox(height: 10),
+          Text(
+            '当日备注：$note',
+            style: TextStyle(color: HabitDesign.muted(context), height: 1.6),
+          ),
+        ],
+      ],
     ),
   );
 }

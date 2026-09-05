@@ -1707,3 +1707,26 @@
 - 任务目标：复核工程师五项修订的实际落点与平台依据，判断是否存在阻碍进入下一阶段的重大问题。
 - 任务结果：五项在计划层基本闭合；唤醒合并已明确串行owner、两节点上限、稳定WorkRequest身份和崩溃恢复验收；无可信锚force-local不允许retain且错误请求不自动删除；boot identity来源、存储、降级和异常路径已明确；DNS与领域状态口径已统一。本轮定向复核未发现新增重大阻断，可推进M0 ADR/spike与M1 Contract冻结；既定加密/协议实验、机器Contract/fixture和实现验收仍须执行，受控域名与DNS权限仍是公网验收前置条件。
 - 验证状态：只读检查实际计划、相关领域状态与Android生产代码，并通过Android官方文档确认setId自WorkManager 2.8.0提供、BOOT_COUNT自API 24提供且值类型为int。实际WorkManager依赖为2.11.2；未运行代码构建、压力测试、故障注入或真机验证，不能将计划中的10,000次触发等验收条目描述为已经通过。本轮仅追加此日志，保留用户既有修改。
+
+
+## 2026-09-05 12:25 +08:00 习惯页面风格统一与美化
+- 使用 Skill：`frontend-flutter-feature`。负责模块：Habit presentation（列表、卡片、详情、日期记录、新建/编辑、局部主题与公共视觉组件）及相关 Widget 回归。
+- 任务目标：按用户要求将习惯相关页面统一到应用的浅青背景、白色卡片与清爽视觉风格；本轮和后续界面美化优先限定 presentation，保留现有业务功能与流程。可行性 GO，沿用现有 Page → Controller → HabitGateway → typed DTO / MethodChannel 链路；未修改 Application、Gateway、DTO、Native、业务规则、依赖或工具链，保留用户与并行任务的 Contracts / Sync / ADR 修改。
+- 任务结果：实现统一的 Habit 局部主题、导航栏、卡片、按钮、弹窗与日期/时间选择器；整理今日总进度、生命周期分组、统计、日期范围、中文历史状态及热力图；新建/编辑表单按目标、周期、提醒分组，保存按钮固定在可视区域并适配键盘。数量快捷 +1、精确输入/长按、撤销确认、跳过、备注、分页、编辑、提前结束、删除、再来一轮、提醒能力提示均保留原有调用。现有颜色偏好仍驱动进度颜色，支持深浅色、长标题、大字体和减少动画。
+- 渲染与可访问性修正：实际 Flutter 预览发现卡片完成率背景在 Align 的松高度约束下没有可见高度，现补齐 heightFactor=1，仍使用原 completionRate；圆环补齐 Stack 内尺寸约束，列表圆环中心仍是连续天数，详情圆环仍表达原挑战时间进度。热力图触控区域至少 48dp，中文状态同时用图标表达，并显式保留读屏点击动作。
+- 验证状态：本次 9 个 Dart 文件格式校验通过；flutter analyze 退出 0；Habit 定向 5 文件 47/47 通过，最终 flutter test 全量 604/604 通过，flutter build apk --debug 退出 0，生成 flutter_client/build/app/outputs/flutter-apk/app-debug.apk；git diff --check 通过。新增 3 个场景测试覆盖 320dp/200% 字体下热力图与读屏日期操作、320dp 软键盘下保存按钮可达性、长标题卡片的快捷/精确/详情点击隔离；原测试仅补充新版布局需要的滚动步骤，保留原断言。
+- 全库格式例外：dart format --output=none --set-exit-if-changed lib test 退出 1，仅报告 test/create_schedule_controller_test.dart 的既有格式差异；该文件与 HEAD 无 diff，本轮未改动，未为美化扩大整理范围。
+- 视觉证据：使用真实 Flutter Widget 渲染及测试专用投影生成 12 张浅/深色截图，输出在 C:/Users/vincent/.codex/visualizations/2026/09/05/01a06fb6-8d4a-7791-a5c2-4c2643aa9490/habit/；检查列表、详情、历史、表单/周期、日期记录的实际排版。临时截图测试已删除，未将 Fake 或预览数据接入生产。此为主机视觉验证，字体与 Emoji 使用 Windows 本机字体，不代表 Android 真机截图。
+- 结果边界：界面实现及主机测试/构建完成；全库格式门禁存在上述既有例外。真机在任务中途断开，最终 adb devices 为空，本轮真机安装、实际交互、TalkBack 与系统提醒端到端未验证，也未变更这些底层行为。查看入口：日程页 → 更多 → 习惯；进入卡片详情、右上角新建或详情中的编辑查看完整样式。
+
+## 2026-09-05 12:34 +08:00 云同步-02 CT0基线校准、兼容保护与决策审计
+
+- 使用 Skill：`calendar-data-contracts`。负责模块：同步Contract前置审计、runtime版本校准、七项ADR提案、Contract验证工具与隔离spike；未修改Flutter/Kotlin/C++/Backend产品代码或构建依赖。
+- 任务目标：严格按云同步-02与总计划完成协议开发，保护既有Contract及历史数据；当前结果为 **部分完成 / DECISION REQUIRED / CT0 PARTIAL**，未达到CONTRACT FROZEN，CT1–CT4尚未开始。
+- 已交付：runtime.initialize Schema与fixture校准到已集成Storage v5，v4/v6响应明确拒绝；sync.apply及旧宽松Sync Schema标记deprecated/blocked且保持形状。记录基线commit 3ccc2b681f75fbbbfcfb80b94891ee40053da5b5并保护220份Schema/核心YAML；冻结v4/v5节点摘要，未改历史migration。新增七项Proposed ADR、CT0审计、Backend17声明/16Controller的可重算源码/DTO顶级字段/错误HTTP映射盘点，记录HTTP200与语义状态、request_digest缺失、Anniversary UUID category_id与opaque弱引用等真实冲突。
+- 实验：13个固定JCS等价边界向量证实现有Windows C++ picojson、Java Jackson、Dart json原始encoder不能直接复用为JCS；8项Windows既有私有SHA-256 KAT通过，Android三ABI encoder探针编译成功。SQLCipher Community4.18.0隔离AAR校验上游SHA-256一致，三ABI必要sqlite3/key符号存在并以当前NDK链接scratch加密探针成功；包minCompileSdk=37，未引入产品、未升级SDK/SQLite。源码构建、完整许可与实际加密/20,000组合事实/故障恢复未验证，不能把链接探针当加密交付。
+- 验证：`python contracts/run_sync_v1_validation.py --stage ct0 --self-test`通过，15项反例包含旧协议漂移、v5定义变化、错误runtime版本、重复JSON/YAML key、未闭合ref/fragment、fixture/hash篡改、伪冻结与默认Python退出码2门禁；默认入口明确拒绝冻结，正式CT1–CT4/Sync V1 validator未交付。Anniversary/Habit/Calendar/Search现有validator全部通过（58/46/19/31 fixtures）；CMake重新配置并`cmake --build cpp_core/build-ninja --target excellent_calendar_check`修改后13/13通过。smoke工程`flutter test --no-pub`1/1、`flutter analyze --no-pub`、`flutter build apk --debug --no-pub`通过。Python编译、文档链接/围栏与任务范围diff空白检查通过。
+- 未验证与恢复：设备在encoder探针执行时断开，全部新Android ABI runtime以及真实smoke APK设备运行均未取得通过证据；可能残留`/data/local/tmp/excellent-calendar-sync-ct0-arm64-v8a`单个合成测试二进制，重连后仅清该精确路径，不清用户App。Backend HTTP/Testcontainers、完整历史身份审计、counter golden、SQLCipher/JCS正式spike、v6/PG模型及四层consumer未交付/未验证。
+- 继续条件：按原计划§4.1/§4.2接受ADR/依赖与兼容版本方案，并关闭实际spike门禁后再进入CT1–CT4；审批不替代测试。完整记录见`docs/plan/active/云同步-02-CT0审计与决策记录.md`。执行期间出现的其他任务Habit UI/测试及其他日志追加均保留，不归入本任务更改或验证结论。
+- 最终审阅补充（2026-09-05T12:40+08:00）：ADR-Sync-05 将 Anniversary 兼容建议具体化为保留 Native v2 定义、另立 Native v3 修订，覆盖写入/筛选/组合投影/缓存；解释了单独 sync projection 无法保护旧 reader 的原因。此为待接受提案，尚未变更任何协议版本或实现。CT0 15项反例复跑通过；新增29个文件的空白/文档链接/围栏检查通过。
+- 加密来源审计补充（2026-09-05T12:45+08:00）：固定SQLCipher core v4.18.0 commit 63697beb0fafcb61faa7a3e6fd267036548ab11b与SQLCipher LibTomCrypt fork 476a9579ae94f32b9ea9e2747bfb04b302370259，记录15份来源/构建说明/顶层许可文件的原始SHA-256；SQLCipher三条款、SQLite public domain及构建例外、LibTomCrypt public-domain/WTFPL双选项已初审。发现Android v4.18.0标签core gitlink e2a6040仍为SQLite3.53.1，与独立core标签3.53.4不同；已在ADR-Sync-03及CT0-C13记录，不能据AAR摘要/ABI链接宣称源码可重现或正式许可门禁通过。逐文件分发审查、源码构建和设备runtime仍未验证，产品依赖未变。

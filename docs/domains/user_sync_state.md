@@ -1,5 +1,7 @@
 ## UserSyncState：用户同步状态
 
+2026-09-05 CT0执行补充：已增加[基线审计与决策提案](../plan/active/云同步-02-CT0审计与决策记录.md)，状态为DECISION REQUIRED / CT0 PARTIAL；下表仍未被生产Schema采用，不能据静态审计或encoder探针通过声称同步状态机已实现。
+
 > 当前状态（2026-09-04）：已建立 active 云同步总计划，产品与架构方向仅作为待冻结目标；ADR、机器 Contract 和 fixtures 尚未冻结，整体状态为 `ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED`。仍无生产 Schema、Repository、SQLite Store、设备注册、服务端游标或客户端同步引擎。字段必须由同步 Contract 分计划重新审查，不能直接据此实现。
 
 | 字段 | 类型 | 必填 | 说明 |

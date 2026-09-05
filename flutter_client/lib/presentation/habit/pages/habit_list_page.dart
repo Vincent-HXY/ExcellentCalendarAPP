@@ -9,6 +9,7 @@ import '../../../gateway_interfaces/habit_gateway.dart';
 import '../../../native_contract/habit/habit_contract_enums.dart';
 import '../habit_design.dart';
 import '../widgets/habit_card.dart';
+import '../widgets/habit_page_components.dart';
 
 class HabitListPage extends StatefulWidget {
   const HabitListPage({
@@ -58,7 +59,7 @@ class _HabitListPageState extends State<HabitListPage>
     );
     final value = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => HabitDialog(
         title: Text('${item.title} · 精确数量'),
         content: TextField(
           controller: text,
@@ -130,7 +131,7 @@ class _HabitListPageState extends State<HabitListPage>
   Future<bool> _confirmClear(HabitCardViewData item) async =>
       await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => HabitDialog(
           title: Text('撤销 ${item.title} 的今日记录？'),
           content: Text(item.hasTodayNote ? '现有数量或备注会一起清除。' : '现有数量会被清除。'),
           actions: [
@@ -159,25 +160,18 @@ class _HabitListPageState extends State<HabitListPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: HabitDesign.background(context),
-      appBar: AppBar(
-        backgroundColor: HabitDesign.background(context),
-        title: const Text('习惯'),
-        actions: [
-          IconButton(
-            tooltip: '新建习惯',
-            onPressed: _create,
-            icon: const Icon(Icons.add_rounded),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: ListenableBuilder(
-          listenable: _controller,
-          builder: (context, _) => _body(),
+    return HabitPageScaffold(
+      title: '习惯',
+      actions: [
+        IconButton.filledTonal(
+          tooltip: '新建习惯',
+          onPressed: _create,
+          icon: const Icon(Icons.add_rounded),
         ),
+      ],
+      body: ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) => _body(),
       ),
     );
   }
@@ -187,16 +181,17 @@ class _HabitListPageState extends State<HabitListPage>
       return const Center(child: CircularProgressIndicator());
     }
     if (_controller.phase == HabitListPhase.error) {
-      return _Status(
+      return HabitEmptyState(
         title: '习惯加载失败',
+        icon: Icons.cloud_off_rounded,
         message: _controller.errorMessage ?? '请稍后重试',
         action: _controller.load,
       );
     }
     if (_controller.phase == HabitListPhase.empty) {
-      return _Status(
+      return HabitEmptyState(
         title: '从一个小目标开始',
-        message: '建立固定期限的每日挑战，进度会保存在本机。',
+        message: '给想养成的习惯一个开始，\n让每天的小小坚持，慢慢积累。',
         action: _create,
         actionLabel: '新建习惯',
       );
@@ -205,6 +200,7 @@ class _HabitListPageState extends State<HabitListPage>
     return RefreshIndicator(
       onRefresh: () => _controller.load(preserve: true),
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           if (_controller.phase == HabitListPhase.refreshing)
@@ -227,6 +223,7 @@ class _HabitListPageState extends State<HabitListPage>
           _TodayProgress(
             done: progress?.done ?? 0,
             total: progress?.eligible ?? 0,
+            date: progress?.asOfDate,
           ),
           _group('进行中', HabitLifecycleStatusContract.active),
           _group('即将开始', HabitLifecycleStatusContract.upcoming),
@@ -281,9 +278,31 @@ class _HabitListPageState extends State<HabitListPage>
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
-          child: Text(
-            '$title · ${items.length}',
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(
+                    alpha: lifecycle == HabitLifecycleStatusContract.active
+                        ? 1
+                        : 0.35,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  '$title · ${items.length}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         for (final item in items) ...[
@@ -308,71 +327,85 @@ class _HabitListPageState extends State<HabitListPage>
 }
 
 class _TodayProgress extends StatelessWidget {
-  const _TodayProgress({required this.done, required this.total});
+  const _TodayProgress({required this.done, required this.total, this.date});
   final int done;
   final int total;
+  final String? date;
   @override
   Widget build(BuildContext context) => Semantics(
     label: '今日完成 $done / $total',
     child: Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(HabitDesign.radius),
+      padding: const EdgeInsets.all(22),
+      decoration: HabitDesign.cardDecoration(context).copyWith(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [HabitDesign.surface(context), HabitDesign.tint(context)],
+        ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.auto_graph_rounded, size: 32),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('今日完成', style: TextStyle(fontSize: 14)),
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            children: [
+              const Text(
+                '今日完成',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              if (date != null)
                 Text(
-                  '$done / $total',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
+                  formatHabitDate(date!),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: HabitDesign.muted(context),
                   ),
                 ),
-              ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$done / $total',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const HabitIconBadge(icon: Icons.spa_outlined, size: 52),
+            ],
+          ),
+          const SizedBox(height: 18),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: total == 0 ? 0 : done / total,
+              minHeight: 6,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.10),
             ),
           ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Status extends StatelessWidget {
-  const _Status({
-    required this.title,
-    required this.message,
-    required this.action,
-    this.actionLabel = '重试',
-  });
-  final String title;
-  final String message;
-  final VoidCallback action;
-  final String actionLabel;
-  @override
-  Widget build(BuildContext context) => Center(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(28),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.track_changes_rounded, size: 52),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            total == 0
+                ? '今天没有待完成的习惯，按自己的节奏来。'
+                : done == total
+                ? '今天的目标已完成，为这份坚持喝彩。'
+                : '每一次坚持，都在靠近想要的生活。',
+            style: TextStyle(
+              color: HabitDesign.muted(context),
+              fontSize: 12,
+              height: 1.5,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 18),
-          FilledButton(onPressed: action, child: Text(actionLabel)),
         ],
       ),
     ),

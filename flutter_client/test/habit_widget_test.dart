@@ -13,6 +13,7 @@ import 'package:excellent_calendar/presentation/habit/pages/habit_detail_page.da
 import 'package:excellent_calendar/presentation/habit/pages/habit_form_page.dart';
 import 'package:excellent_calendar/presentation/habit/pages/habit_list_page.dart';
 import 'package:excellent_calendar/presentation/habit/widgets/habit_card.dart';
+import 'package:excellent_calendar/presentation/habit/widgets/habit_detail_sections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -324,6 +325,8 @@ void main() {
 
     final clearAction = find.bySemanticsLabel('散步 撤销今日完成');
     expect(clearAction, findsOneWidget);
+    await tester.ensureVisible(clearAction);
+    await tester.pumpAndSettle();
     await tester.tap(clearAction);
     await tester.pumpAndSettle();
     expect(find.text('撤销 散步 的今日记录？'), findsOneWidget);
@@ -367,6 +370,11 @@ void main() {
 
       expect(find.text('3'), findsOneWidget);
       expect(find.text('第二页备注'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('清除记录'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('清除记录'));
       await tester.pump();
       expect(find.text('数量和备注会一起清除。'), findsOneWidget);
@@ -406,7 +414,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('开始挑战'),
+      find.text('每日提醒'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
@@ -415,6 +423,170 @@ void main() {
     expect(find.text('开始挑战'), findsOneWidget);
     expect(tester.takeException(), isNull);
     semantics.dispose();
+  });
+
+  testWidgets('Habit heatmap has Chinese labels and accessible date targets', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    try {
+      final detail = (await tester.runAsync(
+        () => FakeHabitGateway(delay: Duration.zero).detail(
+          const GetHabitDetailRequestDto(
+            id: '00000001-1111-4111-8111-111111111111',
+            timezone: 'Asia/Shanghai',
+          ),
+        ),
+      ))!;
+      String? selectedDate;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: HabitHeatmap(
+                  history: detail.history,
+                  onTap: (date) => selectedDate = date,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (final day in detail.history) {
+        final target = find.bySemanticsLabel(
+          '${formatHabitDate(day.date)}，${habitDayStatusLabel(day.status)}',
+        );
+        expect(target, findsOneWidget);
+        expect(tester.getSize(target).width, greaterThanOrEqualTo(48));
+        expect(tester.getSize(target).height, greaterThanOrEqualTo(48));
+        tester.semantics.tap(
+          find.semantics.byLabel(
+            '${formatHabitDate(day.date)}，${habitDayStatusLabel(day.status)}',
+          ),
+        );
+        expect(selectedDate, day.date);
+        selectedDate = null;
+        await tester.ensureVisible(target);
+        await tester.pumpAndSettle();
+        await tester.tap(target);
+        expect(selectedDate, day.date);
+        expect(find.text(day.status.wireValue), findsNothing);
+      }
+      expect(tester.takeException(), isNull);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('Habit form keeps save visible above a compact-screen keyboard', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HabitFormPage(
+          gateway: FakeHabitGateway(delay: Duration.zero),
+          timezoneProvider: () => 'Asia/Shanghai',
+          categoryRepository: FakeCategoryRepository(),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField).first, '每天阅读');
+    tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+    await tester.pumpAndSettle();
+    final save = find.widgetWithText(FilledButton, '开始挑战');
+    expect(save.hitTestable(), findsOneWidget);
+    expect(tester.getRect(save).bottom, lessThanOrEqualTo(420));
+    expect(find.text('每天阅读'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Habit card keeps quick, exact and open actions separate', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    try {
+      const title = '每天喝水，给忙碌的自己留一点照顾';
+      const item = HabitCardViewData(
+        id: '00000002-1111-4111-8111-111111111111',
+        title: title,
+        lifecycle: HabitLifecycleStatusContract.active,
+        todayStatus: HabitDailyStatusContract.absent,
+        targetCountHundredths: 800,
+        completedCountHundredths: null,
+        todayNote: null,
+        hasTodayCheckIn: false,
+        unit: '杯',
+        challengeTimeProgress: 0.8,
+        completionRate: 0.3,
+        currentStreak: 120,
+        remainingDays: 18,
+        reminderEnabled: true,
+        reminderLocalTime: '09:00',
+      );
+      var quickCount = 0;
+      var exactCount = 0;
+      var openCount = 0;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            textScaler: TextScaler.linear(2),
+            disableAnimations: true,
+          ),
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: HabitCard(
+                  item: item,
+                  mutating: false,
+                  succeeded: true,
+                  onOpen: () => openCount++,
+                  onQuickAction: () => quickCount++,
+                  onExactQuantity: () => exactCount++,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final quick = find.bySemanticsLabel(
+        RegExp('^${RegExp.escape('$title 剩余 8 杯，增加 1 杯')}'),
+      );
+      await tester.tap(quick);
+      await tester.longPress(quick);
+      expect(quickCount, 1);
+      expect(exactCount, 1);
+      expect(openCount, 0);
+      final exact = find.text('0 / 8 杯');
+      await tester.ensureVisible(exact);
+      await tester.pumpAndSettle();
+      await tester.tap(exact);
+      expect(exactCount, 2);
+      expect(openCount, 0);
+      await tester.ensureVisible(find.text(title));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(title));
+      expect(openCount, 1);
+      expect(tester.takeException(), isNull);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('new habit form previews the default 30-day range', (
@@ -508,8 +680,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('提醒等待系统恢复'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp('挑战时间进度')), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.textContaining('提醒等待系统恢复'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('提醒等待系统恢复'), findsOneWidget);
       expect(tester.takeException(), isNull);
       semantics.dispose();
     },

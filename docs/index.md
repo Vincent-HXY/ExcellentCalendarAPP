@@ -63,6 +63,8 @@
 
 目录中的文件应先按文件名和关键词筛选，再读取命中章节。目录存在不代表需要读取其中全部文件。
 
+云同步-02 的当前执行证据入口是 [CT0审计与决策记录](./plan/active/云同步-02-CT0审计与决策记录.md)，其中索引七项 `docs/architecture/decisions/ADR-Sync-*` Proposed ADR。机器入口为 `contracts/run_sync_v1_validation.py --stage ct0`、`contracts/sync/ct0_gate_status.json`；实验位于 `contracts/spikes/sync_v1/`。状态为 **DECISION REQUIRED / CT0 PARTIAL**，当前runner仅校验基线与审计，默认拒绝冻结，不能替代CT1–CT4。
+
 ## 4. 按任务类型选择资料
 
 | 任务类型                       | 必须优先读取                                                 | 仅在需要时补充                                               |
