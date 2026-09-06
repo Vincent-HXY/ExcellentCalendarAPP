@@ -4,7 +4,7 @@
   "title": "SyncV1 habit_list_daily_statuses_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
   "x-rule-anchor": "cloud-sync-02/8",
   "description": "Inclusive bounded date query. Dates must be within the Habit challenge interval and the range may contain at most 400 natural days.",

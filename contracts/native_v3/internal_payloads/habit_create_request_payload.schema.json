@@ -4,7 +4,7 @@
   "title": "SyncV1 habit_create_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
   "x-rule-anchor": "cloud-sync-02/8",
   "description": "Complete Habit V1 create plan. Dates are inclusive user-local challenge dates with a maximum of 400 natural days. Quantities are transported as exact JSON integer hundredths. C++ owns IDs, timestamps, recurrence materialization, text normalization, Reminder identity, and the logical transaction.",

@@ -10,23 +10,19 @@
   "additionalProperties": false,
   "required": [
     "date",
-    "timezone",
     "section",
     "snapshot_token",
     "page_size",
     "items",
     "has_more",
-    "next_cursor"
+    "next_cursor",
+    "workspace_timezone",
+    "device_timezone"
   ],
   "properties": {
     "date": {
       "type": "string",
       "format": "date"
-    },
-    "timezone": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 255
     },
     "section": {
       "type": "string",
@@ -60,6 +56,18 @@
       ],
       "pattern": "^calcur1\\.[A-Za-z0-9_-]{20,2048}$",
       "maxLength": 2056
+    },
+    "workspace_timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "x-format": "iana-timezone"
+    },
+    "device_timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "x-format": "iana-timezone"
     }
   },
   "allOf": [

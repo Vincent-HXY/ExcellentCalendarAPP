@@ -38,6 +38,12 @@ def derive():
     cleanup = emit("guest_import_cleanup_receipt", object_of({"source_workspace_id": UUID4, "source_epoch": SAFE,
         "import_lineage_id": UUID, "through_published_batch_id": UUID4, "through_import_revision": POSITIVE,
         "source_snapshot_hash": HASH, "mapping_digest": HASH, "cleaned_at": DATE_TIME, "receipt_hash": HASH}), "7.6/IMP-09")
+    affected_execution = emit("import_affected_execution", object_of({"workspace_id": UUID4, "workspace_kind": const("local"),
+        "source_epoch": SAFE, "retirement_receipt_hash": HASH,
+        "reminder_ids": {"type": "array", "items": UUID, "uniqueItems": True},
+        "notifications": {"type": "array", "items": object_of({"notification_id": UUID, "delivery_id": UUID, "delivery_attempt_id": UUID,
+            "recovery_batch_id": nullable(UUID)}), "uniqueItems": True},
+        "recovery_batch_ids": {"type": "array", "items": UUID, "uniqueItems": True}}), "7.6/IMP-09,8.3", "workspace")
     confirmation = emit("import_cleanup_confirm_response", object_of({
         "disposition": {"enum": ["cleanup_confirmed", "already_cleanup_confirmed"]}, "import_lineage_id": UUID,
         "source_workspace_id": UUID4, "source_epoch": SAFE, "resulting_import_revision": POSITIVE,
@@ -143,7 +149,17 @@ def derive():
             shape["properties"]["publication"] = native_publication
         elif stage not in {"local_staging", "server_staging"}:
             shape["properties"]["publication"] = nullable(native_publication)
-    emit("native_import_status_response", {"oneOf": [empty, *statuses]}, "7.6/IMP-06", "workspace")
+    native_statuses = copy.deepcopy(statuses)
+    for shape in native_statuses:
+        shape["properties"]["affected_execution"] = nullable(affected_execution)
+        shape["required"].append("affected_execution")
+        shape.setdefault("allOf", []).append({"if": {"properties": {"cleanup_receipt": {"type": "object"}}},
+            "then": {"properties": {"affected_execution": affected_execution}},
+            "else": {"properties": {"affected_execution": NULL}}})
+    native_empty = copy.deepcopy(empty)
+    native_empty["properties"]["affected_execution"] = NULL
+    native_empty["required"].append("affected_execution")
+    emit("native_import_status_response", {"oneOf": [native_empty, *native_statuses]}, "7.6/IMP-06,IMP-09", "workspace")
     emit("import_status_request", object_of({**route, "import_batch_id": nullable(UUID4), "source_workspace_id": UUID4,
         "source_epoch": SAFE, "target_workspace_id": UUID4, "source_snapshot_hash": nullable(HASH)}), "7.6/IMP-06", "workspace")
     public_stages = []

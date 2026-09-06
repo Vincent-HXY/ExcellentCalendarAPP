@@ -21,6 +21,7 @@ from validate_sync_v1 import validate_schemas, walk
 
 def main():
     suite = unittest.defaultTestLoader.discover(str(CONTRACTS / "tests"), pattern="test_sync_capabilities.py")
+    suite.addTests(unittest.defaultTestLoader.discover(str(CONTRACTS / "tests"), pattern="test_sync_review_regressions.py"))
     result = unittest.TextTestRunner(verbosity=1).run(suite)
     outputs = {**business(), **native(), **graph(), **registries()}
     sources = set(outputs) | {CONTRACTS / name for name in REVISION_PATHS}
@@ -30,6 +31,9 @@ def main():
         "backend_sync_v1/backend_api.yaml", "backend_sync_v1/session_capabilities.yaml", "sync/sync_v1_baseline.json", "sync/sync_field_registry.yaml",
         "fixtures/sync/v1/capability_vectors.json", "fixtures/habit/prepare_habit_delivery.valid.json"))
     sources.update(ROOT / "cpp_core/include/excellent_calendar/domain" / name for name in ("event.hpp", "recurrence.hpp", "event_occurrence_state.hpp", "reminder.hpp"))
+    sources.update(CONTRACTS / path for path in ("tests/test_sync_review_regressions.py", "tests/test_sync_conflict_resolution.py", "tests/test_sync_protocol.py"))
+    from run_import_capacity_spike import sources as source_closure
+    sources = set(source_closure(sources | {HERE / "audit_fixture.py"}))
     schemas, _ = validate_schemas()
     pending = [value for value in outputs.values() if "$id" in value]
     visited = set()

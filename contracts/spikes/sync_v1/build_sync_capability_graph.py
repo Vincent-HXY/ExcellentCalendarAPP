@@ -92,7 +92,8 @@ def derive():
     def emit(name, value, lane):
         directory = "native_v3/" + lane
         schema = document(name, value, "8", directory)
-        schema.update({"x-contract-domain": "native", "x-contract-version": 3})
+        schema.update({"x-contract-domain": "native", "x-contract-version": 3,
+            "x-implementation-status": "planned", "x-release-status": "planned"})
         out[CONTRACTS / directory / (name + ".schema.json")] = schema
         return directory + "/" + name + ".schema.json"
 
@@ -125,6 +126,9 @@ def derive():
                 for child in node:
                     visit(child)
         visit(value, True)
+        if native and path == "sync/sync_conflict_resolution_response.schema.json":
+            value["properties"]["native_state_revision"] = value["properties"].pop("status_revision")
+            value["required"][value["required"].index("status_revision")] = "native_state_revision"
         return {k: v for k, v in value.items() if k not in {"$id", "$schema", "title"}}
 
     def public_legacy(operation, source, response=False):
@@ -144,8 +148,12 @@ def derive():
         # Native infrastructure already owns an exact runtime binding shape.
         if source.startswith(INTERNAL):
             return source
-        payload_path = emit(operation.replace(".", "_") + ("_response_payload" if response else "_request_payload"),
-            plain_body(source, native=True, writer=response and operation == "reminder.prepare_delivery"), "internal_payloads")
+        body = plain_body(source, native=True, writer=response and operation == "reminder.prepare_delivery")
+        if not response and operation in {"calendar.range_summary", "calendar.list_day_items", "search.query"}:
+            body["properties"].update(workspace_timezone={"type": "null", "description": "Core resolves this axis from durable workspace preferences in the query snapshot; callers cannot override it."},
+                device_timezone={"type": "string", "minLength": 1, "maxLength": 255, "x-format": "iana-timezone", "x-owner": "Kotlin OS timezone injection"})
+            body["required"] += ["workspace_timezone", "device_timezone"]
+        payload_path = emit(operation.replace(".", "_") + ("_response_payload" if response else "_request_payload"), body, "internal_payloads")
         return emit(operation.replace(".", "_") + ("_response" if response else "_request"), object_of({
             "binding": ref("runtime_binding", "native_v3/internal"), "payload": schema_ref(payload_path)
         }), "native")
@@ -188,7 +196,8 @@ def derive():
             "implementation_status": "planned", "release_status": "planned", "kotlin_owner": owner,
             "implementation_path": "kotlin_workflow" if native_edges or http_edges else "kotlin_local",
             "native_calls": native_edges, "http_operations": http_edges,
-            "route_policy": "schema_declared_recovery_or_session_cas" if operation.startswith("auth.") or operation in {"workspace.get_state", "workspace.list", "device.list", "device.revoke"} else "explicit_workspace_and_route_cas"}
+            "route_policy": "target_workspace_with_current_route_cas" if operation == "workspace.activate" else
+                "schema_declared_recovery_or_session_cas" if operation.startswith("auth.") or operation in {"workspace.get_state", "workspace.list", "device.list", "device.revoke"} else "explicit_workspace_and_route_cas"}
     for operation, request in category_requests.items():
         methods[operation] = {"module": "category", "request": request,
             "result": {"envelope": "native_v3/common/native_result.schema.json", "data": category_response},

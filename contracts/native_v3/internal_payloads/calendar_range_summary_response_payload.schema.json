@@ -4,9 +4,9 @@
   "title": "SyncV1 calendar_range_summary_response_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
-  "x-rule-anchor": "cloud-sync-02/8",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4",
   "description": "Complete, gap-free ascending day summaries plus the opaque Calendar View snapshot token that must be used by all selected-day section requests accepted into the same Flutter page snapshot.",
   "x-calendar-view-revision": 1,
   "x-order": [
@@ -17,9 +17,10 @@
   "required": [
     "range_start_date",
     "range_end_date",
-    "timezone",
     "snapshot_token",
-    "days"
+    "days",
+    "workspace_timezone",
+    "device_timezone"
   ],
   "properties": {
     "range_start_date": {
@@ -29,11 +30,6 @@
     "range_end_date": {
       "type": "string",
       "format": "date"
-    },
-    "timezone": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 255
     },
     "snapshot_token": {
       "type": "string",
@@ -47,6 +43,18 @@
       "items": {
         "$ref": "https://excellent-calendar.local/contracts/calendar/calendar_range_day_summary.schema.json"
       }
+    },
+    "workspace_timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "x-format": "iana-timezone"
+    },
+    "device_timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "x-format": "iana-timezone"
     }
   }
 }

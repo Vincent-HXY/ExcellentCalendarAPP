@@ -20,8 +20,12 @@ private class KotlinAssertions(val nodes: List<*>) {
     private fun matches(pattern: String, value: String) = Pattern.compile(pattern, Pattern.UNICODE_CHARACTER_CLASS).matcher(value).find()
     private fun format(name: String, value: String): Boolean = try {
         when (name) {
-            "date" -> LocalDate.parse(value).toString() == value
-            "date-time" -> { OffsetDateTime.parse(value.uppercase()); true }
+            "date" -> Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}").matches(value) && LocalDate.parse(value).year >= 1 && LocalDate.parse(value).toString() == value
+            "date-time" -> {
+                val m = Regex("([0-9]{4}-[0-9]{2}-[0-9]{2})[Tt]([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\\.[0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})").matchEntire(value)
+                m != null && format("date", m.groupValues[1]) && m.groupValues[2].toInt() <= 23 && m.groupValues[3].toInt() <= 59 && m.groupValues[4].toInt() <= 59 &&
+                    (m.groupValues[5].length == 1 || m.groupValues[5].substring(1, 3).toInt() <= 23 && m.groupValues[5].substring(4).toInt() <= 59)
+            }
             "uuid" -> value.length == 36 && UUID.fromString(value).toString().equals(value, ignoreCase = true)
             "email" -> '@' in value
             else -> error("Unsupported format")

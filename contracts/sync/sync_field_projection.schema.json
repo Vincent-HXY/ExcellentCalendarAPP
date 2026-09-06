@@ -89,7 +89,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -294,7 +294,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             },
             "end_at": {
               "type": [
@@ -302,7 +302,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             },
             "start_date": {
               "type": [
@@ -371,14 +371,16 @@
                 "string",
                 "null"
               ],
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             },
             "deleted_at": {
               "type": [
                 "string",
                 "null"
               ],
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -741,7 +743,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -1044,14 +1046,16 @@
             },
             "state_changed_at": {
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             },
             "reopened_at": {
               "type": [
                 "string",
                 "null"
               ],
-              "format": "date-time"
+              "format": "date-time",
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -1142,7 +1146,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -1412,7 +1416,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -1523,7 +1527,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -1563,7 +1567,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -1822,7 +1826,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -1880,7 +1884,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }
@@ -2008,7 +2012,7 @@
                 "null"
               ],
               "format": "date-time",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
             }
           }
         }

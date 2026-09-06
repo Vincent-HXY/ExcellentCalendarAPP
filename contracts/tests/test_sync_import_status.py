@@ -52,6 +52,31 @@ class ImportStatusTests(unittest.TestCase):
         OBSERVATIONS.append({"schema": "sync/import_status_response.schema.json", "value": result})
         return result
 
+    def test_retired_full_audits_and_exact_cancellation_identities_survive_both_reopens(self):
+        self.ready()
+        before = self.guest.snapshot()
+        self.assertIsNone(self.account.status(self.operation)["affected_execution"])
+        receipt = self.retire()
+        after = self.guest.snapshot()
+        for table, label in (("reminders", "old-reminder"), ("notifications", "past-attempt")):
+            key = helpers.identifier(label)
+            self.assertEqual(next(row for row in before[table] if row[0] == key), next(row for row in after[table] if row[0] == key))
+        attempt = json.loads(next(row[2] for row in after["notifications"] if row[0] == helpers.identifier("prepared-attempt")))
+        self.assertEqual((attempt["status"], attempt["abandon_reason"]), ("abandoned", "source_migrated"))
+        validate_schema("native_v3/business_compat/notification/notification_response.schema.json", attempt)
+        expected = self.guest.affected_execution(0)
+        self.assertEqual(expected["reminder_ids"], [helpers.identifier("open-reminder")])
+        self.assertEqual(expected["notifications"], [{key: attempt[key] for key in
+            ("notification_id", "delivery_id", "delivery_attempt_id", "recovery_batch_id")}])
+        self.assertEqual(expected["workspace_id"], helpers.S)
+        self.assertEqual(expected["retirement_receipt_hash"], receipt["receipt_hash"])
+        self.guest = helpers.GuestImportCleanup(self.guest.path, workspace_id=helpers.S)
+        self.account = AccountImportStatus(self.account.path, account_id=helpers.A, device_id=helpers.D, installation_key=bytes(range(32)))
+        self.assertEqual(self.guest.affected_execution(0), expected)
+        self.assertEqual(self.account.status(self.operation)["affected_execution"], expected)
+        self.complete(receipt)
+        self.assertEqual(self.account.status(self.operation)["affected_execution"], expected)
+
     def test_initial_native_revision_zero_and_server_shape_owns_only_server_stages(self):
         self.freeze()
         local = self.account.status(self.operation)

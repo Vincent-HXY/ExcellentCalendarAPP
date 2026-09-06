@@ -146,33 +146,52 @@
     "contracts/spikes/sync_v1/cipher_runtime_source_audit.json": "6b85c2a0d44dc3f8979c3a7299ec8ac2a0d5fde1f66b2135b35b209a8a743bf8",
     "contracts/spikes/sync_v1/counter_spike_result.json": "9ec62f257c9c7dbc5c15b3bdd76d6dd61c9b8970082d0da1bd1991d395c1b70b",
     "contracts/spikes/sync_v1/backend_http_calibration_result.json": "d6862a00c4f083f47db33fe61a72a2dccf7569d80b3107aa7027caa75b7f515d",
-    "contracts/spikes/sync_v1/domain_spike_result.json": "0a0922788bc045af1835dabc412cc43fbc0302986ec8b6394ecf35cc2446dc7f",
-    "contracts/spikes/sync_v1/protocol_spike_result.json": "c66e08a2e6a9b6821713465f6e1aa47ffed03af86e4f659428860aab81394ec9",
-    "contracts/spikes/sync_v1/storage_spike_result.json": "d3447a9ffa9d475f3bccf4bcbc785465a53535d3170675a80cd7bd60be55ace0",
-    "contracts/spikes/sync_v1/capability_spike_result.json": "d78dfe632b164589efa3be737fd28811f4fcac908a328bf5642c83d724cf12c4",
+    "contracts/spikes/sync_v1/domain_spike_result.json": "49960be6b133a8f3eb664498405c807b91266b2802395ad41f14a0e700b3b0da",
+    "contracts/spikes/sync_v1/protocol_spike_result.json": "2d0d5819fa87290255ffcd8f2f50dd7adf0e3cab4cc65b6fb1e831173b5a2be5",
+    "contracts/spikes/sync_v1/storage_spike_result.json": "13370c44136bd6ad7cca57a9765ad4a916afdbf205f7fb282cf5cc23bd79ff7b",
+    "contracts/spikes/sync_v1/capability_spike_result.json": "b740a20261a3276dd3c4ea2786f2bde008943fc974465a1f2be716c1998a622d",
     "contracts/spikes/sync_v1/proof_signature_spike_result.json": "286d0baaada877e73ae081bb1feadd92b725da79046de9fc38f97e339bf6f556",
-    "contracts/spikes/sync_v1/proof_capsule_spike_result.json": "3f51a6ae369b5723d363cd6814d50d984b8929c36f29ac8e0260f94ea096b788",
+    "contracts/spikes/sync_v1/proof_capsule_spike_result.json": "b8bbc14e055c61559d0684c2836388de5d64aaf81d3b7bd6403e0ef25b33d886",
     "contracts/spikes/sync_v1/occurrence_identity_spike_result.json": "19530951a2fd374bfe12160e3cdebc5a7384e4cb87f155a7c571bc8d1dbeda6e",
     "contracts/spikes/sync_v1/android_key_spike_result.json": "7d59b38b5a3f2ed44fa1829e4430c8b7210fb66ef2e3b60c3749b0a46c262fea",
     "contracts/spikes/sync_v1/android_key_build_result.json": "101bb5ee1fe7599bd97e3af1bfd69a8f9e5fe9c335d116ec337db5c1d422899d",
-    "contracts/spikes/sync_v1/legacy_identity_spike_result.json": "f97eb435324a8b327df5650c516ed94c944dae19b114d3c6933b67a6990bc5c7",
-    "contracts/spikes/sync_v1/owned_graph_spike_result.json": "ffe39b97ecd7231ec1635322e1295d6065f13c97153c980282b5750f5ddbc61e",
+    "contracts/spikes/sync_v1/legacy_identity_spike_result.json": "38932c51a043724b48729be4494c7e2162013e50b824fa3fd4120a30116656d6",
+    "contracts/spikes/sync_v1/owned_graph_spike_result.json": "38cdd7ef8ce7bbed61870e4209eabaf979163a8131d7cc141a8a27b6aa1efee4",
     "contracts/spikes/sync_v1/cursor_spike_result.json": "e8b87869eaf71765ce292283566b94b343446edb6f1ab68ea8b540d17d34b180",
-    "contracts/spikes/sync_v1/bootstrap_spike_result.json": "df7e991403f916f9183525a15170268e6e972dce7994dd90ae2892e72825b0a1",
+    "contracts/spikes/sync_v1/bootstrap_spike_result.json": "786dfa760fd7ada193a326b6635bdcc428c141092fe2ef71d5fbd7c6e737785e",
     "contracts/spikes/sync_v1/backend_shape_audit_result.json": "ae9434453a0bc41cd048bcc9426a75fe2d2dcdffc052d37515bec70b5ec4988d",
     "contracts/spikes/sync_v1/backup_policy_spike_result.json": "0852148330aab0741de20b5b459eb93e65dfc8a301c88b3a7c8e30600926edb2",
-    "contracts/spikes/sync_v1/habit_operation_spike_result.json": "080afd11ef5e0ce39ea585f74b29f4ba802321a32f4a09d836da8ae0f3a22414",
-    "contracts/spikes/sync_v1/local_intent_spike_result.json": "8e17f10cb885658c9218dbcb595be3c19a3e91abe7f1d202e45720d7d2413dc6",
-    "contracts/spikes/sync_v1/conflict_resolution_spike_result.json": "9f1d937f47a50977f7412d437ed779e61f0fd1fcecd859730eb7bb44b9122166",
-    "contracts/spikes/sync_v1/notice_spike_result.json": "a31d7785ff2cb2827f8d618e60e730c555ab97408ffc40ba6e3a8a30ad8b8d9f",
-    "contracts/spikes/sync_v1/owned_sequence_spike_result.json": "f906a3b33dac5fdb92b51ad4e78de81dff822fa235fd8d9f087b503ffdd9c6a2",
-    "contracts/spikes/sync_v1/owned_resolution_spike_result.json": "9889c44743e30e893447702e1ea5bc31c0b7839a5b607587303dcad195ec04e3",
-    "contracts/spikes/sync_v1/import_saga_spike_result.json": "8dac2a9d6e303d7120e5576963b99bbefcebe06a22e1cd53e86d2c15433f5e72",
-    "contracts/spikes/sync_v1/import_capacity_spike_result.json": "e5b747c1ba00367cc95115a5c57346dec377374bd66973f631b2fcbddb6b1a7b",
-    "contracts/spikes/sync_v1/cross_language_schema_spike_result.json": "3a9bc0e14c2e8de9f0ee0e66b430971868eb2928d7085bb77165eddb5aef03c0",
-    "contracts/spikes/sync_v1/client_recovery_spike_result.json": "75307b4192a9ef06f12e23587f643d4f182f2257729214529c15bf6fdb76aaea"
+    "contracts/spikes/sync_v1/habit_operation_spike_result.json": "86ea5217d2591d40f4630c09cb632715844c8a3d55789d4e2cba36a1e01eea5e",
+    "contracts/spikes/sync_v1/local_intent_spike_result.json": "6976b98a04949eaa5df9b8d7341ce1eca7d4c5a22497e757c7a469d5b189651b",
+    "contracts/spikes/sync_v1/conflict_resolution_spike_result.json": "6bab43d47b9f4912f15d6cf2dd2b29eab74536f90fac0127ba0e521daef625bc",
+    "contracts/spikes/sync_v1/notice_spike_result.json": "1802c8a16a95ba763c9e4eeb4737b96e50b3ce9ae1265010bf72d0863d961c3a",
+    "contracts/spikes/sync_v1/owned_sequence_spike_result.json": "4e0a398de9cfb47e7dd94b8406d273b5ea97865a068a7f31e4b0f425ec071f8b",
+    "contracts/spikes/sync_v1/owned_resolution_spike_result.json": "920604e5e0d3d650839810c81c745bf470704b66818200be17a7c529547b5dba",
+    "contracts/spikes/sync_v1/import_saga_spike_result.json": "7456a8dad0206dd291038783f52178c023ea16d0003da2c9e3becbbabd806326",
+    "contracts/spikes/sync_v1/import_capacity_spike_result.json": "0b810220194489d37dba8d093324833de73f93f19bbbc6a4fd04d0e00714e7e5",
+    "contracts/spikes/sync_v1/cross_language_schema_spike_result.json": "5b5f34ac86a955235770fbea99fe3bd151a2ad19a48296565c538fb4ff1f250a",
+    "contracts/spikes/sync_v1/client_recovery_spike_result.json": "a84c122e86211282dbdfb2106a5ff973c8609a10d5f1aa6f02a8b6aac65b7257"
   },
   "revision_lock": "contracts/sync/sync_v1_revision_lock.json",
+  "freeze_scope": "Plan 02 design and machine Contract only. All new product capabilities remain planned; the separate font worktree is not included in this revision.",
+  "review_closure": {
+    "base_commit": "5d8fb0a6debe3dc4e99e8aed5213ed9d3b43731d",
+    "resolved_issues": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "record": "docs/plan/active/云同步-02-Review复核与兼容修订记录.md",
+    "scope": "Versioned planned contracts and isolated references; protected Native v2 and SQLite v4/v5 unchanged; production integration not claimed"
+  },
   "integration_notes": [
     {
       "id": "CT0-CONCURRENT-APPEARANCE",
@@ -185,6 +204,5 @@
       ],
       "effect": "Original Appearance edits preserved; isolated worktree restored the protected v2 input and passed all previous 173 tests. This does not approve an Appearance baseline amendment."
     }
-  ],
-  "freeze_scope": "Plan 02 design and machine Contract only. All new product capabilities remain planned; the separate font worktree is not included in this revision."
+  ]
 }

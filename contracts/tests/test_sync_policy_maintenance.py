@@ -166,6 +166,26 @@ class PolicyMaintenanceTests(unittest.TestCase):
             self.local.maintenance(max_items=501)
         self.assertEqual(self.local.snapshot(), after)
 
+    def test_cleanup_cutoff_is_durable_and_not_reconstructed_from_transient_state(self):
+        response = self.response(upper=0)
+        self.apply(response)
+        expected = response["resolved_conflict_cleanup_before"]
+        with connect(self.local.path) as db:
+            row = db.execute("SELECT resolved_conflict_cleanup_before FROM sync_state").fetchone()
+            self.assertEqual(row, (expected,))
+            state = self.state()
+            state["cleanup"] = 4102444800  # A transient 2100 cutoff must not authorize deletion.
+            db.execute("UPDATE state SET payload=?", (json.dumps(state),))
+        self.local = PolicyMaintenanceStore(self.local.path, workspace_id=A, runtime_id=RUNTIME, device_id=D)
+        self.assertEqual(self.local.maintenance()["resolved_conflict_cleanup_before"], expected)
+        with connect(self.local.path) as db:
+            db.execute("UPDATE sync_state SET resolved_conflict_cleanup_before=NULL")
+        self.local = PolicyMaintenanceStore(self.local.path, workspace_id=A, runtime_id=RUNTIME, device_id=D)
+        before = self.local.snapshot()
+        with self.assertRaisesRegex(ValueError, "SYNC_BOOTSTRAP_INCOMPLETE"):
+            self.local.maintenance()
+        self.assertEqual(self.local.snapshot(), before)
+
     def kill_then_retry(self, method, arguments, points):
         for point in points:
             before = self.local.snapshot()

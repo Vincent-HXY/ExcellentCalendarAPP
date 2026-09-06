@@ -4,9 +4,9 @@
   "title": "SyncV1 calendar_list_day_items_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
-  "x-rule-anchor": "cloud-sync-02/8",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4",
   "description": "Lists one typed Calendar section for one local date against the exact snapshot returned by calendar.range_summary. cursor=null starts the section; continuation cursors bind every query field, sort revision, complete last key, and snapshot token.",
   "x-calendar-view-revision": 1,
   "x-semantic-errors": {
@@ -20,21 +20,17 @@
   "additionalProperties": false,
   "required": [
     "date",
-    "timezone",
     "section",
     "snapshot_token",
     "cursor",
-    "page_size"
+    "page_size",
+    "workspace_timezone",
+    "device_timezone"
   ],
   "properties": {
     "date": {
       "type": "string",
       "format": "date"
-    },
-    "timezone": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 255
     },
     "section": {
       "type": "string",
@@ -61,6 +57,17 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 100
+    },
+    "workspace_timezone": {
+      "type": "null",
+      "description": "Core resolves this axis from durable workspace preferences in the query snapshot; callers cannot override it."
+    },
+    "device_timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "x-format": "iana-timezone",
+      "x-owner": "Kotlin OS timezone injection"
     }
   }
 }

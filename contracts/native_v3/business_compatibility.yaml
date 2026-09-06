@@ -6,13 +6,28 @@ schemas:
 - source: calendar/calendar_day_item_page.schema.json
   target: native_v3/business_compat/calendar/calendar_day_item_page.schema.json
   changes:
-  - transitive_ref_only
+  - mixed_query_separate_workspace_and_device_timezones
   source_semantic_sha256: ff09f6f57a2b1914d323ee6d6a21324bef3a843c99e338be2d7f3537171e3d97
 - source: calendar/calendar_event_item.schema.json
   target: native_v3/business_compat/calendar/calendar_event_item.schema.json
   changes:
   - checked_recurrence_revision_int64_safe_range
   source_semantic_sha256: 33c0a85f76e37df15e697306f5500d6eaa98ddec9b9f46581d57d5b35ec69fc4
+- source: calendar/calendar_list_day_items_request.schema.json
+  target: native_v3/business_compat/calendar/calendar_list_day_items_request.schema.json
+  changes:
+  - mixed_query_separate_workspace_and_device_timezones
+  source_semantic_sha256: 4f9d900deee6d2e722b3c79284a87694c01693a511f181ac9614715bd7bb7176
+- source: calendar/calendar_range_summary_request.schema.json
+  target: native_v3/business_compat/calendar/calendar_range_summary_request.schema.json
+  changes:
+  - mixed_query_separate_workspace_and_device_timezones
+  source_semantic_sha256: 283eba3b061aa214d31955426bcc4d6d73f3315021e6850a481e624ef40cb9ed
+- source: calendar/calendar_range_summary_response.schema.json
+  target: native_v3/business_compat/calendar/calendar_range_summary_response.schema.json
+  changes:
+  - mixed_query_separate_workspace_and_device_timezones
+  source_semantic_sha256: 742ecd09afbd16c2e315224c678949fbb214fcddd20adec3b53d92a06ff16c60
 - source: event/event_detail_response.schema.json
   target: native_v3/business_compat/event/event_detail_response.schema.json
   changes:
@@ -63,6 +78,16 @@ schemas:
   changes:
   - paired_optional_workspace_routing_legacy_reader
   source_semantic_sha256: 97e84bf84919cd4ff6f07eb0e1798517ffdf62162edc9ad4cf196ab9192f3129
+- source: notification/notification_list_response.schema.json
+  target: native_v3/business_compat/notification/notification_list_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 881a67d9aa2071fe832b3f644ea7ece34dae1274fe42bdd15e5250dd761678b5
+- source: notification/notification_response.schema.json
+  target: native_v3/business_compat/notification/notification_response.schema.json
+  changes:
+  - guest_source_migrated_prepared_attempt_abandonment
+  source_semantic_sha256: 50eae0e6272969c1bed6917ad7c7f900faf6b9b65af9a7d82b828bcaef995f32
 - source: notification/notification_tap_payload.schema.json
   target: native_v3/business_compat/notification/notification_tap_payload.schema.json
   changes:
@@ -112,6 +137,7 @@ schemas:
   target: native_v3/business_compat/reminder/reminder_response.schema.json
   changes:
   - checked_recurrence_revision_int64_safe_range
+  - guest_source_migrated_irreversible_cancellation
   source_semantic_sha256: 170960f8d3fb57cff2a9ef8fda8170967e19eccf8d035ca2b5ca5c918730ff25
 - source: reminder/schedulable_reminder_list_response.schema.json
   target: native_v3/business_compat/reminder/schedulable_reminder_list_response.schema.json
@@ -158,10 +184,15 @@ schemas:
   changes:
   - checked_recurrence_revision_int64_safe_range
   source_semantic_sha256: ddcc4bae5d7a6b03dc0b6db03d396153049385216c5d1bbc3f69060b8f07ed5e
+- source: search/search_query_request.schema.json
+  target: native_v3/business_compat/search/search_query_request.schema.json
+  changes:
+  - mixed_query_separate_workspace_and_device_timezones
+  source_semantic_sha256: f0aa7f44e4199ddb2db1a363409b6062b2de60dcd9fd4b0e71bb8ebec60bf7b9
 - source: search/search_query_response.schema.json
   target: native_v3/business_compat/search/search_query_response.schema.json
   changes:
-  - transitive_ref_only
+  - mixed_query_separate_workspace_and_device_timezones
   source_semantic_sha256: 1c19f589a86c2c0f0d05aed059616e8257737ec0e79c9173f9e63e6a0c58d118
 - source: search/search_section_response.schema.json
   target: native_v3/business_compat/search/search_section_response.schema.json
@@ -186,6 +217,9 @@ schema_mapping:
   anniversary/update_anniversary_request.schema.json: native_v3/anniversary/update_anniversary_request.schema.json
   calendar/calendar_day_item_page.schema.json: native_v3/business_compat/calendar/calendar_day_item_page.schema.json
   calendar/calendar_event_item.schema.json: native_v3/business_compat/calendar/calendar_event_item.schema.json
+  calendar/calendar_list_day_items_request.schema.json: native_v3/business_compat/calendar/calendar_list_day_items_request.schema.json
+  calendar/calendar_range_summary_request.schema.json: native_v3/business_compat/calendar/calendar_range_summary_request.schema.json
+  calendar/calendar_range_summary_response.schema.json: native_v3/business_compat/calendar/calendar_range_summary_response.schema.json
   event/event_detail_response.schema.json: native_v3/business_compat/event/event_detail_response.schema.json
   event/event_list_response.schema.json: native_v3/business_compat/event/event_list_response.schema.json
   event/event_occurrence_list_response.schema.json: native_v3/business_compat/event/event_occurrence_list_response.schema.json
@@ -196,6 +230,8 @@ schema_mapping:
   event/event_series_operation_request.schema.json: native_v3/business_compat/event/event_series_operation_request.schema.json
   event/list_event_occurrences_request.schema.json: native_v3/business_compat/event/list_event_occurrences_request.schema.json
   habit/habit_notification_action_payload.schema.json: native_v3/business_compat/habit/habit_notification_action_payload.schema.json
+  notification/notification_list_response.schema.json: native_v3/business_compat/notification/notification_list_response.schema.json
+  notification/notification_response.schema.json: native_v3/business_compat/notification/notification_response.schema.json
   notification/notification_tap_payload.schema.json: native_v3/business_compat/notification/notification_tap_payload.schema.json
   notification/notification_tap_payload_response.schema.json: native_v3/business_compat/notification/notification_tap_payload_response.schema.json
   notification/prepared_notification_payload.schema.json: native_v3/business_compat/notification/prepared_notification_payload.schema.json
@@ -215,6 +251,7 @@ schema_mapping:
   ring/ring_state_changed_event.schema.json: native_v3/business_compat/ring/ring_state_changed_event.schema.json
   ring/ring_state_snapshot.schema.json: native_v3/business_compat/ring/ring_state_snapshot.schema.json
   search/search_event_item.schema.json: native_v3/business_compat/search/search_event_item.schema.json
+  search/search_query_request.schema.json: native_v3/business_compat/search/search_query_request.schema.json
   search/search_query_response.schema.json: native_v3/business_compat/search/search_query_response.schema.json
   search/search_section_response.schema.json: native_v3/business_compat/search/search_section_response.schema.json
 writer_schema_mapping:
@@ -232,12 +269,15 @@ recurrence_revision:
   storage_codec_revisions: storage/calendar_core_storage.yaml#/calendar_core_v6/payload_codec_revisions
   legacy_v2_schema: unchanged; its absent maximum does not prove that the int32 production
     decoder accepts larger values
-  legacy_v5: exact historical codecs and rows; four v6 metadata codec bumps authorize
-    only the recurrence counter width change
+  legacy_v5: exact historical codecs and rows; v6 explicitly versions recurrence width
+    and source-migrated Reminder/Notification audit deltas
   v3_dispatch: only workspace-bound v6 runtimes; never send a v6 record to the v2/v5
     int32 reader
 notification:
   legacy_reader: workspace pair absent or both present; never one present/null
+  source_retirement: pending/scheduled Reminder -> cancelled with last_cancellation_reason=source_migrated;
+    prepared Notification -> abandoned with abandon_reason=source_migrated; terminal
+    audit payloads remain unchanged; late finalize has zero writes
   v6_writer: both workspace fields required for prepared, tap and Habit action payloads;
     reminder.prepare_delivery uses writer refs recursively
   legacy_route: only a uniquely identified legacy workspace; ambiguity refuses routing;
@@ -246,3 +286,22 @@ notification:
     never auto-login
   guest_source_label: 本机
   upload: workspace routing is local-only and excluded from all Sync facts
+mixed_query_timezones:
+  operations:
+  - calendar.range_summary
+  - calendar.list_day_items
+  - search.query
+  public_request: Flutter supplies dates/filter/pagination only; timezone is absent
+    and forbidden
+  native_request: workspace_timezone must be null (resolve in Core); device_timezone
+    is the OS IANA zone injected by Kotlin
+  workspace_authority: C++ reads workspace_preferences.timezone inside the same query
+    snapshot; never a Flutter/Kotlin override
+  response: workspace_timezone is the resolved persisted value; device_timezone echoes
+    the validated OS value
+  snapshot_binding: Calendar/Search snapshot and cursor bind both effective zones;
+    a change on either axis invalidates reuse
+  projection: Event uses workspace_timezone; Habit/Anniversary local dates and follow-device
+    use device_timezone
+  invalidation: workspace changes invalidate Event projection only; OS changes invalidate
+    Habit/Anniversary and reconcile their open reminders

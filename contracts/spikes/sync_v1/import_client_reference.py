@@ -376,18 +376,8 @@ class FullGraphGuestImport(GuestImportCleanup):
             receipt["receipt_hash"] = cleanup_hash(receipt)
             check_cleanup(receipt)
             identities = {(row["target_type"], row["target_id"]) for row in records}
-            for reminder, target, entity, state in db.execute("SELECT id,target,entity,state FROM guest_execution_reminders").fetchall():
-                old_anchor = db.execute("SELECT 1 FROM guest_import_audit_anchors WHERE target_type=? AND target_id=? AND reminder_id=?", (target, entity, reminder)).fetchone()
-                if old_anchor:
-                    continue
-                # Historical identities deleted during repair are also part of
-                # the frozen import closure and retain their local audit graph.
-                check((target, entity) in identities or (target, entity) in evidence["source_identities"], "IMPORT_REFERENCE_INVALID")
-                db.execute("INSERT INTO guest_import_audit_anchors VALUES(?,?,?,?,?,'source_migrated',?,NULL,NULL)",
-                    (target, entity, reminder, epoch, evidence["import_lineage_id"], now))
-                if state in {"open", "prepared"}:
-                    db.execute("UPDATE guest_execution_reminders SET state='cancelled',reason='source_migrated' WHERE id=?", (reminder,))
-                db.execute("UPDATE guest_execution_notifications SET state='cancelled',reason='source_migrated' WHERE reminder=? AND state='prepared'", (reminder,))
+            from source_retirement_reference import retire_audits
+            retire_audits(db, identities | set(map(tuple, evidence["source_identities"])), receipt, now)
             checkpoint(hook, "import_guest_execution_retired")
             db.execute("DELETE FROM guest_import_source_facts")
             checkpoint(hook, "import_guest_facts_retired")

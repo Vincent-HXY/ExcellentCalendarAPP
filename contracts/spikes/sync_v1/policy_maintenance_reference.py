@@ -34,6 +34,34 @@ class PolicyMaintenanceStore(LocalIntentStore):
             """)
             if db.execute("SELECT 1 FROM sqlite_master WHERE name='sync_policy_operation_receipts'").fetchone() is None:
                 db.execute(derive()["new_tables"]["sync_policy_operation_receipts"])
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='sync_state'").fetchone() is None:
+                db.execute(derive()["new_tables"]["sync_state"])
+                # Initialize this oracle's formal projection once. Reopening never
+                # reconstructs a missing cutoff from the logical state or clock.
+                self._persist_sync_state(db, self._state(db))
+
+    @staticmethod
+    def _persist_sync_state(db, state):
+        device, transport = db.execute("SELECT device_id,transport FROM binding").fetchone()
+        enabled, revision, gate = db.execute("SELECT enabled,revision,pull_required FROM policy_state").fetchone()
+        highest = MAXIMUM if state["exhausted"] else state["next_sequence"] - 1
+        cutoff = None if state["fresh"] else datetime.fromtimestamp(state["cleanup"], timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        values = (1, device, transport, state["next_sequence"], int(state["exhausted"]), highest,
+            state["local_ack"], state["server_ack"], int(state["local_ack"] > state["server_ack"]), state["cursor"],
+            None if state["fresh"] else state["generation"], None if state["fresh"] else state["upper_bound"],
+            state["server_ack"], state["floor"], cutoff, enabled, revision, gate, 1, 0,
+            0, 0, 0, None, None, None)
+        db.execute("INSERT OR REPLACE INTO sync_state VALUES(" + ",".join("?" for _ in values) + ")", values)
+
+    @staticmethod
+    def _save_state(db, state):
+        LocalIntentStore._save_state(db, state)
+        PolicyMaintenanceStore._persist_sync_state(db, state)
+
+    def _finalize_local_intents(self, db, state, metadata, hook):
+        super()._finalize_local_intents(db, state, metadata, hook)
+        self._persist_sync_state(db, state)
+        checkpoint(hook, "bootstrap_trusted_cleanup_watermark")
 
     def set_enabled(self, request, *, hook=None):
         validate_schema("sync/native_set_sync_enabled_request.schema.json", request)
@@ -124,7 +152,10 @@ class PolicyMaintenanceStore(LocalIntentStore):
             state = self._state(db)
             check(not state["fresh"] and state["cursor"] is not None and state["generation"] is not None and
                   0 <= state["floor"] <= state["upper_bound"], "SYNC_BOOTSTRAP_INCOMPLETE")
-            cutoff = datetime.fromtimestamp(state["cleanup"], timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            durable = db.execute("SELECT account_generation,resolved_conflict_cleanup_before FROM sync_state WHERE singleton=1").fetchone()
+            check(durable is not None and durable[0] == state["generation"] and durable[1] is not None,
+                  "SYNC_BOOTSTRAP_INCOMPLETE")
+            cutoff = durable[1]
             resolved = [identifier for identifier, in db.execute("SELECT id FROM conflict_history WHERE status='resolved' AND "
                 "json_extract(payload,'$.resolved_at')<=? ORDER BY id LIMIT ?", (cutoff, max_items + 1))]
             # Effect receipts remain pinned until their actual client receipts
@@ -140,11 +171,11 @@ class PolicyMaintenanceStore(LocalIntentStore):
             checkpoint(hook, "maintenance_bounded_deletes")
             return {"resolved_conflicts_deleted": sum(kind == "conflict" for kind, _ in selected),
                 "change_receipts_deleted": sum(kind == "receipt" for kind, _ in selected), "has_more": len(actions) > max_items,
-                "retention_floor_server_sequence": state["floor"]}
+                "retention_floor_server_sequence": state["floor"], "resolved_conflict_cleanup_before": cutoff}
 
     def snapshot(self):
         value = super().snapshot()
         with connect(self.path) as db:
-            for table in ("policy_state", "policy_bootstrap", "sync_policy_operation_receipts", "local_import_ack_requests"):
+            for table in ("policy_state", "policy_bootstrap", "sync_policy_operation_receipts", "local_import_ack_requests", "sync_state"):
                 value[table] = db.execute("SELECT * FROM " + table + " ORDER BY 1").fetchall()
         return value

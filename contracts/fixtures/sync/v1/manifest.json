@@ -8574,6 +8574,720 @@
       "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
     },
     {
+      "id": "FX-CAPABILITY-review_date_2026-09-06",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/28",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_date_0000-01-01",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/29",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_date_0001-01-01",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/30",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_date_9999-12-31",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/31",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_date_2024-02-29",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/32",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_date_2026-02-29",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/33",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_completed_at_2026-09-06T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/34",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_completed_at_2026-09-06T08:00:00+08:00",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/35",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_completed_at_0000-01-01T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/36",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_created_at_2026-09-06T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/37",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_created_at_2026-09-06T08:00:00+08:00",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/38",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_created_at_0000-01-01T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/39",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_updated_at_2026-09-06T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/40",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_updated_at_2026-09-06T08:00:00+08:00",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/41",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_updated_at_0000-01-01T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/42",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_deleted_at_2026-09-06T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/43",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_deleted_at_2026-09-06T08:00:00+08:00",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/44",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_deleted_at_0000-01-01T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/45",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_start_at_2026-09-06T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/46",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_start_at_2026-09-06T08:00:00+08:00",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/47",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_utc_start_at_0000-01-01T00:00:00Z",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/48",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_retired_storage/v6/reminder_record.schema.json",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/49",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_retired_native_v3/business_compat/reminder/reminder_response.schema.json",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/50",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_retired_reminder/reminder_response.schema.json",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/51",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_retired_notification/notification_response.schema.json",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/52",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_retired_native_v3/business_compat/notification/notification_response.schema.json",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/53",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_retired_notification_illegal_prepared",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/54",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_retired_notification_illegal_sent",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/55",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_retired_notification_illegal_cancelled",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/56",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_native_revision",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/57",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_wrong_revision_owner",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/58",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_two_timezone_inputs",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/59",
+      "expected": {
+        "schema_valid": true
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_workspace_timezone_cannot_be_overridden",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/60",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
+      "id": "FX-CAPABILITY-review_single_timezone_forbidden",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "input_file": "capability_vectors.json",
+      "case_pointer": "/cases/61",
+      "expected": {
+        "schema_valid": false
+      },
+      "required_consumers": [
+        "python_contract_oracle"
+      ],
+      "parser_consumers": [
+        "cpp_windows",
+        "java21",
+        "kotlin_jvm_2_2_20",
+        "dart"
+      ],
+      "byte_for_byte_required": false,
+      "owner_evidence_file": "contracts/spikes/sync_v1/capability_spike_result.json"
+    },
+    {
       "id": "PG-FIELD-125-TYPED",
       "family": "FX-WORKSPACE",
       "rule_anchor": "cloud-sync-02/11",
@@ -17332,7 +18046,7 @@
         "python_sqlite_client_recovery"
       ],
       "byte_for_byte_required": false,
-      "expected": "26 combined tests; 8 dual-store, 5 fresh-recovery and 4 policy/maintenance process-death boundaries; authenticated private receipts/AEAD and safe-export TTL",
+      "expected": "27 combined tests; 8 dual-store, 5 fresh-recovery and 4 policy/maintenance process-death boundaries; durable cleanup cutoff, authenticated private receipts/AEAD and safe-export TTL",
       "families": [
         "FX-IMPORT-STAGE",
         "FX-IMPORT-PUBLISH",

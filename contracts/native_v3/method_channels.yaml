@@ -1682,7 +1682,7 @@ methods:
     - runtime.close_workspace
     - runtime.open_workspace
     http_operations: []
-    route_policy: explicit_workspace_and_route_cas
+    route_policy: target_workspace_with_current_route_cas
     planned_dtos:
       dart_request: WorkspaceActivateWorkspaceRequestV3
       dart_response: WorkspaceWorkspaceStateResponseV3

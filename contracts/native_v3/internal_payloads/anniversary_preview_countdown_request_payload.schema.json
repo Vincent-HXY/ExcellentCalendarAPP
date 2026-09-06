@@ -4,7 +4,7 @@
   "title": "SyncV1 anniversary_preview_countdown_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
   "x-rule-anchor": "cloud-sync-02/8",
   "description": "Calculates a countdown before persistence from only the facts needed by the calculator. recurrence must reflect the form's current yearly-repeat switch. lunar is accepted so the operation can return ANNIVERSARY_CALENDAR_UNSUPPORTED.",

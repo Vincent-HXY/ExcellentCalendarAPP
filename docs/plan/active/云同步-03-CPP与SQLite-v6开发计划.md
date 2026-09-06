@@ -1,6 +1,7 @@
 # 云同步-03：C++ Core 与 SQLite v6 开发计划
 
 > 状态：ACTIVE PLAN / CONTRACT FROZEN / IMPLEMENTATION NOT STARTED
+> 2026-09-07 Review 修订：提交 `5d8fb0a` 的 11 类问题经独立复核成立，修订依据和跨层交接规则见[Review 复核与兼容修订记录](./云同步-02-Review复核与兼容修订记录.md)。03–06 以机器锁中的最新内容摘要为共同输入；初次交付的旧摘要仅作历史记录。
 > 上位统筹：`docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`
 > 协议与数据真相源：`docs/plan/active/云同步-02-Contracts与数据模型开发计划.md`
 > 实施范围：`cpp_core/**`；本文只制定计划，不执行实现

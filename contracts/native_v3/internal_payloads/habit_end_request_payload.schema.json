@@ -4,7 +4,7 @@
   "title": "SyncV1 habit_end_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
   "x-rule-anchor": "cloud-sync-02/8",
   "description": "Irreversibly ends one active Habit only when the device-local today is strictly before end_date. Upcoming returns HABIT_NOT_STARTED; today=end_date returns HABIT_END_NOT_EARLY; completed/ended_early returns HABIT_ALREADY_ENDED. C++ derives ended_date, preserves end_date, and cancels future Habit Reminders atomically.",

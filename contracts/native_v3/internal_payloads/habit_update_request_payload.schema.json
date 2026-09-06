@@ -4,7 +4,7 @@
   "title": "SyncV1 habit_update_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
   "x-rule-anchor": "cloud-sync-02/8",
   "description": "Complete Habit fact replacement with optimistic concurrency. recurrence is immutable. reminder omitted preserves the plan; present replaces it in the same C++ transaction. C++ enforces the 400-natural-day challenge cap, target/start locks, lifecycle permissions, and date constraints against existing CheckIns.",

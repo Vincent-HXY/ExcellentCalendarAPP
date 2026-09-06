@@ -28,7 +28,7 @@
   ],
   "properties": {
     "notification": {
-      "$ref": "https://excellent-calendar.local/contracts/notification/notification_response.schema.json"
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/notification/notification_response.schema.json"
     },
     "reminder": {
       "oneOf": [

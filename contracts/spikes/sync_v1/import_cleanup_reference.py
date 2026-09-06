@@ -15,6 +15,7 @@ from build_sync_storage_contract import derive as storage_model
 from import_range_reference import ImportRangeStore
 from protocol_reference import digest, encode, unwrap_terminal, validate_terminal_for_mutation
 from sqlite_reference import connect
+from source_retirement_reference import create_audit_tables, audit_rows, write_audit, retire_audits, read_affected
 
 
 def cleanup_hash(receipt):
@@ -90,6 +91,8 @@ class AccountImportCleanup(AccountImportJournal):
     def __init__(self, path, **kwargs):
         super().__init__(path, **kwargs)
         with connect(path) as db:
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='sync_import_execution_cancellations'").fetchone() is None:
+                db.execute(storage_model()["new_tables"]["sync_import_execution_cancellations"])
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS local_import_control(batch TEXT PRIMARY KEY,revision INTEGER NOT NULL,head TEXT NOT NULL,publication TEXT,cleanup TEXT,completed TEXT);
                 CREATE TABLE IF NOT EXISTS local_import_effect_gates(sequence INTEGER PRIMARY KEY,batch TEXT NOT NULL);
@@ -249,6 +252,8 @@ class AccountImportCleanup(AccountImportJournal):
         check_cleanup(receipt)
         # This read is an actual durable guest receipt, never a caller boolean.
         check(guest.cleanup_receipt(receipt["source_epoch"]) == receipt, "IMPORT_REFERENCE_INVALID")
+        affected = guest.affected_execution(receipt["source_epoch"])
+        check(affected["retirement_receipt_hash"] == receipt["receipt_hash"], "IMPORT_REFERENCE_INVALID")
         with connect(self.path) as db:
             db.execute("BEGIN IMMEDIATE")
             local = self._receipt(db, operation)
@@ -256,6 +261,8 @@ class AccountImportCleanup(AccountImportJournal):
                 local["import_lineage_id"] == receipt["import_lineage_id"] and local["manifest"]["source_snapshot_hash"] == receipt["source_snapshot_hash"], "IMPORT_LINEAGE_MISMATCH")
             check(db.execute("SELECT 1 FROM local_import_applied WHERE batch=?", (local["batch_id"],)).fetchone() is not None, "IMPORT_PUBLISH_INCOMPLETE")
             db.execute("UPDATE local_import_control SET cleanup=? WHERE batch=?", (encode(receipt), local["batch_id"]))
+            db.execute("INSERT OR REPLACE INTO sync_import_execution_cancellations VALUES(?,?,?,?,?,?,?)",
+                (local["batch_id"], receipt["source_workspace_id"], receipt["source_epoch"], receipt["receipt_hash"], 1, encode(affected), digest(affected)))
             db.execute("UPDATE local_import_operations SET stage='cleanup_pending' WHERE operation=? AND stage!='completed'", (operation,))
             db.execute("INSERT OR IGNORE INTO local_import_reminder_gates VALUES(?,?)", (local["batch_id"], receipt["receipt_hash"]))
             checkpoint(hook, "import_account_retirement_observed")
@@ -340,7 +347,7 @@ class AccountImportCleanup(AccountImportJournal):
     def snapshot(self):
         value = super().snapshot()
         with connect(self.path) as db:
-            for table in ("local_import_control", "local_import_effect_gates", "local_import_ack_requests", "local_import_reminder_gates", "local_import_range_terminals"):
+            for table in ("local_import_control", "local_import_effect_gates", "local_import_ack_requests", "local_import_reminder_gates", "local_import_range_terminals", "sync_import_execution_cancellations"):
                 value[table] = db.execute("SELECT * FROM " + table + " ORDER BY 1").fetchall()
         return value
 
@@ -349,11 +356,12 @@ class GuestImportCleanup(GuestImportSource):
     def __init__(self, path, **kwargs):
         super().__init__(path, **kwargs)
         with connect(path) as db:
+            create_audit_tables(db)
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='guest_import_execution_retirements'").fetchone() is None:
+                db.execute(storage_model()["new_tables"]["guest_import_execution_retirements"])
             if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='guest_import_source_lease_terminals'").fetchone() is None:
                 db.execute(storage_model()["new_tables"]["guest_import_source_lease_terminals"])
             db.executescript("""
-                CREATE TABLE IF NOT EXISTS guest_execution_reminders(id TEXT PRIMARY KEY,target TEXT NOT NULL,entity TEXT NOT NULL,state TEXT NOT NULL,reason TEXT);
-                CREATE TABLE IF NOT EXISTS guest_execution_notifications(id TEXT PRIMARY KEY,reminder TEXT NOT NULL,state TEXT NOT NULL,reason TEXT);
                 CREATE TABLE IF NOT EXISTS guest_search_history(position INTEGER PRIMARY KEY,keyword TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS guest_lease_release_receipts(operation TEXT PRIMARY KEY,identity TEXT NOT NULL,result TEXT NOT NULL);
             """)
@@ -368,6 +376,13 @@ class GuestImportCleanup(GuestImportSource):
     def cleanup_receipt(self, epoch):
         with connect(self.path) as db:
             return self._cleanup_receipt(db, epoch)
+
+    def affected_execution(self, epoch):
+        with connect(self.path) as db:
+            value = read_affected(db, epoch)
+            receipt = self._cleanup_receipt(db, epoch)
+            check(receipt is not None and value["retirement_receipt_hash"] == receipt["receipt_hash"], "IMPORT_REFERENCE_INVALID")
+            return value
 
     def retire(self, account, operation, *, now, hook=None):
         # Guest -> account is the same global lock order as reservation/recovery.
@@ -391,16 +406,7 @@ class GuestImportCleanup(GuestImportSource):
             receipt["receipt_hash"] = cleanup_hash(receipt)
             check_cleanup(receipt)
             identities = {(row["target_type"], row["target_id"]) for row in records}
-            for reminder, target, entity, state in db.execute("SELECT id,target,entity,state FROM guest_execution_reminders").fetchall():
-                old_anchor = db.execute("SELECT 1 FROM guest_import_audit_anchors WHERE target_type=? AND target_id=? AND reminder_id=?", (target, entity, reminder)).fetchone()
-                if old_anchor:
-                    continue
-                check((target, entity) in identities, "IMPORT_REFERENCE_INVALID")
-                db.execute("INSERT INTO guest_import_audit_anchors VALUES(?,?,?,?,?,'source_migrated',?,NULL,NULL)",
-                    (target, entity, reminder, epoch, evidence["import_lineage_id"], now))
-                if state in {"open", "prepared"}:
-                    db.execute("UPDATE guest_execution_reminders SET state='cancelled',reason='source_migrated' WHERE id=?", (reminder,))
-                db.execute("UPDATE guest_execution_notifications SET state='cancelled',reason='source_migrated' WHERE reminder=? AND state='prepared'", (reminder,))
+            retire_audits(db, identities, receipt, now)
             checkpoint(hook, "import_guest_execution_retired")
             db.execute("DELETE FROM guest_import_source_facts")
             checkpoint(hook, "import_guest_facts_retired")
@@ -412,18 +418,20 @@ class GuestImportCleanup(GuestImportSource):
             checkpoint(hook, "import_guest_retirement_receipt_epoch")
             return receipt
 
-    def finalize_notification(self, notification):
+    def finalize_notification(self, notification, *, now=None):
         with connect(self.path) as db:
             db.execute("BEGIN IMMEDIATE")
-            row = db.execute("SELECT reminder,state,reason FROM guest_execution_notifications WHERE id=?", (notification,)).fetchone()
+            row = next((value for key, _, value in audit_rows(db, "notifications") if key == notification), None)
             check(row is not None, "IMPORT_REFERENCE_INVALID")
-            if row[1] != "prepared":
+            if row["status"] != "prepared":
                 return "no_effect"
-            parent = db.execute("SELECT state,reason FROM guest_execution_reminders WHERE id=?", (row[0],)).fetchone()
-            if parent is None or parent[1] == "source_migrated":
+            parent = next((value for key, _, value in audit_rows(db, "reminders") if key == row["reminder_id"]), None)
+            if parent is None or parent["last_cancellation_reason"] == "source_migrated":
                 return "no_effect"
-            db.execute("UPDATE guest_execution_notifications SET state='delivered' WHERE id=?", (notification,))
-            return "delivered"
+            check(now is not None, "IMPORT_REFERENCE_INVALID")
+            row.update(status="sent", sent_at=now, finalized_at=now, updated_at=now)
+            write_audit(db, "notifications", row)
+            return "sent"
 
     def release_completed(self, account, completed, *, expected_source_lease_revision=None, hook=None):
         receipt = completed["guest_receipt"]
@@ -582,6 +590,6 @@ class GuestImportCleanup(GuestImportSource):
     def snapshot(self):
         value = super().snapshot()
         with connect(self.path) as db:
-            for table in ("guest_execution_reminders", "guest_execution_notifications", "guest_search_history", "guest_lease_release_receipts", "guest_import_source_lease_terminals"):
+            for table in ("reminders", "notifications", "guest_import_execution_retirements", "guest_search_history", "guest_lease_release_receipts", "guest_import_source_lease_terminals"):
                 value[table] = db.execute("SELECT * FROM " + table + " ORDER BY 1").fetchall()
         return value

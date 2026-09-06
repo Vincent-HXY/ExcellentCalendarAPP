@@ -1940,3 +1940,21 @@
 - 验证：从本次暂存树导出的独立快照运行 `contracts/run_sync_v1_validation.py` 实际通过，返回 CONTRACT FROZEN、220 protected Contracts、951 Schema、5 runtime fixtures、17 Backend 声明/16 Controller、13 canonical integrity checks；全部实验报告来源摘要匹配。Contracts 与已冻结开发副本内容一致，沿用其已通过实验，不重复构建或运行耗时容量/设备测试。
 - 差异检查：本次编写的文件通过空白检查；5 份上游许可证/版权声明的 6 处原始空白提示保持原样，未修改来源文件或其摘要。
 - 验收边界：本次通过的是 HXY 提交内容的快照；工作目录仍保留字体任务修改的两份旧 Appearance Contract，其兼容调整未由本次完成，也不声明混合工作目录通过冻结校验。无远程推送。
+
+
+## 2026-09-06 23:15 +0800 云同步-02 Review 复核与修订开始
+
+- Skill：calendar-data-contracts、debug。模块：Contracts、planned Native v3 / SQLite v6、隔离参考与回归验证。
+- 目标：独立核实提交 5d8fb0a 的 11 类 review 问题，确认存在后修复，保护历史 220 份定义与其他任务修改。
+- 结果：11 类均确认；实际 SQLite Outbox CHECK、HTTP→Native schema、workspace.activate CAS、Event UTC、Java/Dart 日期探针均复现。第 3 类通过独立 v3 审计修订解决，旧 Notification 的拒绝行为不改。暂撤销冻结与下游实施许可，修订验证完成后重新锁定。
+- 当前状态：在 A:/calendar/ExcellentCalendarAPP-sync-review 的 codex/cloud-sync-02-review 隔离工作副本修订中；尚未完成，不声称旧 1308 个样本覆盖新增场景。
+
+
+## 2026-09-07 00:42 +0800 云同步-02 Review 兼容修订验收
+
+- Skill：calendar-data-contracts、debug。模块：Contracts、planned Native v3/SQLite v6、隔离参考与验证、同步计划交接文档。
+- 目标与依据：固定5d8fb0a独立复核用户提供的11类问题，确认事实后按02目标及01裁决顺序修订；旧Native v2和active SQLite v4/v5保持原定义。
+- 结果：11类均成立并修复。补齐import控制消息及resolution的Outbox/Native链路、v3完整退休审计和持久affected execution、双时区owner、目标workspace激活CAS、正式UTC清理水位、Native revision owner、UTC/date边界、planned标注；修正生成器共享日期字典副作用并验证重复/组合生成一致性。旧Notification拒绝新reason是合理旧行为，本次使用独立v3修订。
+- 验证：默认门禁CONTRACT FROZEN，220 protected/961 Schema/1197机器输入，43项门禁反例通过；四语言1376项一致，协议53项、能力及Review22项、导入组件54项、组合恢复27项通过；SQLite11项/134回滚边界、PostgreSQL70项、20k/50k完整发布通过；手机64/32位及Java/Windows各49项证明验签通过。所有证据来源摘要匹配，未手改报告制造通过。
+- 冻结锁：888fee7a8767eed7ac95eb3c7a76707e8bd3ed3264695ebdf750cc837d3643a9；03–06同版输入，新产品能力仍planned。本轮未改产品业务源码，未重跑完整产品应用构建，既有未受影响的系统实验按原始证据保留。
+- Git交接：目标HXY；隔离分支codex/cloud-sync-02-review只提交Contracts及相关文档。33个外观/界面等其他任务文件和原有日志已备份并按摘要保护，不纳入本次提交；具体问题及验证详见云同步-02-Review复核与兼容修订记录.md。

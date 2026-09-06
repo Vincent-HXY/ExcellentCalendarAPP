@@ -41,7 +41,9 @@ def boolean(name):
 
 def derive():
     tables, indexes, triggers, codecs = {}, {}, {}, {}
-    target = "target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile'))"
+    targets = ["category", "event", "event_recurrence", "event_occurrence_state", "anniversary", "anniversary_recurrence",
+        "habit", "habit_recurrence", "habit_check_in", "reminder_intent", "user_preferences", "account_profile"]
+    target = enum("target_type", targets)
 
     def table(name, columns, constraints=(), codec=None, account=False, guest=False):
         tables[name] = "CREATE TABLE " + name + "(" + ",".join([*columns, *constraints]) + ") WITHOUT ROWID"
@@ -82,11 +84,14 @@ def derive():
     table("sync_state", [singleton, text("device_id"), counter("sync_transport_generation"), counter("next_client_sequence", True, 1),
         boolean("client_sequence_exhausted"), counter("highest_local_client_sequence"), counter("local_receipt_ack_through"), counter("server_accepted_ack_through"),
         boolean("ack_watermark_dirty"), text("cursor", True), counter("account_generation", True), counter("server_sequence", True),
-        counter("receipt_cleanup_through"), counter("change_cleanup_through"), boolean("sync_enabled"), counter("sync_policy_revision"),
+        counter("receipt_cleanup_through"), counter("change_cleanup_through"), text("resolved_conflict_cleanup_before", True),
+        boolean("sync_enabled"), counter("sync_policy_revision"),
         boolean("reenable_pull_required"), counter("next_notice_sequence", True, 1), counter("last_claimed_notice_sequence"),
         counter("unresolved_conflict_count"), counter("failed_local_change_count"), counter("backlog_count"),
         text("transport_terminal_code", True), hashed("transport_terminal_evidence_hash", True), js("transport_terminal_binding_json", True)],
-        ["UNIQUE(device_id)", "CHECK(server_accepted_ack_through<=local_receipt_ack_through AND local_receipt_ack_through<=highest_local_client_sequence)",
+        ["UNIQUE(device_id)", "CHECK(resolved_conflict_cleanup_before IS NULL OR account_generation IS NOT NULL)",
+         "CHECK(resolved_conflict_cleanup_before IS NULL OR (typeof(resolved_conflict_cleanup_before)='text' AND length(resolved_conflict_cleanup_before)=20 AND resolved_conflict_cleanup_before GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z'))",
+         "CHECK(server_accepted_ack_through<=local_receipt_ack_through AND local_receipt_ack_through<=highest_local_client_sequence)",
          f"CHECK((client_sequence_exhausted=0 AND next_client_sequence IS NOT NULL AND next_client_sequence=highest_local_client_sequence+1) OR (client_sequence_exhausted=1 AND next_client_sequence IS NULL AND highest_local_client_sequence={MAX}))",
          "CHECK((transport_terminal_code IS NULL AND transport_terminal_evidence_hash IS NULL AND transport_terminal_binding_json IS NULL) OR (transport_terminal_code IS NOT NULL AND transport_terminal_evidence_hash IS NOT NULL AND transport_terminal_binding_json IS NOT NULL))"], account=True)
     table("sync_local_device_causal_anchors", [text("device_id"), *identity, text("merge_key"), counter("client_sequence", minimum=1), counter("resulting_field_version")],
@@ -100,12 +105,15 @@ def derive():
         ["PRIMARY KEY(device_id,notice_sequence)", "UNIQUE(notice_id)", "FOREIGN KEY(device_id) REFERENCES sync_state(device_id)"], codec={"columns": {"conflict_ids_json": "nonempty_sorted_unique_uuid_array"}}, account=True)
     table("sync_conflict_notice_journal", [text("device_id"), counter("account_generation"), counter("upper_bound"), text("conflict_id"), boolean("was_unresolved_at_start"), boolean("seen_created"), boolean("seen_resolved")],
         ["PRIMARY KEY(device_id,account_generation,upper_bound,conflict_id)", "FOREIGN KEY(device_id) REFERENCES sync_state(device_id)"], account=True)
-    table("sync_outbox", [text("mutation_id"), text("device_id"), counter("client_sequence", minimum=1), *identity, text("operation_type"), counter("base_entity_version"),
+    outbox_identity = [enum("target_type", [*targets, "workspace_import"]), text("target_id")]
+    table("sync_outbox", [text("mutation_id"), text("device_id"), counter("client_sequence", minimum=1), *outbox_identity, text("operation_type"), counter("base_entity_version"),
         js("causal_predecessors_json"), *payload, enum("route", ["exchange", "conflict_resolution", "import_range"]),
         enum("state", ["pending", "prepared", "sent"]), counter("attempt_count"), text("prepared_request_id", True), text("created_at")],
         ["PRIMARY KEY(mutation_id)", "UNIQUE(device_id,client_sequence)", "FOREIGN KEY(device_id) REFERENCES sync_state(device_id)",
-         "CHECK((state='pending' AND prepared_request_id IS NULL) OR (state IN ('prepared','sent') AND prepared_request_id IS NOT NULL))"],
-        codec={"columns": {"payload_json": "sync/sync_mutation.schema.json", "causal_predecessors_json": "sync/sync_mutation.schema.json#/oneOf/0/properties/causal_predecessors"}, "cross_checks": ["indexed columns equal mutation envelope", "JCS hash excludes only envelope created_at", "causal predecessor is earlier than client sequence"]}, account=True)
+         "CHECK((state='pending' AND prepared_request_id IS NULL) OR (state IN ('prepared','sent') AND prepared_request_id IS NOT NULL))",
+         "CHECK(target_type!='workspace_import' OR (operation_type IN ('import_begin','import_commit') AND route='import_range'))",
+         "CHECK((route='conflict_resolution' AND operation_type='resolve_conflict') OR (route='import_range' AND substr(operation_type,1,7)='import_') OR (route='exchange' AND operation_type!='resolve_conflict' AND substr(operation_type,1,7)!='import_'))"],
+        codec={"columns": {"payload_json": "sync/sync_outbox_mutation.schema.json", "causal_predecessors_json": "sync/sync_mutation.schema.json#/oneOf/0/properties/causal_predecessors"}, "cross_checks": ["indexed columns equal mutation envelope", "JCS hash excludes only envelope created_at", "causal predecessor is earlier than client sequence", "workspace_import target_id equals import_batch_id; resolution uses its single-item route; all import messages share the device sequence"]}, account=True)
     triggers["guard_sync_outbox_immutable"] = ("CREATE TRIGGER guard_sync_outbox_immutable BEFORE UPDATE ON sync_outbox WHEN "
         "NEW.mutation_id!=OLD.mutation_id OR NEW.device_id!=OLD.device_id OR NEW.client_sequence!=OLD.client_sequence OR NEW.payload_hash!=OLD.payload_hash OR NEW.payload_json!=OLD.payload_json OR NEW.target_type!=OLD.target_type OR NEW.target_id!=OLD.target_id OR NEW.operation_type!=OLD.operation_type OR NEW.base_entity_version!=OLD.base_entity_version OR NEW.causal_predecessors_json!=OLD.causal_predecessors_json OR NEW.route!=OLD.route OR NEW.created_at!=OLD.created_at "
         "BEGIN SELECT RAISE(ABORT,'SYNC_SEQUENCE_REPLAY_MISMATCH'); END")
@@ -114,7 +122,7 @@ def derive():
     table("sync_failed_local_changes", [text("failed_change_id"), text("mutation_id"), *identity, counter("failed_change_revision"), counter("base_entity_version"),
         js("merge_keys_json"), js("causal_predecessors_json"), js("local_candidate_json"), js("manual_draft_json", True), text("failure_code"), js("failure_context_json", True),
         text("superseding_mutation_id", True), enum("state", ["active", "superseded_pending"]), *payload], ["PRIMARY KEY(failed_change_id)", "UNIQUE(mutation_id)"],
-        codec={"columns": {"payload_json": "sync/sync_mutation.schema.json", "local_candidate_json": "target_specific_fact", "manual_draft_json": "target_specific_patch", "failure_context_json": "sync/sync_error_registry.yaml"}}, account=True)
+        codec={"columns": {"payload_json": "sync/sync_failed_change_mutation.schema.json", "local_candidate_json": "target_specific_fact", "manual_draft_json": "target_specific_patch", "failure_context_json": "sync/sync_error_registry.yaml"}}, account=True)
     table("sync_entity_state", [*identity, counter("entity_version"), counter("last_server_sequence"), js("field_versions_json"), js("awaiting_server_adjudication_keys_json", True)],
         ["PRIMARY KEY(target_type,target_id)"], codec={"columns": {"field_versions_json": "target_registry_merge_key_safe_integer_map", "awaiting_server_adjudication_keys_json": "target_registry_unique_merge_keys"}}, account=True)
     table("sync_server_baselines", [*identity, counter("entity_version"), *payload], ["PRIMARY KEY(target_type,target_id)"],
@@ -185,6 +193,14 @@ def derive():
     table("guest_import_cleanup_receipts", [text("source_workspace_id"), counter("source_epoch"), text("lineage_id"), text("through_published_batch_id"),
         counter("import_revision"), hashed("source_snapshot_hash"), hashed("mapping_digest"), text("cleaned_at"), hashed("receipt_hash"), enum("state", ["pending_confirmation", "completed", "account_deleted"])],
         ["PRIMARY KEY(source_workspace_id,source_epoch)"], guest=True)
+    table("guest_import_execution_retirements", [text("source_workspace_id"), counter("source_epoch"), hashed("receipt_hash"), *payload],
+        ["PRIMARY KEY(source_workspace_id,source_epoch)", "UNIQUE(receipt_hash)"],
+        codec={"columns": {"payload_json": "workspace/import_affected_execution.schema.json"},
+            "cross_checks": ["source workspace/epoch and receipt hash equal the durable cleanup receipt; private local execution identities never enter HTTP"]}, guest=True)
+    table("sync_import_execution_cancellations", [text("import_batch_id"), text("source_workspace_id"), counter("source_epoch"), hashed("receipt_hash"), *payload],
+        ["PRIMARY KEY(import_batch_id)", "UNIQUE(receipt_hash)"],
+        codec={"columns": {"payload_json": "workspace/import_affected_execution.schema.json"},
+            "cross_checks": ["copy only from authenticated local guest retirement transaction; binding and cleanup hash match this batch; status replays the same identities after restart"]}, account=True)
     table("guest_import_source_leases", [text("source_workspace_id"), counter("source_epoch"), text("lineage_id"), hashed("protected_owner_binding_digest"), hashed("source_snapshot_hash"),
         text("reserved_operation_id"), text("active_batch_id", True), hashed("active_manifest_hash", True),
         counter("begin_client_sequence", True, 1), counter("terminal_client_sequence", True, 1),
@@ -252,19 +268,34 @@ def derive():
             "events": {"from": 3, "to": 4, "changed_field": "recurrence_revision", "nullable": True},
             "recurrence_versions": {"from": 3, "to": 4, "changed_field": "revision", "nullable": False},
             "event_occurrence_states": {"from": 3, "to": 4, "changed_field": "recurrence_revision", "nullable": False},
-            "reminders": {"from": 4, "to": 5, "changed_field": "recurrence_revision", "nullable": True}},
-        "payload_codec_revision_rules": {"only_change": "recurrence revision uses exact checked int64 in 1..9007199254740991 instead of current C++ int32",
+            "reminders": {"from": 4, "to": 5, "changed_field": "recurrence_revision", "nullable": True,
+                "additional_semantic_delta": "cancelled audit accepts irreversible last_cancellation_reason=source_migrated"},
+            "notifications": {"from": 4, "to": 5, "changed_field": "abandon_reason", "nullable": True,
+                "additional_semantic_delta": "prepared attempt retires as abandoned/source_migrated; retains full audit identity and finalization timestamps"}},
+        "inherited_audit_store_codecs": {name: {
+            "ddl": f"CREATE TABLE {name}(record_key TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE CHECK(position >= 0),payload_json TEXT NOT NULL CHECK(json_valid(payload_json))) WITHOUT ROWID",
+            "schema": "storage/v6/reminder_record.schema.json" if module == "reminder" else "native_v3/business_compat/notification/notification_response.schema.json",
+            "record_key_field": module + "_id", "existing_ddl": "unchanged frozen SQLite record store",
+            "retirement": "update complete validated payload in place; preserve record_key, position and terminal audit bytes"}
+            for name, module in (("reminders", "reminder"), ("notifications", "notification"))},
+        "payload_codec_revision_rules": {"only_change": "checked recurrence int64 in 1..9007199254740991 and explicitly versioned source_migrated Reminder/Notification audit reasons",
             "all_other_fields": "preserve previous exact keys/null/enum/domain semantics", "migration_payload_rewrite": "forbidden",
             "existing_legal_v5_records": "remain valid byte-for-byte", "new_wide_v6_records": "validate with the v6 codec; must not be routed through or downcast into the frozen v5 int32 codec",
             "native_v2": "preserve old schemas and runtime; v5 runtime refuses user_version=6", "native_v3": "planned reader and writer must use the same exact safe integer across Event/Recurrence/OccurrenceState/Reminder and occurrence identity formatting"},
         "migration": {"source_version": 5, "target_version": 6, "input_gate": "complete_frozen_v5_checker_before_any_v6_write",
             "transaction": "BEGIN IMMEDIATE", "metadata_updates": {"storage_format_version": "6", "payload_codec_version.events": "4",
-                "payload_codec_version.recurrence_versions": "4", "payload_codec_version.event_occurrence_states": "4", "payload_codec_version.reminders": "5"},
+                "payload_codec_version.recurrence_versions": "4", "payload_codec_version.event_occurrence_states": "4", "payload_codec_version.reminders": "5", "payload_codec_version.notifications": "5"},
             "metadata_additions": {"sync_protocol_version": "1", "workspace_schema_version": "1"},
             "history": {"migration_id": "calendar_core_sqlite_v5_to_v6", "source_format": "excellent_calendar_core_sqlite", "source_version": 5, "target_version": 6},
             "steps": ["freeze writers and pass complete v5 checker", "begin immediate and recheck v5 identity", "create exact added objects", "insert workspace and portable preference seed", "for account require encrypted binding and authoritative device sequence/policy seed", "update exact metadata and append one history row", "set user_version=6", "full v6 schema metadata history relation and codec validation", "commit"],
             "rollback": "all added objects rows metadata history and user_version roll back together", "downgrade": "v2/v5 runtime rejects v6 before any write; no reverse migration"},
-        "validation": {"ddl": "exact normalized CREATE of all objects; reject unknown and same-name different definition", "quick_check": "required", "foreign_key_check": "required", "json": "json_valid is only a syntax guard; exact target codec + schema + identity/hash/merge registry checks required before write and on open", "inherited_payloads": "preserve old bytes; only the four declared recurrence-counter codec revisions and source_migrated audit-anchor relationship closure may change reader rules", "guest_outbox": "all account-only tables reject guest inserts/updates", "encryption": "account must be opened with SQLCipher key and workspace/account/device AAD verified outside SQL before queries"}}
+        "trusted_cleanup_watermarks": {"generation_column": "sync_state.account_generation", "utc_cutoff_column": "sync_state.resolved_conflict_cleanup_before",
+            "codec": "UTC datetime exactly YYYY-MM-DDTHH:mm:ssZ; null before authenticated watermarks exist",
+            "writers": ["sync.apply_download_batch", "sync.finalize_bootstrap"],
+            "atomicity": "facts, conflicts, visible cursor, generation and UTC cutoff commit together",
+            "acceptance": "same authenticated account generation; missing or regressing cutoff never permits cleanup; generation replacement clears prior watermarks before installing the authenticated bootstrap values",
+            "maintenance": "read only durable sync_state cutoff after reopen; never derive a cutoff from wall clock or a transient HTTP page"},
+        "validation": {"ddl": "exact normalized CREATE of all objects; reject unknown and same-name different definition", "quick_check": "required", "foreign_key_check": "required", "json": "json_valid is only a syntax guard; exact target codec + schema + identity/hash/merge registry checks required before write and on open", "inherited_payloads": "preserve old bytes; only declared recurrence-counter and source_migrated audit codec revisions plus audit-anchor relationship closure may change reader rules", "guest_outbox": "all account-only tables reject guest inserts/updates", "encryption": "account must be opened with SQLCipher key and workspace/account/device AAD verified outside SQL before queries"}}
 
 
 def main():

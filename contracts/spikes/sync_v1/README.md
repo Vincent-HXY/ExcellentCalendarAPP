@@ -60,7 +60,7 @@ python contracts/run_sync_v1_validation.py --stage ct0 --self-test
 python contracts/run_sync_v1_validation.py
 ```
 
-第一条校验当前 CT0–CT4 已交付部分的证据、旧协议/Storage 摘要、Schema 引用、runtime 校准、Backend 盘点、向量与反例。第二条默认要求冻结，当前必须以 Python 退出码 2 返回 `DECISION REQUIRED`；完整 owned 因果/import/四语言消费及最终 revision 接受仍未闭合。PowerShell 宿主可能将非零退出映射为 1，反例测试直接检查 Python 子进程结果。
+第一条校验 CT0–CT4 已交付证据并运行完整参考测试；它可用于冻结前诊断，成功本身不等于封版。第二条是正式默认入口，只有所有证据、来源摘要和最新 revision 锁通过才成功；未冻结时以 Python 退出码 2 返回 `DECISION REQUIRED`。当前状态以 `contracts/sync/ct0_gate_status.json` 为准，5d8fb0a 的 Review 复核及本次兼容修订见 `docs/plan/active/云同步-02-Review复核与兼容修订记录.md`。PowerShell 宿主可能将非零退出映射为 1，反例测试直接检查 Python 子进程结果。
 
 所有fixture/producer source摘要使用UTF-8文本、LF换行，以免Git autocrlf产生伪漂移；golden期望仍是明确的canonical UTF-8 bytes/hex。报告源码或fixture变化必须重跑相关审计，不能手填passed。失败实验、缺失ABI和未验证设备行为不得被 `--stage ct0` 的成功掩盖。
 

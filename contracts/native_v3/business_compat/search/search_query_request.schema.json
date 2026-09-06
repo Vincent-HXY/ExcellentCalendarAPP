@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/search/search_query_request.schema.json",
+  "title": "SearchQueryRequest",
+  "description": "Unified Event/Habit/Anniversary Search request. All nullable filter fields are explicitly present. query_generation is a client correlation token echoed unchanged; it is not the canonical data snapshot generation.",
+  "x-contract-version": 3,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "planned",
+  "x-semantic-errors": {
+    "invalid_keyword_filter_or_section": "SEARCH_QUERY_INVALID",
+    "invalid_timezone": "TIMEZONE_ID_INVALID",
+    "malformed_cursor": "SEARCH_CURSOR_INVALID",
+    "cursor_query_mismatch": "SEARCH_CURSOR_QUERY_MISMATCH",
+    "changed_store_generation": "SEARCH_CURSOR_EXPIRED"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "query_generation",
+    "keyword",
+    "target_types",
+    "date_from",
+    "date_to_exclusive",
+    "category_ids",
+    "include_uncategorized",
+    "include_completed",
+    "sort_by",
+    "sections"
+  ],
+  "properties": {
+    "query_generation": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "keyword": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "target_types": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "event",
+          "habit",
+          "anniversary"
+        ]
+      }
+    },
+    "date_from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "date_to_exclusive": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "category_ids": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      ]
+    },
+    "include_uncategorized": {
+      "type": "boolean"
+    },
+    "include_completed": {
+      "type": "boolean"
+    },
+    "sort_by": {
+      "type": "string",
+      "enum": [
+        "relevance",
+        "occur_time",
+        "updated_at"
+      ]
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/search/search_section_request.schema.json"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {
+          "properties": {
+            "date_from": {
+              "type": "null"
+            },
+            "date_to_exclusive": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "date_from": {
+              "type": "string",
+              "format": "date"
+            },
+            "date_to_exclusive": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "oneOf": [
+        {
+          "properties": {
+            "category_ids": {
+              "type": "null"
+            },
+            "include_uncategorized": {
+              "const": false
+            }
+          }
+        },
+        {
+          "properties": {
+            "category_ids": {
+              "type": "array",
+              "minItems": 1
+            },
+            "include_uncategorized": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "properties": {
+            "category_ids": {
+              "type": "array",
+              "maxItems": 0
+            },
+            "include_uncategorized": {
+              "const": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "x-contract-domain": "native",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

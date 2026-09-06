@@ -4,7 +4,7 @@
   "title": "SyncV1 habit_check_in_response_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
   "x-rule-anchor": "cloud-sync-02/8",
   "description": "Internal atomic set/clear result. check_in=null means the final logical state is cleared. Replayed notification actions return the same final state with idempotent_replay=true.",

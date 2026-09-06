@@ -30,7 +30,7 @@
     }
   },
   "builds": {
-    "windows_cng_cpp": "57a04ea7e0b3bc73d63f4a73b59ddcefab4b3a3de00c1f2dd02c952acc71cfc4",
+    "windows_cng_cpp": "50ca31810203fd87cc0a6419de9aa8538e3322dccaeb06637a7d0f0c6e417a5f",
     "arm64-v8a": "7ff240a054988fb6dd8c7afe9708a24e8f91694925f57459ac06ed97286fda7f",
     "armeabi-v7a": "c74e93f14184c517dd4a03eba6e1712a72b69bb5b967cdcb8ca696fd10311b42",
     "x86_64": "7295550759f24e8f499739c96b8616e44721c6f34f0297e9152c110fb3d0ae3c"
@@ -41,7 +41,7 @@
     "passed": true,
     "tests": 12,
     "fixed_cases": 45,
-    "output_sha256": "f859133e1f0ed7b9195bf9050e19477f8ff76a4b8e6d7fd37261f8c9a07316bc"
+    "output_sha256": "826da8d739da320652a59d7b6ab79d6ac2933cf26f17e64e93477105ceccefea"
   },
   "dex_sha256": "73b168243a08d7fc54c6503702b9b5845dc5b4f311eac2486f3fe1bb3a3e133d",
   "device": {
@@ -85,7 +85,7 @@
     "contracts/spikes/sync_v1/bootstrap_reference.py": "ccb9918db43fbed12590c357f38908017f3f0db55ffed1a1a72a4afcacb6e297",
     "contracts/spikes/sync_v1/cursor_reference.py": "b61293e2f6b7c4a796faba2048e57683ff255aec25bc45e9ab9b194869eeb743",
     "contracts/spikes/sync_v1/build_target_fixtures.py": "df4c7342ed1eca4c71ccd4428e4105c9a554a2649f829f142089dda550258cf9",
-    "contracts/spikes/sync_v1/build_sync_domain_contracts.py": "325019499a88e1ae25bded8e1f1e3490e62e3026400a0903186756f435744150",
+    "contracts/spikes/sync_v1/build_sync_domain_contracts.py": "750a510b4bf6a5cb83bf6b9ba329fb51f6538d1a519867658f7f0b58b0f53166",
     "contracts/sync/sync_protocol_invariants.yaml": "2926baea24d374436e6c53ad59df2c8ead3502fc1d70ab2ea9376827ae325871"
   }
 }

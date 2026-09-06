@@ -1,6 +1,7 @@
 # 云同步-02：Contracts 与数据模型开发计划
 
 > 状态：CONTRACT FROZEN / CT0–CT4 PASSED / 下游生产实现仍为 planned
+> 2026-09-07 Review 修订：提交 `5d8fb0a` 的 11 类问题经独立复核成立，修订依据和跨层交接规则见[Review 复核与兼容修订记录](./云同步-02-Review复核与兼容修订记录.md)。03–06 以机器锁中的最新内容摘要为共同输入；初次交付的旧摘要仅作历史记录。
 > 建立时间：2026-09-04
 > 上位计划：[云同步-01：Local-first 多设备同步开发计划](./云同步-01-Local-first多设备同步开发计划.md)
 > 负责范围：`docs/domains/` 中同步相关语义、`docs/architecture/decisions/` 中同步 ADR、`contracts/**`、跨层 fixture/validator 以及 SQLite v6 / PostgreSQL 逻辑模型冻结
@@ -8,7 +9,7 @@
 > 文内语义锚点：第 5–12 节定义版本、协议、方法、模型与错误；第 13–17 节只登记 fixture、执行顺序和冻结证据，不得重新定义前述语义。
 > 2026-09-05 执行记录：[审计与决策记录](./云同步-02-CT0审计与决策记录.md)。保留首次 CT0 审计及后续证据，当前状态以最新章节和 `contracts/sync/ct0_gate_status.json` 为准，不代表 Contract 冻结或下游可实现。
 > 后续授权：用户已接受 SQLCipher 原生 C 候选和保留 Native v2 定义的 Anniversary Native v3 兼容修订；ADR-Sync-03/05 的方向已接受，继续自主完成实验、协议和验证。上述历史执行记录不再表示这两项决策仍待用户确认；实验通过状态单独记录。
-> 最终交付（2026-09-06 18:47，隔离工作副本）：默认统一验收入口通过，951 Schema、220 protected Contracts、717 fixed/9 generated suites；四端 1,308 项、最新 26 项组合恢复、53 项导入组件、20k/50k 容量、SQLite 128 回滚边界与 PostgreSQL 70 用例均通过。43 项门禁回归通过。同版 revision/hash 已锁定至 03–06；详见[冻结验收与交付记录](./云同步-02-冻结验收与交付记录.md)。原工作副本的并行字体修改保留，未并入本次冻结输入。
+> 初次交付历史（2026-09-06 18:47，已由后续 Review 修订取代）：默认统一验收入口通过，951 Schema、220 protected Contracts、717 fixed/9 generated suites；四端 1,308 项、最新 26 项组合恢复、53 项导入组件、20k/50k 容量、SQLite 128 回滚边界与 PostgreSQL 70 用例均通过。43 项门禁回归通过。同版 revision/hash 已锁定至 03–06；详见[冻结验收与交付记录](./云同步-02-冻结验收与交付记录.md)。原工作副本的并行字体修改保留，未并入本次冻结输入。
 
 ## 1. 目标与完成口径
 

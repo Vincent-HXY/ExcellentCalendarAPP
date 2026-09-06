@@ -9,7 +9,7 @@ import json
 from bootstrap_reference import checkpoint, epoch
 from domain_reference import check, validate_schema
 from import_cleanup_reference import AccountImportCleanup, ImportCleanupServer
-from protocol_reference import encode
+from protocol_reference import encode, digest
 from sqlite_reference import connect
 
 
@@ -135,7 +135,7 @@ class AccountImportStatus(AccountImportCleanup):
         with connect(self.path) as db:
             local = self._receipt(db, operation)
             if local is None:
-                return empty_status()
+                return {**empty_status(), "affected_execution": None}
             cached = db.execute("SELECT snapshot FROM local_import_server_status WHERE batch=?", (local["batch_id"],)).fetchone()
             server_snapshot = json.loads(cached[0]) if cached else None
             control = db.execute("SELECT revision,head,publication,cleanup,completed FROM local_import_control WHERE batch=?", (local["batch_id"],)).fetchone()
@@ -167,7 +167,16 @@ class AccountImportStatus(AccountImportCleanup):
                 "server_staged_item_count": server_snapshot["server_staged_item_count"] if server_snapshot else 0,
                 "local_staged_item_count": local["manifest"]["total_item_count"], "publication": published,
                 "cleanup_receipt": json.loads(control[3]) if control and control[3] is not None else None,
-                "range_close_proof": server_snapshot["range_close_proof"] if server_snapshot else None, "stage": stage}
+                "range_close_proof": server_snapshot["range_close_proof"] if server_snapshot else None, "stage": stage,
+                "affected_execution": None}
+            if value["cleanup_receipt"] is not None:
+                row = db.execute("SELECT payload_json,payload_hash FROM sync_import_execution_cancellations WHERE import_batch_id=?", (local["batch_id"],)).fetchone()
+                check(row is not None, "IMPORT_REFERENCE_INVALID")
+                affected = json.loads(row[0])
+                check(digest(affected) == row[1] and affected["workspace_id"] == value["source_workspace_id"]
+                    and affected["source_epoch"] == value["source_epoch"]
+                    and affected["retirement_receipt_hash"] == value["cleanup_receipt"]["receipt_hash"], "IMPORT_REFERENCE_INVALID")
+                value["affected_execution"] = affected
             states = {"local_staging": ("not_requested", "not_required", "resume_upload"), "server_staging": ("not_requested", "not_required", "resume_upload"),
                 "repair_required": ("not_applicable", "full_successor_required", "create_successor"), "server_confirmed": ("not_applicable", "not_required", "resume_publish"),
                 "publish_applied": ("not_applicable", "not_required", "resume_cleanup"), "cleanup_pending": ("not_applicable", "cleanup_recovery_required", "resume_cleanup"),

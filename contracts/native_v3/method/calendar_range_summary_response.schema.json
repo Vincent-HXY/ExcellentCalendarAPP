@@ -27,7 +27,7 @@
       "maximum": 9007199254740991
     },
     "payload": {
-      "$ref": "https://excellent-calendar.local/contracts/calendar/calendar_range_summary_response.schema.json"
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/calendar/calendar_range_summary_response.schema.json"
     },
     "runtime_instance_id": {
       "type": "string",

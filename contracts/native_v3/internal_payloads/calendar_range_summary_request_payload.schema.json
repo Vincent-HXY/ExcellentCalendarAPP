@@ -4,10 +4,10 @@
   "title": "SyncV1 calendar_range_summary_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
-  "x-rule-anchor": "cloud-sync-02/8",
-  "description": "Requests a non-empty, half-open local-date range [range_start_date, range_end_date) in one explicit IANA timezone. Semantic validation limits the range to 42 natural days.",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4",
+  "description": "Requests a non-empty, half-open local-date range [range_start_date, range_end_date) using the persisted workspace timezone for Event and OS device timezone for Habit/Anniversary. Semantic validation limits the range to 42 natural days.",
   "x-calendar-view-revision": 1,
   "x-semantic-errors": {
     "empty_or_reversed_range": "CALENDAR_RANGE_INVALID",
@@ -19,7 +19,8 @@
   "required": [
     "range_start_date",
     "range_end_date",
-    "timezone"
+    "workspace_timezone",
+    "device_timezone"
   ],
   "properties": {
     "range_start_date": {
@@ -30,10 +31,16 @@
       "type": "string",
       "format": "date"
     },
-    "timezone": {
+    "workspace_timezone": {
+      "type": "null",
+      "description": "Core resolves this axis from durable workspace preferences in the query snapshot; callers cannot override it."
+    },
+    "device_timezone": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 255
+      "maxLength": 255,
+      "x-format": "iana-timezone",
+      "x-owner": "Kotlin OS timezone injection"
     }
   }
 }

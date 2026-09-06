@@ -93,7 +93,7 @@ def derive():
     result["generated_suites"].append({"id": "FX-IMPORT-client-recovery", "rule_anchor": "cloud-sync-02/7.6/IMP-01-IMP-12,8,10",
         "input_file": "../../../tests", "case_pointer": ["test_sync_full_import.py", "test_sync_fresh_import.py", "test_sync_policy_maintenance.py", "test_sync_private_lifecycle.py"],
         "runner": "contracts/spikes/sync_v1/run_client_recovery_spike.py", "required_consumers": ["python_sqlite_client_recovery"],
-        "byte_for_byte_required": False, "expected": "26 combined tests; 8 dual-store, 5 fresh-recovery and 4 policy/maintenance process-death boundaries; authenticated private receipts/AEAD and safe-export TTL"})
+        "byte_for_byte_required": False, "expected": "27 combined tests; 8 dual-store, 5 fresh-recovery and 4 policy/maintenance process-death boundaries; durable cleanup cutoff, authenticated private receipts/AEAD and safe-export TTL"})
     present = {case["family"] for case in result["cases"]}
     for family in result["families"]:
         if family["id"] in present:

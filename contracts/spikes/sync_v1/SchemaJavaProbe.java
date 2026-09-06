@@ -23,8 +23,13 @@ public final class SchemaJavaProbe {
     private static boolean format(String name, String text) {
         try {
             switch (name) {
-                case "date": return LocalDate.parse(text).toString().equals(text);
-                case "date-time": OffsetDateTime.parse(text.toUpperCase(Locale.ROOT)); return true;
+                case "date": return text.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}") && LocalDate.parse(text).getYear() >= 1 && LocalDate.parse(text).toString().equals(text);
+                case "date-time": {
+                    var m = Pattern.compile("([0-9]{4}-[0-9]{2}-[0-9]{2})[Tt]([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\\.[0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})").matcher(text);
+                    if (!m.matches() || !format("date", m.group(1)) || Integer.parseInt(m.group(2)) > 23 || Integer.parseInt(m.group(3)) > 59 || Integer.parseInt(m.group(4)) > 59) return false;
+                    String offset = m.group(5);
+                    return offset.length() == 1 || Integer.parseInt(offset.substring(1, 3)) <= 23 && Integer.parseInt(offset.substring(4)) <= 59;
+                }
                 case "uuid": return text.length() == 36 && UUID.fromString(text).toString().equalsIgnoreCase(text);
                 case "email": return text.contains("@");
                 default: throw new IllegalArgumentException("Unsupported format");

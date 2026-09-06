@@ -44,6 +44,42 @@ def derive():
     for field in ("workspace_id", "workspace_kind"):
         add("tap_v6_missing_" + field, schema, {k: v for k, v in tap.items() if k != field}, False, "FX-RETENTION-NOTIFY")
     add("tap_v6_unknown_kind", schema, {**tap, "workspace_kind": "shared"}, False, "FX-RETENTION-NOTIFY")
+    # Review regressions use complete facts and the actual versioned readers.
+    samples = json.loads((ROOT / "contracts/fixtures/sync/v1/target_vectors.json").read_text(encoding="utf8"))["samples"]
+    habit = next(row for row in samples.values() if row["target_type"] == "habit")["fact"]
+    for text, valid in [("2026-09-06", True), ("0000-01-01", False), ("0001-01-01", True),
+                        ("9999-12-31", True), ("2024-02-29", True), ("2026-02-29", False)]:
+        add("review_date_" + text, "sync/v1/habit_fact.schema.json", {**habit, "start_date": text}, valid)
+    event = next(row for row in samples.values() if row["target_type"] == "event")["fact"]
+    for field in ("completed_at", "created_at", "updated_at", "deleted_at", "start_at"):
+        for value, valid in [("2026-09-06T00:00:00Z", True), ("2026-09-06T08:00:00+08:00", False),
+                             ("0000-01-01T00:00:00Z", False)]:
+            add("review_utc_" + field + "_" + value, "sync/v1/event_fact.schema.json", {**event, field: value}, valid)
+    from audit_fixture import reminder, notification
+    parent = reminder(C, "open-reminder")
+    parent.update(status="cancelled", is_enabled=False, last_cancellation_reason="source_migrated", last_cancelled_at="2026-09-06T07:00:00Z")
+    public_parent = {key: value for key, value in parent.items() if key not in {"source", "recovery_batch_id"}}
+    for schema, valid in [("storage/v6/reminder_record.schema.json", True), ("native_v3/business_compat/reminder/reminder_response.schema.json", True),
+                           ("reminder/reminder_response.schema.json", False)]:
+        add("review_retired_" + schema, schema, parent if schema.startswith("storage/") else public_parent, valid)
+    attempt = notification(parent, "prepared-attempt")
+    attempt.update(status="abandoned", abandon_reason="source_migrated", finalized_at="2026-09-06T07:00:00Z")
+    for schema, valid in [("notification/notification_response.schema.json", False),
+                          ("native_v3/business_compat/notification/notification_response.schema.json", True)]:
+        add("review_retired_" + schema, schema, attempt, valid)
+    for status in ("prepared", "sent", "cancelled"):
+        add("review_retired_notification_illegal_" + status, "native_v3/business_compat/notification/notification_response.schema.json",
+            {**attempt, "status": status}, False)
+    native = {"workspace_id": A, "runtime_instance_id": B, "conflict_id": C, "disposition": "queued",
+        "status": "resolving", "conflict_version": 1, "native_state_revision": 7}
+    schema = "native_v3/internal_payloads/sync_conflict_resolve_response_payload.schema.json"
+    add("review_native_revision", schema, native, True)
+    add("review_wrong_revision_owner", schema, {**{k: v for k, v in native.items() if k != "native_state_revision"}, "status_revision": 7}, False)
+    query = {"range_start_date": "2026-09-06", "range_end_date": "2026-09-07", "workspace_timezone": None, "device_timezone": "America/Los_Angeles"}
+    schema = "native_v3/internal_payloads/calendar_range_summary_request_payload.schema.json"
+    add("review_two_timezone_inputs", schema, query, True)
+    add("review_workspace_timezone_cannot_be_overridden", schema, {**query, "workspace_timezone": "Asia/Shanghai"}, False)
+    add("review_single_timezone_forbidden", schema, {"range_start_date": query["range_start_date"], "range_end_date": query["range_end_date"], "timezone": "UTC"}, False)
     return {"fixture_version": 1, "scope": "planned Schema boundary examples; not product or four-language evidence", "cases": cases}
 
 

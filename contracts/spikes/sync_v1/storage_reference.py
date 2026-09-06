@@ -86,6 +86,10 @@ def validate_new_codecs(db, definition):
     if preferences is None:
         raise ValueError("V6_PREFERENCES_MISSING")
     try:
+        from build_sync_domain_contracts import DATE_TIME
+        for cutoff, generation in db.execute("SELECT resolved_conflict_cleanup_before,account_generation FROM sync_state"):
+            if cutoff is not None and (generation is None or not Draft202012Validator(DATE_TIME, format_checker=FormatChecker()).is_valid(cutoff)):
+                raise ValueError("V6_CLEANUP_WATERMARK_INVALID")
         validate_fact({"target_type": "user_preferences", "target_id": WORKSPACE,
             "fact": {"timezone": preferences[0], "habit_progress_color": preferences[1],
                 "default_reminder_methods": json.loads(preferences[2]), "auto_enable_reminders_on_other_devices": bool(preferences[3])}})
@@ -146,6 +150,9 @@ def validate_new_codecs(db, definition):
                                 raise ValueError("V6_OUTBOX_INDEX_INVALID")
                         if mutation["causal_predecessors"] != decoded["causal_predecessors_json"]:
                             raise ValueError("V6_OUTBOX_INDEX_INVALID")
+                        expected_route = "conflict_resolution" if mutation["operation_type"] == "resolve_conflict" else "import_range" if mutation["operation_type"].startswith("import_") else "exchange"
+                        if row["route"] != expected_route or mutation["target_type"] == "workspace_import" and mutation["target_id"] != mutation["import_batch_id"]:
+                            raise ValueError("V6_OUTBOX_INDEX_INVALID")
                     if table == "guest_import_source_lease_replacements":
                         previous = decoded["payload_json"]
                         current = db.execute("SELECT reserved_operation_id,source_epoch,lineage_id,protected_owner_binding_digest,state,lease_revision "
@@ -155,6 +162,11 @@ def validate_new_codecs(db, definition):
                             or row["source_workspace_id"] != previous["source_workspace_id"] or row["source_epoch"] != previous["source_epoch"]
                             or previous["terminal_client_sequence"] <= previous["begin_client_sequence"]):
                             raise ValueError("V6_IMPORT_LEASE_BACKUP_INVALID")
+                    if table in {"guest_import_execution_retirements", "sync_import_execution_cancellations"}:
+                        affected = decoded["payload_json"]
+                        if (affected["workspace_id"] != row["source_workspace_id"] or affected["source_epoch"] != row["source_epoch"]
+                            or affected["retirement_receipt_hash"] != row["receipt_hash"]):
+                            raise ValueError("V6_IMPORT_EXECUTION_BINDING_INVALID")
     except (AssertionError, KeyError, TypeError, json.JSONDecodeError) as error:
         raise ValueError("V6_PAYLOAD_CODEC_INVALID") from error
 

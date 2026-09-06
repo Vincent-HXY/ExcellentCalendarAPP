@@ -1132,21 +1132,23 @@ calendar_core_v6:
       IS NULL OR (typeof(account_generation)='integer' AND account_generation BETWEEN 0 AND 9007199254740991)),server_sequence INTEGER CHECK(server_sequence
       IS NULL OR (typeof(server_sequence)='integer' AND server_sequence BETWEEN 0 AND 9007199254740991)),receipt_cleanup_through INTEGER NOT NULL
       CHECK(typeof(receipt_cleanup_through)='integer' AND receipt_cleanup_through BETWEEN 0 AND 9007199254740991),change_cleanup_through INTEGER
-      NOT NULL CHECK(typeof(change_cleanup_through)='integer' AND change_cleanup_through BETWEEN 0 AND 9007199254740991),sync_enabled INTEGER
-      NOT NULL CHECK(typeof(sync_enabled)='integer' AND sync_enabled IN (0,1)),sync_policy_revision INTEGER NOT NULL CHECK(typeof(sync_policy_revision)='integer'
-      AND sync_policy_revision BETWEEN 0 AND 9007199254740991),reenable_pull_required INTEGER NOT NULL CHECK(typeof(reenable_pull_required)='integer'
-      AND reenable_pull_required IN (0,1)),next_notice_sequence INTEGER CHECK(next_notice_sequence IS NULL OR (typeof(next_notice_sequence)='integer'
-      AND next_notice_sequence BETWEEN 1 AND 9007199254740991)),last_claimed_notice_sequence INTEGER NOT NULL CHECK(typeof(last_claimed_notice_sequence)='integer'
-      AND last_claimed_notice_sequence BETWEEN 0 AND 9007199254740991),unresolved_conflict_count INTEGER NOT NULL CHECK(typeof(unresolved_conflict_count)='integer'
-      AND unresolved_conflict_count BETWEEN 0 AND 9007199254740991),failed_local_change_count INTEGER NOT NULL CHECK(typeof(failed_local_change_count)='integer'
-      AND failed_local_change_count BETWEEN 0 AND 9007199254740991),backlog_count INTEGER NOT NULL CHECK(typeof(backlog_count)='integer' AND backlog_count
-      BETWEEN 0 AND 9007199254740991),transport_terminal_code TEXT,transport_terminal_evidence_hash TEXT CHECK(length(transport_terminal_evidence_hash)=64
-      AND transport_terminal_evidence_hash NOT GLOB '*[^0-9a-f]*'),transport_terminal_binding_json TEXT CHECK(json_valid(transport_terminal_binding_json)
-      OR transport_terminal_binding_json IS NULL),UNIQUE(device_id),CHECK(server_accepted_ack_through<=local_receipt_ack_through AND local_receipt_ack_through<=highest_local_client_sequence),CHECK((client_sequence_exhausted=0
-      AND next_client_sequence IS NOT NULL AND next_client_sequence=highest_local_client_sequence+1) OR (client_sequence_exhausted=1 AND next_client_sequence
-      IS NULL AND highest_local_client_sequence=9007199254740991)),CHECK((transport_terminal_code IS NULL AND transport_terminal_evidence_hash
-      IS NULL AND transport_terminal_binding_json IS NULL) OR (transport_terminal_code IS NOT NULL AND transport_terminal_evidence_hash IS NOT
-      NULL AND transport_terminal_binding_json IS NOT NULL))) WITHOUT ROWID
+      NOT NULL CHECK(typeof(change_cleanup_through)='integer' AND change_cleanup_through BETWEEN 0 AND 9007199254740991),resolved_conflict_cleanup_before
+      TEXT,sync_enabled INTEGER NOT NULL CHECK(typeof(sync_enabled)='integer' AND sync_enabled IN (0,1)),sync_policy_revision INTEGER NOT NULL
+      CHECK(typeof(sync_policy_revision)='integer' AND sync_policy_revision BETWEEN 0 AND 9007199254740991),reenable_pull_required INTEGER NOT
+      NULL CHECK(typeof(reenable_pull_required)='integer' AND reenable_pull_required IN (0,1)),next_notice_sequence INTEGER CHECK(next_notice_sequence
+      IS NULL OR (typeof(next_notice_sequence)='integer' AND next_notice_sequence BETWEEN 1 AND 9007199254740991)),last_claimed_notice_sequence
+      INTEGER NOT NULL CHECK(typeof(last_claimed_notice_sequence)='integer' AND last_claimed_notice_sequence BETWEEN 0 AND 9007199254740991),unresolved_conflict_count
+      INTEGER NOT NULL CHECK(typeof(unresolved_conflict_count)='integer' AND unresolved_conflict_count BETWEEN 0 AND 9007199254740991),failed_local_change_count
+      INTEGER NOT NULL CHECK(typeof(failed_local_change_count)='integer' AND failed_local_change_count BETWEEN 0 AND 9007199254740991),backlog_count
+      INTEGER NOT NULL CHECK(typeof(backlog_count)='integer' AND backlog_count BETWEEN 0 AND 9007199254740991),transport_terminal_code TEXT,transport_terminal_evidence_hash
+      TEXT CHECK(length(transport_terminal_evidence_hash)=64 AND transport_terminal_evidence_hash NOT GLOB '*[^0-9a-f]*'),transport_terminal_binding_json
+      TEXT CHECK(json_valid(transport_terminal_binding_json) OR transport_terminal_binding_json IS NULL),UNIQUE(device_id),CHECK(resolved_conflict_cleanup_before
+      IS NULL OR account_generation IS NOT NULL),CHECK(resolved_conflict_cleanup_before IS NULL OR (typeof(resolved_conflict_cleanup_before)='text'
+      AND length(resolved_conflict_cleanup_before)=20 AND resolved_conflict_cleanup_before GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z')),CHECK(server_accepted_ack_through<=local_receipt_ack_through
+      AND local_receipt_ack_through<=highest_local_client_sequence),CHECK((client_sequence_exhausted=0 AND next_client_sequence IS NOT NULL AND
+      next_client_sequence=highest_local_client_sequence+1) OR (client_sequence_exhausted=1 AND next_client_sequence IS NULL AND highest_local_client_sequence=9007199254740991)),CHECK((transport_terminal_code
+      IS NULL AND transport_terminal_evidence_hash IS NULL AND transport_terminal_binding_json IS NULL) OR (transport_terminal_code IS NOT NULL
+      AND transport_terminal_evidence_hash IS NOT NULL AND transport_terminal_binding_json IS NOT NULL))) WITHOUT ROWID
     sync_local_device_causal_anchors: CREATE TABLE sync_local_device_causal_anchors(device_id TEXT NOT NULL,target_type TEXT NOT NULL CHECK(target_type
       IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
       TEXT NOT NULL,merge_key TEXT NOT NULL,client_sequence INTEGER NOT NULL CHECK(typeof(client_sequence)='integer' AND client_sequence BETWEEN
@@ -1177,7 +1179,7 @@ calendar_core_v6:
       INTEGER NOT NULL CHECK(typeof(seen_resolved)='integer' AND seen_resolved IN (0,1)),PRIMARY KEY(device_id,account_generation,upper_bound,conflict_id),FOREIGN
       KEY(device_id) REFERENCES sync_state(device_id)) WITHOUT ROWID
     sync_outbox: CREATE TABLE sync_outbox(mutation_id TEXT NOT NULL,device_id TEXT NOT NULL,client_sequence INTEGER NOT NULL CHECK(typeof(client_sequence)='integer'
-      AND client_sequence BETWEEN 1 AND 9007199254740991),target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      AND client_sequence BETWEEN 1 AND 9007199254740991),target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile','workspace_import')),target_id
       TEXT NOT NULL,operation_type TEXT NOT NULL,base_entity_version INTEGER NOT NULL CHECK(typeof(base_entity_version)='integer' AND base_entity_version
       BETWEEN 0 AND 9007199254740991),causal_predecessors_json TEXT NOT NULL CHECK(json_valid(causal_predecessors_json)),payload_version INTEGER
       NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash
@@ -1185,7 +1187,9 @@ calendar_core_v6:
       TEXT NOT NULL CHECK(state IN ('pending','prepared','sent')),attempt_count INTEGER NOT NULL CHECK(typeof(attempt_count)='integer' AND attempt_count
       BETWEEN 0 AND 9007199254740991),prepared_request_id TEXT,created_at TEXT NOT NULL,PRIMARY KEY(mutation_id),UNIQUE(device_id,client_sequence),FOREIGN
       KEY(device_id) REFERENCES sync_state(device_id),CHECK((state='pending' AND prepared_request_id IS NULL) OR (state IN ('prepared','sent')
-      AND prepared_request_id IS NOT NULL))) WITHOUT ROWID
+      AND prepared_request_id IS NOT NULL)),CHECK(target_type!='workspace_import' OR (operation_type IN ('import_begin','import_commit') AND route='import_range')),CHECK((route='conflict_resolution'
+      AND operation_type='resolve_conflict') OR (route='import_range' AND substr(operation_type,1,7)='import_') OR (route='exchange' AND operation_type!='resolve_conflict'
+      AND substr(operation_type,1,7)!='import_'))) WITHOUT ROWID
     sync_prepared_requests: CREATE TABLE sync_prepared_requests(request_id TEXT NOT NULL,device_id TEXT NOT NULL,sync_transport_generation INTEGER
       NOT NULL CHECK(typeof(sync_transport_generation)='integer' AND sync_transport_generation BETWEEN 0 AND 9007199254740991),runtime_instance_id
       TEXT NOT NULL,run_intent TEXT NOT NULL,payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN
@@ -1313,6 +1317,16 @@ calendar_core_v6:
       AND mapping_digest NOT GLOB '*[^0-9a-f]*'),cleaned_at TEXT NOT NULL,receipt_hash TEXT NOT NULL CHECK(length(receipt_hash)=64 AND receipt_hash
       NOT GLOB '*[^0-9a-f]*'),state TEXT NOT NULL CHECK(state IN ('pending_confirmation','completed','account_deleted')),PRIMARY KEY(source_workspace_id,source_epoch))
       WITHOUT ROWID
+    guest_import_execution_retirements: CREATE TABLE guest_import_execution_retirements(source_workspace_id TEXT NOT NULL,source_epoch INTEGER
+      NOT NULL CHECK(typeof(source_epoch)='integer' AND source_epoch BETWEEN 0 AND 9007199254740991),receipt_hash TEXT NOT NULL CHECK(length(receipt_hash)=64
+      AND receipt_hash NOT GLOB '*[^0-9a-f]*'),payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN
+      1 AND 9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64
+      AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY KEY(source_workspace_id,source_epoch),UNIQUE(receipt_hash)) WITHOUT ROWID
+    sync_import_execution_cancellations: CREATE TABLE sync_import_execution_cancellations(import_batch_id TEXT NOT NULL,source_workspace_id TEXT
+      NOT NULL,source_epoch INTEGER NOT NULL CHECK(typeof(source_epoch)='integer' AND source_epoch BETWEEN 0 AND 9007199254740991),receipt_hash
+      TEXT NOT NULL CHECK(length(receipt_hash)=64 AND receipt_hash NOT GLOB '*[^0-9a-f]*'),payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer'
+      AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL
+      CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY KEY(import_batch_id),UNIQUE(receipt_hash)) WITHOUT ROWID
     guest_import_source_leases: CREATE TABLE guest_import_source_leases(source_workspace_id TEXT NOT NULL,source_epoch INTEGER NOT NULL CHECK(typeof(source_epoch)='integer'
       AND source_epoch BETWEEN 0 AND 9007199254740991),lineage_id TEXT NOT NULL,protected_owner_binding_digest TEXT NOT NULL CHECK(length(protected_owner_binding_digest)=64
       AND protected_owner_binding_digest NOT GLOB '*[^0-9a-f]*'),source_snapshot_hash TEXT NOT NULL CHECK(length(source_snapshot_hash)=64 AND
@@ -1559,6 +1573,18 @@ calendar_core_v6:
     guard_guest_import_cleanup_receipts_update_workspace: CREATE TRIGGER guard_guest_import_cleanup_receipts_update_workspace BEFORE UPDATE ON
       guest_import_cleanup_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local' BEGIN SELECT
       RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_execution_retirements_insert_workspace: CREATE TRIGGER guard_guest_import_execution_retirements_insert_workspace BEFORE
+      INSERT ON guest_import_execution_retirements WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local'
+      BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_execution_retirements_update_workspace: CREATE TRIGGER guard_guest_import_execution_retirements_update_workspace BEFORE
+      UPDATE ON guest_import_execution_retirements WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local'
+      BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_import_execution_cancellations_insert_workspace: CREATE TRIGGER guard_sync_import_execution_cancellations_insert_workspace BEFORE
+      INSERT ON sync_import_execution_cancellations WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account'
+      BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_import_execution_cancellations_update_workspace: CREATE TRIGGER guard_sync_import_execution_cancellations_update_workspace BEFORE
+      UPDATE ON sync_import_execution_cancellations WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account'
+      BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
     guard_guest_import_source_leases_insert_workspace: CREATE TRIGGER guard_guest_import_source_leases_insert_workspace BEFORE INSERT ON guest_import_source_leases
       WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
       END
@@ -1634,18 +1660,19 @@ calendar_core_v6:
         conflict_ids_json: nonempty_sorted_unique_uuid_array
     sync_outbox:
       columns:
-        payload_json: sync/sync_mutation.schema.json
+        payload_json: sync/sync_outbox_mutation.schema.json
         causal_predecessors_json: sync/sync_mutation.schema.json#/oneOf/0/properties/causal_predecessors
       cross_checks:
       - indexed columns equal mutation envelope
       - JCS hash excludes only envelope created_at
       - causal predecessor is earlier than client sequence
+      - workspace_import target_id equals import_batch_id; resolution uses its single-item route; all import messages share the device sequence
     sync_prepared_requests:
       columns:
         payload_json: sync/native_prepared_exchange_request.schema.json
     sync_failed_local_changes:
       columns:
-        payload_json: sync/sync_mutation.schema.json
+        payload_json: sync/sync_failed_change_mutation.schema.json
         local_candidate_json: target_specific_fact
         manual_draft_json: target_specific_patch
         failure_context_json: sync/sync_error_registry.yaml
@@ -1682,6 +1709,17 @@ calendar_core_v6:
     sync_transport_fence_receipts:
       columns:
         payload_json: sync/sync_device_fence_response.schema.json
+    guest_import_execution_retirements:
+      columns:
+        payload_json: workspace/import_affected_execution.schema.json
+      cross_checks:
+      - source workspace/epoch and receipt hash equal the durable cleanup receipt; private local execution identities never enter HTTP
+    sync_import_execution_cancellations:
+      columns:
+        payload_json: workspace/import_affected_execution.schema.json
+      cross_checks:
+      - copy only from authenticated local guest retirement transaction; binding and cleanup hash match this batch; status replays the same identities
+        after restart
     guest_import_source_lease_replacements:
       columns:
         payload_json: storage/guest_import_source_lease_backup.schema.json
@@ -1692,8 +1730,8 @@ calendar_core_v6:
         payload_json: sync/sync_bootstrap_item.schema.json
   required_tables:
     inherited_count: 20
-    new_count: 37
-    total_count: 57
+    new_count: 39
+    total_count: 59
   required_indexes:
     inherited_count: 24
     new_count: 12
@@ -1719,8 +1757,30 @@ calendar_core_v6:
       to: 5
       changed_field: recurrence_revision
       nullable: true
+      additional_semantic_delta: cancelled audit accepts irreversible last_cancellation_reason=source_migrated
+    notifications:
+      from: 4
+      to: 5
+      changed_field: abandon_reason
+      nullable: true
+      additional_semantic_delta: prepared attempt retires as abandoned/source_migrated; retains full audit identity and finalization timestamps
+  inherited_audit_store_codecs:
+    reminders:
+      ddl: CREATE TABLE reminders(record_key TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE CHECK(position >= 0),payload_json TEXT NOT NULL
+        CHECK(json_valid(payload_json))) WITHOUT ROWID
+      schema: storage/v6/reminder_record.schema.json
+      record_key_field: reminder_id
+      existing_ddl: unchanged frozen SQLite record store
+      retirement: update complete validated payload in place; preserve record_key, position and terminal audit bytes
+    notifications:
+      ddl: CREATE TABLE notifications(record_key TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE CHECK(position >= 0),payload_json TEXT NOT
+        NULL CHECK(json_valid(payload_json))) WITHOUT ROWID
+      schema: native_v3/business_compat/notification/notification_response.schema.json
+      record_key_field: notification_id
+      existing_ddl: unchanged frozen SQLite record store
+      retirement: update complete validated payload in place; preserve record_key, position and terminal audit bytes
   payload_codec_revision_rules:
-    only_change: recurrence revision uses exact checked int64 in 1..9007199254740991 instead of current C++ int32
+    only_change: checked recurrence int64 in 1..9007199254740991 and explicitly versioned source_migrated Reminder/Notification audit reasons
     all_other_fields: preserve previous exact keys/null/enum/domain semantics
     migration_payload_rewrite: forbidden
     existing_legal_v5_records: remain valid byte-for-byte
@@ -1739,6 +1799,7 @@ calendar_core_v6:
       payload_codec_version.recurrence_versions: '4'
       payload_codec_version.event_occurrence_states: '4'
       payload_codec_version.reminders: '5'
+      payload_codec_version.notifications: '5'
     metadata_additions:
       sync_protocol_version: '1'
       workspace_schema_version: '1'
@@ -1759,12 +1820,23 @@ calendar_core_v6:
     - commit
     rollback: all added objects rows metadata history and user_version roll back together
     downgrade: v2/v5 runtime rejects v6 before any write; no reverse migration
+  trusted_cleanup_watermarks:
+    generation_column: sync_state.account_generation
+    utc_cutoff_column: sync_state.resolved_conflict_cleanup_before
+    codec: UTC datetime exactly YYYY-MM-DDTHH:mm:ssZ; null before authenticated watermarks exist
+    writers:
+    - sync.apply_download_batch
+    - sync.finalize_bootstrap
+    atomicity: facts, conflicts, visible cursor, generation and UTC cutoff commit together
+    acceptance: same authenticated account generation; missing or regressing cutoff never permits cleanup; generation replacement clears prior
+      watermarks before installing the authenticated bootstrap values
+    maintenance: read only durable sync_state cutoff after reopen; never derive a cutoff from wall clock or a transient HTTP page
   validation:
     ddl: exact normalized CREATE of all objects; reject unknown and same-name different definition
     quick_check: required
     foreign_key_check: required
     json: json_valid is only a syntax guard; exact target codec + schema + identity/hash/merge registry checks required before write and on open
-    inherited_payloads: preserve old bytes; only the four declared recurrence-counter codec revisions and source_migrated audit-anchor relationship
+    inherited_payloads: preserve old bytes; only declared recurrence-counter and source_migrated audit codec revisions plus audit-anchor relationship
       closure may change reader rules
     guest_outbox: all account-only tables reject guest inserts/updates
     encryption: account must be opened with SQLCipher key and workspace/account/device AAD verified outside SQL before queries

@@ -161,9 +161,15 @@ def derive():
     facts["account_profile"] = object_of({"email": account["properties"]["email"],
         **{key: profile["properties"][key] for key in ("username", "display_name", "avatar")}})
     reminder_variants = reminder_schemas()
+    # Properties can reference shared primitive dictionaries. Tightening a fact
+    # must not change primitives used by later protocol/capability generators.
+    facts = copy.deepcopy(facts)
+    fact_datetime_pattern = r"^(?!0000)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"
     for target, value in facts.items():
         # Only Sync schemas gain safe-integer ceilings; protected v2 definitions remain byte/semantic stable.
         for node in walk(value):
+            if node.get("format") == "date-time":
+                node["pattern"] = fact_datetime_pattern
             if node.get("format") == "uuid":
                 node["pattern"] = UUID["pattern"]
             types = node.get("type", [])

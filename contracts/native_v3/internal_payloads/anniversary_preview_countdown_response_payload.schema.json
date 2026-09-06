@@ -4,7 +4,7 @@
   "title": "SyncV1 anniversary_preview_countdown_response_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
   "x-rule-anchor": "cloud-sync-02/8",
   "description": "A non-persisted solar countdown snapshot. days is a difference between local natural dates in timezone, never a rounded duration. A yearly February 29 anchor resolves to the last day of February in non-leap target years.",

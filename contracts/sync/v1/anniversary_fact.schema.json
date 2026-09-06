@@ -70,12 +70,12 @@
     "created_at": {
       "type": "string",
       "format": "date-time",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+      "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
     },
     "updated_at": {
       "type": "string",
       "format": "date-time",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+      "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
     },
     "deleted_at": {
       "type": [
@@ -83,7 +83,7 @@
         "null"
       ],
       "format": "date-time",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+      "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
     }
   },
   "$id": "https://excellent-calendar.local/contracts/sync/v1/anniversary_fact.schema.json",

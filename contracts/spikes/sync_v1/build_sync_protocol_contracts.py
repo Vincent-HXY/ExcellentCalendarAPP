@@ -215,6 +215,8 @@ def derive():
         variants.append(object_of(properties))
     mutation = emit("sync_mutation", {"oneOf": variants}, "7.1")
     upload = emit("sync_hashed_mutation", object_of({"mutation": mutation, "payload_hash": HASH}), "6.1,7.1")
+    sequenced = emit("sync_outbox_mutation", {"oneOf": [mutation, ref("sync_conflict_resolution_mutation")]}, "6.1,7.5,8.3")
+    emit("sync_failed_change_mutation", {"allOf": [sequenced, {"properties": {"import_batch_id": NULL}}]}, "6.2,7.5")
 
     versions = array(object_of({"key": key_ref, "field_version": SAFE}), 64)
     typed_after = []
@@ -381,14 +383,22 @@ def derive():
         if intent == "reenable_pull_only":
             wire["properties"]["upload_mutations"] = array(upload, 0)
         prepared.append(object_of({**runtime, "prepared_exchange_id": UUID4, "run_intent": const(intent),
-            "request_hash": HASH, "wire_request": wire,
+            "request_hash": HASH, "route": const("exchange"), "wire_request": wire,
             "logout_operation_id": UUID4 if intent == "logout_final" else NULL,
             "pull_gate_revision": SAFE if intent == "reenable_pull_only" else NULL}))
+    for intent in ("normal", "logout_final"):
+        prepared.append(object_of({**runtime, "prepared_exchange_id": UUID4, "run_intent": const(intent),
+            "request_hash": HASH, "route": const("conflict_resolution"),
+            "wire_request": ref("backend_resolve_sync_conflict_request"),
+            "logout_operation_id": UUID4 if intent == "logout_final" else NULL, "pull_gate_revision": NULL}))
     emit("native_prepared_exchange_request", {"oneOf": prepared}, "6.2,8.3")
     emit("native_apply_exchange_response", object_of({**runtime, "prepared_exchange_id": UUID4,
         "response": normal_response}), "6.2,8.3")
     emit("native_acknowledge_upload_request", {"oneOf": [object_of({**runtime, "prepared_exchange_id": UUID4,
-        "reported_acknowledged_client_sequence_through": SAFE, "response": response}) for response in (normal_response, ack_response)]}, "6.2,8.3")
+        "route": const("exchange"), "reported_acknowledged_client_sequence_through": SAFE, "response": response})
+        for response in (normal_response, ack_response)] + [object_of({**runtime, "prepared_exchange_id": UUID4,
+            "route": const("conflict_resolution"), "reported_acknowledged_client_sequence_through": NULL,
+            "response": ref("backend_sync_conflict_resolution_response")})]}, "6.2,7.5,8.3")
     emit("sync_device_fence_request", object_of({"protocol_version": const(1), "device_id": UUID4,
         "fence_operation_id": UUID4, "expected_sync_transport_generation": SAFE,
         "reason": {"enum": ["clear_rebuild", "fresh_recovery", "force_local_relogin"]}}), "6.1")

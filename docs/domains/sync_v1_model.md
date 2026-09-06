@@ -1,6 +1,6 @@
 # Sync Protocol v1：身份与同步事实投影
 
-状态由 `contracts/sync/ct0_gate_status.json` 唯一登记；封版摘要见 `contracts/sync/sync_v1_revision_lock.json`。本文记录云同步-01、云同步-02 和 Accepted Sync ADR 的目标投影；现有 Native v2 与 SQLite v5 保持不变，新增生产能力仍为 planned。下文有日期的检查点保留其当时范围，最终验收见云同步-02冻结交付记录。
+状态由 `contracts/sync/ct0_gate_status.json` 唯一登记；封版摘要见 `contracts/sync/sync_v1_revision_lock.json`。本文记录云同步-01、云同步-02 和 Accepted Sync ADR 的目标投影；现有 Native v2 与 SQLite v5 保持不变，新增生产能力仍为 planned。下文有日期的检查点保留其当时范围，当前验收及 5d8fb0a 的 11 类问题闭合见[Review复核与兼容修订记录](../plan/active/云同步-02-Review复核与兼容修订记录.md)，首次冻结记录只保留历史范围。
 
 ## 机器入口与边界
 

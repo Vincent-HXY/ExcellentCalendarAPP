@@ -20,6 +20,7 @@
         "prepared_exchange_id",
         "run_intent",
         "request_hash",
+        "route",
         "wire_request",
         "logout_operation_id",
         "pull_gate_revision"
@@ -62,6 +63,9 @@
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
         },
+        "route": {
+          "const": "exchange"
+        },
         "wire_request": {
           "type": "object",
           "additionalProperties": false,
@@ -138,6 +142,7 @@
         "prepared_exchange_id",
         "run_intent",
         "request_hash",
+        "route",
         "wire_request",
         "logout_operation_id",
         "pull_gate_revision"
@@ -180,6 +185,9 @@
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
         },
+        "route": {
+          "const": "exchange"
+        },
         "wire_request": {
           "type": "object",
           "additionalProperties": false,
@@ -258,6 +266,7 @@
         "prepared_exchange_id",
         "run_intent",
         "request_hash",
+        "route",
         "wire_request",
         "logout_operation_id",
         "pull_gate_revision"
@@ -299,6 +308,9 @@
         "request_hash": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
+        },
+        "route": {
+          "const": "exchange"
         },
         "wire_request": {
           "type": "object",
@@ -378,6 +390,7 @@
         "prepared_exchange_id",
         "run_intent",
         "request_hash",
+        "route",
         "wire_request",
         "logout_operation_id",
         "pull_gate_revision"
@@ -419,6 +432,9 @@
         "request_hash": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
+        },
+        "route": {
+          "const": "exchange"
         },
         "wire_request": {
           "type": "object",
@@ -473,6 +489,146 @@
         },
         "logout_operation_id": {
           "type": "null"
+        },
+        "pull_gate_revision": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_id",
+        "runtime_instance_id",
+        "device_id",
+        "session_generation",
+        "sync_transport_generation",
+        "prepared_exchange_id",
+        "run_intent",
+        "request_hash",
+        "route",
+        "wire_request",
+        "logout_operation_id",
+        "pull_gate_revision"
+      ],
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "runtime_instance_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sync_transport_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "prepared_exchange_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "run_intent": {
+          "const": "normal"
+        },
+        "request_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "route": {
+          "const": "conflict_resolution"
+        },
+        "wire_request": {
+          "$ref": "https://excellent-calendar.local/contracts/sync/backend_resolve_sync_conflict_request.schema.json"
+        },
+        "logout_operation_id": {
+          "type": "null"
+        },
+        "pull_gate_revision": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_id",
+        "runtime_instance_id",
+        "device_id",
+        "session_generation",
+        "sync_transport_generation",
+        "prepared_exchange_id",
+        "run_intent",
+        "request_hash",
+        "route",
+        "wire_request",
+        "logout_operation_id",
+        "pull_gate_revision"
+      ],
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "runtime_instance_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sync_transport_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "prepared_exchange_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "run_intent": {
+          "const": "logout_final"
+        },
+        "request_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "route": {
+          "const": "conflict_resolution"
+        },
+        "wire_request": {
+          "$ref": "https://excellent-calendar.local/contracts/sync/backend_resolve_sync_conflict_request.schema.json"
+        },
+        "logout_operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
         },
         "pull_gate_revision": {
           "type": "null"

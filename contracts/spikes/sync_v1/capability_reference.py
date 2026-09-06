@@ -4,6 +4,7 @@ import json
 
 from build_sync_domain_contracts import CONTRACTS, yaml
 from domain_reference import validate_schema, check
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 @lru_cache(maxsize=1)
@@ -19,6 +20,11 @@ def check_public_request(operation, request, route=None):
     if entry["route_policy"] == "explicit_workspace_and_route_cas":
         check(route is not None and route["route_state"] == "ready", "WORKSPACE_LOCKED")
         check(request["workspace_id"] == route["active_workspace_id"] and request["expected_active_route_revision"] == route["active_route_revision"], "WORKSPACE_SWITCH_CONFLICT")
+    elif entry["route_policy"] == "target_workspace_with_current_route_cas":
+        check(route is not None and route["route_state"] in {"ready", "locked", "empty"}, "WORKSPACE_SWITCH_CONFLICT")
+        check(request["expected_active_route_revision"] == route["active_route_revision"], "WORKSPACE_SWITCH_CONFLICT")
+        # workspace_id selects the target. Registry ownership, availability and
+        # close/open remain the WorkspaceCoordinator's separate responsibilities.
     return entry
 
 
@@ -35,6 +41,21 @@ def check_native_request(operation, request, pinned_binding):
         if operation.split(".")[0] in {"event", "event_occurrence", "reminder", "habit", "anniversary", "category", "calendar", "search"}:
             check_business_workspace(request.get("payload"), pinned_binding)
     return entry
+
+
+def resolve_mixed_query_timezones(db, operation, request, pinned_binding):
+    check(operation in {"calendar.range_summary", "calendar.list_day_items", "search.query"}, "FEATURE_NOT_IMPLEMENTED")
+    check_native_request(operation, request, pinned_binding)
+    check(db.in_transaction, "WORKSPACE_SWITCH_CONFLICT")
+    row = db.execute("SELECT timezone FROM workspace_preferences WHERE singleton=1").fetchone()
+    check(row is not None, "WORKSPACE_ACCOUNT_MISMATCH")
+    zones = {"workspace_timezone": row[0], "device_timezone": request["payload"]["device_timezone"]}
+    try:
+        for value in zones.values():
+            ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError):
+        raise ValueError("TIMEZONE_ID_INVALID") from None
+    return zones
 
 
 def check_business_workspace(value, binding):

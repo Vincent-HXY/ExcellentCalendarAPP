@@ -437,7 +437,7 @@ def validate_protocol_drafts(report: dict) -> None:
     validate_spike_sources(report)
     require(report["passed"] and not report["errors"] and report["tests_run"] == 53,
             "Protocol/lifecycle reference tests failed")
-    require(report["generated_schemas"] == 213 and report["fixed_cases"] == 96, "Protocol draft coverage differs")
+    require(report["generated_schemas"] == 216 and report["fixed_cases"] == 96, "Protocol draft coverage differs")
     for field in ("full_owned_graph_import_bootstrap_engine_verified", "android_keystore_verified",
                   "four_language_consumers_verified", "product_owners_implemented"):
         require(report[field] is False, "Limited reference evidence cannot certify " + field)
@@ -451,7 +451,7 @@ def validate_storage_drafts(report: dict) -> None:
     from build_storage_fixtures import derive as fixtures
     validate_spike_sources(report)
     require(report["passed"] and not report["errors"], "SQLite/PostgreSQL logical model experiment failed")
-    require(report["sqlite"]["tests_run"] == 11 and report["sqlite"]["transaction_rollback_boundaries"] == 128,
+    require(report["sqlite"]["tests_run"] == 11 and report["sqlite"]["transaction_rollback_boundaries"] == 134,
             "Frozen checker/migration boundary evidence incomplete")
     require(report["postgres"]["passed"] and report["postgres"]["new_tables"] == 40 and report["postgres"]["mapped_fields_checked"] == 125,
             "PostgreSQL live typed field mapping incomplete")
@@ -470,9 +470,9 @@ def validate_capability_drafts(report: dict) -> None:
     from build_sync_capability_graph import derive as graph
     from build_sync_registry_revisions import derive as registries, REVISION_PATHS, extension
     validate_spike_sources(report)
-    require(report["passed"] and not report["errors"] and report["tests_run"] == 17 and report["fixed_cases"] == 28,
+    require(report["passed"] and not report["errors"] and report["tests_run"] == 22 and report["fixed_cases"] == 62,
             "Capability boundary regression evidence incomplete")
-    require(report["generated_schemas"] == 480 and report["public_methods"] == 107 and report["native_calls"] == 90,
+    require(report["generated_schemas"] == 487 and report["public_methods"] == 107 and report["native_calls"] == 90,
             "Capability graph coverage differs")
     for path, expected in {**business(), **native(), **graph(), **registries()}.items():
         require(read_data(path) == expected, "Capability/compatibility definition differs: " + str(path))
@@ -763,7 +763,7 @@ def validate_import_saga_evidence(report: dict) -> None:
                 expected_ids += [path.stem + "." + cls.name + "." + method.name for method in cls.body
                     if isinstance(method, ast.FunctionDef) and method.name.startswith("test_")]
     require(sorted(report["test_case_ids"]) == sorted(expected_ids) and
-            report["tests_run"] == len(expected_ids) == 53, "Import test identity/count coverage differs")
+            report["tests_run"] == len(expected_ids) == 54, "Import test identity/count coverage differs")
     expected_points = {
         "contract": [], "status": [],
         "staging": ["import_canonical_fact:event", "import_canonical_fact:event_recurrence", "import_canonical_fact:reminder_intent",
@@ -803,7 +803,7 @@ def validate_client_recovery_evidence(report: dict) -> None:
             if isinstance(cls, ast.ClassDef):
                 expected_ids.extend(path.stem + "." + cls.name + "." + method.name for method in cls.body
                     if isinstance(method, ast.FunctionDef) and method.name.startswith("test_"))
-    require(sorted(report["test_case_ids"]) == sorted(expected_ids) and report["tests_run"] == len(expected_ids) == 26,
+    require(sorted(report["test_case_ids"]) == sorted(expected_ids) and report["tests_run"] == len(expected_ids) == 27,
             "Client recovery test identity/count coverage differs")
     points = {
         "test_sync_full_import": ["import_guest_reserved", "import_guest_reserved_committed", "import_client_mapping", "import_account_outbox",
@@ -844,7 +844,7 @@ def validate_cross_language_schema_evidence(report: dict) -> None:
     require(report["passed"] and not report["errors"] and report["production_implemented"] is False and
         report["all_fixture_families_verified"] is False, "Schema consumers failed or overstate full fixture scope")
     value, paths = bundle()
-    require(report["case_ids"] == [case["id"] for case in value["cases"]] and report["case_count"] == len(value["cases"]) == 1308,
+    require(report["case_ids"] == [case["id"] for case in value["cases"]] and report["case_count"] == len(value["cases"]) == 1376,
         "Four-language schema case identity/count differs")
     manifest = read_json(CONTRACTS / "fixtures/sync/v1/manifest.json")
     require(report["all_fixed_fixture_transport_verified"] is True and report["fixture_transport_ids"] == [case["id"] for case in manifest["cases"]],

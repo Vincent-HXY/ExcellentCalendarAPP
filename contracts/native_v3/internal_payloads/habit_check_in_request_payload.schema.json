@@ -4,7 +4,7 @@
   "title": "SyncV1 habit_check_in_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
   "x-rule-anchor": "cloud-sync-02/8",
   "description": "Kotlin-to-C++ set/upsert command. A Flutter manual request is normalized to the manual branch; only the non-exported Android notification action path may construct the notification_action branch.",

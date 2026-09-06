@@ -4,9 +4,9 @@
   "title": "SyncV1 search_query_request_payload",
   "x-contract-domain": "native",
   "x-contract-version": 3,
-  "x-implementation-status": "integrated",
+  "x-implementation-status": "planned",
   "x-release-status": "planned",
-  "x-rule-anchor": "cloud-sync-02/8",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4",
   "description": "Unified Event/Habit/Anniversary Search request. All nullable filter fields are explicitly present. query_generation is a client correlation token echoed unchanged; it is not the canonical data snapshot generation.",
   "x-search-contract-revision": 2,
   "x-semantic-errors": {
@@ -21,7 +21,6 @@
   "required": [
     "query_generation",
     "keyword",
-    "timezone",
     "target_types",
     "date_from",
     "date_to_exclusive",
@@ -29,7 +28,9 @@
     "include_uncategorized",
     "include_completed",
     "sort_by",
-    "sections"
+    "sections",
+    "workspace_timezone",
+    "device_timezone"
   ],
   "properties": {
     "query_generation": {
@@ -41,11 +42,6 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 128
-    },
-    "timezone": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 255
     },
     "target_types": {
       "type": "array",
@@ -114,6 +110,17 @@
       "items": {
         "$ref": "https://excellent-calendar.local/contracts/search/search_section_request.schema.json"
       }
+    },
+    "workspace_timezone": {
+      "type": "null",
+      "description": "Core resolves this axis from durable workspace preferences in the query snapshot; callers cannot override it."
+    },
+    "device_timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "x-format": "iana-timezone",
+      "x-owner": "Kotlin OS timezone injection"
     }
   },
   "allOf": [

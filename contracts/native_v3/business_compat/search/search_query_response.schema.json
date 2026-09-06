@@ -11,10 +11,11 @@
   "required": [
     "query_generation",
     "normalized_keyword",
-    "timezone",
     "evaluated_at",
     "snapshot_token",
-    "sections"
+    "sections",
+    "workspace_timezone",
+    "device_timezone"
   ],
   "properties": {
     "query_generation": {
@@ -26,11 +27,6 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 128
-    },
-    "timezone": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 255
     },
     "evaluated_at": {
       "type": "string",
@@ -49,6 +45,18 @@
       "items": {
         "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/search/search_section_response.schema.json"
       }
+    },
+    "workspace_timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "x-format": "iana-timezone"
+    },
+    "device_timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "x-format": "iana-timezone"
     }
   },
   "x-contract-domain": "native",

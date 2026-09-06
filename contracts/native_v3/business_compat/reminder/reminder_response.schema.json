@@ -217,7 +217,8 @@
         "habit_deleted",
         "habit_template_disabled",
         "habit_template_replaced",
-        null
+        null,
+        "source_migrated"
       ]
     },
     "last_cancelled_at": {
@@ -394,6 +395,32 @@
         "properties": {
           "fulfillment_delivery_id": {
             "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "last_cancellation_reason": {
+            "const": "source_migrated"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "cancelled"
+          },
+          "is_enabled": {
+            "const": false
+          },
+          "scheduled_at": {
+            "type": "null"
+          },
+          "last_cancelled_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

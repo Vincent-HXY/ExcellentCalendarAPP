@@ -6,7 +6,7 @@
   "x-contract-version": 3,
   "x-implementation-status": "planned",
   "x-release-status": "planned",
-  "x-rule-anchor": "cloud-sync-02/7.6/IMP-06",
+  "x-rule-anchor": "cloud-sync-02/7.6/IMP-06,IMP-09",
   "oneOf": [
     {
       "type": "object",
@@ -21,7 +21,8 @@
         "import_batch_id",
         "source_epoch",
         "current_head",
-        "import_revision"
+        "import_revision",
+        "affected_execution"
       ],
       "properties": {
         "disposition": {
@@ -53,6 +54,9 @@
         },
         "import_revision": {
           "type": "null"
+        },
+        "affected_execution": {
+          "type": "null"
         }
       }
     },
@@ -82,7 +86,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -218,8 +223,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "type": "object",
@@ -247,7 +287,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -383,8 +424,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "type": "object",
@@ -412,7 +488,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -595,8 +672,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "type": "object",
@@ -624,7 +736,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -801,8 +914,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "type": "object",
@@ -830,7 +978,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -1009,8 +1158,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "type": "object",
@@ -1038,7 +1222,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -1207,8 +1392,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "type": "object",
@@ -1236,7 +1456,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -1405,8 +1626,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "type": "object",
@@ -1434,7 +1690,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -1615,8 +1872,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "type": "object",
@@ -1644,7 +1936,8 @@
         "abandon_status",
         "reconciliation_status",
         "resume_disposition",
-        "disposition"
+        "disposition",
+        "affected_execution"
       ],
       "properties": {
         "import_lineage_id": {
@@ -1823,8 +2116,43 @@
         },
         "disposition": {
           "const": "found"
+        },
+        "affected_execution": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cleanup_receipt": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "affected_execution": {
+                "$ref": "https://excellent-calendar.local/contracts/workspace/import_affected_execution.schema.json"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_execution": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

@@ -19,6 +19,8 @@ from import_cleanup_reference import AccountImportCleanup, GuestImportCleanup, I
 from import_proof_authority import ImportProofAuthority
 from import_range_reference import binding_from_begin
 from sqlite_reference import connect
+from audit_fixture import identifier, reminder, notification
+from source_retirement_reference import write_audit
 
 A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
@@ -61,10 +63,11 @@ class ImportCleanupTests(unittest.TestCase):
         self.account.finalize(expected_page_set_digest=page_set_digest([page]), final_cursor=page["terminal_sync_cursor"])
         root = next(row for row in self.records if row["target_type"] == "event")
         with connect(self.guest.path) as db:
-            db.executemany("INSERT INTO guest_execution_reminders VALUES(?,'event',?,?,NULL)",
-                [("open-reminder", root["target_id"], "open"), ("old-reminder", root["target_id"], "delivered")])
-            db.executemany("INSERT INTO guest_execution_notifications VALUES(?,?,?,NULL)",
-                [("prepared-attempt", "open-reminder", "prepared"), ("past-attempt", "old-reminder", "delivered")])
+            for position, (label, attempt, sent) in enumerate([
+                    ("open-reminder", "prepared-attempt", False), ("old-reminder", "past-attempt", True)]):
+                parent = reminder(root["target_id"], label, sent=sent)
+                write_audit(db, "reminders", parent, position=position)
+                write_audit(db, "notifications", notification(parent, attempt, sent=sent), position=position)
             db.execute("INSERT INTO guest_search_history VALUES(0,'guest only keyword')")
 
     def freeze(self, epoch=0):
@@ -127,11 +130,12 @@ class ImportCleanupTests(unittest.TestCase):
         receipt = self.retire()
         self.assertTrue(self.account.reminder_materialization_allowed(self.batch))
         self.assertEqual(len(self.guest.snapshot()["guest_import_audit_anchors"]), 2)
-        reminders = {row[0]: row for row in self.guest.snapshot()["guest_execution_reminders"]}
-        self.assertEqual(reminders["open-reminder"][-2:], ("cancelled", "source_migrated"))
-        self.assertEqual(reminders["old-reminder"][-2:], ("delivered", None))
+        reminders = {row[0]: json.loads(row[2]) for row in self.guest.snapshot()["reminders"]}
+        self.assertEqual(reminders[identifier("open-reminder")]["status"], "cancelled")
+        self.assertEqual(reminders[identifier("open-reminder")]["last_cancellation_reason"], "source_migrated")
+        self.assertEqual(reminders[identifier("old-reminder")]["status"], "sent")
         before = self.guest.snapshot()
-        self.assertEqual(self.guest.finalize_notification("prepared-attempt"), "no_effect")
+        self.assertEqual(self.guest.finalize_notification(identifier("prepared-attempt")), "no_effect")
         self.assertEqual(self.guest.snapshot(), before)
         self.assertEqual(self.guest.snapshot()["guest_search_history"], [(0, "guest only keyword")])
         self.assertEqual(self.guest.preview(self.account, target_workspace_id=W)["disposition"], "previous_epoch_cleanup_pending")

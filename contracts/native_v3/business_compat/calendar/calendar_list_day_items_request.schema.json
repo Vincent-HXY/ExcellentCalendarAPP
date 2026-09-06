@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/calendar/calendar_list_day_items_request.schema.json",
+  "title": "CalendarListDayItemsRequest",
+  "description": "Lists one typed Calendar section for one local date against the exact snapshot returned by calendar.range_summary. cursor=null starts the section; continuation cursors bind every query field, sort revision, complete last key, and snapshot token.",
+  "x-contract-version": 3,
+  "x-calendar-view-revision": 1,
+  "x-implementation-status": "planned",
+  "x-semantic-errors": {
+    "malformed_snapshot_token": "CALENDAR_SNAPSHOT_INVALID",
+    "changed_snapshot_generation": "CALENDAR_SNAPSHOT_EXPIRED",
+    "malformed_cursor": "CALENDAR_CURSOR_INVALID",
+    "cursor_query_mismatch": "CALENDAR_CURSOR_QUERY_MISMATCH",
+    "invalid_timezone": "TIMEZONE_ID_INVALID"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date",
+    "section",
+    "snapshot_token",
+    "cursor",
+    "page_size"
+  ],
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "event",
+        "habit",
+        "anniversary"
+      ]
+    },
+    "snapshot_token": {
+      "type": "string",
+      "pattern": "^calsnap1\\.[A-Za-z0-9_-]{20,512}$",
+      "maxLength": 521
+    },
+    "cursor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^calcur1\\.[A-Za-z0-9_-]{20,2048}$",
+      "maxLength": 2056
+    },
+    "page_size": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    }
+  },
+  "x-contract-domain": "native",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}
