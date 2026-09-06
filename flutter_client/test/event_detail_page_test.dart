@@ -178,7 +178,6 @@ void main() {
               importance: TaskImportance.unimportantNotUrgent,
               isCompleted: false,
             ),
-            showDivider: false,
             onTap: () => detailTapCount += 1,
             onComplete: () async {
               completionCount += 1;

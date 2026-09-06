@@ -2,11 +2,29 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://excellent-calendar.local/contracts/appearance/local_appearance_response.schema.json",
   "title": "LocalAppearanceResponse",
-  "description": "Kotlin-local appearance projection. Missing or corrupted persisted state recovers to teal and records a diagnostic; unknown wire values remain contract failures in Dart.",
+  "description": "Kotlin-local appearance projection. Missing or corrupted persisted state recovers to teal and records a diagnostic; unknown wire values remain contract failures in Dart. Optional display extends typography in the same APK: omitted update preserves stored typography; omitted historical response explicitly means defaults (system scale/family, weight delta -1). Present display must be complete and valid. Old strict readers must ship with their matching native layer.",
   "x-contract-version": 2,
   "x-implementation-status": "integrated",
   "type": "object",
   "additionalProperties": false,
-  "required": ["habit_progress_color"],
-  "properties": {"habit_progress_color": {"type": "string", "enum": ["teal", "blue", "indigo", "green", "orange", "rose", "purple"]}}
+  "required": [
+    "habit_progress_color"
+  ],
+  "properties": {
+    "habit_progress_color": {
+      "type": "string",
+      "enum": [
+        "teal",
+        "blue",
+        "indigo",
+        "green",
+        "orange",
+        "rose",
+        "purple"
+      ]
+    },
+    "display": {
+      "$ref": "display_preferences.schema.json"
+    }
+  }
 }

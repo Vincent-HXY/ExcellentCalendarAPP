@@ -52,7 +52,10 @@ class CustomCheckbox extends StatelessWidget {
     );
 
     if (onTap == null) {
-      return SizedBox.square(dimension: 40, child: Center(child: visual));
+      return SizedBox.square(
+        dimension: InboxSizes.checkboxTouchTarget,
+        child: Center(child: visual),
+      );
     }
     return Semantics(
       button: true,
@@ -60,7 +63,10 @@ class CustomCheckbox extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: isBusy ? null : onTap,
-        child: SizedBox.square(dimension: 40, child: Center(child: visual)),
+        child: SizedBox.square(
+          dimension: InboxSizes.checkboxTouchTarget,
+          child: Center(child: visual),
+        ),
       ),
     );
   }

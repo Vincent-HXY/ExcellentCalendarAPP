@@ -4,19 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../inbox_design_tokens.dart';
 
-enum _InboxTopBarAction { habits, anniversaries, ringSettings }
+enum _InboxTopBarAction { habits, anniversaries }
 
 class InboxTopBar extends StatelessWidget {
-  const InboxTopBar({
-    this.onOpenAnniversaries,
-    this.onOpenHabits,
-    this.onOpenRingSettings,
-    super.key,
-  });
+  const InboxTopBar({this.onOpenAnniversaries, this.onOpenHabits, super.key});
 
   final VoidCallback? onOpenAnniversaries;
   final VoidCallback? onOpenHabits;
-  final VoidCallback? onOpenRingSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +51,6 @@ class InboxTopBar extends StatelessWidget {
                   onOpenHabits?.call();
                 } else if (action == _InboxTopBarAction.anniversaries) {
                   onOpenAnniversaries?.call();
-                } else if (action == _InboxTopBarAction.ringSettings) {
-                  onOpenRingSettings?.call();
                 }
               },
               itemBuilder: (_) => [
@@ -87,17 +79,6 @@ class InboxTopBar extends StatelessWidget {
                       ),
                       SizedBox(width: 12),
                       Text('倒数纪念日'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: _InboxTopBarAction.ringSettings,
-                  enabled: onOpenRingSettings != null,
-                  child: const Row(
-                    children: [
-                      Icon(Icons.alarm_rounded, color: Color(0xFF38B9C5)),
-                      SizedBox(width: 12),
-                      Text('响铃设置'),
                     ],
                   ),
                 ),

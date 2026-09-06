@@ -248,7 +248,6 @@ class TaskGroupCard extends StatelessWidget {
           TaskListItem(
             key: ValueKey(tasks[index].id),
             task: tasks[index],
-            showDivider: index != tasks.length - 1,
             isCompleting: completingIds.contains(tasks[index].id),
             onComplete: onTaskComplete == null
                 ? null

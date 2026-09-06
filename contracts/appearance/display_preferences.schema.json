@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/appearance/display_preferences.schema.json",
+  "title": "DisplayPreferences",
+  "description": "Device-local typography. Null scale follows the system's text scaler; explicit percentages replace it. Weight delta is relative to the existing semantic weight (100 per step).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["font_scale_percent", "font_weight_delta", "font_family"],
+  "properties": {
+    "font_scale_percent": {"type": ["integer", "null"], "minimum": 80, "maximum": 150},
+    "font_weight_delta": {"type": "integer", "minimum": -1, "maximum": 2},
+    "font_family": {"type": "string", "enum": ["system", "noto_sans_sc", "noto_serif_sc"]}
+  }
+}

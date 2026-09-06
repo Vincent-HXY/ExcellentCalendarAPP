@@ -105,7 +105,6 @@ void main() {
                           importance: TaskImportance.unimportantNotUrgent,
                           isCompleted: false,
                         ),
-                        showDivider: false,
                         onComplete: () async {
                           completeCalls += 1;
                           return true;
@@ -148,7 +147,6 @@ void main() {
               importance: TaskImportance.unimportantNotUrgent,
               isCompleted: true,
             ),
-            showDivider: false,
           ),
         ),
       ),

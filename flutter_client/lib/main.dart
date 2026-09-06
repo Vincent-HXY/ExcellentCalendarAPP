@@ -326,8 +326,6 @@ class _ExcellentCalendarAppState extends State<ExcellentCalendarApp> {
           onOpenAnniversaries: () =>
               Navigator.of(tabContext).pushNamed('/anniversaries'),
           onOpenHabits: () => Navigator.of(tabContext).pushNamed('/habits'),
-          onOpenRingSettings: () =>
-              Navigator.of(tabContext).pushNamed('/settings/ring'),
           ringGateway: _ringGateway,
         ),
       ),

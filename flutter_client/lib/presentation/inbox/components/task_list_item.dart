@@ -10,7 +10,6 @@ import 'custom_checkbox.dart';
 class TaskListItem extends StatefulWidget {
   const TaskListItem({
     required this.task,
-    required this.showDivider,
     this.isCompleting = false,
     this.onComplete,
     this.onRemovalFinished,
@@ -19,7 +18,6 @@ class TaskListItem extends StatefulWidget {
   });
 
   final InboxTaskViewData task;
-  final bool showDivider;
   final bool isCompleting;
   final Future<bool> Function()? onComplete;
   final VoidCallback? onRemovalFinished;
@@ -129,6 +127,11 @@ class _TaskListItemState extends State<TaskListItem>
     );
     final canComplete = !task.isCompleted && !task.hasRecurrence;
     final isBusy = _isHandlingTap || widget.isCompleting;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final rowHeight = math.max(
+      InboxSizes.rowHeight,
+      textScaler.scale(titleStyle.fontSize!) * titleStyle.height! + 24,
+    );
 
     return SizeTransition(
       sizeFactor: _sizeFactor,
@@ -138,21 +141,12 @@ class _TaskListItemState extends State<TaskListItem>
         child: ScaleTransition(
           scale: _scale,
           alignment: Alignment.centerLeft,
-          child: Container(
-            height: InboxSizes.rowHeight,
-            decoration: BoxDecoration(
-              border: widget.showDivider
-                  ? const Border(
-                      bottom: BorderSide(
-                        color: InboxColors.divider,
-                        width: 0.75,
-                      ),
-                    )
-                  : null,
-            ),
+          child: SizedBox(
+            height: rowHeight,
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: InboxSpacing.rowHorizontal,
+              padding: const EdgeInsets.only(
+                left: InboxSpacing.rowLeading,
+                right: InboxSpacing.rowTrailing,
               ),
               child: Row(
                 children: [
@@ -186,6 +180,7 @@ class _TaskListItemState extends State<TaskListItem>
                                         foregroundPainter: _StrikeRevealPainter(
                                           text: task.title,
                                           style: titleStyle,
+                                          textScaler: textScaler,
                                           textDirection: Directionality.of(
                                             context,
                                           ),
@@ -242,12 +237,14 @@ class _StrikeRevealPainter extends CustomPainter {
   const _StrikeRevealPainter({
     required this.text,
     required this.style,
+    required this.textScaler,
     required this.textDirection,
     required this.progress,
   });
 
   final String text;
   final TextStyle style;
+  final TextScaler textScaler;
   final TextDirection textDirection;
   final double progress;
 
@@ -258,6 +255,7 @@ class _StrikeRevealPainter extends CustomPainter {
     }
     final textPainter = TextPainter(
       text: TextSpan(text: text, style: style),
+      textScaler: textScaler,
       maxLines: 1,
       ellipsis: '…',
       textDirection: textDirection,
@@ -276,6 +274,7 @@ class _StrikeRevealPainter extends CustomPainter {
     return oldDelegate.progress != progress ||
         oldDelegate.text != text ||
         oldDelegate.style != style ||
+        oldDelegate.textScaler != textScaler ||
         oldDelegate.textDirection != textDirection;
   }
 }

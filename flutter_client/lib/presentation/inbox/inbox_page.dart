@@ -26,7 +26,6 @@ class InboxPage extends StatefulWidget {
     required this.categoryRepository,
     this.onOpenAnniversaries,
     this.onOpenHabits,
-    this.onOpenRingSettings,
     this.ringGateway,
     super.key,
   });
@@ -38,7 +37,6 @@ class InboxPage extends StatefulWidget {
   final CategoryRepository categoryRepository;
   final VoidCallback? onOpenAnniversaries;
   final VoidCallback? onOpenHabits;
-  final VoidCallback? onOpenRingSettings;
   final RingNativeGateway? ringGateway;
 
   @override
@@ -136,7 +134,6 @@ class _InboxPageState extends State<InboxPage> {
                 InboxTopBar(
                   onOpenAnniversaries: widget.onOpenAnniversaries,
                   onOpenHabits: widget.onOpenHabits,
-                  onOpenRingSettings: widget.onOpenRingSettings,
                 ),
                 Expanded(
                   child: Padding(

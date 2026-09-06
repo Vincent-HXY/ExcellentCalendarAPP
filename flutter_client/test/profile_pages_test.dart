@@ -6,6 +6,7 @@ import 'package:excellent_calendar/native_contract/user/current_user_response_dt
 import 'package:excellent_calendar/presentation/profile/pages/account_security_page.dart';
 import 'package:excellent_calendar/presentation/profile/pages/edit_profile_page.dart';
 import 'package:excellent_calendar/presentation/profile/pages/profile_page.dart';
+import 'package:excellent_calendar/presentation/ring/ring_settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,7 +15,10 @@ import 'fakes/fake_navigator.dart';
 import 'fakes/fake_profile_cache.dart';
 import 'fakes/fake_refresh_token_store.dart';
 import 'fakes/fake_user_gateway.dart';
+import 'fakes/fake_ring_gateway.dart';
 import 'fixtures/backend_api_fixtures.dart';
+import 'fixtures/notification_fixtures.dart';
+import 'fixtures/ring_fixtures.dart';
 
 void main() {
   late FakeAuthGateway authGateway;
@@ -49,6 +53,48 @@ void main() {
   });
 
   group('ProfilePage', () {
+    for (final offline in [false, true]) {
+      testWidgets('My opens ring settings and returns with offline=$offline', (
+        tester,
+      ) async {
+        if (offline) {
+          userGateway.onGetCurrentUser = () =>
+              throw const BackendTransportException(
+                BackendTransportKind.network,
+              );
+        }
+        final ringGateway = FakeRingGateway(
+          onGetState: () async => successInvocation(ringSnapshot()),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ProfilePage(
+              authService: authService,
+              session: session,
+              navigator: navigator,
+              showBack: false,
+            ),
+            routes: {
+              '/settings/ring': (_) => RingSettingsPage(gateway: ringGateway),
+            },
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('我的'), findsOneWidget);
+        await tester.ensureVisible(find.text('响铃设置'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('响铃设置'));
+        await tester.pumpAndSettle();
+        expect(find.byType(RingSettingsPage), findsOneWidget);
+        expect(find.text('晨曦'), findsOneWidget);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.text('我的'), findsOneWidget);
+        expect(find.byType(RingSettingsPage), findsNothing);
+        await ringGateway.eventController.close();
+      });
+    }
+
     testWidgets('renders the user rows after load', (tester) async {
       await tester.pumpWidget(
         MaterialApp(

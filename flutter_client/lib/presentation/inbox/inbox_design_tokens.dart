@@ -15,7 +15,6 @@ class InboxColors {
   static const titleSoft = Color(0xFF111827);
   static const body = Color(0xFF1C2326);
   static const mutedText = Color(0xFF9AA3A7);
-  static const divider = Color(0xFFF1F3F4);
   static const dueDate = Color(0xFF8F2D2F);
   static const checkbox = Color(0xFFC5CCD0);
   static const checkboxImportant = Color(0xFFE15E64);
@@ -34,7 +33,11 @@ class InboxSpacing {
   static const groupSpacing = 12.0;
   static const groupHeaderHorizontal = 22.0;
   static const groupHeaderGap = 10.0;
-  static const rowHorizontal = 22.0;
+  // 圆圈的可见左缘与分组标题对齐，点击区域向左多留空间。
+  static const rowLeading =
+      groupHeaderHorizontal -
+      (InboxSizes.checkboxTouchTarget - InboxSizes.checkbox) / 2;
+  static const rowTrailing = groupHeaderHorizontal;
   static const checkboxGap = 2.0;
   static const dateGap = 10.0;
 }
@@ -43,16 +46,17 @@ class InboxSizes {
   const InboxSizes._();
 
   // 数据块作用：Inbox 页面固定尺寸，控制顶部栏、分组标题、任务行和按钮大小。
-  // 关键布局：rowHeight 影响列表一屏可见任务数量，widget_test 中有覆盖。
+  // rowHeight 是标准字号下的最小行高，大字号由任务行增加高度。
   static const topBarHeight = 62.0;
   static const topBarIconButton = 36.0;
   static const topBarIcon = 25.0;
   static const groupHeaderHeight = 48.0;
-  static const rowHeight = 44.0;
+  static const rowHeight = 52.0;
   static const cardRadius = AppRadius.sectionCard;
-  static const checkbox = 22.0;
-  static const checkboxBorder = 2.0;
-  static const checkIcon = 15.0;
+  static const checkbox = 20.0;
+  static const checkboxTouchTarget = 48.0;
+  static const checkboxBorder = 1.5;
+  static const checkIcon = 14.0;
   static const dateMaxWidth = 58.0;
 }
 
@@ -70,14 +74,14 @@ class InboxTextStyles {
 
   static const taskTitle = TextStyle(
     color: InboxColors.body,
-    fontSize: 15.5,
-    fontWeight: FontWeight.w500,
-    height: 1.1,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.35,
   );
 
   static const dueDate = TextStyle(
     color: InboxColors.dueDate,
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: FontWeight.w500,
     height: 1.1,
   );

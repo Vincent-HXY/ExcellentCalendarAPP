@@ -1,4 +1,6 @@
 import '../shared/contract_value.dart';
+import '../shared/contract_json_object.dart';
+import 'display_preferences.dart';
 
 enum HabitProgressColorToken {
   teal('teal'),
@@ -18,14 +20,19 @@ enum HabitProgressColorToken {
 }
 
 class LocalAppearanceResponseDto {
-  const LocalAppearanceResponseDto({required this.habitProgressColor});
+  const LocalAppearanceResponseDto({required this.habitProgressColor, this.display = const DisplayPreferences()});
   final HabitProgressColorToken habitProgressColor;
+  final DisplayPreferences display;
 
   factory LocalAppearanceResponseDto.fromJson(Map<String, dynamic> json) {
-    ContractValue.requireExactKeys(json, const {
+    ContractJsonObject.rejectUnknownKeys(json, const {
       'habit_progress_color',
+      'display',
     }, 'LocalAppearanceResponse');
     return LocalAppearanceResponseDto(
+      display: json.containsKey('display')
+          ? DisplayPreferences.fromJson(json['display'] is Map<String, dynamic> ? json['display'] as Map<String, dynamic> : (throw const FormatException('display must be an object.')))
+          : const DisplayPreferences(),
       habitProgressColor: HabitProgressColorToken.fromWireValue(
         ContractValue.nonEmptyString(
           json,
@@ -38,13 +45,16 @@ class LocalAppearanceResponseDto {
 
   Map<String, dynamic> toJson() => {
     'habit_progress_color': habitProgressColor.wireValue,
+    'display': display.toJson(),
   };
 }
 
 class UpdateLocalAppearanceRequestDto {
-  const UpdateLocalAppearanceRequestDto({required this.habitProgressColor});
+  const UpdateLocalAppearanceRequestDto({required this.habitProgressColor, this.display});
   final HabitProgressColorToken habitProgressColor;
+  final DisplayPreferences? display;
   Map<String, dynamic> toJson() => {
     'habit_progress_color': habitProgressColor.wireValue,
+    if (display != null) 'display': display!.toJson(),
   };
 }

@@ -99,7 +99,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return AuthPageScaffold(
-      title: '个人信息',
+      title: widget.showBack ? '个人信息' : '我的',
       showBack: widget.showBack,
       child: ListenableBuilder(
         listenable: controller,
@@ -107,13 +107,18 @@ class _ProfilePageState extends State<ProfilePage> {
           final viewData = controller.viewData;
           if (controller.phase == ProfileLoadPhase.loading &&
               viewData == null) {
-            return const Padding(
-              padding: EdgeInsets.only(top: 96),
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: AuthDesignTokens.primary,
+            return Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 64),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: AuthDesignTokens.primary,
+                    ),
+                  ),
                 ),
-              ),
+                _buildLocalSettings(),
+              ],
             );
           }
           if (viewData == null) {
@@ -123,14 +128,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   message: controller.errorMessage ?? '加载失败',
                   onRetry: controller.load,
                 ),
-                if (widget.onOpenAppearance != null) ...[
-                  const SizedBox(height: 16),
-                  _ProfileActionTile(
-                    icon: Icons.palette_outlined,
-                    label: '外观设置（保存在本机）',
-                    onTap: widget.onOpenAppearance!,
-                  ),
-                ],
+                const SizedBox(height: 16),
+                _buildLocalSettings(),
               ],
             );
           }
@@ -183,18 +182,42 @@ class _ProfilePageState extends State<ProfilePage> {
                 label: '账号安全',
                 onTap: () => widget.navigator.push('/account-security'),
               ),
-              if (widget.onOpenAppearance != null) ...[
-                const SizedBox(height: 10),
-                _ProfileActionTile(
-                  icon: Icons.palette_outlined,
-                  label: '外观设置（保存在本机）',
-                  onTap: widget.onOpenAppearance!,
-                ),
-              ],
+              const SizedBox(height: 24),
+              _buildLocalSettings(),
             ],
           );
         },
       ),
+    );
+  }
+
+  Widget _buildLocalSettings() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 10),
+          child: Text(
+            '本机设置',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        _ProfileActionTile(
+          icon: Icons.notifications_active_outlined,
+          label: '响铃设置',
+          onTap: () => Navigator.of(context).pushNamed('/settings/ring'),
+        ),
+        if (widget.onOpenAppearance != null) ...[
+          const SizedBox(height: 10),
+          _ProfileActionTile(
+            icon: Icons.palette_outlined,
+            label: '外观设置（保存在本机）',
+            onTap: widget.onOpenAppearance!,
+          ),
+        ],
+      ],
     );
   }
 }

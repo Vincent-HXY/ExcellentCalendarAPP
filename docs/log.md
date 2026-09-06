@@ -1813,6 +1813,26 @@
 - 验证：统一草案 self-test 167/167 PASS（241.973 秒），946 Schema、220 旧基线、583 fixed + 4 suite；协议 51/208 schema/96 fixed，SQLite 9/113 回滚点，PostgreSQL 36 用例。Search/Habit/Calendar/Anniversary 四个旧 validator 均 PASS，git diff --check PASS（仅既有换行提示）。报告 source hash 与 gate evidence 已更新到实际执行结果。
 - 剩余工作：bootstrap 单独组件对非空 pending/failed/effect gate 明确返回需要组合重放，不能冒称该部分完成；import saga/发布、Habit operation、完整 child causal、冲突解决、四语言适用 fixture 消费及下游 revision/hash 锁仍需闭合。状态保持 CT0–CT4 PARTIAL / DECISION REQUIRED，尚未 CONTRACT FROZEN。
 
+## 2026-09-05 23:29 +08:00 — 响铃设置界面美化与入口迁移
+
+- 使用 Skill：frontend-flutter-feature。
+- 负责模块：Flutter Presentation / Ring Settings、Profile、Inbox 入口及对应页面测试；main.dart 仅移除旧入口的两行导航回调。
+- 任务目标：保持业务逻辑与基本功能不变，统一响铃设置视觉并将入口迁移至“我的”。
+- 任务结果：响铃设置采用共享浅青背景、跟随主题色的圆角卡片与深色适配；整理提醒偏好、测试响铃按钮、设备权限与受限提示；支持下拉刷新及小屏大字号换行。“我的”新增本机设置分组，资料加载中、成功及失败时均提供响铃入口；日程更多菜单移除原入口，习惯与倒数纪念日入口保留。铃声选择、强提醒、开始/停止测试、活动响铃禁用测试、错误/取消提示、能力状态及底层调用保持既有规则。未改 Application、Gateway、Contract、Native、依赖或工具链。
+- 验证：相关 5 组测试 36 项通过；最终 flutter test 全部 608 项通过；flutter analyze 无问题；flutter build apk --debug 成功；本次 7 个 Dart 文件格式化及 git diff --check 通过。390×844 浅色/深色页面实际 Widget 渲染已目视检查，320 宽/2 倍字号/受限状态测试通过；新增正常与离线个人资料场景的入口往返测试。临时截图测试已移除，预览保存在工作区外 Codex visualizations/ring。
+- 验证边界：未验证真机播放/系统铃声选择器；全局 format --output=none --set-exit-if-changed lib test 发现既有 test/create_schedule_controller_test.dart 格式问题（退出 1），未改动无关文件。用户已有 Contracts/Sync/ADR/docs 等修改予以保留。
+- 文档定位：docs/index.md 未直接索引响铃/个人设置相关入口，本次依照范围定向定位既有实现、路由、Ring Contract 和相关测试，未扩改索引或业务规格。
+
+## 2026-09-05 23:35 +08:00 — 日程列表留白、字号与圆圈对齐
+
+- 使用 Skill：frontend-flutter-feature。
+- 负责模块：Flutter Presentation / Inbox 任务列表组件与视觉 token；两处既有测试文件仅移除已删除的 showDivider 构造参数。
+- 任务目标：按用户参考图取消日程间分隔线，调整文字与完成圆圈大小，使圆圈可见左缘与“即将到期”等分组标题起点对齐。
+- 方案与结果（GO）：移除 TaskListItem 分隔线及专用参数；标题改为 16 / w400、日期 13；标准行高 52，大字号时自动增高；圆圈直径 20、描边 1.5，点击区域保留并扩大为 48×48。根据分组标题边距与圆圈可见尺寸计算行左边距，避免点击区域内居中造成额外缩进；完成划线绘制跟随系统文字缩放。未改变任务分组、完成命令、详情导航、重要性颜色、完成/移除时序与数据逻辑；本轮生产改动仅限 presentation。
+- 验证：相关交互动画和详情测试 14 项通过；完整 flutter test 608 项通过；flutter analyze 无问题；Android Debug APK 构建成功；本轮 6 个 Dart 文件格式化及 git diff --check 通过。临时 Widget 渲染分别检查 390 宽标准字号、320 宽两倍字号，测量确认圆圈左缘与“即将到期”左缘相等、圆圈与行文字垂直居中、点击区域 48×48；无布局异常，预览已目视确认，临时测试已移除。
+- 验证边界：未进行真机安装或触摸验证；全局只读格式检查仍仅报告原有 test/create_schedule_controller_test.dart 格式问题（退出 1），保留未改。既有响铃入口迁移与其他用户修改全部保留。没有新增显示设置功能或引入依赖。
+
+
 ## 2026-09-05 23:33 — 云同步-02 后端完整请求/DTO 校准
 
 - Skill：calendar-data-contracts。模块：contracts 的 Backend 校准探针、验证器与同步 ADR。
@@ -1828,6 +1848,26 @@
 - CT0 范围：按 02 §4.2 的 fixture 与 §18 的实现边界，现状/候选/备份材料已齐；API33 双 ABI 92 项实际 APK 证据独立保留。整项任务尚未冻结。
 - 新冲突：173 项 self-test 运行期间出现非本任务 Appearance/字体改动，两个既有 v2 Schema 新增 display，另增加 display_preferences.schema.json 及多处 Flutter 字体代码。HEAD 仍为 32b463d415ccc992b798be7f93ca1e1c6573cdc8。原 220 定义保护测试和关联 field registry fingerprint 测试失败，实际为 171 PASS / 2 FAIL；随后的 --stage ct0 也正确拒绝旧定义漂移。不能使用该运行最初的 946 Schema/220 PASS 静态输出冒充结束时工作区通过。
 - 处置：保留非本任务改动，旧基线不重建；按用户“保留旧 Contracts”指令及 AGENTS §7 记录具体冲突，已异步询问是否来自并行字体任务。相关整体兼容门禁暂停，继续独立的同步 Contract 工作；当前文件数新增到 947 Schema 是外观修改带来的状态，不是本任务新增一个同步 Schema。
+
+## 2026-09-05 23:54:35 +08:00 — 外观显示设置开发暂停（用户明确要求）
+
+- 使用 Skill：frontend-flutter-feature、calendar-data-contracts；已读取 android-kotlin-native-feature 的相关约束。
+- 负责模块：Appearance 外观设置 / Flutter 字体展示 / Kotlin 本机偏好 / Appearance Contract。
+- 任务目标：从“我的”进入外观设置，上方“主题”“显示”双页签；主题暂不支持；显示提供字号、字重、字体及预览，默认更细。用户已确认先提供几种常用字体以减小安装包。
+- 暂停结果：收到用户“先暂停开发，进行等待，保留工作痕迹，等待下一次开发”后立即停止实现。未提交、未回滚、未清理现有工作。
+- 已写入的工作：新增 DisplayPreferences Schema/Dart DTO/Kotlin model；Appearance 请求和响应添加可选 display；Controller、测试 Fake、Kotlin Store/Contract/Handler 已做部分接线；新增 AppTypography/AppText 初稿；pubspec 声明两种离线字体及许可证；assets/fonts 中保留裁剪字体与说明（约 9 MB）。此前响铃设置迁移和日程列表美化修改均保留。
+- 当前代码未完成，不能视为可构建交付：appearance_page.dart 正处于页面替换中，仅保留颜色辅助函数，尚缺页面类和 imports；main.dart 尚未接入字体/字号作用域；AppText 尚未应用到现有页面；Kotlin 测试 Store 尚未实现新增接口；新字段枚举登记、完整兼容说明、许可证注册、设置页及相关测试仍待完成。尚未进行本轮格式化、analyze、完整测试、Kotlin 测试、APK 构建或设备验证。
+- 下次恢复：先检查工作区变化，接续上述未完成文件；实现双页签及三项设置、即时预览与本机保存；保留旧颜色存储；完成全局字体应用、失败/取消/加载/重启恢复验证、Contract/Native/Flutter 测试与构建。不要重复覆盖用户或其他任务的修改。
+- 临时工作痕迹：系统 TEMP/excellent-calendar-font-sources 保留上游原字体和许可证；TEMP/excellent-calendar-font-tools 保存临时 fontTools 4.64.0（没有升级项目依赖或系统工具链）。本轮没有安排自动恢复或定时任务。
+
+## 2026-09-06 00:21:32 +08:00 — AI 协作开发效率初步诊断
+
+- 使用 Skill：self-learning。
+- 负责模块：项目开发流程与学习诊断；未修改业务代码。
+- 任务目标：结合当前项目寻找 AI 协作瓶颈，并询问用户实际耗时与返工案例。
+- 任务结果：读取架构、索引、当前阶段与验证入口，抽样查看 Appearance Controller 和同步 CT0 门禁；发现工作区存在外观与同步两类修改，门禁记录外观协议变更影响同步校验。提出共享协议变更协调、小批次闭环验收和记录实际返工耗时的初步建议。个人瓶颈仍待用户实例确认，不能据此认定技术能力不足。
+- 验证状态：仅文档与代码只读取证；未执行构建或测试，门禁中的历史结果未重新验证。仅追加本日志，保留已有修改。
+
 
 ## 2026-09-06 00:47 — 云同步 02 持续开发：Habit operation 与隔离验收
 - Skill：calendar-data-contracts。
@@ -1940,6 +1980,35 @@
 - 验证：从本次暂存树导出的独立快照运行 `contracts/run_sync_v1_validation.py` 实际通过，返回 CONTRACT FROZEN、220 protected Contracts、951 Schema、5 runtime fixtures、17 Backend 声明/16 Controller、13 canonical integrity checks；全部实验报告来源摘要匹配。Contracts 与已冻结开发副本内容一致，沿用其已通过实验，不重复构建或运行耗时容量/设备测试。
 - 差异检查：本次编写的文件通过空白检查；5 份上游许可证/版权声明的 6 处原始空白提示保持原样，未修改来源文件或其摘要。
 - 验收边界：本次通过的是 HXY 提交内容的快照；工作目录仍保留字体任务修改的两份旧 Appearance Contract，其兼容调整未由本次完成，也不声明混合工作目录通过冻结校验。无远程推送。
+
+## 2026-09-06 20:04 +08:00 最近提交规模与耗时快速审阅
+
+- 使用 Skill：`review-worktree-architecture`；负责范围：提交 `5d8fb0a` 相对父提交 `32b463d`，用户要求快速解释文件规模、任务耗时和工作重心，未开展完整实现审计。
+- 结果：提交改动1,062文件（新增1,031、修改31），新增222,364行、删除242行；1,042文件位于contracts，19份文档，另1份既有上游tzdata Makefile。Native v3占504文件，包含独立公开/内部封装及兼容引用闭包；spikes占196文件，其中40份reference、38份生成/构建器、30份runner、31份报告；fixtures仅25文件但新增56,885行。文件与行数不能等同手写产品功能量。
+- 耗时判断：提交时间间隔约30小时14分，仅代表日历跨度。提交日志显示工作集中于同步状态机/双库导入与恢复、SQLCipher/JCS/签名/真机实验、旧Contract兼容和跨语言机器闭包；公共源码变化引发证据摘要过期、多轮回归，以及Docker/设备/Windows清理故障增加耗时。没有完整执行时间轨迹，不给出各模块耗时百分比。
+- 快速发现：`contracts/spikes/sync_v1/README.md:63`仍称默认入口应失败且未冻结，与同文件开头、机器CONTRACT FROZEN和交付记录冲突；属于非重大文档收尾遗漏。超大单次封版提交降低独立审阅与定位效率，但抽查生成器和参考程序用途支持其主要范围，未因文件多直接认定越界。
+- 验证：独立Git提交级数量/目录/扩展名统计、生成器与参考验证入口抽查、提交内日志时间线核对及diff空白检查；空白检查只报告5份上游许可文件的6处原始空白。未重跑耗时实验、产品构建或全量冻结门禁，交付报告测试结果作为历史证据引用。保留当前外观任务的未提交修改，本轮仅追加日志。
+
+## 2026-09-06 22:05 +08:00 Native v3文件扩张实例说明
+
+- 使用上下文：沿用已读取的calendar-data-contracts规则；模块：Native v3协议与生成器。目标：用真实event.complete接口解释v3的身份包装、旧协议复用、兼容引用传播与重复文件来源。
+- 结果：公开v3请求的payload直接引用旧complete_event_request；内部请求增加runtime binding并引用生成的internal_payloads副本，副本保留相同业务字段约束。因此接口身份升级必要，但每个方法独立落盘、对未改变payload也展开复制属于当前生成器组织选择，并非v3版本必然要求。event_response的计数约束变更会沿详情/列表等引用传播。未发现本提交重写旧contracts/event定义，不把计划协议误称为已接入产品。
+- 验证：实际Schema、v2/v3映射、生成器plain_body/public_legacy/native_payload与event_response差异只读比对；无代码修改、无构建测试，仅追加说明日志。
+
+## 2026-09-06 22:08 +08:00 Contracts封版下游阻断快速审阅
+
+- 使用 Skill：calendar-data-contracts；范围：提交5d8fb0a的Contracts交付与总计划要求，重点关注03–06分计划的接口依赖，不实施修复。
+- 确认问题：总计划第269行和Contracts计划IMP规则要求guest导入退休以source_migrated终结Reminder与prepared Notification，但Native v3 Reminder响应last_cancellation_reason、Notification响应abandon_reason及其abandoned条件分支均不接受该原因。import_cleanup_reference使用简化表写Notification state=cancelled，而实际Notification状态枚举只有prepared/sent/failed/abandoned，现有cleanup测试未验证真实审计对象的Schema闭包。该同一根因需Contracts补齐后再封版，影响03的导入退休/审计与05的执行取消对接，不要求暂停无关模块。
+- 其他抽查：五类run intent、conflict resolve意图提交响应、默认提醒适用矩阵、退出缓存策略响应和冻结状态未发现新的明显矛盾；不将有限抽查等同完整无缺陷证明。
+- 验证：从HEAD读取Schema并独立检查枚举，确认两个原因字段均拒绝source_migrated；核对Native v3 reminder.list引用链、总计划、导入参考程序与测试。当前Python无jsonschema，未安装依赖，未运行完整Schema验证、耗时spike或产品构建。保留外观任务全部未提交修改，仅追加日志。
+
+## 2026-09-06 22:40 +08:00 Contracts 提交与分计划一致性扩展审阅
+
+- 使用 Skill：calendar-data-contracts、review-worktree-architecture；后者要求独立测试设计，由独立测试子任务依据计划先建立预期，再验证协议与精确 DDL。
+- 负责模块与目标：固定提交 5d8fb0a6debe3dc4e99e8aed5213ed9d3b43731d，对照父提交与当前 Contracts 计划、Native V2 保护基线，审阅新增协议、生成器、存储模型、参考程序及验证证据；不实施修复、不提供修复方案。
+- 结果：归并确认 11 类问题：导入控制消息被 Outbox target CHECK 拒绝；resolution 的 Outbox codec 与 Native prepare/ack 不能承载专用 HTTP 路由；guest 退休 reason 与真实审计 Schema 不一致；Native import_status 缺少计划要求的 affected identities；混合 Calendar/Search 查询仍只有单 timezone；workspace.activate 参考门禁把目标误当当前 workspace；普通同步 cleanup UTC 水位缺少正式 v6 持久化映射；Native resolution 返回 Kotlin-owned status_revision；新 Event fact 四个 lifecycle datetime 未落实 UTC 限制；Java/Dart 对真实 Habit start_date 的 year 0000 接受结果不同；30 份新 Native v3 payload 残留 integrated 状态标注。未将缺少后续产品实现、获准的 Native v3 版本化和原始 tzdata Makefile 纳入问题。
+- 验证：从 HEAD 导出隔离快照，使用已有离线 Python 依赖运行 validate_sync_v1.py --self-test。机器审计通过 CONTRACT FROZEN、220 protected、951 Schema；执行 348 项测试，无断言失败，但 StorageTests setUpClass 因快照缺少预构建 C++ 静态库而报错，整体退出 1，不能声明全套测试通过。另完成独立 exact Outbox DDL/codec 和 Native/HTTP 反例，两个普通 exchange 对照通过；运行 Java/Dart 原始探针复现日期差异；解析 181 份 Python 文件 AST。未重跑 Android 真机、全套四端编译、PostgreSQL 环境实验或产品构建；原提交实验报告的摘要校验不等于本轮重新执行实验。
+- 修改范围：仅追加本日志，诊断脚本与快照位于系统临时目录；保留其他任务的外观与界面未提交修改。详细问题、源码位置与判断理由在本任务最终审阅结论列出。
 
 
 ## 2026-09-06 23:15 +0800 云同步-02 Review 复核与修订开始
