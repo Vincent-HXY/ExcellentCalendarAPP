@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/storage/guest_import_source_lease_backup.schema.json",
+  "title": "SyncV1 guest_import_source_lease_backup",
+  "x-contract-domain": "calendar_core_storage",
+  "x-contract-version": 6,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.6/IMP-01,IMP-05;10",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_workspace_id",
+    "source_epoch",
+    "lineage_id",
+    "protected_owner_binding_digest",
+    "source_snapshot_hash",
+    "reserved_operation_id",
+    "active_batch_id",
+    "active_manifest_hash",
+    "begin_client_sequence",
+    "terminal_client_sequence",
+    "state",
+    "lease_revision"
+  ],
+  "properties": {
+    "source_workspace_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "source_epoch": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "lineage_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "protected_owner_binding_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_snapshot_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reserved_operation_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "active_batch_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "active_manifest_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "begin_client_sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "terminal_client_sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "state": {
+      "const": "active"
+    },
+    "lease_revision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  },
+  "x-semantic-rules": [
+    "terminal_client_sequence > begin_client_sequence",
+    "backup belongs to the same source, epoch, lineage and opaque owner as its reserved successor",
+    "restore only after absence of successor account receipt; restore increments the current lease revision"
+  ]
+}

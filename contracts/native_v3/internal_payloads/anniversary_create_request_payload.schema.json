@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/anniversary_create_request_payload.schema.json",
+  "title": "SyncV1 anniversary_create_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Complete Anniversary create plan. timezone is the explicit IANA timezone used for countdown and Reminder materialization. date remains the only yearly anchor. recurrence=null creates a one-time Anniversary. reminder_plan is an additive legacy bridge: omission means reminders disabled with an empty template set; an object is the complete initial plan; explicit null is invalid. lunar reaches C++ so it can return ANNIVERSARY_CALENDAR_UNSUPPORTED.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "date",
+    "calendar_type",
+    "category_id",
+    "recurrence",
+    "note",
+    "importance",
+    "timezone"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Original user-local date. For yearly recurrence its month/day are the occurrence anchor and its year remains the historical origin year."
+    },
+    "calendar_type": {
+      "type": "string",
+      "enum": [
+        "solar",
+        "lunar"
+      ]
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Opaque weak Category reference; preserve exact Unicode, including historical non-UUID values. Null remains distinct from a string."
+    },
+    "recurrence": {
+      "description": "Yearly Anniversary recurrence intent, or null for a one-time Anniversary.",
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/anniversary/anniversary_recurrence_rule_input.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "importance": {
+      "type": "string",
+      "enum": [
+        "unimportant_noturgent",
+        "important_noturgent",
+        "unimportant_urgent",
+        "important_urgent"
+      ]
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "IANA timezone used by C++ to derive the local date and calculate the response countdown."
+    },
+    "reminder_plan": {
+      "$ref": "https://excellent-calendar.local/contracts/anniversary/anniversary_reminder_plan_input.schema.json",
+      "description": "Optional only for legacy v2 callers. Missing means {reminders_enabled:false, templates:[]}; null is never accepted. New writers must always send this field."
+    }
+  },
+  "x-native-compatibility-revision": "anniversary_opaque_category_v1"
+}

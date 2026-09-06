@@ -422,3 +422,13 @@ endpoints:
       - API_INTERNAL_ERROR
       - AUTH_ACCOUNT_DISABLED
       - AUTH_SESSION_EXPIRED
+
+planned_revisions:
+- revision: cloud_sync_v1
+  contract_domain: backend_api
+  version: 1
+  registry: backend_sync_v1/backend_api.yaml
+  implementation_status: planned
+  release_status: planned
+  compatibility: historical registry and schemas retained; explicit revision selection
+    only; no fallback

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/reminder_prepare_delivery_response_payload.schema.json",
+  "title": "SyncV1 reminder_prepare_delivery_response_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4",
+  "description": "Prepared Notification attempt, exact tap payload, and—only for a Habit reminder—the immutable direct-complete action payload Kotlin must attach.",
+  "x-habit-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notification",
+    "tap_payload",
+    "idempotent_replay"
+  ],
+  "properties": {
+    "notification": {
+      "$ref": "https://excellent-calendar.local/contracts/notification/notification_response.schema.json"
+    },
+    "tap_payload": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/notification/prepared_notification_payload_v6_writer.schema.json"
+    },
+    "idempotent_replay": {
+      "type": "boolean"
+    },
+    "habit_action_payload": {
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/native_v3/habit/habit_notification_action_payload_v6_writer.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "notification": {
+            "properties": {
+              "target_type": {
+                "const": "habit"
+              }
+            },
+            "required": [
+              "target_type"
+            ]
+          }
+        },
+        "required": [
+          "notification"
+        ]
+      },
+      "then": {
+        "required": [
+          "habit_action_payload"
+        ],
+        "properties": {
+          "habit_action_payload": {
+            "$ref": "https://excellent-calendar.local/contracts/native_v3/habit/habit_notification_action_payload_v6_writer.schema.json"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "habit_action_payload": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

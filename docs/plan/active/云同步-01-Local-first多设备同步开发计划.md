@@ -1,11 +1,11 @@
 # 云同步-01：Local-first 多设备同步开发计划
 
-> 状态：ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED
+> 状态：ACTIVE PLAN / CONTRACT FROZEN / IMPLEMENTATION NOT STARTED
 > 建立时间：2026-09-03
 > 目标阶段：R2-C
 > 首发范围：Android 多设备、小规模内测，协议保持跨平台中立
 > 计划入口：docs/plan/active/云同步-01-Local-first多设备同步开发计划.md
-> 2026-09-05 M0进展：[Contracts CT0审计](./云同步-02-CT0审计与决策记录.md) 已交付基线校准、七项ADR提案与部分实验；当前DECISION REQUIRED，尚未关闭M0或达到M1 Contract冻结，下游生产实现仍未开始。
+> 2026-09-06 18:47 M0/M1交付：[Contracts冻结验收记录](./云同步-02-冻结验收与交付记录.md) 与 `contracts/sync/sync_v1_revision_lock.json` 已建立同一 Contract revision/hash；默认统一入口通过。03–06 已锁定输入，生产实现、双设备集成与内测部署仍未开始。此状态对应同步专用工作副本，原字体任务的变更另行保留。
 
 ## 1. 计划结论
 

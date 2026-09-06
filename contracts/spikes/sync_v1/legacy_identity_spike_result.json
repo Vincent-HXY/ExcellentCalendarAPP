@@ -1,0 +1,372 @@
+{
+  "spike_version": 1,
+  "passed": true,
+  "production_converter_implemented": false,
+  "scope": "current Core v1-to-v5 migration, exact legacy field preservation, read-only typed import eligibility",
+  "cases": [
+    {
+      "id": "LEGACY-opaque-id-and-weak-category",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": null,
+        "portable_events": 1,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "typed_projection_sha256": "7758a3c4bdf996413b9033c975fc382d589690b348ac88850cbb21489d12cd96",
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-two-methods-one-owned-intent",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": null,
+        "portable_events": 1,
+        "portable_intents": 1,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "typed_projection_sha256": "6b7dc107421b120f5c282821b74276adef39cd3e599d68d89a0778b3eda80974",
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-disabled-configuration-preserved",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": null,
+        "portable_events": 1,
+        "portable_intents": 1,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "typed_projection_sha256": "62eec3a2de3e3fa4150d54bcb8b92a33d26f30ac9df2728edbc9ab86f17cd0ef",
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-terminal-delivery-stays-guest",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": null,
+        "portable_events": 1,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "typed_projection_sha256": "7758a3c4bdf996413b9033c975fc382d589690b348ac88850cbb21489d12cd96",
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-absolute-reminder-time-preserved",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": null,
+        "portable_events": 1,
+        "portable_intents": 1,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "typed_projection_sha256": "c10f717774799e1457ac2bb5f7c4d98f7eca5da9fb0dc333cf3e8771aa3f8089",
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-uuid-lexeme-is-still-legacy",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": null,
+        "portable_events": 1,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "typed_projection_sha256": "7758a3c4bdf996413b9033c975fc382d589690b348ac88850cbb21489d12cd96",
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-missing-timezone-no-device-default",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "IMPORT_REFERENCE_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-unknown-timezone",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "SYNC_TIMEZONE_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-all-day-no-invented-civil-dates",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "IMPORT_REFERENCE_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-recurrence-without-rule-or-revision",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "IMPORT_REFERENCE_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-dangling-recurrence-link",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "IMPORT_REFERENCE_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-legacy-invalid-time-order",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "EVENT_TIME_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-source-identity-too-long-no-truncation",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "IMPORT_REFERENCE_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-missing-optional-preserved-as-null",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": null,
+        "portable_events": 1,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "typed_projection_sha256": "7758a3c4bdf996413b9033c975fc382d589690b348ac88850cbb21489d12cd96",
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-deleted-event-stays-local-audit",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": null,
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "typed_projection_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-legacy-unsupported-wechat-no-silent-drop",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "REMINDER_METHOD_UNSUPPORTED",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-legacy-orphan-reminder",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "IMPORT_REFERENCE_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-advance-and-stored-time-disagree",
+      "passed": true,
+      "actual": {
+        "core_error": null,
+        "projection_error": "IMPORT_REFERENCE_INVALID",
+        "portable_events": 0,
+        "portable_intents": 0,
+        "v1_fields_preserved": true,
+        "missing_fields_not_invented": true,
+        "migration_ids": [
+          "calendar_core_json_v1_compat_to_sqlite_v4",
+          "calendar_core_sqlite_v4_to_v5_habit_v1"
+        ],
+        "source_unchanged_after_projection": true
+      }
+    },
+    {
+      "id": "LEGACY-corrupted-required-field-rejected-by-core",
+      "passed": true,
+      "actual": {
+        "core_error": "STORAGE_DATA_CORRUPTED",
+        "projection_error": "STORAGE_DATA_CORRUPTED",
+        "portable_events": 0,
+        "portable_intents": 0
+      }
+    }
+  ],
+  "errors": [],
+  "core_library_sha256": {
+    "cpp_core/build-ninja/libexcellent_calendar_core.a": "1ea26967cb2a872ead4424706f2623442c4387de5cea1dcc7a6d7d7b9edd7fb3",
+    "cpp_core/build-ninja/libexcellent_calendar_date_tz.a": "50ecb07332212445584d720a6ad7c27990446f77b5d1696ac58981e9b8c40d8c",
+    "cpp_core/build-ninja/libexcellent_calendar_sqlite.a": "d844d9f5ee0f0cc71abba0b1c16804971f7b35bd16a3dbb5ae61a56f7b3ae97f"
+  },
+  "binary_sha256": "1912ef74e7309947b74b81fd9459d609ba8a661bba1742c99823fd9618d1b1f6",
+  "source_sha256": {
+    "contracts/fixtures/sync/v1/legacy_identity_vectors.json": "ee3694878e971377039681366d76a82ff4a3ee83636d8cf24ce0e143503113b2",
+    "contracts/spikes/sync_v1/build_legacy_identity_fixtures.py": "814bb05aaedcfaf19ccd2977819cab765129f4917bc26e03f3e518d2d5e98711",
+    "contracts/spikes/sync_v1/domain_reference.py": "4d3559aca4203d9adbe6ad6314616012267c2d5b904c3ae3bca3eeb968943971",
+    "contracts/spikes/sync_v1/identity_reference.py": "10b5eb81fff9ef943de0ed51ec3f61e5cd16cbf319daebcae8e08cc86f19802e",
+    "contracts/spikes/sync_v1/legacy_identity_probe.cpp": "dedbb11388ad5c9e94e427878e677ee61d8f1a9faa3e263b1739eebec0947635",
+    "contracts/spikes/sync_v1/legacy_identity_reference.py": "35bfdc23f5b61ba3b9ceb5353766be2519d4adfdc80c75b2ed56e00a231882ce",
+    "contracts/spikes/sync_v1/run_legacy_identity_spike.py": "2792461dafb9920e0d2afdaec545ec26468919c266ee024246873f3c5530c2f9",
+    "contracts/spikes/sync_v1/schema_validation_reference.py": "d969e1b383cb008d6e4381742c479893a3a6f931044af76bfc3d410b4f091ffd",
+    "contracts/sync/sync_field_registry.yaml": "456f20734d234a6bfc3d7402e795c1d71563c4f9a7317ddbc569b699039fe645",
+    "contracts/sync/sync_identity_registry.yaml": "661b82becf71cfe0aa9cdcd911f0726d2f81772479e9ce8cf34b155bb14ebbc7",
+    "contracts/sync/v1/account_profile_fact.schema.json": "2bc05c7838b35b2cc2820ec01cf28e0659bb197c7e0abba49aaf30348ba17937",
+    "contracts/sync/v1/anniversary_fact.schema.json": "0ccd7f199b82816eb3fc9a4c14efd56c3bdf43dcd883acfca8560aa4f439dc51",
+    "contracts/sync/v1/anniversary_recurrence_fact.schema.json": "0805c9d322f86fd8aa192a836247ff20aa47309ac2e25f4b6924cd80bb4632d8",
+    "contracts/sync/v1/category_fact.schema.json": "b3f154a5f6c7a410ed1f9665263536f5950307bf7fb2749e1ed88f2eb5f275b1",
+    "contracts/sync/v1/event_fact.schema.json": "b048df16e1d07470535b0f2dea79a61b51c19eec72f17d3e174733a1510a1e84",
+    "contracts/sync/v1/event_occurrence_state_fact.schema.json": "8967eca0816d987d44ec588339c135a6a4be569e966dc7cac875dc433e5709e6",
+    "contracts/sync/v1/event_recurrence_fact.schema.json": "5f857d1eb32be704a36c1a7bd2d51ebe58c157e3e88771503584b48cca144df2",
+    "contracts/sync/v1/habit_check_in_fact.schema.json": "0444a28a2b4bb60f33eb34f791a0be6e5291cea4d9c8b4cf36030390e68df054",
+    "contracts/sync/v1/habit_fact.schema.json": "00522c01eb85d9e32155102d702f41f72ba429e2447efdf18ca6790a42478bd8",
+    "contracts/sync/v1/habit_recurrence_fact.schema.json": "691727d2fd9a43e8cc42ff4db89cc806af0a711af8f30c1a42fbad141ca7b380",
+    "contracts/sync/v1/reminder_intent_anniversary_fact.schema.json": "1ed82aa09a6c9b6e7e59c91c32c635b711b90e20960e0fec4f4ddb254d997d50",
+    "contracts/sync/v1/reminder_intent_event_fact.schema.json": "8fbce0d500004c3e2b547aa094996e3bf1cced398e9346661675f6a91878a9e2",
+    "contracts/sync/v1/reminder_intent_fact.schema.json": "77c1cc6ec60676ff5ee3b46f9f257988907c652b6f0619273288a98d69c16a7b",
+    "contracts/sync/v1/reminder_intent_habit_fact.schema.json": "7eec66a109073018f57045be62f6f25615467a151bb1698a58ef4d46864cf754",
+    "contracts/sync/v1/sync_fact.schema.json": "8ba48673eb9fcc2d65a8b6ffcee07a4877ec83297ce5e4eb07dd15d2bf20b74b",
+    "contracts/sync/v1/user_preferences_fact.schema.json": "b2546dab09ec0c7c151284e084b562025c538d02f565b66849baff54ab7160a8",
+    "cpp_core/include/excellent_calendar/storage/json/legacy_json_codec.hpp": "0284bc0a8c6ec8a0ca458f020bc3c5c92a40205bb1022f623b9e6d34aae2ac7f",
+    "cpp_core/src/storage/json/json_event_repository.cpp": "ddc5aa3350bae552ec424e8d4fc2541f17e9771f9d57ac59391b65305d3dcc0d",
+    "cpp_core/src/storage/json/json_notification_repository.cpp": "74e9acd7e004018653f071c993aa3cb937f25751c37cca4130a6a67f3bea166f",
+    "cpp_core/src/storage/json/json_reminder_repository.cpp": "3a119785d89ab0bc4d553e331b3ef78312c0f2f1b190dbaca8d1ff397f6ea16e",
+    "cpp_core/src/storage/sqlite/sqlite_calendar_database.cpp": "9b2b400e072f11bd2421b0bb363e34747488554bd5650981286a00f245c7d491"
+  }
+}

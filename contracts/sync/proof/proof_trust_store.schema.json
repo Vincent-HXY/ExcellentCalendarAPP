@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/proof/proof_trust_store.schema.json",
+  "title": "SyncV1 proof_trust_store",
+  "x-contract-domain": "sync_proof",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.1,7.6,8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "trust_store_id",
+    "keys"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "trust_store_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "keys": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key_id",
+          "algorithm",
+          "exponent",
+          "modulus_hex",
+          "verification_status"
+        ],
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "algorithm": {
+            "const": "rsa_pss_sha256"
+          },
+          "exponent": {
+            "const": 65537
+          },
+          "modulus_hex": {
+            "type": "string",
+            "pattern": "^[89a-f][0-9a-f]{511}$"
+          },
+          "verification_status": {
+            "enum": [
+              "trusted",
+              "revoked"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "x-exposure": "backend_and_kotlin_jni_cpp_only_never_flutter_event_or_diagnostics"
+}

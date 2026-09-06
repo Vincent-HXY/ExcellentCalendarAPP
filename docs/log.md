@@ -1730,3 +1730,213 @@
 - 继续条件：按原计划§4.1/§4.2接受ADR/依赖与兼容版本方案，并关闭实际spike门禁后再进入CT1–CT4；审批不替代测试。完整记录见`docs/plan/active/云同步-02-CT0审计与决策记录.md`。执行期间出现的其他任务Habit UI/测试及其他日志追加均保留，不归入本任务更改或验证结论。
 - 最终审阅补充（2026-09-05T12:40+08:00）：ADR-Sync-05 将 Anniversary 兼容建议具体化为保留 Native v2 定义、另立 Native v3 修订，覆盖写入/筛选/组合投影/缓存；解释了单独 sync projection 无法保护旧 reader 的原因。此为待接受提案，尚未变更任何协议版本或实现。CT0 15项反例复跑通过；新增29个文件的空白/文档链接/围栏检查通过。
 - 加密来源审计补充（2026-09-05T12:45+08:00）：固定SQLCipher core v4.18.0 commit 63697beb0fafcb61faa7a3e6fd267036548ab11b与SQLCipher LibTomCrypt fork 476a9579ae94f32b9ea9e2747bfb04b302370259，记录15份来源/构建说明/顶层许可文件的原始SHA-256；SQLCipher三条款、SQLite public domain及构建例外、LibTomCrypt public-domain/WTFPL双选项已初审。发现Android v4.18.0标签core gitlink e2a6040仍为SQLite3.53.1，与独立core标签3.53.4不同；已在ADR-Sync-03及CT0-C13记录，不能据AAR摘要/ABI链接宣称源码可重现或正式许可门禁通过。逐文件分发审查、源码构建和设备runtime仍未验证，产品依赖未变。
+
+
+## 2026-09-05 14:35（进行中）云同步-02 接受候选后的继续开发
+
+- Skill：calendar-data-contracts。负责 contracts/**、同步 ADR 与计划记录；本轮起点 HEAD 32b463d415ccc992b798be7f93ca1e1c6573cdc8，工作树原为干净，未修改产品业务代码。
+- 目标：在用户已接受 SQLCipher 原生 C 和保留 Native v2 的 Anniversary Native v3 修订后，自主完成云同步-02。七项 ADR 设计方向已登记；接受设计不等于冻结或实现完成。
+- 当前结果：固定 SQLCipher/LTC 源码重建，Windows/三 NDK-Bionic ABI QEMU-user/真实 arm64 Android 的真实加密文件与四点强杀恢复、临时文件、密钥错误、VFS磁盘不足注入通过；427文件来源清单及6份通知保留。发现并禁止OS RNG失败后provider时钟回退，未升级工具链/SQLite或引入产品依赖。
+- 准确性修复：扩展JCS数字边界发现Windows CRT舍入及原最短小数选择算法问题，已修复；64固定JSON、6非法UTF-8、20,000随机数和31,487系统边界在六个实际消费者环境bytes/hash一致，独立SHA KAT通过。明确QEMU-user与完整Android OS验证的区别。
+- 数据模型/兼容进度：26计数器owner/MAX注册，78 golden、52并发双写、26持久重放和26回滚案例通过；新建15个独立Native v3 Anniversary直接/传递Schema，28兼容向量及旧Anniversary结构回归通过。220份旧Contract及v4/v5节点未漂移。CT0相关29项测试通过。
+- 状态：任务仍进行中，未冻结。完整实体身份、field registry、HTTP/Native映射、v6/PG逻辑模型、Keystore/Backup、全target容量、20族fixture及四层revision/hash签署尚待交付。本条只记录已发生的进度，不报告整项完成；下一次最终验证后继续追加实际结果。
+
+### 2026-09-05 16:25 — 云同步 02 持续开发（CT1 / CT2 / CT3 草案）
+- Skill：calendar-data-contracts。负责模块：contracts/**、同步领域与计划文档；未修改生产业务代码。
+- 目标：在用户已接受 Native C 加密候选和 Native v3 Anniversary 兼容方向后，继续补齐 02 所要求的机器模型。
+- 结果：完成首批 12 target / 125 field 事实注册表与身份参考模型；新增 mutation、回执、normal/ack-only、下载组、bootstrap、import 与 Workspace/Session/Device/Retention 的严格 Schema 草案。新增 12 项真实 SQLite 事务参考测试，覆盖因果链、重放、部分合并、拒绝意图保留及 ack→apply 崩溃窗；模型明确不冒充 Backend/Native/完整导入引擎。
+- 验证：此前 16 项领域/身份测试、61 个领域固定用例和 Backend 93 单元 + 58 集成 + 39 HTTP 观测通过；本次 12 项协议参考测试通过。当前 420 个 Schema 的 Draft 2020-12 / ref closure 检查通过。新增 recurrence_revision 计数器及生命周期 Schema 的完整用例尚在补充，整体验证证据须在收尾时重新生成。
+- 限制：Contract 未冻结；原子依赖整图、完整能力图、SQLite v6 / PostgreSQL 模型、四语言消费与全部 FX-* 尚未完成。Android 手机仍未连接，最新 24 步 cipher 中新增二进制 key / bound-open 的实机结果未验证，Windows / 三 ABI QEMU 不替代实机。所有下游 production capability 继续 planned / blocked。
+
+
+### 2026-09-05 17:33 — 云同步-02 协议与逻辑存储继续开发
+
+- Skill：`calendar-data-contracts`。负责模块：contracts/sync、native_v3、storage、隔离参考程序及相关文档。目标：依原 02 计划完成强类型协议、v6/PG 模型并保护 Native v2 与 Storage v5。
+- 结果：planned 协议/生命周期/错误 Schema 176 个；Counter 27 个 owner；v6 独立追加 34 表/12 索引/65 triggers；PostgreSQL 35 表/125 字段映射。澄清原 20 表含 3 个元数据表，保护 v4/v5 节点 hash；基线仅比较精确历史投影，未重建原 220 项摘要。Search 新 history 文件移至 native_v3/search，旧目录 12 个 Schema 不变。用户已接受的两个方向未重复请求确认。
+- 验证：统一 drafts self-test 87/87 通过、429 Schema/ref closure、220 旧 Contract 保护；C++ 构建后测试 13/13 通过。SQLite 9 项测试及 113 个回滚点通过，调用未修改的生产 v5 checker；隔离 PostgreSQL 17.11 的 22 个约束用例、125 字段 catalog 映射、MAX 并发单赢家通过。账号加密完整图/Android v6/四语言消费及完整 owned graph/capability 仍未验证，默认冻结入口继续拒绝，不表示整项任务完成。
+
+### 2026-09-05 18:52 — 云同步 02：接口映射与边界复验
+
+- Skill：calendar-data-contracts。范围：contracts、同步领域/审计文档；未修改生产 Backend、Native、Flutter 业务实现。
+- 补充 Native v3 recurrence 安全整数/通知 workspace 兼容修订、29 个内部基础形状、107 个公开方法与 90 个内部调用的 planned 映射、18 个新增 HTTP 端点和三态中央权限矩阵。旧 220 个 Contract 通过历史投影保护；根注册表仅追加 planned 修订引用。
+- 已验证：12 项 capability 边界测试、6 项 Backend 修订测试；SQLite 最新 9 项/113 个回滚边界与 PostgreSQL 22 项用例通过。
+- 本次 Backend 全量复验：58 项集成测试中 RateLimitIT.loginIsThrottledPerIpAndEmailWithRetryHint 失败 1 项，期望 429、实际 401。日志显示请求开始于 18:46:59.909，测试结束于 18:47:00；现有 InMemoryRateLimiter 按整分钟 fixed window 分桶，测试三次请求跨窗口时会发生此结果。保留失败记录并复验，不以重跑抹去该测试稳定性问题；生产修复归 04。
+- 未完成/未验证：完整 owned graph、签名证明、导入/bootstrap 组合事务、四语言完整消费和真机新版本矩阵。默认冻结入口仍拒绝通过；正在继续开发。
+
+### 2026-09-05 19:06 — 云同步 02：统一回归与双 ABI 真机证据
+
+- Skill：calendar-data-contracts；负责 contracts / 同步模型与审计文档。继续按总计划保护旧边界，未改生产业务或升级依赖。
+- 结果：13 capability/43 protocol/112 unified draft tests 通过；934 Schema、220 旧 Contract、380 fixed/4 suite；Search/Calendar/Habit/Anniversary 全部回归通过。Backend 原 93 单元/58 集成/39 HTTP 重跑通过，前次 fixed-window 跨分钟失败保留记录。
+- 真机：RMX3687 API 33，arm64 与 armeabi-v7a 最新 24 步 SQLCipher 探针均通过；Windows/三 ABI QEMU 同步通过；427 源码/6 份 notice 再核验。
+- 验证限制：仍未冻结；完整 owned graph、签名/Keystore/backup、导入/bootstrap 组合事务和四语言全消费继续开发。x86_64 不是完整 Android OS 证据。
+
+### 2026-09-05 19:21 — 云同步 02：认证证明密码服务可行性
+
+- Skill：calendar-data-contracts；负责 contracts/spikes、签名格式草案；未修改生产密码服务或引入第三方依赖。
+- 采用平台既有 RSA-PSS SHA-256 / MGF1-SHA256 / salt32 / RSA2048-e65537 做隔离可行性验证。14 个固定验证输入不含私钥；Windows CNG C++、JDK 21、Android API 33 arm64/armeabi-v7a 的 JCA 与真实 JNI 六个 consumer 全部通过；三 ABI JNI 库成功构建，x86_64 未在完整 Android OS 运行。设备临时文件已精确清理。
+- 该结果仅证明密码原语与 JNI 适配，尚未证明 capsule、trust-store 轮换、claims/account/purpose/range/CAS 全部认证；新增 4 个独立 proof Schema 与协议草案，继续补充具体绑定验证。默认冻结门禁保持拒绝。
+
+
+### 2026-09-05 19:50 — 云同步 02 证明认证与事务绑定
+
+- Skill：calendar-data-contracts；模块：contracts/sync/proof、isolated C++/Java/JNI 与验证入口。
+- 结果：冻结候选 RSA-PSS/SHA-256、MGF1-SHA256、salt32、RSA2048/exponent65537；新增账号/用途/内容摘要绑定、严格 JCS capsule 与受信任密钥格式，保留所有 Native v2 定义。14 个密码原语用例在 6 个消费环境通过；45 个完整 capsule 用例在 Java、Windows C++、RMX3687/API33 的 arm64 与 arm32 C++/JNI 中逐项一致；12 项真实验签参与的 SQLite 绑定/原子收据测试通过。manifest 439 固定用例。
+- 边界：测试私钥仅在生成进程内存中，固定样例只有公开验签材料；未把 Hash 当作身份认证。完整导入 saga、Android 撤销记录持久化和 Backend 账号删除证据 producer 仍未验证；不标记 CONTRACT FROZEN 或激活产品能力。
+
+
+### 2026-09-05 21:02 — 云同步 02 真机密钥、原始 civil identity 与错误闭包
+
+- Skill：calendar-data-contracts；负责模块：contracts/isolated spikes、机器定义、验证入口；未修改产品 C++/Flutter/Kotlin/Backend 业务。
+- 真机结果：RMX3687/API33 的 arm64 与 armeabi-v7a 实际 APK 进程各完成 46 项（共 92 项）Keystore、二进制 JNI key、20,000 条 SQLCipher 数据、进程重启、APK 升级、crypto destroy、卸载重装、残留密文拒绝检查；测试包已经卸载。API23/24 和实际 cloud/D2D transport 均未执行；排除矩阵是已打包 XML/Manifest 的独立证据，未标为产品功能完成。
+- 遇到并修正的测试入口问题：OEM 安装确认可晚于 ADB timeout；结果字段解析遗漏数字；exec-out 不传入 stdin；设备忽略 ABI 安装选择而启动 64 位进程；Windows aapt2 ZIP asset 本地头路径分隔符及 resources.arsc 压缩要求。最终使用实际 process bitness 检查、独立 ABI APK、可恢复 phase journal、shell 非 PTY 精确长度传输；失败历史保留，未把错误 ABI 计为通过。新构建入口 build-only 通过，Dex 和三 ABI JNI 与已执行载荷完全一致。
+- 原始 occurrence 身份：15 个固定用例使用未修改的实际 Core/TZDB 验证，覆盖 DST gap/fold、半小时偏移、Apia 跳日同 UTC 不同 key、月末/闰日和拒绝边界；不宣称 legacy v1 转换或 Native v3 宽计数 runtime 完成。
+- 错误闭包：新草案仅允许明确的 Backend 错误和 Backend counter context；平台、鉴权、存储、协议请求错误不进入 failed-local；逐项 rejected 增加与 code 对应的严格 failure_context，ack 参考事务保留该 context。46 项协议/生命周期测试、13 项 capability 测试、12 项真实证明接纳测试通过；存储 9 项/113 回滚边界与 PostgreSQL 22 项重跑通过。
+- 状态：500 fixed/4 generated suite；正在执行统一自测，尚未冻结 CT0–CT4；220 项旧 Contract 和 v5 历史摘要继续受保护。
+
+
+### 2026-09-05 21:59 — 云同步 02 旧数据与 owned graph 验证
+
+- Skill：calendar-data-contracts；模块：contracts 的隔离参考模型、机器定义、fixtures/validator 与相关文档；产品业务代码未改动。
+- 结果：真实 Core v1→v4→v5 迁移和只读投影 19 个合成库场景通过；旧 ID 逐字编码到独立 legacy 命名空间，UUIDv4 映射耐久重放，未知时区/缺失规则/悬空提醒等整批拒绝且源保持不变。4 项 legacy 单元与新增字段/图边界合计 domain 22 项通过。
+- owned graph：4 项测试、7 个固定场景及 4 个真实 SQLite 回滚点通过；同 revision 不同规则内容保留整个 schedule component，独立标题可合并；根实体/规则/提醒原子发布、响应丢失后准确重放，orphan/递归依赖拒绝。完整 child causal 与 transport 组合仍未验证。
+- 校准：新 Sync UUID 限定 canonical 小写，既有 v2 与 opaque 弱分类引用不变；打卡单位快照改为沿用现有领域的 32 字符，校验目标/单位快照、有效结束日与 owner lifecycle；failed-local 状态统一为总计划的 superseded_pending。公开/内部 DTO 分别命名，设备改名回显 route，习惯通知 action 强制 workspace identity，保留原有四类事件并增加同步/工作区事件。
+- 验证：统一 drafts 自测 149 项通过，945 Schema、526 fixed/4 generated suite、220 protected；四个旧领域验证器全部通过。协议 46、capability 17、存储 9/113 与 PostgreSQL 22、45 个完整 proof capsule 在 Java/Windows C++/Android arm64/arm32 重新通过；报告源码摘要检查无过期，git diff --check 通过（仅现有 CRLF 提示）。测试中两处错误 fixture（非法 recurrence interval、提前结束却保持 active）修正为领域合法输入后再验证，未放宽旧规则。
+- 尚未完成：import commit typed terminal、完整 import/bootstrap/failed-local/maintenance 参考闭环与四语言消费、最终共同 revision/hash；保持 CT0–CT4 partial，未签署 CONTRACT FROZEN，未激活产品。
+
+
+## 2026-09-05 23:11 — 云同步-02 游标、严格导入终态与 bootstrap 原子性
+
+- Skill：calendar-data-contracts。负责 contracts/** 与同步模型/计划文档，继续用户已授权的 Contract 开发；无生产业务代码、历史迁移或工具链变更。
+- 目标与结果：新增 Backend 私有 HMAC 游标格式及签发范围保留模型；Java/Python 33 个固定用例字节与错误结果一致。PostgreSQL 新增非敏感签发范围表，禁止过早删 key usage、bootstrap identity/item 原位变化，36 个数据库约束用例通过。
+- 严格终态：import commit 成功与 repair 拒绝携带独立必要证据；duplicate 外壳与原回执、mutation、完整 per-key 结果相互绑定。本机 ack 增加持久 device binding。发现并修复参考模型的确认水位过早推进：此前收到 effect 回执即可确认，现等待准确 group/末序号原子应用，避免 Backend 提前回收恢复证据；重启、错设备、错序号和回滚均有测试。
+- Bootstrap：HTTP/Native/SQLite/PostgreSQL planned identity 补齐总条目数、完整条目摘要、页数与固定 page limit，精确 hash 算法进入机器文件。7 项测试涵盖 10 固定场景、六类 union、500 条分页、重复/乱序/漏页、固定上界/TTL/MAX、provenance 保留与 fresh 确认恢复。10 个 named write boundary 均通过真实子进程无清理退出并重开检查，未发布半份图。
+- 验证：统一草案 self-test 167/167 PASS（241.973 秒），946 Schema、220 旧基线、583 fixed + 4 suite；协议 51/208 schema/96 fixed，SQLite 9/113 回滚点，PostgreSQL 36 用例。Search/Habit/Calendar/Anniversary 四个旧 validator 均 PASS，git diff --check PASS（仅既有换行提示）。报告 source hash 与 gate evidence 已更新到实际执行结果。
+- 剩余工作：bootstrap 单独组件对非空 pending/failed/effect gate 明确返回需要组合重放，不能冒称该部分完成；import saga/发布、Habit operation、完整 child causal、冲突解决、四语言适用 fixture 消费及下游 revision/hash 锁仍需闭合。状态保持 CT0–CT4 PARTIAL / DECISION REQUIRED，尚未 CONTRACT FROZEN。
+
+## 2026-09-05 23:33 — 云同步-02 后端完整请求/DTO 校准
+
+- Skill：calendar-data-contracts。模块：contracts 的 Backend 校准探针、验证器与同步 ADR。
+- 结果：JVM 探针核对 17 个 HTTP 声明、16 个 Controller、24 个已编译 DTO 的全部字段和嵌套 Bean Validation/容器约束；绑定旧/目标 Schema 完整引用闭包、每个声明错误及 HTTP 状态、幂等规则与 39 个已执行 HTTP 观测。无新请求实例、应用上下文或外部服务写入。
+- 差异处置：Java String @Size 的 UTF-16 单元上限与 Contract Unicode code point 不同；04 的同版严格绑定修订须同时调整旧窄限制。unknown key、scalar coercion、nullable/union、profile/preferences owner、request digest 和缺少的错误 producer 均有明确目标处置，旧 Contract 不改。
+- 验证：backend_shape_audit_result PASS，17/24 完整；针对遗漏端点、嵌套 ref、处置与反射字段的负例测试 PASS。统一草案静态入口 PASS，220 旧定义/946 Schema 保持；最近完整 self-test 为 23:11 的 167 项，新增校准负例另运行 1 项，不冒称已重新跑完整 168 项。
+- 门禁范围校正：CT0 encryption/identity/backend 审计已通过；账号完整生产组合、child causal transport、Backend 修复依照 02 §18 分属后续实现/组合验收，不再错挂为 CT0 可行性决策。Android backup/两目标恢复 fixture 矩阵继续补齐，CT1–CT4 与 Contract freeze 仍未完成。
+
+
+## 2026-09-05 23:48 — 云同步-02 备份策略矩阵与并行 Contract 冲突
+
+- Skill：calendar-data-contracts。完成 25 类合成数据、API23/24/30/31/33 cloud/D2D XML 分支及同源两目标策略 fixture，共 11 固定场景、4 项测试 PASS；额外负例逐项删除 18 个 modern 域排除条目，能检测 guest 文件变为可导出。旧身份复用与未经允许的 guest re-home 拒绝。无实际云备份/OEM迁移/API23或24 OS执行声明，生产 restore owner 未实现。
+- CT0 范围：按 02 §4.2 的 fixture 与 §18 的实现边界，现状/候选/备份材料已齐；API33 双 ABI 92 项实际 APK 证据独立保留。整项任务尚未冻结。
+- 新冲突：173 项 self-test 运行期间出现非本任务 Appearance/字体改动，两个既有 v2 Schema 新增 display，另增加 display_preferences.schema.json 及多处 Flutter 字体代码。HEAD 仍为 32b463d415ccc992b798be7f93ca1e1c6573cdc8。原 220 定义保护测试和关联 field registry fingerprint 测试失败，实际为 171 PASS / 2 FAIL；随后的 --stage ct0 也正确拒绝旧定义漂移。不能使用该运行最初的 946 Schema/220 PASS 静态输出冒充结束时工作区通过。
+- 处置：保留非本任务改动，旧基线不重建；按用户“保留旧 Contracts”指令及 AGENTS §7 记录具体冲突，已异步询问是否来自并行字体任务。相关整体兼容门禁暂停，继续独立的同步 Contract 工作；当前文件数新增到 947 Schema 是外观修改带来的状态，不是本任务新增一个同步 Schema。
+
+## 2026-09-06 00:47 — 云同步 02 持续开发：Habit operation 与隔离验收
+- Skill：calendar-data-contracts。
+- 负责模块：contracts/sync、contracts/storage、contracts/spikes/sync_v1、相关 fixtures/tests 与同步领域/审计文档。
+- 目标：按总计划 01 §9.3 和 02 §7/10/11 完成 Habit 打卡增量、去重、clear/replace 屏障及持久化边界，保护旧 Contract。
+- 结果：原并行 Appearance/Flutter/Kotlin 修改保留；已在 codex/cloud-sync-02-contracts 工作副本继续。隔离基线 173 tests/946 schemas/220 protected 全通过。新增 Habit 操作规则、typed error 生产范围/私有 context、公有脱敏投影、29 个固定场景、operation ledger/barrier 与五个实际进程退出点；源 v2/v5、历史 migration、生产业务代码未改。
+- 已验证：Habit 11 项测试、29 fixed、5 实际强杀点；Protocol 51 项/208 schemas/96 fixed；Storage 9 项/115 回滚点、PostgreSQL 38 新表/125 字段/48 约束用例；Capability 17 项、Owned graph 4 项、Bootstrap 7 项/10 实际强杀点。45 capsule 在 Java/Windows C++/Android arm64+arm32 再次输出一致并清理测试目录。fixture manifest 为 635 fixed/4 generated suites。
+- 验证状态：总入口 ct0+self-test 正在运行，尚未记录本轮全套通过。仍为部分完成/DECISION REQUIRED；后续继续 pending/failed/effect 重放、owned child 因果组合、完整 import、冲突/maintenance 与四语言消费/冻结。原工作目录的字体兼容差异留待整合复核，不通过修改基线掩盖。
+
+
+## 2026-09-06 00:52 — 云同步 02 本轮统一复验通过
+- Skill：calendar-data-contracts；模块：同步 Contract、逻辑存储与隔离验证。
+- 目标/结果：Habit operation 组件闭合后复验现有全部证据，仍按部分完成管理。
+- 实际验证：隔离副本 `run_sync_v1_validation.py --stage ct0 --self-test` 185 项通过（266.754 秒），946 Schema、220 受保护 Contract、635 fixed/4 generated suites；Search 31、Habit 46+4 identity、Calendar 19、Anniversary 58+20 identity 全通过；`git diff --check` 通过。
+- 边界：这些是 Contract/隔离参考模型证据；没有宣称生产同步、多设备集成、完整 pending/import 状态机或 CONTRACT FROZEN 完成。继续实现下载/bootstrap 下本机意图与回执恢复。
+
+### 2026-09-06 01:46 云同步 02：本机意图与下载/重建组合验证
+- Skill：calendar-data-contracts；模块：contracts/sync、contracts/spikes/sync_v1、contracts/tests 与同步模型文档。
+- 目标：补齐 pending / failed-local / effect-gate 在普通下载、全量重建及重启下的原子恢复，不改变旧 Contract 或生产业务代码。
+- 结果：隔离工作树完成冻结 journal、准备请求绑定、普通 typed group/page 原子应用和 bootstrap 重投影；发送后回执丢失时保留原请求/草稿，真实 Habit 500+100 在普通下载与重建恢复后均为 600。旧库不得凭 server confirmed 跳过本地缺失回执，已 resolved 冲突不会被迟到 created 重新打开，field version 倒退与错配响应均零写拒绝。
+- 验证：local-intent 29 项测试 / 8 固定历史 / 18 实际进程退出点 PASS（111.938s）；独立 bootstrap 7 项 / 10 固定历史 / 10 实际进程退出点重新 PASS（181.551s）；fixture manifest 为 643 fixed / 4 generated suites。新的统一 CT0 + self-test 正在执行，尚不宣称通过。
+- 状态：本计划继续部分完成；导入发布、完整 resolution writer、owned-child causal 组合与四语言消费仍待验证。修改位于 A:/calendar/ExcellentCalendarAPP-sync-contracts，尚未将后续隔离开发集成回原工作区；保留用户并行字体/外观修改。
+
+### 2026-09-06 01:59 云同步 02：215 项统一验收检查点
+- Skill：calendar-data-contracts；模块：同步 Contract / 模型 / 隔离验证。
+- 目标与结果：完成本机意图、普通下载和 bootstrap 的组合恢复证据登记，继续保护 Native v2 和冻结 SQLite v5。
+- 验证：run_sync_v1_validation.py --stage ct0 --self-test 实际 PASS，215 tests / 418.912s；946 schemas / 220 protected contracts / 643 fixed fixtures / 4 generated suites；git diff --check PASS。各报告对应源码哈希由实际 runner 生成，门禁仍为 CT0_AUDIT_ONLY_NOT_FROZEN。
+- 剩余：完整冲突解决、导入、owned-child 因果组合、四语言消费及最终工作区集成；不能把本检查点解释成整份计划已完成或生产功能已接入。
+
+
+## 2026-09-06 12:10 云同步-02：冲突解决与通知组合验证（继续开发，未冻结）
+
+- Skill：calendar-data-contracts。模块：contracts/sync、fixtures、isolated spikes/tests 及同步领域说明；本次没有修改生产业务代码。
+- 结果：root 冲突解决 16 项测试/8 个固定场景/5 个实际强杀点通过；新增通知 journal 与 ordinary download/bootstrap 同事务组合，9 项测试/6 个固定场景/14 个实际强杀点通过，包含迟到/重复、并发领取、响应丢失、MAX 和 bootstrap 续接未通知发现集。
+- 容量：实际运行 1,000,000 个通知窗口和领取，每 1,000 个窗口一批提交，共 1,000 次提交；最终通知/成员/窗口/discovery 均为零行，checkpoint 后数据库 36,864 bytes。该容量实验不等于百万次独立 fsync，也不认证产品 UI。
+- 复验：手机重新连接后，45 个证明 capsule 在 Java21、Windows CNG C++、真实 Android arm64/arm32 结果一致；SQLite 9 项/115 迁移回滚点和 PostgreSQL 48 约束通过；bootstrap 7 项/10 强杀、本机意图 29 项/18 强杀复跑通过。Docker 启动曾因遗留零字节 IPC 文件失败；保留原文件目录，用户修复无权限目录并重启后数据库复验成功，未改容器数据。
+- 当前清单为 657 fixed/5 generated suites，24 份证据摘要已核对；统一 ct0+self-test 正在执行，本条不宣称其已经通过。
+- 状态：CT0–CT4 PARTIAL / DECISION REQUIRED；尚需 owned child 因果与 resolution 组合、完整 import、四语言消费、capability/error 闭包和最终同版锁定。原并行 Appearance 修改保持原样，整合回原工作副本仍待完成。
+
+
+## 2026-09-06 12:15 云同步-02：243 项统一验收检查点
+
+使用 calendar-data-contracts Skill，负责同步 Contract/参考模型。`run_sync_v1_validation.py --stage ct0 --self-test` 实际 243 项测试通过（452.904s），946 Schema、220 protected Contract、657 fixed/5 generated suites；24 份已登记证据与来源摘要一致，diff whitespace 检查通过。本检查点不认证尚在开发的 owned sequence 组合，也不表示完整计划完成、Contract 冻结或生产能力激活；后续修改须复跑受影响证据。
+
+### 2026-09-06 12:54 云同步-02 owned 因果组合与冲突候选复核（继续开发，未冻结）
+- Skill：calendar-data-contracts；模块：contracts/、同步领域与计划审计。
+- 目标：保持旧 Contract，补齐主对象/子项连续写与 resolution 的真实参考验证。
+- 结果：owned sequence 组件历史执行 12 项/7 fixed/7 实际强杀通过；manifest 新增 7 场景至 664 fixed。新建 planned owned 规则；未发布子项的 server candidate 增加严格 absent 分支，原 v2 不变。新增 resolution-only 候选非法错误和只读/Habit 历史保护；owned resolution 正在测试。
+- 验证：12:15 的 243 项统一检查仍是上一个完整检查点。本次公共 helper/schema 已更新，相关源摘要需实际复跑；当前不能以旧报告宣称新草案已通过。导入、四语言、同版锁定及原工作区整合仍未完成。
+
+### 2026-09-06 13:44｜云同步-02：导入暂存与统一校验继续推进（未完成）
+
+- Skill：calendar-data-contracts；负责模块：contracts/** 的隔离协议 reference、fixture/validator 与同步领域文档。
+- 目标：按总计划和 02 计划闭合协议与数据模型，保留旧 Contract 和用户并行字体修改。
+- 本轮已完成：统一 ct0+self-test 278 项测试（1025.813 秒）、946 Schema、220 受保护旧 Contract 通过；26 份已登记证据在该轮启动时均为实际复跑后的新鲜结果。Owned sequence 12 项、owned resolution 11 项、root resolution 19 项，手机 45 项证明用例两个架构与 Java/Windows 一致，SQLite/PostgreSQL 复验通过。
+- 导入新增验证：初始 staging/commit 的 6 项测试（47.351 秒）通过，含 6 个真实进程退出恢复点；摘要/分块独立测试已有一次 6 项通过。新增下载端跨页可见性测试尚在运行，未计入上述 278 项。
+- 限制与后续：统一测试退出时 Python 临时目录清理遇到 storage_v5_probe.exe 的 Windows 异常，需修复资源收尾并复验。正在扩展导入下载、双库 lease、修复/范围关闭和退休清理；四语言消费、同版锁定和原工作区最终整合仍未完成。后续共享 reference 修改将要求更新受影响证据，不以历史通过代替当前通过。保持 DECISION REQUIRED、implementation_allowed=false，不宣称冻结或产品实现。
+
+### 2026-09-06 15:45｜云同步-02：设备/数据库恢复与导入后继验证（继续开发，未冻结）
+
+- Skill：calendar-data-contracts；负责模块：contracts/** 的隔离参考模型、Schema、逻辑存储与相关验证。
+- 目标：在保留 Native v2、Storage v5 与并行字体修改的前提下，继续完成 02 计划的导入与跨语言验收。
+- 本轮验证：手机证明验签 45 用例在 Java/Windows/Android arm64/arm32 结果一致，摘要 70ddd7d8f4243ccec7e976ac4dae5af9c058422260f4c79e49d0af2454d518cb；Docker 恢复后 PostgreSQL 52 用例及 SQLite 9 项/118 回滚边界通过。随后 v6 新增服务器状态缓存列，该存储报告须再次复跑，不作为当前版本已验证证据。
+- 导入组件：cleanup 8 项（88.150 秒）、status 5 项（23.424 秒）、后继图 5 项（23.822 秒）实际通过；cleanup 包含 9 个真实进程退出点。后继图覆盖持久 ID 映射、完整历史删除集合、旧发布记录不变、已消费失败后的修复和云端字段冲突与独立合并。后继发布的强杀恢复等组合仍在补充。
+- 跨语言：C++/Java 21/Kotlin 2.2.20/Dart 各 389 个 Schema 边界用例通过，四者输出摘要均为 0539732cb652e76ce74fed7405e3324ed79ef7471b915fa4916baa8d36764dfb；该范围不等同全部 FX 家族已闭合，也未计入新的统一检查。
+- 进行中及限制：20k/50k 完整组合图容量测试仍运行，20k 已暂存至末尾，最终发布校验耗时正在分析；新增组件尚需登记 fixture/报告与统一回归。当前修改在 A:/calendar/ExcellentCalendarAPP-sync-contracts 隔离工作副本；原工作区字体改动未覆盖。后续同版锁定、最终整合和全计划冻结仍未完成，保持 implementation_allowed=false。
+
+
+### 2026-09-06 16:48 +0800 云同步-02：组件复验与后继双库恢复（继续开发）
+
+- Skill：calendar-data-contracts。负责 contracts/docs 隔离工作副本；保持生产代码、Native v2 与 SQLite v5 冻结定义不变。
+- 目标：复验共享 Schema/删除锚点/导入状态修正，补齐整图后继导入的本机双库 lease 与清理组合。
+- 已执行：38 组共 288 项回归，287 项通过，1 项为 Native v3 导入状态派生文件未重生成；同步生成后该组 17 项全部通过。Java/Windows C++/Android 真机 arm64、armv7 各 45 个 capsule 验签用例结果一致。17 份组件报告全部实际复跑通过；其中 SQLite 9 项/118 回滚边界，PostgreSQL 52 个实际数据库用例；四语言各 389 个 Schema/round-trip 边界一致。
+- 容量：再次实际发布 20,000 与 50,000 条十类组合事实，分别 40/100 个分块，全部 mapping 与实际 receipt 完整。没有把 opaque 行数替代业务图。
+- 验收门禁新增导入组件、容量与四语言边界报告检查及缺用例/缺消费者/缺强杀点/越界宣称负例。一次 validator 中 target 字符串校正导致 import_saga/import_capacity 两份源码绑定过期，须再复跑，未手工改写报告 source hash。其余报告当前源码扫描无过期项。
+- 正在开发：FullGraphAccountImport/FullGraphGuestImport 双库整图后继、旧 lease 恢复、当前源对象计数和历史 delete 清理，尚处新组合测试阶段；新增 guest replacement journal 的正式 v6 映射仍待补齐。
+- 状态：部分完成，未执行本轮最终统一门禁；不宣称 CONTRACT FROZEN、全生命周期完成或下游生产激活。原工作区字体修改保持原样，最终整合未完成。
+
+### 2026-09-06 同步 02：完整导入及 fresh 恢复继续验证
+- Skill：calendar-data-contracts；模块：Contracts、v6 / PostgreSQL 逻辑模型、隔离 reference 与验收测试。
+- 目标：保留旧 Native v2 / SQLite v5 定义，闭合双库导入与账号缓存丢失后的恢复边界。
+- 结果：完整导入 8 项测试实际通过（79.245 秒，8 个进程强杀点）；fresh 恢复 6 项测试实际通过（51.006 秒，5 个进程强杀点），覆盖已发布回执丢失、未上传 gap、旧 origin 撤销、伪造证明、reserved successor 缓存丢失及完整 bootstrap / ack 门禁。后续新改动仍须统一复验。
+- 存储复验：SQLite 11 项 / 128 个回滚边界、PostgreSQL 66 个真实用例通过；planned v6 新增 37 张表，PostgreSQL 新增 40 张表。220 个旧定义保护基线不修改。
+- 验收状态：仍为部分完成；策略持久化 / maintenance、剩余四端消费、源哈希统一证据及原工作区整合未闭合，不标记 CONTRACT FROZEN，不激活产品实现。
+
+
+## 2026-09-06 18:47 云同步-02 Contract 与数据模型完成
+
+- 使用 Skill：calendar-data-contracts。
+- 负责模块：contracts、同步领域/ADR/计划与隔离参考验证；无产品 C++/Dart/Kotlin/Backend 业务代码变更。
+- 任务目标：严格完成云同步-02，保护既有 Contract，落实已接受的 SQLCipher 原生 C 与独立 Native v3 修订。
+- 结果：同步工作副本 `A:/calendar/ExcellentCalendarAPP-sync-contracts` 的默认入口通过，CONTRACT FROZEN；revision `cloud-sync-v1-contracts-2026-09-06`，SHA-256 `e3229e43a9ef29584ffc625c28cf371c13136da05d054f93599a261145ef04e2`。03–06 输入已锁定，新增产品能力仍 planned。
+- 验证：951 Schema/220 protected、717 fixed/9 suites、四端 1,308 项、43 门禁回归、26 恢复组合、53 导入组件、20k/50k 容量、SQLite 128 回滚点、PostgreSQL 70 用例、Android 49 证明用例通过；四个原领域 validator 通过。依用户要求省去未受影响的重复全量产品构建，保留原始通过记录，没有声称本轮重跑。
+- 交付边界：原工作副本字体/外观修改保留，未合并入冻结输入。详情见同步工作副本 `docs/plan/active/云同步-02-冻结验收与交付记录.md`。
+
+
+## 2026-09-06 19:10 +0800 云同步-02 成果同步至 HXY（整合中）
+
+- 使用 Skill：calendar-data-contracts；模块：contracts、同步领域、ADR、计划与交付文档。
+- 任务目标：按用户明确要求，将已冻结的 Plan 02 成果同步进入 HXY 分支，保护暂停的字体/外观开发。
+- 当前结果：已将同步专属内容同步到 HXY 工作目录并准备独立提交；33 个其他任务文件按原字节保留，4 条其他任务日志保留为未提交内容，历史日志仅追加。
+- 验证状态：准备从暂存内容导出独立快照，核验冻结修订、历史 Contract 与证据来源；不重复已经通过且源码未变的耗时实验。字体任务的两份旧 Appearance Schema 扩展不计入本次提交，本次不声明混合工作目录通过冻结校验。
+
+
+## 2026-09-06 19:16 +0800 云同步-02 HXY 整合验收通过
+
+- 使用 Skill：calendar-data-contracts；负责模块：本次同步 Contracts、逻辑模型、隔离验证与交付文档。
+- 任务目标与结果：将 Plan 02 的冻结成果独立提交到 HXY；保留 33 个字体/界面等其他任务文件的原始内容，4 条其他任务日志继续保留为未提交修改，未合入其他任务代码。
+- 必要交付补充：干净暂存快照首次校验发现 `cpp_core/third_party/tzdata/2026c/Makefile` 被全局 Makefile 忽略规则漏收。该文件是既有时区实验报告记录的原始上游输入，本次仅纳入版本管理，内容及证据摘要一致；没有改动 C++ 业务实现、构建配置或升级依赖。
+- 验证：从本次暂存树导出的独立快照运行 `contracts/run_sync_v1_validation.py` 实际通过，返回 CONTRACT FROZEN、220 protected Contracts、951 Schema、5 runtime fixtures、17 Backend 声明/16 Controller、13 canonical integrity checks；全部实验报告来源摘要匹配。Contracts 与已冻结开发副本内容一致，沿用其已通过实验，不重复构建或运行耗时容量/设备测试。
+- 差异检查：本次编写的文件通过空白检查；5 份上游许可证/版权声明的 6 处原始空白提示保持原样，未修改来源文件或其摘要。
+- 验收边界：本次通过的是 HXY 提交内容的快照；工作目录仍保留字体任务修改的两份旧 Appearance Contract，其兼容调整未由本次完成，也不声明混合工作目录通过冻结校验。无远程推送。

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/session_get_access_token_request.schema.json",
+  "title": "SyncV1 session_get_access_token_request",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "minimum_validity_seconds",
+    "rejected_access_token_generation"
+  ],
+  "properties": {
+    "minimum_validity_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 900
+    },
+    "rejected_access_token_generation": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  }
+}

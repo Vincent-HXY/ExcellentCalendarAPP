@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/session_reauthenticate_request.schema.json",
+  "title": "SyncV1 session_reauthenticate_request",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "password",
+    "purpose",
+    "target_device_id"
+  ],
+  "properties": {
+    "password": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "x-sensitive": true,
+      "writeOnly": true
+    },
+    "purpose": {
+      "const": "device_revoke"
+    },
+    "target_device_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    }
+  }
+}

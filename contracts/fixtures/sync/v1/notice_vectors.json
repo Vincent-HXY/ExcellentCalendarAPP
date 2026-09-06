@@ -1,0 +1,150 @@
+{
+  "fixture_version": 1,
+  "scope": "isolated durable notice journal histories, with separate typed apply composition tests",
+  "cases": [
+    {
+      "id": "FX-CONFLICT-NOTICE-NET-ZERO",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/8.2,10,13",
+      "input": {
+        "steps": [
+          "begin",
+          "create_a",
+          "resolve_a",
+          "terminal"
+        ]
+      },
+      "expected": {
+        "unresolved": 0,
+        "queue": 0,
+        "next_sequence": 1,
+        "last_claimed": 0,
+        "exhausted": false,
+        "claim_disposition": null
+      }
+    },
+    {
+      "id": "FX-CONFLICT-NOTICE-LATER-B-SURVIVES-OLD-CLAIM",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/8.2,10,13",
+      "input": {
+        "steps": [
+          "begin",
+          "create_a",
+          "terminal",
+          "begin",
+          "create_b",
+          "terminal",
+          "claim_a",
+          "claim_a"
+        ]
+      },
+      "expected": {
+        "unresolved": 2,
+        "queue": 1,
+        "next_sequence": 3,
+        "last_claimed": 1,
+        "exhausted": false,
+        "claim_disposition": "no_longer_actionable"
+      }
+    },
+    {
+      "id": "FX-CONFLICT-NOTICE-RESOLVED-HEAD",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/8.2,10,13",
+      "input": {
+        "steps": [
+          "begin",
+          "create_a",
+          "terminal",
+          "begin",
+          "resolve_a",
+          "terminal",
+          "claim_a"
+        ]
+      },
+      "expected": {
+        "unresolved": 0,
+        "queue": 0,
+        "next_sequence": 2,
+        "last_claimed": 1,
+        "exhausted": false,
+        "claim_disposition": "no_longer_actionable"
+      }
+    },
+    {
+      "id": "FX-CONFLICT-NOTICE-MAX-CONTINUES-DOWNLOAD",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/8.2,10,13",
+      "input": {
+        "steps": [
+          "maximum",
+          "begin",
+          "create_a",
+          "terminal",
+          "begin",
+          "create_b",
+          "terminal",
+          "claim_a"
+        ]
+      },
+      "expected": {
+        "unresolved": 2,
+        "queue": 0,
+        "next_sequence": null,
+        "last_claimed": 9007199254740991,
+        "exhausted": true,
+        "claim_disposition": "claimed"
+      }
+    },
+    {
+      "id": "FX-CONFLICT-NOTICE-BOOTSTRAP-CARRIES-UNNOTIFIED",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/8.2,10,13",
+      "input": {
+        "steps": [
+          "begin",
+          "create_a",
+          "bootstrap",
+          "terminal"
+        ]
+      },
+      "expected": {
+        "unresolved": 1,
+        "queue": 1,
+        "next_sequence": 2,
+        "last_claimed": 0,
+        "exhausted": false,
+        "claim_disposition": null
+      }
+    },
+    {
+      "id": "FX-CONFLICT-NOTICE-KNOWN-IS-NOT-NEW",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/8.2,10,13",
+      "input": {
+        "steps": [
+          "known_a",
+          "begin",
+          "create_a",
+          "terminal"
+        ]
+      },
+      "expected": {
+        "unresolved": 1,
+        "queue": 0,
+        "next_sequence": 1,
+        "last_claimed": 0,
+        "exhausted": false,
+        "claim_disposition": null
+      }
+    }
+  ],
+  "capacity": {
+    "windows": 1000000,
+    "windows_per_commit": 1000,
+    "maximum_live_queue_rows": 1,
+    "maximum_live_members": 1,
+    "retained_terminal_discovery_rows": 0
+  }
+}

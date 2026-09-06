@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/device/method_revoke_device_response.schema.json",
+  "title": "SyncV1 method_revoke_device_response",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registration_outcome",
+        "revocation"
+      ],
+      "properties": {
+        "registration_outcome": {
+          "const": "not_applicable"
+        },
+        "revocation": {
+          "$ref": "https://excellent-calendar.local/contracts/device/device_revocation_response.schema.json"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registration_outcome",
+        "revocation",
+        "workspace_state"
+      ],
+      "properties": {
+        "registration_outcome": {
+          "const": "registered"
+        },
+        "revocation": {
+          "$ref": "https://excellent-calendar.local/contracts/device/device_revocation_response.schema.json"
+        },
+        "workspace_state": {
+          "$ref": "https://excellent-calendar.local/contracts/workspace/workspace_state_response.schema.json"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registration_outcome",
+        "revocation",
+        "registration_pending"
+      ],
+      "properties": {
+        "registration_outcome": {
+          "const": "still_limited"
+        },
+        "revocation": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/device/device_revocation_response.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "registration_pending": {
+          "const": true
+        }
+      }
+    }
+  ]
+}

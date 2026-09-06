@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "completed",
+        "skipped",
+        "cancelled"
+      ]
+    },
+    "state_changed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reopened_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "minProperties": 1,
+  "dependentRequired": {
+    "status": [
+      "state_changed_at",
+      "reopened_at"
+    ],
+    "state_changed_at": [
+      "status",
+      "reopened_at"
+    ],
+    "reopened_at": [
+      "status",
+      "state_changed_at"
+    ]
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/v1/event_occurrence_state_patch.schema.json",
+  "title": "SyncV1 event_occurrence_state patch",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.2,7.7"
+}

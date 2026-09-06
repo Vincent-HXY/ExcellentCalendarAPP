@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_hashed_mutation.schema.json",
+  "title": "SyncV1 sync_hashed_mutation",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.1,7.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mutation",
+    "payload_hash"
+  ],
+  "properties": {
+    "mutation": {
+      "$ref": "https://excellent-calendar.local/contracts/sync/sync_mutation.schema.json"
+    },
+    "payload_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

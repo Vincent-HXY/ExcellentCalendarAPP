@@ -26,8 +26,8 @@ def run(command: list[str], payload: bytes | None = None) -> bytes:
     return result.stdout
 
 
-def measure(command: list[str], vectors: list[dict]) -> dict:
-    lines = run(command, ("\n".join(v["input_json"] for v in vectors) + "\n").encode()).decode().splitlines()
+def classify(output: bytes, vectors: list[dict]) -> dict:
+    lines = output.decode().splitlines()
     if len(lines) != len(vectors):
         raise AssertionError("Probe did not return exactly one result per input")
     results = []
@@ -35,6 +35,19 @@ def measure(command: list[str], vectors: list[dict]) -> dict:
         expected = "ERROR" if vector.get("expected_error") else "OK\t" + vector["canonical_utf8_hex"]
         results.append({"id": vector["id"], "matches_jcs": actual == expected, "actual": actual})
     return {"status": "compatible_sample_only" if all(r["matches_jcs"] for r in results) else "not_jcs", "cases": results}
+
+
+def measure(command: list[str], vectors: list[dict]) -> dict:
+    return classify(run(command, ("\n".join(v["input_json"] for v in vectors) + "\n").encode()), vectors)
+
+
+def device_file_input(adb: str, remote: str, build: Path, body: bytes, argument: str = "") -> bytes:
+    # adb exec-out does not reliably propagate pipe EOF to a read-until-EOF
+    # native process. A synthetic file gives the process a real EOF.
+    local = build / "android-probe-input.txt"
+    local.write_bytes(body)
+    run([adb, "push", str(local), remote + ".input"])
+    return run([adb, "exec-out", f"{remote} {argument} < {remote}.input"])
 
 
 def main() -> int:
@@ -97,8 +110,9 @@ def main() -> int:
                 try:
                     run([args.adb, "push", str(binary), remote])
                     run([args.adb, "shell", "chmod", "700", remote])
-                    report["consumers"]["android_" + abi] = measure([args.adb, "exec-out", remote], vectors)
-                    android_hashes = run([args.adb, "exec-out", remote, "--sha256"], ("\n".join(messages) + "\n").encode()).decode().splitlines()
+                    body = ("\n".join(v["input_json"] for v in vectors) + "\n").encode()
+                    report["consumers"]["android_" + abi] = classify(device_file_input(args.adb, remote, build, body), vectors)
+                    android_hashes = device_file_input(args.adb, remote, build, ("\n".join(messages) + "\n").encode(), "--sha256").decode().splitlines()
                     if android_hashes != expected_hashes:
                         raise AssertionError(f"SHA-256 KAT failed on {abi}")
                     report["android_builds"][abi].update(executed=True, sha256_kat_passed=True)
@@ -106,7 +120,7 @@ def main() -> int:
                     report["execution_errors"].append(f"Android {abi} probe incomplete: {type(error).__name__}")
                 finally:
                     try:
-                        run([args.adb, "shell", "rm", "-f", remote])
+                        run([args.adb, "shell", "rm", "-f", remote, remote + ".input"])
                     except (RuntimeError, subprocess.TimeoutExpired):
                         report["cleanup_pending"].append(remote)
     if args.report:

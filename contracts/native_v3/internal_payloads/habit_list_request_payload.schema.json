@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/habit_list_request_payload.schema.json",
+  "title": "SyncV1 habit_list_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "integrated",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Lists non-deleted card projections in the current device timezone. Missing filters mean all. Stable server order is lifecycle group, today's status rank, reminder local_time null-last, created_at, id.",
+  "x-habit-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "timezone"
+  ],
+  "properties": {
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "x-format": "iana-timezone"
+    },
+    "lifecycle_statuses": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "upcoming",
+          "active",
+          "completed",
+          "ended_early"
+        ]
+      }
+    },
+    "category_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "pagination": {
+      "allOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/common/pagination_request.schema.json"
+        },
+        {
+          "properties": {
+            "page": {
+              "maximum": 9007199254740991
+            },
+            "page_size": {
+              "maximum": 100
+            },
+            "cursor": {
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "sort_by": {
+              "type": "null"
+            },
+            "sort_direction": {
+              "type": "null"
+            }
+          }
+        }
+      ],
+      "description": "Habit V1 ordering is fixed by C++; caller-defined sorting is forbidden."
+    }
+  }
+}

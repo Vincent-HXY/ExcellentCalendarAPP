@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/device/private/remote_snapshot_cache.schema.json",
+  "title": "SyncV1 remote_snapshot_cache",
+  "x-contract-domain": "android_private",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.6/IMP-08,IMP-10;8.2;13",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "account_id",
+    "workspace_id",
+    "device_id",
+    "captured_at",
+    "snapshot"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "account_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "workspace_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "device_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "snapshot": {
+      "$ref": "https://excellent-calendar.local/contracts/device/device_list_response.schema.json"
+    }
+  },
+  "x-owner": "Kotlin WorkspaceLifecycle / private persistence; diagnostics safe projection only",
+  "x-sensitive": true,
+  "x-exposure": "kotlin_local_only_never_HTTP_MethodChannel_EventChannel_or_JNI"
+}

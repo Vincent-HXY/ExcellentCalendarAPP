@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/reminder_finalize_delivery_request_payload.schema.json",
+  "title": "SyncV1 reminder_finalize_delivery_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Finalizes one prepared attempt. Finalized and sent timestamps come from the C++ Clock; Kotlin supplies only the system outcome. timezone is an additive optional wire field for compatibility with existing Event, Ring, and ordinary Recovery callers. After loading the prepared attempt, C++ treats timezone as semantically required when the attempt targets an Anniversary Reminder or has kind=anniversary_catch_up. For a ring attempt, outcome=sent is permitted only after the foreground control notification is visible and at least one of sound or vibration has actually started.",
+  "x-semantic-timezone-policy": {
+    "wire_required": false,
+    "required_after_attempt_load_for": [
+      "anniversary_reminder",
+      "anniversary_catch_up"
+    ],
+    "missing_error": "CONTRACT_VALIDATION_FAILED",
+    "invalid_iana_error": "TIMEZONE_ID_INVALID",
+    "legacy_without_timezone": [
+      "event_reminder",
+      "ring",
+      "ordinary_recovery"
+    ],
+    "identity_input": false
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "delivery_attempt_id",
+    "outcome",
+    "failure_class",
+    "error_code"
+  ],
+  "properties": {
+    "delivery_attempt_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "failed"
+      ]
+    },
+    "failure_class": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "retryable",
+        "permanent",
+        null
+      ]
+    },
+    "error_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Current device IANA timezone. Optional at the shared wire boundary, but semantically required for Anniversary Reminder and anniversary_catch_up attempts after C++ loads the prepared attempt. Explicit null is invalid.",
+      "x-format": "iana-timezone"
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "outcome": {
+          "const": "sent"
+        },
+        "failure_class": {
+          "type": "null"
+        },
+        "error_code": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "outcome": {
+          "const": "failed"
+        },
+        "failure_class": {
+          "type": "string",
+          "enum": [
+            "retryable",
+            "permanent"
+          ]
+        },
+        "error_code": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  ]
+}

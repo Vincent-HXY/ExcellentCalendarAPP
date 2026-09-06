@@ -1,0 +1,4814 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/backend_sync_v1/common/api_error.schema.json",
+  "title": "SyncV1 api_error",
+  "x-contract-domain": "backend_api",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/12",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ALL_DAY_RECURRING_REMINDER_NOT_SUPPORTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ANNIVERSARY_CALENDAR_UNSUPPORTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ANNIVERSARY_DATE_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ANNIVERSARY_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ANNIVERSARY_REMINDER_CONFIG_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ANNIVERSARY_TARGET_DELETED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "ANNIVERSARY_TITLE_EMPTY"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "API_FORBIDDEN"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "API_IDEMPOTENCY_KEY_REUSED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field"
+          ],
+          "properties": {
+            "field": {
+              "const": "Idempotency-Key"
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "API_INTERNAL_ERROR"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": true
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 86400
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "API_RATE_LIMITED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": true
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 86400
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "API_UNAUTHENTICATED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "API_VALIDATION_FAILED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "APPEARANCE_COLOR_TOKEN_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_ACCOUNT_ALREADY_VERIFIED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_ACCOUNT_DISABLED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_ACCOUNT_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_CURRENT_PASSWORD_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_EMAIL_ALREADY_EXISTS"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_EMAIL_UNVERIFIED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "$ref": "https://excellent-calendar.local/contracts/common/api_error_context.schema.json"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_INVALID_CREDENTIALS"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_PASSWORD_POLICY_VIOLATION"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_PASSWORD_UNCHANGED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_REAUTH_FAILED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_REFRESH_TOKEN_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_REFRESH_TOKEN_REUSED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_SESSION_EXPIRED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_USERNAME_ALREADY_EXISTS"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_USERNAME_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_VERIFICATION_EXPIRED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_VERIFICATION_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AUTH_VERIFICATION_USED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AVATAR_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AVATAR_TOO_LARGE"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AVATAR_TYPE_UNSUPPORTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "AVATAR_UPLOAD_FAILED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": true
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 86400
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "CATEGORY_NAME_EMPTY"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "CATEGORY_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "DEVICE_DISPLAY_NAME_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "DEVICE_LIMIT_REACHED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "device_limit",
+            "registration_pending"
+          ],
+          "properties": {
+            "device_limit": {
+              "const": 10
+            },
+            "registration_pending": {
+              "const": true
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "DEVICE_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "DEVICE_NOT_REGISTERED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "DEVICE_REAUTH_REQUIRED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "DEVICE_REAUTH_TARGET_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "DEVICE_REVOKED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "DEVICE_VERSION_CONFLICT"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "current_device_version"
+          ],
+          "properties": {
+            "current_device_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "EVENT_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "EVENT_TIME_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "EVENT_TITLE_EMPTY"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_ALREADY_ENDED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_CHALLENGE_TOO_LONG"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_CHECK_IN_DATE_OUT_OF_RANGE"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_CHECK_IN_FUTURE_DATE"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_CHECK_IN_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_CHECK_IN_STATE_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_DATE_RANGE_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_END_NOT_EARLY"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_HISTORY_IMMUTABLE"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_NOT_STARTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_REMINDER_CONFIG_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_START_DATE_LOCKED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_TARGET_DELETED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_TARGET_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_TARGET_LOCKED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "HABIT_TITLE_EMPTY"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "IMPORT_BATCH_ABANDONED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "IMPORT_BATCH_SUPERSEDED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "IMPORT_DUPLICATE_IDENTITY"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "IMPORT_LINEAGE_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "IMPORT_REFERENCE_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "IMPORT_SOURCE_CHANGED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "IMPORT_VERSION_CONFLICT"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "current_stage",
+            "current_head_batch_id",
+            "current_import_revision"
+          ],
+          "properties": {
+            "current_stage": {
+              "enum": [
+                "local_staging",
+                "server_staging",
+                "repair_required",
+                "server_confirmed",
+                "publish_applied",
+                "cleanup_pending",
+                "completed",
+                "superseded",
+                "abandoned"
+              ]
+            },
+            "current_head_batch_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "current_import_revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "OCCURRENCE_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "OCCURRENCE_OPERATION_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "RECURRENCE_RULE_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "RECURRENCE_TARGET_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "REMINDER_METHOD_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "REMINDER_METHOD_UNSUPPORTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "REMINDER_TARGET_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "REMINDER_TIME_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_ACK_WATERMARK_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_BATCH_TOO_LARGE"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maximum_items",
+            "maximum_bytes"
+          ],
+          "properties": {
+            "maximum_items": {
+              "const": 100
+            },
+            "maximum_bytes": {
+              "const": 1048576
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_BOOTSTRAP_EXPIRED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_BOOTSTRAP_GENERATION_CHANGED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CAUSAL_PREDECESSOR_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CHANGE_GROUP_TOO_LARGE"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CLIENT_SEQUENCE_GAP"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expected_client_sequence"
+          ],
+          "properties": {
+            "expected_client_sequence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CONFLICT_ALREADY_RESOLVED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CONFLICT_NOT_FOUND"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CONFLICT_VERSION_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "conflict_id",
+            "current_conflict_version"
+          ],
+          "properties": {
+            "conflict_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "current_conflict_version": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_COUNTER_EXHAUSTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "counter_kind"
+          ],
+          "properties": {
+            "counter_kind": {
+              "enum": [
+                "account_generation",
+                "account_profile_revision",
+                "conflict_version",
+                "device_version",
+                "entity_version",
+                "field_version",
+                "import_revision",
+                "preferences_revision",
+                "reorder_revision"
+              ]
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CURSOR_ACCOUNT_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CURSOR_DEVICE_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CURSOR_EXPIRED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CURSOR_GENERATION_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_CURSOR_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_ENTITY_CONFLICT_BLOCKED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_HABIT_OPERATION_ID_REUSED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operation_id"
+          ],
+          "properties": {
+            "operation_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_IDENTITY_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_IMPORT_CAPACITY_EXCEEDED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_NOT_ENABLED_FOR_ACCOUNT"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_OPERATION_UNSUPPORTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_PAYLOAD_HASH_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_PAYLOAD_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_PROTOCOL_VERSION_UNSUPPORTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "supported_protocol_versions",
+            "received_protocol_version"
+          ],
+          "properties": {
+            "supported_protocol_versions": {
+              "const": [
+                1
+              ]
+            },
+            "received_protocol_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_RESOLUTION_CANDIDATE_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_SEQUENCE_REPLAY_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_SEQUENCE_ROUTE_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_SERVER_SEQUENCE_EXHAUSTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "counter_kind"
+          ],
+          "properties": {
+            "counter_kind": {
+              "enum": [
+                "server_sequence"
+              ]
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_TARGET_UNSUPPORTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_TIMEZONE_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_TRANSPORT_GENERATION_EXHAUSTED"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "counter_kind"
+          ],
+          "properties": {
+            "counter_kind": {
+              "enum": [
+                "sync_transport_generation"
+              ]
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "SYNC_TRANSPORT_GENERATION_MISMATCH"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "current_sync_transport_generation"
+          ],
+          "properties": {
+            "current_sync_transport_generation": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "context",
+        "field_errors",
+        "retry_after_seconds"
+      ],
+      "properties": {
+        "code": {
+          "const": "USER_PROFILE_INVALID"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "const": false
+        },
+        "context": {
+          "type": "null"
+        },
+        "field_errors": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/common/api_field_error.schema.json"
+          }
+        },
+        "retry_after_seconds": {
+          "type": "null"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/search_query_response_payload.schema.json",
+  "title": "SyncV1 search_query_response_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4",
+  "description": "Unified grouped Search response produced from one read snapshot and one fixed C++ clock instant. query_generation is echoed exactly for stale-response rejection.",
+  "x-search-contract-revision": 2,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "query_generation",
+    "normalized_keyword",
+    "timezone",
+    "evaluated_at",
+    "snapshot_token",
+    "sections"
+  ],
+  "properties": {
+    "query_generation": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "normalized_keyword": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "snapshot_token": {
+      "type": "string",
+      "pattern": "^srchsnap1\\.[A-Za-z0-9_-]{20,512}$",
+      "maxLength": 522
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/search/search_section_response.schema.json"
+      }
+    }
+  }
+}

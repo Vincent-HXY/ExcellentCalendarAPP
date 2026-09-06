@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_deleted_entity_anchor.schema.json",
+  "title": "SyncV1 sync_deleted_entity_anchor",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.3,7.5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "target_type",
+    "target_id",
+    "entity_version",
+    "delete_server_sequence",
+    "import_provenance"
+  ],
+  "properties": {
+    "kind": {
+      "const": "deleted_entity_anchor"
+    },
+    "target_type": {
+      "enum": [
+        "category",
+        "event",
+        "event_recurrence",
+        "event_occurrence_state",
+        "anniversary",
+        "anniversary_recurrence",
+        "habit",
+        "habit_recurrence",
+        "habit_check_in",
+        "user_preferences",
+        "account_profile",
+        "reminder_intent"
+      ]
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 53
+    },
+    "entity_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "delete_server_sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "import_provenance": {
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/sync/sync_import_provenance.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

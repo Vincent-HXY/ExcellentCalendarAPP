@@ -1,0 +1,51 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "timezone",
+    "habit_progress_color",
+    "default_reminder_methods",
+    "auto_enable_reminders_on_other_devices"
+  ],
+  "properties": {
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "x-format": "iana-timezone"
+    },
+    "habit_progress_color": {
+      "type": "string",
+      "enum": [
+        "teal",
+        "blue",
+        "indigo",
+        "green",
+        "orange",
+        "rose",
+        "purple"
+      ]
+    },
+    "default_reminder_methods": {
+      "type": "array",
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "ring",
+          "popup"
+        ]
+      }
+    },
+    "auto_enable_reminders_on_other_devices": {
+      "type": "boolean"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/v1/user_preferences_fact.schema.json",
+  "title": "SyncV1 user_preferences fact",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.2,7.7"
+}

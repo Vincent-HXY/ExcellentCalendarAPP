@@ -1,0 +1,203 @@
+version: 1
+rule_anchor: cloud-sync-02/8.1
+default: deny
+implementation_status: planned
+public_operations:
+- auth.login
+- auth.password_reset.confirm
+- auth.password_reset.request
+- auth.register
+- auth.registration.email.update
+- auth.registration.resend
+- auth.registration.verify
+- system.time
+account_operations:
+  auth.email_change.confirm:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  auth.email_change.request:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  auth.logout:
+    unregistered: true
+    pending_registration: true
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  auth.logout_all:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  auth.password.change:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  auth.reauthenticate:
+    unregistered: false
+    pending_registration: true
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  auth.token.refresh:
+    unregistered: true
+    pending_registration: true
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  device.list:
+    unregistered: false
+    pending_registration: true
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  device.register:
+    unregistered: true
+    pending_registration: true
+    registered: true
+    pending_installation_match_required: true
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  device.rename:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  device.revoke:
+    unregistered: false
+    pending_registration: true
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  device.update_settings:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.bootstrap:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.conflict.get:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.conflict.list:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.conflict.resolve:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.device_fence:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.exchange:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.get_status:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.import.abandon:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.import.cleanup_confirm:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.import.status:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  sync.import.takeover:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  user.avatar.delete:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  user.avatar.upload:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  user.get_current:
+    unregistered: true
+    pending_registration: true
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory
+  user.update_current:
+    unregistered: false
+    pending_registration: false
+    registered: true
+    pending_installation_match_required: false
+    additional_checks: endpoint authentication, current Principal ownership, entitlement,
+      device/transport/CAS remain mandatory

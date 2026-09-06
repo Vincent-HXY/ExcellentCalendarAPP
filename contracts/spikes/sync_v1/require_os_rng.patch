@@ -1,0 +1,11 @@
+--- a/src/prngs/rng_get_bytes.c
++++ b/src/prngs/rng_get_bytes.c
+@@ -178,7 +178,7 @@ unsigned long rng_get_bytes(unsigned char *out, unsigned long outlen,
+ #elif defined(LTC_DEVRANDOM)
+    x = _rng_nix(out, outlen, callback);   if (x != 0) { return x; }
+ #endif
+-#ifdef ANSI_RNG
++#if defined(ANSI_RNG) && !defined(EXCELLENT_CALENDAR_REQUIRE_OS_RNG)
+    x = _rng_ansic(out, outlen, callback); if (x != 0) { return x; }
+ #endif
+    return 0;

@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal/open_workspace_request.schema.json",
+  "title": "SyncV1 open_workspace_request",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.3",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_id",
+        "workspace_kind",
+        "account_id",
+        "device_id",
+        "session_generation",
+        "storage_format_version",
+        "native_contract_version",
+        "storage_directory",
+        "open_mode",
+        "recovery_seed",
+        "fence_evidence",
+        "policy_seed",
+        "open_operation_id"
+      ],
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "workspace_kind": {
+          "const": "local"
+        },
+        "account_id": {
+          "type": "null"
+        },
+        "device_id": {
+          "type": "null"
+        },
+        "session_generation": {
+          "type": "null"
+        },
+        "storage_format_version": {
+          "const": 6
+        },
+        "native_contract_version": {
+          "const": 3
+        },
+        "storage_directory": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-sensitive": true
+        },
+        "open_mode": {
+          "enum": [
+            "existing",
+            "fresh",
+            "migrate_v5"
+          ]
+        },
+        "recovery_seed": {
+          "type": "null"
+        },
+        "fence_evidence": {
+          "type": "null"
+        },
+        "policy_seed": {
+          "type": "null"
+        },
+        "open_operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_id",
+        "workspace_kind",
+        "account_id",
+        "device_id",
+        "session_generation",
+        "storage_format_version",
+        "native_contract_version",
+        "storage_directory",
+        "open_mode",
+        "recovery_seed",
+        "fence_evidence",
+        "policy_seed",
+        "open_operation_id"
+      ],
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "workspace_kind": {
+          "const": "account"
+        },
+        "account_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "storage_format_version": {
+          "const": 6
+        },
+        "native_contract_version": {
+          "const": 3
+        },
+        "storage_directory": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-sensitive": true
+        },
+        "open_mode": {
+          "const": "existing"
+        },
+        "recovery_seed": {
+          "type": "null"
+        },
+        "fence_evidence": {
+          "type": "null"
+        },
+        "policy_seed": {
+          "type": "null"
+        },
+        "open_operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_id",
+        "workspace_kind",
+        "account_id",
+        "device_id",
+        "session_generation",
+        "storage_format_version",
+        "native_contract_version",
+        "storage_directory",
+        "open_mode",
+        "recovery_seed",
+        "fence_evidence",
+        "policy_seed",
+        "open_operation_id",
+        "fresh_reason"
+      ],
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "workspace_kind": {
+          "const": "account"
+        },
+        "account_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "storage_format_version": {
+          "const": 6
+        },
+        "native_contract_version": {
+          "const": 3
+        },
+        "storage_directory": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-sensitive": true
+        },
+        "open_mode": {
+          "const": "fresh"
+        },
+        "recovery_seed": {
+          "$ref": "https://excellent-calendar.local/contracts/sync/sync_sequence_recovery_bundle.schema.json"
+        },
+        "fence_evidence": {
+          "oneOf": [
+            {
+              "$ref": "https://excellent-calendar.local/contracts/sync/sync_device_fence_response.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "policy_seed": {
+          "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/workspace_policy_seed.schema.json"
+        },
+        "open_operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "fresh_reason": {
+          "enum": [
+            "new_device",
+            "destroyed_cache_relogin",
+            "clear_rebuild",
+            "force_local_relogin"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "fresh_reason": {
+                "enum": [
+                  "clear_rebuild",
+                  "force_local_relogin"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "fence_evidence": {
+                "$ref": "https://excellent-calendar.local/contracts/sync/sync_device_fence_response.schema.json"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fresh_reason": {
+                "const": "clear_rebuild"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "policy_seed": {
+                "properties": {
+                  "kind": {
+                    "const": "clear_rebuild"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "policy_seed": {
+                "properties": {
+                  "kind": {
+                    "const": "genesis"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "x-binary-parameters": [
+    {
+      "name": "database_key",
+      "type": "byte_array",
+      "guest_length": 0,
+      "account_length": 32,
+      "nullable": false,
+      "encoding": "raw_octets_not_utf8_base64_hex_or_json",
+      "lifetime": "copy only for open; securely erase every temporary buffer after synchronous native call",
+      "logging": "forbidden",
+      "binding": "Keystore unwrap AAD binds installation/account/workspace/schema; Native verifies metadata/key match before exposing runtime"
+    }
+  ],
+  "x-semantic-rules": [
+    "metadata and key equality required for already-open; never replace a live runtime",
+    "fresh_reason never bypasses durable transport_fence_required; destroyed prior database for active device consumes a fence before writable open",
+    "clear seed identity, operation, generation and hash match fence and binding; no receive_reminders/settings mirror accepted here",
+    "migrate_v5 only for the legacy guest; a plaintext account v5 database is not a supported source"
+  ],
+  "x-exposure": "kotlin_jni_cpp_only"
+}

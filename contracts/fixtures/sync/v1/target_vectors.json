@@ -1,0 +1,1620 @@
+{
+  "fixture_version": 1,
+  "family": "FX-TARGET",
+  "scope": "typed_fact_and_reference_oracle_not_complete_mutation_protocol",
+  "samples": {
+    "category": {
+      "target_type": "category",
+      "target_id": "00000002-1111-4111-8111-111111111111",
+      "fact": {
+        "id": "00000002-1111-4111-8111-111111111111",
+        "name": "工作",
+        "description": null,
+        "color": "#39AFBD",
+        "icon": null,
+        "sort_order": 1,
+        "created_at": "2026-09-05T01:00:00Z",
+        "updated_at": "2026-09-05T01:00:00Z",
+        "deleted_at": null,
+        "reorder_revision": 0
+      }
+    },
+    "event": {
+      "target_type": "event",
+      "target_id": "00000003-1111-4111-8111-111111111111",
+      "fact": {
+        "id": "00000003-1111-4111-8111-111111111111",
+        "title": "会面",
+        "content": null,
+        "start_at": "2026-09-05T01:00:00Z",
+        "end_at": "2026-09-05T02:00:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "has_recurrence": false,
+        "status": "active",
+        "completed_at": null,
+        "recurrence_id": null,
+        "recurrence_revision": null,
+        "category_id": "legacy-category😀",
+        "importance": null,
+        "location": null,
+        "timezone": "Asia/Shanghai",
+        "source": "manual",
+        "created_at": "2026-09-05T01:00:00Z",
+        "updated_at": "2026-09-05T01:00:00Z",
+        "deleted_at": null
+      }
+    },
+    "event_recurrence": {
+      "target_type": "event_recurrence",
+      "target_id": "00000004-1111-4111-8111-111111111111#1",
+      "fact": {
+        "recurrence_id": "00000004-1111-4111-8111-111111111111",
+        "revision": 1,
+        "frequency": "daily",
+        "interval": 1,
+        "start_at": "2026-09-05T01:00:00Z",
+        "start_date": null,
+        "timezone": "Asia/Shanghai",
+        "day_of_month": null,
+        "days_of_week": [],
+        "month_of_year": null,
+        "end_at": null,
+        "count": null,
+        "created_at": "2026-09-05T01:00:00Z"
+      }
+    },
+    "anniversary": {
+      "target_type": "anniversary",
+      "target_id": "00000005-1111-4111-8111-111111111111",
+      "fact": {
+        "id": "00000005-1111-4111-8111-111111111111",
+        "title": "纪念日",
+        "date": "2024-02-29",
+        "calendar_type": "solar",
+        "category_id": "legacy-category😀",
+        "recurrence_id": "00000006-1111-4111-8111-111111111111",
+        "note": null,
+        "importance": null,
+        "created_at": "2026-09-05T01:00:00Z",
+        "updated_at": "2026-09-05T01:00:00Z",
+        "deleted_at": null
+      }
+    },
+    "anniversary_recurrence": {
+      "target_type": "anniversary_recurrence",
+      "target_id": "00000006-1111-4111-8111-111111111111",
+      "fact": {
+        "recurrence_id": "00000006-1111-4111-8111-111111111111",
+        "frequency": "yearly",
+        "interval": 1,
+        "created_at": "2026-09-05T01:00:00Z",
+        "deleted_at": null
+      }
+    },
+    "habit": {
+      "target_type": "habit",
+      "target_id": "00000007-1111-4111-8111-111111111111",
+      "fact": {
+        "id": "00000007-1111-4111-8111-111111111111",
+        "title": "阅读",
+        "description": null,
+        "category_id": "legacy-category😀",
+        "recurrence_id": "00000008-1111-4111-8111-111111111111",
+        "target_count_hundredths": 500,
+        "unit": "页",
+        "start_date": "2026-09-01",
+        "end_date": "2026-09-30",
+        "ended_date": null,
+        "is_active": true,
+        "first_check_in_at": "2026-09-05T01:00:00Z",
+        "created_at": "2026-09-05T01:00:00Z",
+        "updated_at": "2026-09-05T01:00:00Z",
+        "deleted_at": null
+      }
+    },
+    "habit_recurrence": {
+      "target_type": "habit_recurrence",
+      "target_id": "00000008-1111-4111-8111-111111111111",
+      "fact": {
+        "id": "00000008-1111-4111-8111-111111111111",
+        "frequency": "daily",
+        "interval": 1,
+        "timezone_mode": "follow_device",
+        "created_at": "2026-09-05T01:00:00Z",
+        "updated_at": "2026-09-05T01:00:00Z",
+        "deleted_at": null
+      }
+    },
+    "habit_check_in": {
+      "target_type": "habit_check_in",
+      "target_id": "5810815f-7771-54a0-b3be-1cb13a01e10b",
+      "fact": {
+        "habit_id": "00000007-1111-4111-8111-111111111111",
+        "check_date": "2026-09-05",
+        "status": "done",
+        "completed_count_hundredths": 500,
+        "target_count_snapshot_hundredths": 500,
+        "unit_snapshot": "页",
+        "completed_at": "2026-09-05T01:00:00Z",
+        "note": null,
+        "source": "manual",
+        "created_at": "2026-09-05T01:00:00Z",
+        "updated_at": "2026-09-05T01:00:00Z",
+        "deleted_at": null
+      }
+    },
+    "user_preferences": {
+      "target_type": "user_preferences",
+      "target_id": "00000001-1111-4111-8111-111111111111",
+      "fact": {
+        "timezone": "Asia/Shanghai",
+        "habit_progress_color": "teal",
+        "default_reminder_methods": [
+          "ring",
+          "popup"
+        ],
+        "auto_enable_reminders_on_other_devices": false
+      }
+    },
+    "account_profile": {
+      "target_type": "account_profile",
+      "target_id": "00000001-1111-4111-8111-111111111111",
+      "fact": {
+        "email": "synthetic@example.com",
+        "username": "calendar_user",
+        "display_name": "测试用户",
+        "avatar": null
+      }
+    },
+    "reminder_intent_event": {
+      "target_type": "reminder_intent",
+      "target_id": "9f209d5e-f25f-527a-90c3-4d6d240481f3",
+      "fact": {
+        "owner_type": "event",
+        "owner_id": "00000003-1111-4111-8111-111111111111",
+        "is_enabled": true,
+        "templates": [
+          {
+            "remind_at": null,
+            "advance_minutes": 15,
+            "method": "popup",
+            "message": null,
+            "is_enabled": true,
+            "source": "manual"
+          }
+        ]
+      }
+    },
+    "reminder_intent_anniversary": {
+      "target_type": "reminder_intent",
+      "target_id": "cc2ec306-2566-5346-bbba-ea598adf5662",
+      "fact": {
+        "owner_type": "anniversary",
+        "owner_id": "00000005-1111-4111-8111-111111111111",
+        "is_enabled": true,
+        "templates": [
+          {
+            "advance_days": 7,
+            "local_time": "09:00",
+            "timezone_mode": "follow_device",
+            "method": "popup",
+            "is_enabled": true
+          }
+        ]
+      }
+    },
+    "reminder_intent_habit": {
+      "target_type": "reminder_intent",
+      "target_id": "cf212a8e-f213-5ebb-972b-f25707607d6a",
+      "fact": {
+        "owner_type": "habit",
+        "owner_id": "00000007-1111-4111-8111-111111111111",
+        "is_enabled": true,
+        "template": {
+          "local_time": "09:00",
+          "timezone_mode": "follow_device",
+          "method": "popup"
+        }
+      }
+    },
+    "event_occurrence_state": {
+      "target_type": "event_occurrence_state",
+      "target_id": "d2a9e5bc-9d90-5125-923f-25d7a2bbdf2c",
+      "fact": {
+        "event_id": "00000003-1111-4111-8111-111111111111",
+        "recurrence_revision": 1,
+        "occurrence_key": "d2a9e5bc-9d90-5125-923f-25d7a2bbdf2c",
+        "occurrence_start_at": "2026-09-05T01:00:00Z",
+        "occurrence_start_date": null,
+        "original_local_start": "2026-09-05T09:00:00",
+        "status": "completed",
+        "state_changed_at": "2026-09-05T01:00:00Z",
+        "reopened_at": null,
+        "created_at": "2026-09-05T01:00:00Z",
+        "updated_at": "2026-09-05T01:00:00Z"
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "TARGET-category-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": "工作",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 1,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-event-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T01:00:00Z",
+          "end_at": "2026-09-05T02:00:00Z",
+          "start_date": null,
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": null,
+          "category_id": "legacy-category😀",
+          "importance": null,
+          "location": null,
+          "timezone": "Asia/Shanghai",
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-event_recurrence-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event_recurrence",
+        "target_id": "00000004-1111-4111-8111-111111111111#1",
+        "fact": {
+          "recurrence_id": "00000004-1111-4111-8111-111111111111",
+          "revision": 1,
+          "frequency": "daily",
+          "interval": 1,
+          "start_at": "2026-09-05T01:00:00Z",
+          "start_date": null,
+          "timezone": "Asia/Shanghai",
+          "day_of_month": null,
+          "days_of_week": [],
+          "month_of_year": null,
+          "end_at": null,
+          "count": null,
+          "created_at": "2026-09-05T01:00:00Z"
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-anniversary-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "anniversary",
+        "target_id": "00000005-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000005-1111-4111-8111-111111111111",
+          "title": "纪念日",
+          "date": "2024-02-29",
+          "calendar_type": "solar",
+          "category_id": "legacy-category😀",
+          "recurrence_id": "00000006-1111-4111-8111-111111111111",
+          "note": null,
+          "importance": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-anniversary_recurrence-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "anniversary_recurrence",
+        "target_id": "00000006-1111-4111-8111-111111111111",
+        "fact": {
+          "recurrence_id": "00000006-1111-4111-8111-111111111111",
+          "frequency": "yearly",
+          "interval": 1,
+          "created_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-habit-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit",
+        "target_id": "00000007-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000007-1111-4111-8111-111111111111",
+          "title": "阅读",
+          "description": null,
+          "category_id": "legacy-category😀",
+          "recurrence_id": "00000008-1111-4111-8111-111111111111",
+          "target_count_hundredths": 500,
+          "unit": "页",
+          "start_date": "2026-09-01",
+          "end_date": "2026-09-30",
+          "ended_date": null,
+          "is_active": true,
+          "first_check_in_at": "2026-09-05T01:00:00Z",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-habit_recurrence-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_recurrence",
+        "target_id": "00000008-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000008-1111-4111-8111-111111111111",
+          "frequency": "daily",
+          "interval": 1,
+          "timezone_mode": "follow_device",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-habit_check_in-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_check_in",
+        "target_id": "5810815f-7771-54a0-b3be-1cb13a01e10b",
+        "fact": {
+          "habit_id": "00000007-1111-4111-8111-111111111111",
+          "check_date": "2026-09-05",
+          "status": "done",
+          "completed_count_hundredths": 500,
+          "target_count_snapshot_hundredths": 500,
+          "unit_snapshot": "页",
+          "completed_at": "2026-09-05T01:00:00Z",
+          "note": null,
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-user_preferences-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "user_preferences",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "timezone": "Asia/Shanghai",
+          "habit_progress_color": "teal",
+          "default_reminder_methods": [
+            "ring",
+            "popup"
+          ],
+          "auto_enable_reminders_on_other_devices": false
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-account_profile-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "account_profile",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "email": "synthetic@example.com",
+          "username": "calendar_user",
+          "display_name": "测试用户",
+          "avatar": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-reminder_intent_event-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "reminder_intent",
+        "target_id": "9f209d5e-f25f-527a-90c3-4d6d240481f3",
+        "fact": {
+          "owner_type": "event",
+          "owner_id": "00000003-1111-4111-8111-111111111111",
+          "is_enabled": true,
+          "templates": [
+            {
+              "remind_at": null,
+              "advance_minutes": 15,
+              "method": "popup",
+              "message": null,
+              "is_enabled": true,
+              "source": "manual"
+            }
+          ]
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-reminder_intent_anniversary-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "reminder_intent",
+        "target_id": "cc2ec306-2566-5346-bbba-ea598adf5662",
+        "fact": {
+          "owner_type": "anniversary",
+          "owner_id": "00000005-1111-4111-8111-111111111111",
+          "is_enabled": true,
+          "templates": [
+            {
+              "advance_days": 7,
+              "local_time": "09:00",
+              "timezone_mode": "follow_device",
+              "method": "popup",
+              "is_enabled": true
+            }
+          ]
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-reminder_intent_habit-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "reminder_intent",
+        "target_id": "cf212a8e-f213-5ebb-972b-f25707607d6a",
+        "fact": {
+          "owner_type": "habit",
+          "owner_id": "00000007-1111-4111-8111-111111111111",
+          "is_enabled": true,
+          "template": {
+            "local_time": "09:00",
+            "timezone_mode": "follow_device",
+            "method": "popup"
+          }
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-event_occurrence_state-valid",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event_occurrence_state",
+        "target_id": "d2a9e5bc-9d90-5125-923f-25d7a2bbdf2c",
+        "fact": {
+          "event_id": "00000003-1111-4111-8111-111111111111",
+          "recurrence_revision": 1,
+          "occurrence_key": "d2a9e5bc-9d90-5125-923f-25d7a2bbdf2c",
+          "occurrence_start_at": "2026-09-05T01:00:00Z",
+          "occurrence_start_date": null,
+          "original_local_start": "2026-09-05T09:00:00",
+          "status": "completed",
+          "state_changed_at": "2026-09-05T01:00:00Z",
+          "reopened_at": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z"
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-001-event-end_at",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T01:00:00Z",
+          "end_at": "2026-09-05T01:00:00Z",
+          "start_date": null,
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": null,
+          "category_id": "legacy-category😀",
+          "importance": null,
+          "location": null,
+          "timezone": "Asia/Shanghai",
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "EVENT_TIME_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-002-event-start_date",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T01:00:00Z",
+          "end_at": "2026-09-05T02:00:00Z",
+          "start_date": "2026-09-05",
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": null,
+          "category_id": "legacy-category😀",
+          "importance": null,
+          "location": null,
+          "timezone": "Asia/Shanghai",
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-003-event-timezone",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T01:00:00Z",
+          "end_at": "2026-09-05T02:00:00Z",
+          "start_date": null,
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": null,
+          "category_id": "legacy-category😀",
+          "importance": null,
+          "location": null,
+          "timezone": "+08:00",
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_TIMEZONE_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-004-event-start_at",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T09:00:00+08:00",
+          "end_at": "2026-09-05T02:00:00Z",
+          "start_date": null,
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": null,
+          "category_id": "legacy-category😀",
+          "importance": null,
+          "location": null,
+          "timezone": "Asia/Shanghai",
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-005-event-recurrence_revision",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T01:00:00Z",
+          "end_at": "2026-09-05T02:00:00Z",
+          "start_date": null,
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": 1,
+          "category_id": "legacy-category😀",
+          "importance": null,
+          "location": null,
+          "timezone": "Asia/Shanghai",
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-006-event-category_id",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T01:00:00Z",
+          "end_at": "2026-09-05T02:00:00Z",
+          "start_date": null,
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": null,
+          "category_id": 7,
+          "importance": null,
+          "location": null,
+          "timezone": "Asia/Shanghai",
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-007-event-category_id",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T01:00:00Z",
+          "end_at": "2026-09-05T02:00:00Z",
+          "start_date": null,
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": null,
+          "category_id": "",
+          "importance": null,
+          "location": null,
+          "timezone": "Asia/Shanghai",
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-008-event-source",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event",
+        "target_id": "00000003-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000003-1111-4111-8111-111111111111",
+          "title": "会面",
+          "content": null,
+          "start_at": "2026-09-05T01:00:00Z",
+          "end_at": "2026-09-05T02:00:00Z",
+          "start_date": null,
+          "end_date": null,
+          "is_all_day": false,
+          "has_recurrence": false,
+          "status": "active",
+          "completed_at": null,
+          "recurrence_id": null,
+          "recurrence_revision": null,
+          "category_id": "legacy-category😀",
+          "importance": null,
+          "location": null,
+          "timezone": "Asia/Shanghai",
+          "source": "sync",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-009-category-name",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": " ",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 1,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-010-category-description",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": "工作",
+          "description": "",
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 1,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-011-category-sort_order",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": "工作",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 9007199254740991,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-012-category-sort_order",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": "工作",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 9007199254740992,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-013-category-sort_order",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": "工作",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 1.5,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-014-category-sort_order",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": "工作",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 1.0,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-015-category-sort_order",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": "工作",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-016-category-sort_order",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "category",
+        "target_id": "00000002-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000002-1111-4111-8111-111111111111",
+          "name": "工作",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": true,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-017-anniversary-date",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "anniversary",
+        "target_id": "00000005-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000005-1111-4111-8111-111111111111",
+          "title": "纪念日",
+          "date": "2026-02-30",
+          "calendar_type": "solar",
+          "category_id": "legacy-category😀",
+          "recurrence_id": "00000006-1111-4111-8111-111111111111",
+          "note": null,
+          "importance": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-018-anniversary-calendar_type",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "anniversary",
+        "target_id": "00000005-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000005-1111-4111-8111-111111111111",
+          "title": "纪念日",
+          "date": "2024-02-29",
+          "calendar_type": "lunar",
+          "category_id": "legacy-category😀",
+          "recurrence_id": "00000006-1111-4111-8111-111111111111",
+          "note": null,
+          "importance": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-019-anniversary-category_id",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "anniversary",
+        "target_id": "00000005-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000005-1111-4111-8111-111111111111",
+          "title": "纪念日",
+          "date": "2024-02-29",
+          "calendar_type": "solar",
+          "category_id": "é😀",
+          "recurrence_id": "00000006-1111-4111-8111-111111111111",
+          "note": null,
+          "importance": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-020-anniversary-timezone",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "anniversary",
+        "target_id": "00000005-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000005-1111-4111-8111-111111111111",
+          "title": "纪念日",
+          "date": "2024-02-29",
+          "calendar_type": "solar",
+          "category_id": "legacy-category😀",
+          "recurrence_id": "00000006-1111-4111-8111-111111111111",
+          "note": null,
+          "importance": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "timezone": "Asia/Shanghai"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-021-habit-end_date",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit",
+        "target_id": "00000007-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000007-1111-4111-8111-111111111111",
+          "title": "阅读",
+          "description": null,
+          "category_id": "legacy-category😀",
+          "recurrence_id": "00000008-1111-4111-8111-111111111111",
+          "target_count_hundredths": 500,
+          "unit": "页",
+          "start_date": "2026-09-01",
+          "end_date": "2027-12-31",
+          "ended_date": null,
+          "is_active": true,
+          "first_check_in_at": "2026-09-05T01:00:00Z",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "HABIT_DATE_RANGE_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-022-habit-target_count_hundredths",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit",
+        "target_id": "00000007-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000007-1111-4111-8111-111111111111",
+          "title": "阅读",
+          "description": null,
+          "category_id": "legacy-category😀",
+          "recurrence_id": "00000008-1111-4111-8111-111111111111",
+          "target_count_hundredths": 0,
+          "unit": "页",
+          "start_date": "2026-09-01",
+          "end_date": "2026-09-30",
+          "ended_date": null,
+          "is_active": true,
+          "first_check_in_at": "2026-09-05T01:00:00Z",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-023-habit-unit",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit",
+        "target_id": "00000007-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000007-1111-4111-8111-111111111111",
+          "title": "阅读",
+          "description": null,
+          "category_id": "legacy-category😀",
+          "recurrence_id": "00000008-1111-4111-8111-111111111111",
+          "target_count_hundredths": 500,
+          "unit": null,
+          "start_date": "2026-09-01",
+          "end_date": "2026-09-30",
+          "ended_date": null,
+          "is_active": true,
+          "first_check_in_at": "2026-09-05T01:00:00Z",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-024-habit_check_in-status",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_check_in",
+        "target_id": "5810815f-7771-54a0-b3be-1cb13a01e10b",
+        "fact": {
+          "habit_id": "00000007-1111-4111-8111-111111111111",
+          "check_date": "2026-09-05",
+          "status": "missed",
+          "completed_count_hundredths": 500,
+          "target_count_snapshot_hundredths": 500,
+          "unit_snapshot": "页",
+          "completed_at": "2026-09-05T01:00:00Z",
+          "note": null,
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-025-habit_check_in-completed_count_hundredths",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_check_in",
+        "target_id": "5810815f-7771-54a0-b3be-1cb13a01e10b",
+        "fact": {
+          "habit_id": "00000007-1111-4111-8111-111111111111",
+          "check_date": "2026-09-05",
+          "status": "done",
+          "completed_count_hundredths": 100,
+          "target_count_snapshot_hundredths": 500,
+          "unit_snapshot": "页",
+          "completed_at": "2026-09-05T01:00:00Z",
+          "note": null,
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "HABIT_CHECK_IN_STATE_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-026-habit_check_in-id",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_check_in",
+        "target_id": "5810815f-7771-54a0-b3be-1cb13a01e10b",
+        "fact": {
+          "habit_id": "00000007-1111-4111-8111-111111111111",
+          "check_date": "2026-09-05",
+          "status": "done",
+          "completed_count_hundredths": 500,
+          "target_count_snapshot_hundredths": 500,
+          "unit_snapshot": "页",
+          "completed_at": "2026-09-05T01:00:00Z",
+          "note": null,
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "id": "00000002-1111-4111-8111-111111111111"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-027-habit_check_in-source",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_check_in",
+        "target_id": "5810815f-7771-54a0-b3be-1cb13a01e10b",
+        "fact": {
+          "habit_id": "00000007-1111-4111-8111-111111111111",
+          "check_date": "2026-09-05",
+          "status": "done",
+          "completed_count_hundredths": 500,
+          "target_count_snapshot_hundredths": 500,
+          "unit_snapshot": "页",
+          "completed_at": "2026-09-05T01:00:00Z",
+          "note": null,
+          "source": "sync",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-028-habit_check_in-source",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_check_in",
+        "target_id": "5810815f-7771-54a0-b3be-1cb13a01e10b",
+        "fact": {
+          "habit_id": "00000007-1111-4111-8111-111111111111",
+          "check_date": "2026-09-05",
+          "status": "done",
+          "completed_count_hundredths": 500,
+          "target_count_snapshot_hundredths": 500,
+          "unit_snapshot": "页",
+          "completed_at": "2026-09-05T01:00:00Z",
+          "note": null,
+          "source": "notification_action",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-029-habit_check_in-deleted_at",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_check_in",
+        "target_id": "5810815f-7771-54a0-b3be-1cb13a01e10b",
+        "fact": {
+          "habit_id": "00000007-1111-4111-8111-111111111111",
+          "check_date": "2026-09-05",
+          "status": "done",
+          "completed_count_hundredths": 500,
+          "target_count_snapshot_hundredths": 500,
+          "unit_snapshot": "页",
+          "completed_at": "2026-09-05T01:00:00Z",
+          "note": null,
+          "source": "manual",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": "2026-09-05T01:00:00Z"
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-030-habit_recurrence-timezone_mode",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_recurrence",
+        "target_id": "00000008-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000008-1111-4111-8111-111111111111",
+          "frequency": "daily",
+          "interval": 1,
+          "timezone_mode": "fixed",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-031-habit_recurrence-frequency",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "habit_recurrence",
+        "target_id": "00000008-1111-4111-8111-111111111111",
+        "fact": {
+          "id": "00000008-1111-4111-8111-111111111111",
+          "frequency": "yearly",
+          "interval": 1,
+          "timezone_mode": "follow_device",
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-032-anniversary_recurrence-interval",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "anniversary_recurrence",
+        "target_id": "00000006-1111-4111-8111-111111111111",
+        "fact": {
+          "recurrence_id": "00000006-1111-4111-8111-111111111111",
+          "frequency": "yearly",
+          "interval": 2,
+          "created_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-033-event_recurrence-revision",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event_recurrence",
+        "target_id": "00000004-1111-4111-8111-111111111111#1",
+        "fact": {
+          "recurrence_id": "00000004-1111-4111-8111-111111111111",
+          "revision": 9007199254740992,
+          "frequency": "daily",
+          "interval": 1,
+          "start_at": "2026-09-05T01:00:00Z",
+          "start_date": null,
+          "timezone": "Asia/Shanghai",
+          "day_of_month": null,
+          "days_of_week": [],
+          "month_of_year": null,
+          "end_at": null,
+          "count": null,
+          "created_at": "2026-09-05T01:00:00Z"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-034-event_recurrence-count",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event_recurrence",
+        "target_id": "00000004-1111-4111-8111-111111111111#1",
+        "fact": {
+          "recurrence_id": "00000004-1111-4111-8111-111111111111",
+          "revision": 1,
+          "frequency": "daily",
+          "interval": 1,
+          "start_at": "2026-09-05T01:00:00Z",
+          "start_date": null,
+          "timezone": "Asia/Shanghai",
+          "day_of_month": null,
+          "days_of_week": [],
+          "month_of_year": null,
+          "end_at": null,
+          "count": 10,
+          "created_at": "2026-09-05T01:00:00Z"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-035-event_recurrence-frequency",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event_recurrence",
+        "target_id": "00000004-1111-4111-8111-111111111111#1",
+        "fact": {
+          "recurrence_id": "00000004-1111-4111-8111-111111111111",
+          "revision": 1,
+          "frequency": "yearly",
+          "interval": 1,
+          "start_at": "2026-09-05T01:00:00Z",
+          "start_date": null,
+          "timezone": "Asia/Shanghai",
+          "day_of_month": null,
+          "days_of_week": [],
+          "month_of_year": null,
+          "end_at": null,
+          "count": null,
+          "created_at": "2026-09-05T01:00:00Z"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-036-event_occurrence_state-original_local_start",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event_occurrence_state",
+        "target_id": "d2a9e5bc-9d90-5125-923f-25d7a2bbdf2c",
+        "fact": {
+          "event_id": "00000003-1111-4111-8111-111111111111",
+          "recurrence_revision": 1,
+          "occurrence_key": "d2a9e5bc-9d90-5125-923f-25d7a2bbdf2c",
+          "occurrence_start_at": "2026-09-05T01:00:00Z",
+          "occurrence_start_date": null,
+          "original_local_start": "2026-09-05T10:00:00",
+          "status": "completed",
+          "state_changed_at": "2026-09-05T01:00:00Z",
+          "reopened_at": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z"
+        }
+      },
+      "expected_error": "SYNC_IDENTITY_MISMATCH"
+    },
+    {
+      "id": "TARGET-boundary-037-event_occurrence_state-status",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "event_occurrence_state",
+        "target_id": "d2a9e5bc-9d90-5125-923f-25d7a2bbdf2c",
+        "fact": {
+          "event_id": "00000003-1111-4111-8111-111111111111",
+          "recurrence_revision": 1,
+          "occurrence_key": "d2a9e5bc-9d90-5125-923f-25d7a2bbdf2c",
+          "occurrence_start_at": "2026-09-05T01:00:00Z",
+          "occurrence_start_date": null,
+          "original_local_start": "2026-09-05T09:00:00",
+          "status": "pending",
+          "state_changed_at": "2026-09-05T01:00:00Z",
+          "reopened_at": null,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-038-user_preferences-locale",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "user_preferences",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "timezone": "Asia/Shanghai",
+          "habit_progress_color": "teal",
+          "default_reminder_methods": [
+            "ring",
+            "popup"
+          ],
+          "auto_enable_reminders_on_other_devices": false,
+          "locale": "zh-CN"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-039-user_preferences-habit_progress_color",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "user_preferences",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "timezone": "Asia/Shanghai",
+          "habit_progress_color": "#39AFBD",
+          "default_reminder_methods": [
+            "ring",
+            "popup"
+          ],
+          "auto_enable_reminders_on_other_devices": false
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-040-user_preferences-default_reminder_methods",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "user_preferences",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "timezone": "Asia/Shanghai",
+          "habit_progress_color": "teal",
+          "default_reminder_methods": [
+            "wechat"
+          ],
+          "auto_enable_reminders_on_other_devices": false
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-041-user_preferences-default_reminder_methods",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "user_preferences",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "timezone": "Asia/Shanghai",
+          "habit_progress_color": "teal",
+          "default_reminder_methods": [
+            "popup",
+            "popup"
+          ],
+          "auto_enable_reminders_on_other_devices": false
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-042-user_preferences-default_reminder_methods",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "user_preferences",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "timezone": "Asia/Shanghai",
+          "habit_progress_color": "teal",
+          "default_reminder_methods": [],
+          "auto_enable_reminders_on_other_devices": false
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-043-user_preferences-default_reminder_methods",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "user_preferences",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "timezone": "Asia/Shanghai",
+          "habit_progress_color": "teal",
+          "default_reminder_methods": [
+            "popup",
+            "ring"
+          ],
+          "auto_enable_reminders_on_other_devices": false
+        }
+      },
+      "expected_error": null
+    },
+    {
+      "id": "TARGET-boundary-044-account_profile-access_token",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "account_profile",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "email": "synthetic@example.com",
+          "username": "calendar_user",
+          "display_name": "测试用户",
+          "avatar": null,
+          "access_token": "synthetic-secret-never-a-profile-field"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-045-account_profile-timezone",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "account_profile",
+        "target_id": "00000001-1111-4111-8111-111111111111",
+        "fact": {
+          "email": "synthetic@example.com",
+          "username": "calendar_user",
+          "display_name": "测试用户",
+          "avatar": null,
+          "timezone": "Asia/Shanghai"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-046-reminder_intent_habit-template",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "reminder_intent",
+        "target_id": "cf212a8e-f213-5ebb-972b-f25707607d6a",
+        "fact": {
+          "owner_type": "habit",
+          "owner_id": "00000007-1111-4111-8111-111111111111",
+          "is_enabled": true,
+          "template": null
+        }
+      },
+      "expected_error": "HABIT_REMINDER_CONFIG_INVALID"
+    },
+    {
+      "id": "TARGET-boundary-047-reminder_intent_event-notification_status",
+      "rule_anchor": "cloud-sync-02/7.7",
+      "input": {
+        "target_type": "reminder_intent",
+        "target_id": "9f209d5e-f25f-527a-90c3-4d6d240481f3",
+        "fact": {
+          "owner_type": "event",
+          "owner_id": "00000003-1111-4111-8111-111111111111",
+          "is_enabled": true,
+          "templates": [
+            {
+              "remind_at": null,
+              "advance_minutes": 15,
+              "method": "popup",
+              "message": null,
+              "is_enabled": true,
+              "source": "manual"
+            }
+          ],
+          "notification_status": "delivered"
+        }
+      },
+      "expected_error": "SYNC_PAYLOAD_INVALID"
+    }
+  ]
+}

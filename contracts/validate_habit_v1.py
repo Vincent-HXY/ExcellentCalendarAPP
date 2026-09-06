@@ -648,8 +648,22 @@ def validate_storage_v5(yaml_documents: dict[str, Any]) -> None:
     storage = yaml_documents["storage/calendar_core_storage.yaml"]
     if storage.get("active_format_contract") != "calendar_core_v5" or storage.get("storage_format_version") != 5:
         fail("Storage v5 must remain the active runtime format")
-    if storage.get("planned_format_contract") is not None or storage.get("latest_declared_format_version") != 5:
-        fail("Storage v5 active declaration is inconsistent")
+    planned = storage.get("planned_format_contract")
+    if planned is None:
+        if storage.get("latest_declared_format_version") != 5:
+            fail("Storage v5 active declaration is inconsistent")
+    elif planned == "calendar_core_v6":
+        # Sync-02 adds a separate planned successor; the active v5 node and all
+        # checks below remain frozen. Sync validator owns the exact v6 DDL.
+        successor = storage.get("calendar_core_v6", {})
+        if (storage.get("latest_declared_format_version") != 6 or
+                successor.get("storage_format_version") != 6 or
+                successor.get("release_status") != "planned" or
+                successor.get("implementation_status") != "planned" or
+                successor.get("source_v5_contract_sha256") != "dcd92464591cae3f74b2454d4b80021298acab1874ac6f946b45c89d8fe5db79"):
+            fail("Planned v6 must preserve the frozen active v5 source")
+    else:
+        fail("Unrecognized planned storage successor")
     v4 = storage["calendar_core_v4"]
     v5 = storage["calendar_core_v5"]
     digest = hashlib.sha256(

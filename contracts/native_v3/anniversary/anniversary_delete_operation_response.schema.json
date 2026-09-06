@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/anniversary/anniversary_delete_operation_response.schema.json",
+  "title": "AnniversaryDeleteOperationResponse",
+  "description": "Public delete response. data_saved=true means the soft delete and future Reminder cancellation committed even if schedule reconciliation remains pending.",
+  "x-contract-version": 3,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "data_saved",
+    "commit",
+    "capability"
+  ],
+  "properties": {
+    "data_saved": {
+      "const": true
+    },
+    "commit": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/anniversary/anniversary_delete_commit_response.schema.json"
+    },
+    "capability": {
+      "$ref": "https://excellent-calendar.local/contracts/anniversary/anniversary_schedule_capability_response.schema.json"
+    }
+  },
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-native-compatibility-revision": "anniversary_opaque_category_v1"
+}

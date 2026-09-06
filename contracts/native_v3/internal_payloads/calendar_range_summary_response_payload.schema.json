@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/calendar_range_summary_response_payload.schema.json",
+  "title": "SyncV1 calendar_range_summary_response_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "integrated",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Complete, gap-free ascending day summaries plus the opaque Calendar View snapshot token that must be used by all selected-day section requests accepted into the same Flutter page snapshot.",
+  "x-calendar-view-revision": 1,
+  "x-order": [
+    "date"
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "range_start_date",
+    "range_end_date",
+    "timezone",
+    "snapshot_token",
+    "days"
+  ],
+  "properties": {
+    "range_start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "range_end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "snapshot_token": {
+      "type": "string",
+      "pattern": "^calsnap1\\.[A-Za-z0-9_-]{20,512}$",
+      "maxLength": 521
+    },
+    "days": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 42,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/calendar/calendar_range_day_summary.schema.json"
+      }
+    }
+  }
+}

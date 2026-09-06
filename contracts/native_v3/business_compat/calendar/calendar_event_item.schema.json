@@ -1,0 +1,326 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/calendar/calendar_event_item.schema.json",
+  "title": "CalendarEventItem",
+  "description": "One visible Event or Event occurrence projected for one requested local date. Actual occurrence time fields, route identity, derived display mode/status, and active Reminder presence are supplied by C++; Flutter does not recompute overlap, recurrence, status, or ordering.",
+  "x-contract-version": 3,
+  "x-calendar-view-revision": 1,
+  "x-implementation-status": "planned",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "title",
+    "is_all_day",
+    "is_recurring",
+    "recurrence_revision",
+    "occurrence_key",
+    "occurrence_start_at",
+    "occurrence_start_date",
+    "start_at",
+    "end_at",
+    "start_date",
+    "end_date",
+    "day_display",
+    "display_local_time",
+    "status",
+    "has_active_reminder"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "is_all_day": {
+      "type": "boolean"
+    },
+    "is_recurring": {
+      "type": "boolean"
+    },
+    "recurrence_revision": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "occurrence_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "occurrence_start_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "occurrence_start_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "start_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "end_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "start_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "end_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "day_display": {
+      "type": "string",
+      "enum": [
+        "all_day",
+        "starts_at",
+        "continues",
+        "ends_at"
+      ]
+    },
+    "display_local_time": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "overdue",
+        "completed",
+        "skipped"
+      ]
+    },
+    "has_active_reminder": {
+      "type": "boolean"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "is_all_day": {
+            "const": true
+          }
+        },
+        "required": [
+          "is_all_day"
+        ]
+      },
+      "then": {
+        "properties": {
+          "start_at": {
+            "type": "null"
+          },
+          "end_at": {
+            "type": "null"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "day_display": {
+            "const": "all_day"
+          },
+          "display_local_time": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "start_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "start_date": {
+            "type": "null"
+          },
+          "end_date": {
+            "type": "null"
+          },
+          "day_display": {
+            "enum": [
+              "starts_at",
+              "continues",
+              "ends_at"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "is_recurring": {
+            "const": true
+          }
+        },
+        "required": [
+          "is_recurring"
+        ]
+      },
+      "then": {
+        "properties": {
+          "recurrence_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "occurrence_key": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "recurrence_revision": {
+            "type": "null",
+            "maximum": 9007199254740991
+          },
+          "occurrence_key": {
+            "type": "null"
+          },
+          "occurrence_start_at": {
+            "type": "null"
+          },
+          "occurrence_start_date": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "is_recurring": {
+            "const": true
+          },
+          "is_all_day": {
+            "const": false
+          }
+        },
+        "required": [
+          "is_recurring",
+          "is_all_day"
+        ]
+      },
+      "then": {
+        "properties": {
+          "occurrence_start_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "occurrence_start_date": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "is_recurring": {
+            "const": true
+          },
+          "is_all_day": {
+            "const": true
+          }
+        },
+        "required": [
+          "is_recurring",
+          "is_all_day"
+        ]
+      },
+      "then": {
+        "properties": {
+          "occurrence_start_at": {
+            "type": "null"
+          },
+          "occurrence_start_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "day_display": {
+            "enum": [
+              "starts_at",
+              "ends_at"
+            ]
+          }
+        },
+        "required": [
+          "day_display"
+        ]
+      },
+      "then": {
+        "properties": {
+          "display_local_time": {
+            "type": "string",
+            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "display_local_time": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "x-contract-domain": "native",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

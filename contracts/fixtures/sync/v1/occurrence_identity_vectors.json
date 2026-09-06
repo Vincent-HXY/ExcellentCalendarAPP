@@ -1,0 +1,420 @@
+{
+  "fixture_version": 1,
+  "scope": "unchanged Core v2/TZDB original-civil lookup and import identity remap, not a v6 writer",
+  "cases": [
+    {
+      "id": "FX-IDENTITY-london-gap",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-03-28T01:30:00Z",
+        "end_at": "2026-03-28T02:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2026-03-29T01:30:00",
+          "occurrence_start_at": "2026-03-29T01:00:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2026-03-29T02:00:00",
+          "source_occurrence_key": "24c7eda2-669c-5400-bf21-b8291b40395e",
+          "target_occurrence_key": "43c00ccd-2bed-5154-93e3-91aadc825ce7",
+          "same_instant_candidates": 1
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-london-fold",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-10-24T00:30:00Z",
+        "end_at": "2026-10-24T01:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2026-10-25T01:30:00",
+          "occurrence_start_at": "2026-10-25T00:30:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2026-10-25T01:30:00",
+          "source_occurrence_key": "49797fc8-691c-5b01-8425-e11c28f84168",
+          "target_occurrence_key": "63a767e5-426e-5dda-8e57-331b4302dff8",
+          "same_instant_candidates": 1
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-new-york-gap",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-03-07T07:30:00Z",
+        "end_at": "2026-03-07T08:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "America/New_York",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2026-03-08T02:30:00",
+          "occurrence_start_at": "2026-03-08T07:00:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2026-03-08T03:00:00",
+          "source_occurrence_key": "6ae3fd67-e8f6-5ab8-b0bc-1dd5e1c1bbc4",
+          "target_occurrence_key": "18000298-7c56-507e-8529-c9e57852ecf5",
+          "same_instant_candidates": 1
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-new-york-fold",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-10-31T05:30:00Z",
+        "end_at": "2026-10-31T06:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "America/New_York",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2026-11-01T01:30:00",
+          "occurrence_start_at": "2026-11-01T05:30:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2026-11-01T01:30:00",
+          "source_occurrence_key": "9f474b85-95a5-5b7b-bb32-7d70e47d476b",
+          "target_occurrence_key": "f2ba88a4-019d-50c5-b647-ed2fdcee1d8e",
+          "same_instant_candidates": 1
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-lord-howe-half-hour-gap",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-10-02T15:45:00Z",
+        "end_at": "2026-10-02T16:45:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Australia/Lord_Howe",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2026-10-04T02:15:00",
+          "occurrence_start_at": "2026-10-03T15:30:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2026-10-04T02:30:00",
+          "source_occurrence_key": "4bd739a1-e3d0-5c66-bb0c-79baafd96889",
+          "target_occurrence_key": "15a09442-d110-5446-8884-d624972c2c1d",
+          "same_instant_candidates": 1
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-apia-colliding-instant-1",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2011-12-29T10:00:00Z",
+        "end_at": "2011-12-29T11:00:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Pacific/Apia",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2011-12-30T00:00:00",
+          "occurrence_start_at": "2011-12-30T10:00:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2011-12-31T00:00:00",
+          "source_occurrence_key": "8a5d6ab3-ed07-5385-9ebf-1a28b5c7a92f",
+          "target_occurrence_key": "7d8e2f98-c502-5f78-802b-c07fc1e5540c",
+          "same_instant_candidates": 2
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-apia-colliding-instant-2",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2011-12-29T10:00:00Z",
+        "end_at": "2011-12-29T11:00:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Pacific/Apia",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 2,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2011-12-31T00:00:00",
+          "occurrence_start_at": "2011-12-30T10:00:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2011-12-31T00:00:00",
+          "source_occurrence_key": "1f204cb2-f41e-5302-8224-8f37aad0c412",
+          "target_occurrence_key": "cf486045-b1c8-55aa-a0da-2288c6726d07",
+          "same_instant_candidates": 2
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-monthly-clamp",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-01-31T09:00:00Z",
+        "end_at": "2026-01-31T10:00:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "monthly",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2026-02-28T09:00:00",
+          "occurrence_start_at": "2026-02-28T09:00:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2026-02-28T09:00:00",
+          "source_occurrence_key": "5f16fb49-91d1-57fd-aa05-b9b566a0bc32",
+          "target_occurrence_key": "020de7d7-7e28-527b-bfda-ed6e9040a69c",
+          "same_instant_candidates": 1
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-uppercase-source-lexeme",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-03-28T01:30:00Z",
+        "end_at": "2026-03-28T02:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "daily",
+        "revision": 2147483647,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2026-03-29T01:30:00",
+          "occurrence_start_at": "2026-03-29T01:00:00Z",
+          "occurrence_start_date": null,
+          "utc_reconverted_wall": "2026-03-29T02:00:00",
+          "source_occurrence_key": "bc7d1e20-c373-52a8-8ebc-70cd2adb2703",
+          "target_occurrence_key": "fc47f670-1500-5535-be59-36d5bce0ea0b",
+          "same_instant_candidates": 1
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-all-day-leap-month",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": null,
+        "end_at": null,
+        "start_date": "2024-01-31",
+        "end_date": "2024-02-01",
+        "is_all_day": true,
+        "timezone": "Asia/Shanghai",
+        "frequency": "monthly",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": {
+          "original_local_start": "2024-02-29",
+          "occurrence_start_at": null,
+          "occurrence_start_date": "2024-02-29",
+          "utc_reconverted_wall": "2024-02-29",
+          "source_occurrence_key": "ac4832e8-7415-523a-8b05-45415c94edcf",
+          "target_occurrence_key": "95abe5a1-0fb0-5c84-80cc-85c8fc544f81",
+          "same_instant_candidates": 1
+        }
+      }
+    },
+    {
+      "id": "FX-IDENTITY-unknown-source-key",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-03-28T01:30:00Z",
+        "end_at": "2026-03-28T02:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 1,
+        "stored_override": {
+          "occurrence_key": "22222222-2222-4222-8222-222222222222"
+        }
+      },
+      "expected": {
+        "result": null
+      }
+    },
+    {
+      "id": "FX-IDENTITY-wrong-stored-instant",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-03-28T01:30:00Z",
+        "end_at": "2026-03-28T02:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "daily",
+        "revision": 1,
+        "index": 1,
+        "stored_override": {
+          "occurrence_start_at": "2026-03-29T01:00:01Z"
+        }
+      },
+      "expected": {
+        "result": null
+      }
+    },
+    {
+      "id": "FX-IDENTITY-v2-cannot-truncate-wide-revision",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-03-28T01:30:00Z",
+        "end_at": "2026-03-28T02:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "daily",
+        "revision": 2147483648,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": null
+      }
+    },
+    {
+      "id": "FX-IDENTITY-v2-cannot-coerce-fraction",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-03-28T01:30:00Z",
+        "end_at": "2026-03-28T02:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "daily",
+        "revision": 1.5,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": null
+      }
+    },
+    {
+      "id": "FX-IDENTITY-v2-yearly-unsupported",
+      "family": "FX-TARGET",
+      "rule_anchor": "cloud-sync-02/4.2,7.1,7.6",
+      "input": {
+        "source_event_id": "11111111-1111-4111-8111-111111111111",
+        "target_event_id": "22222222-2222-4222-8222-222222222222",
+        "start_at": "2026-03-28T01:30:00Z",
+        "end_at": "2026-03-28T02:30:00Z",
+        "start_date": null,
+        "end_date": null,
+        "is_all_day": false,
+        "timezone": "Europe/London",
+        "frequency": "yearly",
+        "revision": 1,
+        "index": 1,
+        "stored_override": null
+      },
+      "expected": {
+        "result": null
+      }
+    }
+  ]
+}

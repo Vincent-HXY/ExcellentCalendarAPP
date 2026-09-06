@@ -1,12 +1,14 @@
 # 云同步-02：Contracts 与数据模型开发计划
 
-> 状态：ACTIVE PLAN / DECISION REQUIRED / CT0 PARTIAL
+> 状态：CONTRACT FROZEN / CT0–CT4 PASSED / 下游生产实现仍为 planned
 > 建立时间：2026-09-04
 > 上位计划：[云同步-01：Local-first 多设备同步开发计划](./云同步-01-Local-first多设备同步开发计划.md)
 > 负责范围：`docs/domains/` 中同步相关语义、`docs/architecture/decisions/` 中同步 ADR、`contracts/**`、跨层 fixture/validator 以及 SQLite v6 / PostgreSQL 逻辑模型冻结
 > 下游计划：云同步-03（C++/SQLite）、云同步-04（Cloud Backend）、云同步-05（Kotlin/Android）、云同步-06（Flutter）
 > 文内语义锚点：第 5–12 节定义版本、协议、方法、模型与错误；第 13–17 节只登记 fixture、执行顺序和冻结证据，不得重新定义前述语义。
-> 2026-09-05 执行记录：[CT0 审计与决策记录](./云同步-02-CT0审计与决策记录.md)。完成安全基线校准、旧协议保护、HTTP静态盘点与部分隔离实验；七项ADR仍为Proposed，加密/JCS/身份兼容等门禁未关闭，CT1–CT4未开始，不代表Contract冻结或下游可实现。
+> 2026-09-05 执行记录：[审计与决策记录](./云同步-02-CT0审计与决策记录.md)。保留首次 CT0 审计及后续证据，当前状态以最新章节和 `contracts/sync/ct0_gate_status.json` 为准，不代表 Contract 冻结或下游可实现。
+> 后续授权：用户已接受 SQLCipher 原生 C 候选和保留 Native v2 定义的 Anniversary Native v3 兼容修订；ADR-Sync-03/05 的方向已接受，继续自主完成实验、协议和验证。上述历史执行记录不再表示这两项决策仍待用户确认；实验通过状态单独记录。
+> 最终交付（2026-09-06 18:47，隔离工作副本）：默认统一验收入口通过，951 Schema、220 protected Contracts、717 fixed/9 generated suites；四端 1,308 项、最新 26 项组合恢复、53 项导入组件、20k/50k 容量、SQLite 128 回滚边界与 PostgreSQL 70 用例均通过。43 项门禁回归通过。同版 revision/hash 已锁定至 03–06；详见[冻结验收与交付记录](./云同步-02-冻结验收与交付记录.md)。原工作副本的并行字体修改保留，未并入本次冻结输入。
 
 ## 1. 目标与完成口径
 
@@ -66,24 +68,24 @@
 
 Contract 写入前先建立并接受下列决策；名称可按仓库 ADR 编号规范调整，但议题不可省略：
 
-- [ ] Sync Protocol：设备顺序、mutation 幂等、字段/字段组版本、change feed、cursor snapshot、bootstrap、tombstone 与保留窗口。
-- [ ] Workspace Lifecycle：游客/账号隔离、同时存活的提醒 runtime、切换/退出/撤销/缓存清理、可信时间与30天目标保留窗口、跨库导入恢复，以及导入后本机Reminder/Notification/Alarm/Ring/Recovery审计与执行图的处置。
-- [ ] Account SQLite Encryption：SQLCipher 或等价方案、密钥生命周期、三 ABI、WAL/临时页、备份与密钥丢失行为。
-- [ ] SessionCredentialBroker：Refresh Token 单一 owner、single-flight、崩溃窗、logout/revoke/auth failure 的统一终止路径。
-- [ ] Category Sync Lifecycle：账号归属、update/delete/reorder、弱引用、旧 opaque `category_id`、冲突与恢复语义；不得静默改写 ADR-Category-01。
-- [ ] Backend HTTP Contract Calibration：HTTP 状态、`ApiResult`、`Retry-After`、Idempotency-Key payload digest 和现有 16 个端点的状态校准。
-- [ ] Android Backup / Device Transfer：冻结Auto Backup、cloud backup与device-to-device transfer的包含/排除矩阵。`installation_id`、Broker凭据、Keystore/wrapped key、账号DB/WAL/SHM、workspace/device registry内容、transport/import/clear lifecycle journal、远端设备cache以及guest数据库都必须从Auto Backup/任何cloud backup排除，贯彻“游客本机空间永不上传”。device-to-device direct transfer默认同样排除；只有独立ADR明确证明传输通道不落入第三方云、恢复前可原子换新guest workspace/source identity并阻止重复导入时，才可单独允许guest direct-transfer re-home，不能沿用Android默认行为或把换identity当作云上传补救。
+- [x] Sync Protocol：设备顺序、mutation 幂等、字段/字段组版本、change feed、cursor snapshot、bootstrap、tombstone 与保留窗口。
+- [x] Workspace Lifecycle：游客/账号隔离、同时存活的提醒 runtime、切换/退出/撤销/缓存清理、可信时间与30天目标保留窗口、跨库导入恢复，以及导入后本机Reminder/Notification/Alarm/Ring/Recovery审计与执行图的处置。
+- [x] Account SQLite Encryption：SQLCipher 或等价方案、密钥生命周期、三 ABI、WAL/临时页、备份与密钥丢失行为。
+- [x] SessionCredentialBroker：Refresh Token 单一 owner、single-flight、崩溃窗、logout/revoke/auth failure 的统一终止路径。
+- [x] Category Sync Lifecycle：账号归属、update/delete/reorder、弱引用、旧 opaque `category_id`、冲突与恢复语义；不得静默改写 ADR-Category-01。
+- [x] Backend HTTP Contract Calibration：HTTP 状态、`ApiResult`、`Retry-After`、Idempotency-Key payload digest 和现有 16 个端点的状态校准。
+- [x] Android Backup / Device Transfer：冻结Auto Backup、cloud backup与device-to-device transfer的包含/排除矩阵。`installation_id`、Broker凭据、Keystore/wrapped key、账号DB/WAL/SHM、workspace/device registry内容、transport/import/clear lifecycle journal、远端设备cache以及guest数据库都必须从Auto Backup/任何cloud backup排除，贯彻“游客本机空间永不上传”。device-to-device direct transfer默认同样排除；只有独立ADR明确证明传输通道不落入第三方云、恢复前可原子换新guest workspace/source identity并阻止重复导入时，才可单独允许guest direct-transfer re-home，不能沿用Android默认行为或把换identity当作云上传补救。
 
 ### 4.2 Spike 与审计退出条件
 
-- [ ] SQLCipher 候选完成许可证、Android 三 ABI、当前 sqlite3 API、WAL/defensive 配置、20,000 条数据和强杀恢复 spike。
-- [ ] 完成 RFC 8785/JCS + SHA-256 跨端可行性 spike：以官方/等价边界向量覆盖Unicode、对象键排序、数字/nullable/array及JSON safe-integer边界，在Windows C++、Android三ABI与Java得到完全相同UTF-8 bytes/hash。现有`cpp_core/src/common/search_token_crypto.cpp`中的SHA-256实现只可在抽取、独立KAT与许可证/边界审计通过后复用；Java/C++均不得在未批准时新增依赖。该JCS规则与`contracts/identity.yaml`为UUID identity定义的紧凑数组canonical规则是两个版本域，禁止相互替换。
-- [ ] 所有 V1 业务实体 ID 完成稳定性审计；记录哪些是 canonical UUID、哪些必须继续作为 opaque ID，并给出引用图重映射规则。
-- [ ] 明确现有 SQLite v5 生产目录、v1/v2/v3→v4→v5 migration 链和 v5 checker hash，不允许修改历史 migration。
-- [ ] 核对当前 Auth/Profile Controller 与 `backend_api.yaml` 的每个 request、response、error、HTTP status 和幂等行为。
-- [ ] 明确游客提醒在账号登录期间继续运行；这要求 workspace registry 可同时路由游客提醒 runtime 与当前账号 runtime，不能只保存单一全局 Core。
-- [ ] 冻结通知身份迁移：`NotificationTapPayload.workspace_id` 为兼容性可选字段，但所有 v6 writer 必须提供；旧 PendingIntent 缺失该字段时仅可在唯一无歧义的 legacy workspace 中解析，否则拒绝路由，绝不跨库按 `target_id` 搜索或回退当前账号。
-- [ ] 审计主Manifest当前未声明`allowBackup/dataExtractionRules/fullBackupContent`且仓库无备份规则XML的现状；ADR落地前，任何账号缓存保留、重装后新installation或guest transfer语义均不得宣称完成。fixture必须覆盖uninstall/reinstall、Auto Backup/cloud restore、device transfer、Keystore key缺失及同一迁移源到两台设备；cloud路径必须证明guest也未进入备份，direct transfer若获准则证明开放业务前已re-home且不会复用lineage/lease。
+- [x] SQLCipher 候选完成许可证、Android 三 ABI、当前 sqlite3 API、WAL/defensive 配置、20,000 条数据和强杀恢复 spike。
+- [x] 完成 RFC 8785/JCS + SHA-256 跨端可行性 spike：以官方/等价边界向量覆盖Unicode、对象键排序、数字/nullable/array及JSON safe-integer边界，在Windows C++、Android三ABI与Java得到完全相同UTF-8 bytes/hash。现有`cpp_core/src/common/search_token_crypto.cpp`中的SHA-256实现只可在抽取、独立KAT与许可证/边界审计通过后复用；Java/C++均不得在未批准时新增依赖。该JCS规则与`contracts/identity.yaml`为UUID identity定义的紧凑数组canonical规则是两个版本域，禁止相互替换。
+- [x] 所有 V1 业务实体 ID 完成稳定性审计；记录哪些是 canonical UUID、哪些必须继续作为 opaque ID，并给出引用图重映射规则。
+- [x] 明确现有 SQLite v5 生产目录、v1/v2/v3→v4→v5 migration 链和 v5 checker hash，不允许修改历史 migration。
+- [x] 核对当前 Auth/Profile Controller 与 `backend_api.yaml` 的每个 request、response、error、HTTP status 和幂等行为。
+- [x] 明确游客提醒在账号登录期间继续运行；这要求 workspace registry 可同时路由游客提醒 runtime 与当前账号 runtime，不能只保存单一全局 Core。
+- [x] 冻结通知身份迁移：`NotificationTapPayload.workspace_id` 为兼容性可选字段，但所有 v6 writer 必须提供；旧 PendingIntent 缺失该字段时仅可在唯一无歧义的 legacy workspace 中解析，否则拒绝路由，绝不跨库按 `target_id` 搜索或回退当前账号。
+- [x] 审计主Manifest当前未声明`allowBackup/dataExtractionRules/fullBackupContent`且仓库无备份规则XML的现状；ADR落地前，任何账号缓存保留、重装后新installation或guest transfer语义均不得宣称完成。fixture必须覆盖uninstall/reinstall、Auto Backup/cloud restore、device transfer、Keystore key缺失及同一迁移源到两台设备；cloud路径必须证明guest也未进入备份，direct transfer若获准则证明开放业务前已re-home且不会复用lineage/lease。
 
 任一项失败时，只阻塞受影响 Contract；不得用 Android 私有目录冒充加密、用时间戳冒充版本、用运行时 Fake 冒充协议完成。
 
@@ -93,7 +95,7 @@ Contract 写入前先建立并接受下列决策；名称可按仓库 ADR 编号
 | --- | --- | --- |
 | Sync Protocol | `sync_protocol/v1` | 独立业务 payload 版本，可同时被 Backend API 和 Native apply Schema `$ref`；发布后至少支持 N−1 |
 | Backend HTTP API | `/api/v1` / `backend_api` v1 | 现有端点尚未正式激活，可在冻结前校准；发布后按 N−1 和明确弃用窗口演进 |
-| Native MethodChannel/JNI | Native v2 的 additive revision | 新方法逐项 `planned → implemented_unintegrated → integrated/active`；不改变既有 active 方法形状 |
+| Native MethodChannel/JNI | 保留 Native v2，新增独立 Native v3 兼容修订 | 用户已接受 ADR-Sync-05 的版本路径；v2 定义冻结保留，v3 容纳 Anniversary opaque 分类引用和 workspace 能力；新方法逐项 `planned → implemented_unintegrated → integrated/active`，四层随同一 APK 接入，不单独放宽 v2 |
 | Calendar Core Storage | SQLite v6 | 仅允许冻结 v5 输入后的相邻原子 migration；旧 runtime 必须对 v6 fail closed |
 | Workspace registry | 独立格式 v1 | Kotlin 私有、原子写入、只保存路由/密钥别名/缓存期限，不保存业务事实或 token |
 | Flutter ordinary cache | 独立格式版本 | 不复用 API/Native/Storage 版本；换号和锁定时不得泄露标题或搜索结果 |
@@ -683,50 +685,50 @@ Flutter 不接触 cursor、client sequence、Outbox、raw change 或 Refresh Tok
 
 ### 9.1 Sync 核心
 
-- [ ] `contracts/sync/sync_protocol_invariants.yaml`
-- [ ] `contracts/sync/sync_counter_registry.yaml`：owner、safe MAX、checked-increment、stable error/context与terminal action。
-- [ ] `contracts/sync/sync_field_registry.yaml`
-- [ ] `contracts/sync/sync_mutation.schema.json`
-- [ ] `contracts/sync/sync_upload_result.schema.json`
-- [ ] `contracts/sync/sync_change_group.schema.json`：普通mutation的typed entity changes + conflict deltas不可拆原子组。
-- [ ] `contracts/sync/sync_conflict_delta.schema.json`，以及 `sync_import_publish_item.schema.json` 的 begin/chunk/commit strict union。
-- [ ] `contracts/sync/sync_exchange_request.schema.json`
-- [ ] `contracts/sync/sync_exchange_response.schema.json`
-- [ ] `contracts/sync/native_prepared_exchange_request.schema.json`与`native_apply_exchange_response.schema.json`：冻结normal/logout/pull-only/ack-only本机分支、wire mode、cursor/download/ack/upper-bound/has-more/cleanup的required/null矩阵。
-- [ ] `contracts/sync/sync_device_fence_request.schema.json` 与 `sync_device_fence_response.schema.json`：冻结operation幂等、old→new transport generation、sequence recovery bundle、resolved absent-import fence proof。
-- [ ] `contracts/sync/sync_bootstrap_request.schema.json`
-- [ ] `contracts/sync/sync_bootstrap_item.schema.json`：严格 `fact_after_image/tombstone/deleted_entity_anchor/unresolved_conflict/import_publish_marker/requesting_device_causal_anchor` union；每分支有独立required/exact-key，deleted anchor不含业务payload且可携不可变import provenance。
-- [ ] `contracts/sync/sync_bootstrap_page_response.schema.json`：冻结session/generation/upper-bound、device highest/client-confirmed recovery bundle、两个cleanup水位、page hash/cursor与terminal规则。
-- [ ] `contracts/sync/sync_status_response.schema.json`
-- [ ] `contracts/sync/sync_conflict_summary.schema.json`
-- [ ] `contracts/sync/sync_conflict_detail.schema.json`：冻结`conflicting_groups/auto_merged_groups`的typed投影。
-- [ ] `contracts/sync/resolve_sync_conflict_request.schema.json`
-- [ ] `contracts/sync/sync_conflict_resolution_response.schema.json`
-- [ ] `contracts/sync/sync_failed_local_change_summary.schema.json`、detail/discard request/response：只允许typed候选/草稿与安全错误context，严禁自动重传字段。
-- [ ] 每个 `target_type` 的 create/update/delete/restore 或专属 operation Schema，禁止通用 `additionalProperties: true` payload。
+- [x] `contracts/sync/sync_protocol_invariants.yaml`
+- [x] `contracts/sync/sync_counter_registry.yaml`：owner、safe MAX、checked-increment、stable error/context与terminal action。
+- [x] `contracts/sync/sync_field_registry.yaml`
+- [x] `contracts/sync/sync_mutation.schema.json`
+- [x] `contracts/sync/sync_upload_result.schema.json`
+- [x] `contracts/sync/sync_change_group.schema.json`：普通mutation的typed entity changes + conflict deltas不可拆原子组。
+- [x] `contracts/sync/sync_conflict_delta.schema.json`，以及 `sync_import_publish_item.schema.json` 的 begin/chunk/commit strict union。
+- [x] `contracts/sync/sync_exchange_request.schema.json`
+- [x] `contracts/sync/sync_exchange_response.schema.json`
+- [x] `contracts/sync/native_prepared_exchange_request.schema.json`与`native_apply_exchange_response.schema.json`：冻结normal/logout/pull-only/ack-only本机分支、wire mode、cursor/download/ack/upper-bound/has-more/cleanup的required/null矩阵。
+- [x] `contracts/sync/sync_device_fence_request.schema.json` 与 `sync_device_fence_response.schema.json`：冻结operation幂等、old→new transport generation、sequence recovery bundle、resolved absent-import fence proof。
+- [x] `contracts/sync/sync_bootstrap_request.schema.json`
+- [x] `contracts/sync/sync_bootstrap_item.schema.json`：严格 `fact_after_image/tombstone/deleted_entity_anchor/unresolved_conflict/import_publish_marker/requesting_device_causal_anchor` union；每分支有独立required/exact-key，deleted anchor不含业务payload且可携不可变import provenance。
+- [x] `contracts/sync/sync_bootstrap_page_response.schema.json`：冻结session/generation/upper-bound、device highest/client-confirmed recovery bundle、两个cleanup水位、page hash/cursor与terminal规则。
+- [x] `contracts/sync/sync_status_response.schema.json`
+- [x] `contracts/sync/sync_conflict_summary.schema.json`
+- [x] `contracts/sync/sync_conflict_detail.schema.json`：冻结`conflicting_groups/auto_merged_groups`的typed投影。
+- [x] `contracts/sync/resolve_sync_conflict_request.schema.json`
+- [x] `contracts/sync/sync_conflict_resolution_response.schema.json`
+- [x] `contracts/sync/sync_failed_local_change_summary.schema.json`、detail/discard request/response：只允许typed候选/草稿与安全错误context，严禁自动重传字段。
+- [x] 每个 `target_type` 的 create/update/delete/restore 或专属 operation Schema，禁止通用 `additionalProperties: true` payload。
 
 ### 9.2 Workspace、设备、会话与偏好
 
-- [ ] `contracts/workspace/`：ready/locked/empty state/event union、list/activate/import preview/commit/status九态+三个正交enum/abandon/cleanup，以及内部import range-close proof接纳Schema；status固定“exact batch可回终态 / source discovery只回当前handle或empty”。
-- [ ] `contracts/sync/import_takeover_request.schema.json`、`import_range_close_proof.schema.json`与对应HTTP response：冻结virtual no-effect range、resulting revision、origin-device highest/nullable-next/exhausted及防篡改字段。
-- [ ] `contracts/device/`：register/list/rename/settings/revoke 与 device response Schema。
-- [ ] `contracts/auth/`：session adopt/access/status/logout/clear/reauth Schema；服务端logout终态`server_time`、`allowed_cache_policies`、`RETENTION_TRUSTED_TIME_REQUIRED`、RetentionDeadlineRecord/clock state/null矩阵、Kotlin-local BootEpochRecord及所有 token/password sensitive标记。
-- [ ] `contracts/common/server_time_response.schema.json`与`backend_api.yaml`中的`system.time`：exact UTC字段、无body/无账号数据/no-store/限流语义；不得复用为同步冲突裁决时钟。
-- [ ] `contracts/preferences/`：四项portable preference response、typed patch、revision CAS、timezone双轴；locale新写拒绝与历史兼容矩阵。
-- [ ] `contracts/reminder/default_reminder_method_applicability.yaml`：有序候选、五类目标适用集合、无交集和“既有Reminder零变化”。
-- [ ] Search Contract兼容revision：additive `search.get_workspace_history/replace_workspace_history` Schema、workspace/route/history revision、旧全局v1→guest一次迁移和account AEAD生命周期；旧local方法不形成第二writer。
-- [ ] 复核现有 `event.update` 整系列与 occurrence cancel/complete/reopen Schema可以进入同步typed mutation；三作用域operation在R2-C不得出现。
-- [ ] `contracts/user/`：资料安全投影、profile/preferences 双 revision、download-only change 与 cached snapshot Schema；收紧 update request 的字段 owner。
-- [ ] 更新通知 tap payload 与调度 identity Contract：兼容旧 reader、v6 writer 强制 workspace identity，并增加歧义拒绝 fixture。
-- [ ] `contracts/common/`：仅在真正跨版本域稳定时新增公共类型；不得让 API/Native envelope 互相 `$ref`。
+- [x] `contracts/workspace/`：ready/locked/empty state/event union、list/activate/import preview/commit/status九态+三个正交enum/abandon/cleanup，以及内部import range-close proof接纳Schema；status固定“exact batch可回终态 / source discovery只回当前handle或empty”。
+- [x] `contracts/sync/import_takeover_request.schema.json`、`import_range_close_proof.schema.json`与对应HTTP response：冻结virtual no-effect range、resulting revision、origin-device highest/nullable-next/exhausted及防篡改字段。
+- [x] `contracts/device/`：register/list/rename/settings/revoke 与 device response Schema。
+- [x] `contracts/auth/`：session adopt/access/status/logout/clear/reauth Schema；服务端logout终态`server_time`、`allowed_cache_policies`、`RETENTION_TRUSTED_TIME_REQUIRED`、RetentionDeadlineRecord/clock state/null矩阵、Kotlin-local BootEpochRecord及所有 token/password sensitive标记。
+- [x] `contracts/common/server_time_response.schema.json`与`backend_api.yaml`中的`system.time`：exact UTC字段、无body/无账号数据/no-store/限流语义；不得复用为同步冲突裁决时钟。
+- [x] `contracts/preferences/`：四项portable preference response、typed patch、revision CAS、timezone双轴；locale新写拒绝与历史兼容矩阵。
+- [x] `contracts/reminder/default_reminder_method_applicability.yaml`：有序候选、五类目标适用集合、无交集和“既有Reminder零变化”。
+- [x] Search Contract兼容revision：additive `search.get_workspace_history/replace_workspace_history` Schema、workspace/route/history revision、旧全局v1→guest一次迁移和account AEAD生命周期；旧local方法不形成第二writer。
+- [x] 复核现有 `event.update` 整系列与 occurrence cancel/complete/reopen Schema可以进入同步typed mutation；三作用域operation在R2-C不得出现。
+- [x] `contracts/user/`：资料安全投影、profile/preferences 双 revision、download-only change 与 cached snapshot Schema；收紧 update request 的字段 owner。
+- [x] 更新通知 tap payload 与调度 identity Contract：兼容旧 reader、v6 writer 强制 workspace identity，并增加歧义拒绝 fixture。
+- [x] `contracts/common/`：仅在真正跨版本域稳定时新增公共类型；不得让 API/Native envelope 互相 `$ref`。
 
 ### 9.3 映射与状态
 
-- [ ] 更新 `backend_api.yaml`、`method_channels.yaml`、`native_calls.yaml`。
-- [ ] 更新 `enums.yaml`：WorkspaceKind、SyncRunState、SyncMutationType、SyncTargetType、SyncUploadResultStatus、SyncConflictStatus、SyncResolutionMode、ImportStatus、DeviceStatus 等稳定字符串。
-- [ ] 更新 `error_codes.yaml` 并为每个错误声明边界、retryable、是否允许已保存数据、可选 context shape。
-- [ ] 更新 `contracts/storage/calendar_core_storage.yaml`，新增冻结的 v6 节点且保留 v5 节点/hash 不变。
-- [ ] 新建 PostgreSQL 逻辑模型机器文件或等价 Schema，供 Backend migration 测试核对；不得让 JPA Entity 充当 Contract。
+- [x] 更新 `backend_api.yaml`、`method_channels.yaml`、`native_calls.yaml`。
+- [x] 更新 `enums.yaml`：WorkspaceKind、SyncRunState、SyncMutationType、SyncTargetType、SyncUploadResultStatus、SyncConflictStatus、SyncResolutionMode、ImportStatus、DeviceStatus 等稳定字符串。
+- [x] 更新 `error_codes.yaml` 并为每个错误声明边界、retryable、是否允许已保存数据、可选 context shape。
+- [x] 更新 `contracts/storage/calendar_core_storage.yaml`，新增冻结的 v6 节点且保留 v5 节点/hash 不变。
+- [x] 新建 PostgreSQL 逻辑模型机器文件或等价 Schema，供 Backend migration 测试核对；不得让 JPA Entity 充当 Contract。
 
 ## 10. SQLite v6 逻辑模型冻结
 
@@ -762,7 +764,7 @@ SQLite v6 的精确 DDL 由本计划机器文件冻结，C++ 分计划只实现�
 
 - v5→v6 必须先运行完整冻结 v5 checker，再在一个 `BEGIN IMMEDIATE` transaction 中增加精确对象、metadata、history 和 `PRAGMA user_version=6`。
 - guest v6 可为明文 profile，account v6 必须是加密 profile；两者业务 Schema 相同，但 key/open policy 不同。
-- 既有 20 个业务表、索引、payload bytes、position、generation、history 和 JSON guard 均保持不变，除非单独 migration 步骤有明确机器定义。
+- 既有 20 个表（17 个存储表与 3 个元数据表）、24 个索引、payload bytes、position、generation、history 和 JSON guard 均保持不变，除非单独 migration 步骤有明确机器定义。数量以冻结 v5 节点和实际完整 checker 为准；此处澄清计数，不变更旧格式。
 - account workspace 的普通local-user业务writer在同一事务写live事实 + generation/history + Outbox；guest对应writer只写事实/history且Outbox恒为零。Import不走该通用规则：commit只写guest source lease与账号隔离staging/manifest/begin-items-commit Outbox，直到权威publish group/marker被原子apply才发布live事实。Conflict resolution先写本地resolution intent/state + Outbox，只有服务端effect group或resolved delta被apply后才改live事实、冲突终态与计数。remote apply统一写事实/实体状态/receipt/cursor并明确抑制echo Outbox。
 - Scheduler/Notification/Alarm/投递状态更新不产生同步 Outbox；这不是漏同步，而是 V1 数据闭包要求。
 - schema checker 必须检查同名错定义对象、未知 metadata、非法 history、加密 profile、quick_check、关系和 payload codec。
@@ -900,10 +902,10 @@ Backend migration 至少实现并由 Contract fixture 映射以下逻辑表；�
 
 本计划只有在以下条件同时成立时才标记 `CONTRACT FROZEN`：
 
-- [ ] CT0–CT4 的退出条件及第 16 节全部证据已签署，关键技术选择无悬空。
-- [ ] 第 5–12 节均有唯一机器表示；所有 mutation 为 target-specific typed payload，兼容与失败行为闭合。
-- [ ] 03–06 已锁定同一 Contract revision/hash，并用第 13 节相同 fixture manifest 证明消费结果一致。
-- [ ] 状态只表示设计与 Contract 已冻结，不暗示任何实现层或真实多设备集成已经完成。
+- [x] CT0–CT4 的退出条件及第 16 节全部证据已签署，关键技术选择无悬空。
+- [x] 第 5–12 节均有唯一机器表示；所有 mutation 为 target-specific typed payload，兼容与失败行为闭合。
+- [x] 03–06 已锁定同一 Contract revision/hash，并用第 13 节相同 fixture manifest 证明消费结果一致。
+- [x] 状态只表示设计与 Contract 已冻结，不暗示任何实现层或真实多设备集成已经完成。
 
 ## 18. 本计划之外
 

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal/claim_conflict_notice_request.schema.json",
+  "title": "SyncV1 claim_conflict_notice_request",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "binding",
+    "notice_id",
+    "notice_sequence"
+  ],
+  "properties": {
+    "binding": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/runtime_binding.schema.json"
+    },
+    "notice_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "notice_sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    }
+  },
+  "x-exposure": "kotlin_jni_cpp_only"
+}

@@ -1,0 +1,2476 @@
+version: 1
+protocol: sync_protocol/v1
+implementation_status: planned
+release_status: planned
+rule_anchor: cloud-sync-02/7.2,7.7
+targets:
+  category:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/category
+    variants:
+      default:
+        fact_schema: sync/v1/category_fact.schema.json
+        patch_schema: sync/v1/category_patch.schema.json
+        fields:
+          id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          name:
+            direction: both
+            schema:
+              type: string
+              minLength: 1
+              maxLength: 40
+              pattern: .*\S.*
+            nullable: false
+            merge_key: name
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          description:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              minLength: 1
+              maxLength: 200
+            nullable: true
+            merge_key: description
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          color:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              pattern: ^#[0-9A-F]{6}$
+            nullable: true
+            merge_key: color
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          icon:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              minLength: 1
+              maxLength: 64
+            nullable: true
+            merge_key: icon
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          sort_order:
+            direction: both
+            schema:
+              type:
+              - integer
+              - 'null'
+              minimum: 0
+              maximum: 9007199254740991
+              description: Nullable compatibility projection constrained to the exact
+                cross-language JSON integer range 0..9007199254740991; category.list
+                orders null after every integer.
+            nullable: true
+            merge_key: ordering
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          created_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          updated_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          deleted_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          reorder_revision:
+            direction: download
+            schema:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            nullable: false
+            merge_key: ordering
+            server_generated: true
+            create: false
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          ordering:
+          - sort_order
+          - reorder_revision
+          lifecycle:
+          - deleted_at
+          name:
+          - name
+          description:
+          - description
+          color:
+          - color
+          icon:
+          - icon
+        immutable_fact: false
+  event:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/event
+    variants:
+      default:
+        fact_schema: sync/v1/event_fact.schema.json
+        patch_schema: sync/v1/event_patch.schema.json
+        fields:
+          id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          title:
+            direction: both
+            schema:
+              type: string
+              minLength: 1
+            nullable: false
+            merge_key: title
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          content:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+            nullable: true
+            merge_key: content
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          start_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: timing
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          end_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: timing
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          start_date:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date
+            nullable: true
+            merge_key: timing
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          end_date:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date
+            nullable: true
+            merge_key: timing
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          is_all_day:
+            direction: both
+            schema:
+              type: boolean
+            nullable: false
+            merge_key: timing
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          has_recurrence:
+            direction: both
+            schema:
+              type: boolean
+            nullable: false
+            merge_key: recurrence_link
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          status:
+            direction: both
+            schema:
+              type: string
+              enum:
+              - active
+              - completed
+              - cancelled
+              - archived
+            nullable: false
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          completed_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+            nullable: true
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          recurrence_id:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: true
+            merge_key: recurrence_link
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          recurrence_revision:
+            direction: both
+            schema:
+              type:
+              - integer
+              - 'null'
+              minimum: 1
+              maximum: 9007199254740991
+            nullable: true
+            merge_key: recurrence_link
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          category_id:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              description: Nullable opaque weak reference. Event detail preserves
+                this value even when the related Category is missing or soft-deleted
+                and the category projection is null.
+            nullable: true
+            merge_key: category_id
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          importance:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              enum:
+              - unimportant_noturgent
+              - important_noturgent
+              - unimportant_urgent
+              - important_urgent
+              - null
+            nullable: true
+            merge_key: importance
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          location:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+            nullable: true
+            merge_key: location
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          timezone:
+            direction: both
+            schema:
+              type: string
+              minLength: 1
+              x-format: iana-timezone
+            nullable: false
+            merge_key: timing
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          source:
+            direction: both
+            schema:
+              type: string
+              enum:
+              - manual
+              - ai_extraction
+              - sync
+              - import
+              - wechat
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          created_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          updated_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          deleted_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+            nullable: true
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          timing:
+          - is_all_day
+          - start_at
+          - end_at
+          - start_date
+          - end_date
+          - timezone
+          lifecycle:
+          - status
+          - completed_at
+          - deleted_at
+          recurrence_link:
+          - has_recurrence
+          - recurrence_id
+          - recurrence_revision
+          title:
+          - title
+          content:
+          - content
+          category_id:
+          - category_id
+          importance:
+          - importance
+          location:
+          - location
+        immutable_fact: false
+  event_recurrence:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/event_recurrence
+    variants:
+      default:
+        fact_schema: sync/v1/event_recurrence_fact.schema.json
+        patch_schema: null
+        fields:
+          recurrence_id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          revision:
+            direction: both
+            schema:
+              type: integer
+              minimum: 1
+              maximum: 9007199254740991
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          frequency:
+            direction: both
+            schema:
+              type: string
+              enum:
+              - daily
+              - weekly
+              - monthly
+            nullable: false
+            merge_key: frequency
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          interval:
+            direction: both
+            schema:
+              type: integer
+              const: 1
+              maximum: 9007199254740991
+            nullable: false
+            merge_key: interval
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          start_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: start_at
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          start_date:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date
+            nullable: true
+            merge_key: start_date
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          timezone:
+            direction: both
+            schema:
+              type: string
+              minLength: 1
+              x-format: iana-timezone
+            nullable: false
+            merge_key: timezone
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          day_of_month:
+            direction: both
+            schema:
+              type:
+              - integer
+              - 'null'
+              minimum: 1
+              maximum: 31
+            nullable: true
+            merge_key: day_of_month
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          days_of_week:
+            direction: both
+            schema:
+              type: array
+              maxItems: 1
+              uniqueItems: true
+              items:
+                type: integer
+                minimum: 1
+                maximum: 7
+            nullable: false
+            merge_key: days_of_week
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          month_of_year:
+            direction: both
+            schema:
+              type: 'null'
+            nullable: true
+            merge_key: month_of_year
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          end_at:
+            direction: both
+            schema:
+              type: 'null'
+            nullable: true
+            merge_key: end_at
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          count:
+            direction: both
+            schema:
+              type: 'null'
+            nullable: true
+            merge_key: count
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          created_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+        merge_groups:
+          frequency:
+          - frequency
+          interval:
+          - interval
+          start_at:
+          - start_at
+          start_date:
+          - start_date
+          timezone:
+          - timezone
+          day_of_month:
+          - day_of_month
+          days_of_week:
+          - days_of_week
+          month_of_year:
+          - month_of_year
+          end_at:
+          - end_at
+          count:
+          - count
+        immutable_fact: true
+  event_occurrence_state:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/event_occurrence_state
+    variants:
+      default:
+        fact_schema: sync/v1/event_occurrence_state_fact.schema.json
+        patch_schema: sync/v1/event_occurrence_state_patch.schema.json
+        fields:
+          event_id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          recurrence_revision:
+            direction: both
+            schema:
+              type: integer
+              minimum: 1
+              maximum: 9007199254740991
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          occurrence_key:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          occurrence_start_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          occurrence_start_date:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date
+            nullable: true
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          status:
+            direction: both
+            schema:
+              type: string
+              enum:
+              - scheduled
+              - completed
+              - skipped
+              - cancelled
+            nullable: false
+            merge_key: occurrence_state
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          state_changed_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+            nullable: false
+            merge_key: occurrence_state
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          reopened_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+            nullable: true
+            merge_key: occurrence_state
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          created_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          updated_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          original_local_start:
+            direction: both
+            schema:
+              type: string
+              pattern: ^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+        merge_groups:
+          occurrence_state:
+          - status
+          - state_changed_at
+          - reopened_at
+        immutable_fact: false
+  anniversary:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/anniversary
+    variants:
+      default:
+        fact_schema: sync/v1/anniversary_fact.schema.json
+        patch_schema: sync/v1/anniversary_patch.schema.json
+        fields:
+          id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          title:
+            direction: both
+            schema:
+              type: string
+              minLength: 1
+            nullable: false
+            merge_key: title
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          date:
+            direction: both
+            schema:
+              type: string
+              format: date
+              description: Original user-local date. A non-null recurrence_id means
+                this date supplies the yearly month/day anchor.
+            nullable: false
+            merge_key: date_rule
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          calendar_type:
+            direction: both
+            schema:
+              const: solar
+            nullable: false
+            merge_key: date_rule
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          category_id:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+            nullable: true
+            merge_key: category_id
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          recurrence_id:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: uuid
+              description: Null for a one-time Anniversary. A non-null value references
+                one active, exclusively owned Anniversary recurrence with frequency=yearly
+                and interval=1.
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: true
+            merge_key: date_rule
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          note:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+            nullable: true
+            merge_key: note
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          importance:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              enum:
+              - unimportant_noturgent
+              - important_noturgent
+              - unimportant_urgent
+              - important_urgent
+              - null
+            nullable: true
+            merge_key: importance
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          created_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          updated_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          deleted_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          date_rule:
+          - date
+          - calendar_type
+          - recurrence_id
+          lifecycle:
+          - deleted_at
+          title:
+          - title
+          category_id:
+          - category_id
+          note:
+          - note
+          importance:
+          - importance
+        immutable_fact: false
+  anniversary_recurrence:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/anniversary_recurrence
+    variants:
+      default:
+        fact_schema: sync/v1/anniversary_recurrence_fact.schema.json
+        patch_schema: null
+        fields:
+          recurrence_id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          frequency:
+            direction: both
+            schema:
+              type: string
+              const: yearly
+            nullable: false
+            merge_key: frequency
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          interval:
+            direction: both
+            schema:
+              type: integer
+              const: 1
+              maximum: 9007199254740991
+            nullable: false
+            merge_key: interval
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          created_at:
+            direction: both
+            schema: &id001
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          deleted_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: deleted_at
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          frequency:
+          - frequency
+          interval:
+          - interval
+          deleted_at:
+          - deleted_at
+        immutable_fact: true
+  habit:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/habit
+    variants:
+      default:
+        fact_schema: sync/v1/habit_fact.schema.json
+        patch_schema: sync/v1/habit_patch.schema.json
+        fields:
+          id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          title:
+            direction: both
+            schema:
+              type: string
+              minLength: 1
+              maxLength: 80
+            nullable: false
+            merge_key: title
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          description:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              maxLength: 2000
+            nullable: true
+            merge_key: description
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          category_id:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+            nullable: true
+            merge_key: category_id
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          recurrence_id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          target_count_hundredths:
+            direction: both
+            schema:
+              type:
+              - integer
+              - 'null'
+              minimum: 1
+              maximum: 9007199254740991
+            nullable: true
+            merge_key: target
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          unit:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              minLength: 1
+              maxLength: 32
+            nullable: true
+            merge_key: target
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          start_date:
+            direction: both
+            schema:
+              type: string
+              format: date
+            nullable: false
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          end_date:
+            direction: both
+            schema:
+              type: string
+              format: date
+            nullable: false
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          ended_date:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date
+            nullable: true
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          is_active:
+            direction: both
+            schema:
+              type: boolean
+            nullable: false
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          created_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          updated_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          deleted_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: lifecycle
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          first_check_in_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: history_guard
+            server_generated: false
+            create: false
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          target:
+          - target_count_hundredths
+          - unit
+          lifecycle:
+          - start_date
+          - end_date
+          - ended_date
+          - is_active
+          - deleted_at
+          history_guard:
+          - first_check_in_at
+          title:
+          - title
+          description:
+          - description
+          category_id:
+          - category_id
+        immutable_fact: false
+  habit_recurrence:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/habit_recurrence
+    variants:
+      default:
+        fact_schema: sync/v1/habit_recurrence_fact.schema.json
+        patch_schema: null
+        fields:
+          id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          frequency:
+            direction: both
+            schema:
+              const: daily
+            nullable: false
+            merge_key: frequency
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          interval:
+            direction: both
+            schema:
+              const: 1
+            nullable: false
+            merge_key: interval
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          timezone_mode:
+            direction: both
+            schema:
+              const: follow_device
+            nullable: false
+            merge_key: timezone_mode
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          created_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          updated_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          deleted_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: deleted_at
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          frequency:
+          - frequency
+          interval:
+          - interval
+          timezone_mode:
+          - timezone_mode
+          deleted_at:
+          - deleted_at
+        immutable_fact: true
+  habit_check_in:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/habit_check_in
+    variants:
+      default:
+        fact_schema: sync/v1/habit_check_in_fact.schema.json
+        patch_schema: null
+        fields:
+          habit_id:
+            direction: both
+            schema:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          check_date:
+            direction: both
+            schema:
+              type: string
+              format: date
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          status:
+            direction: both
+            schema:
+              type: string
+              enum:
+              - done
+              - partial
+              - skipped
+            nullable: false
+            merge_key: completion
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          completed_count_hundredths:
+            direction: both
+            schema:
+              type:
+              - integer
+              - 'null'
+              minimum: 1
+              maximum: 9007199254740991
+            nullable: true
+            merge_key: completion
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          target_count_snapshot_hundredths:
+            direction: both
+            schema:
+              type:
+              - integer
+              - 'null'
+              minimum: 1
+              maximum: 9007199254740991
+            nullable: true
+            merge_key: snapshot
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          unit_snapshot:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              minLength: 1
+              maxLength: 32
+            nullable: true
+            merge_key: snapshot
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          completed_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: completion
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          note:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              maxLength: 500
+            nullable: true
+            merge_key: note
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          source:
+            direction: both
+            schema:
+              type: string
+              enum:
+              - manual
+              - notification_action
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          created_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          updated_at:
+            direction: both
+            schema:
+              type: string
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: audit
+          deleted_at:
+            direction: both
+            schema:
+              type:
+              - string
+              - 'null'
+              format: date-time
+              pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+            nullable: true
+            merge_key: deleted_at
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          completion:
+          - status
+          - completed_count_hundredths
+          - completed_at
+          snapshot:
+          - target_count_snapshot_hundredths
+          - unit_snapshot
+          note:
+          - note
+          deleted_at:
+          - deleted_at
+        immutable_fact: false
+  user_preferences:
+    direction: both
+    owner: UserPreferencesService
+    conflict_center: false
+    identity_registry: sync_identity_registry.yaml#/targets/user_preferences
+    variants:
+      default:
+        fact_schema: sync/v1/user_preferences_fact.schema.json
+        patch_schema: sync/v1/user_preferences_patch.schema.json
+        fields:
+          timezone:
+            direction: both
+            schema:
+              type: string
+              minLength: 1
+              x-format: iana-timezone
+            nullable: false
+            merge_key: timezone
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: false
+            sensitive: false
+            conflict_center: false
+            role: fact
+          habit_progress_color:
+            direction: both
+            schema:
+              type: string
+              enum:
+              - teal
+              - blue
+              - indigo
+              - green
+              - orange
+              - rose
+              - purple
+            nullable: false
+            merge_key: habit_progress_color
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: fact
+          default_reminder_methods:
+            direction: both
+            schema:
+              type: array
+              maxItems: 2
+              uniqueItems: true
+              items:
+                enum:
+                - ring
+                - popup
+            nullable: false
+            merge_key: default_reminder_methods
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: false
+            sensitive: false
+            conflict_center: false
+            role: fact
+          auto_enable_reminders_on_other_devices:
+            direction: both
+            schema:
+              type: boolean
+            nullable: false
+            merge_key: auto_enable_reminders_on_other_devices
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: false
+            sensitive: false
+            conflict_center: false
+            role: fact
+        merge_groups:
+          timezone:
+          - timezone
+          habit_progress_color:
+          - habit_progress_color
+          default_reminder_methods:
+          - default_reminder_methods
+          auto_enable_reminders_on_other_devices:
+          - auto_enable_reminders_on_other_devices
+        immutable_fact: false
+  account_profile:
+    direction: download
+    owner: BackendIdentityService
+    conflict_center: false
+    identity_registry: sync_identity_registry.yaml#/targets/account_profile
+    variants:
+      default:
+        fact_schema: sync/v1/account_profile_fact.schema.json
+        patch_schema: null
+        fields:
+          email:
+            direction: download
+            schema:
+              type: string
+              format: email
+              maxLength: 254
+            nullable: false
+            merge_key: email
+            server_generated: true
+            create: false
+            update: false
+            clear: false
+            import: false
+            sensitive: false
+            conflict_center: false
+            role: fact
+          username:
+            direction: download
+            schema:
+              type: string
+              pattern: ^[a-z0-9_]{3,24}$
+            nullable: false
+            merge_key: username
+            server_generated: true
+            create: false
+            update: false
+            clear: false
+            import: false
+            sensitive: false
+            conflict_center: false
+            role: fact
+          display_name:
+            direction: download
+            schema:
+              type: string
+              minLength: 1
+              maxLength: 40
+            nullable: false
+            merge_key: display_name
+            server_generated: true
+            create: false
+            update: false
+            clear: false
+            import: false
+            sensitive: false
+            conflict_center: false
+            role: fact
+          avatar:
+            direction: download
+            schema:
+              oneOf:
+              - $ref: https://excellent-calendar.local/contracts/user/avatar_info.schema.json
+              - type: 'null'
+            nullable: true
+            merge_key: avatar
+            server_generated: true
+            create: false
+            update: false
+            clear: false
+            import: false
+            sensitive: false
+            conflict_center: false
+            role: fact
+        merge_groups:
+          email:
+          - email
+          username:
+          - username
+          display_name:
+          - display_name
+          avatar:
+          - avatar
+        immutable_fact: false
+  reminder_intent:
+    direction: both
+    owner: CoreDomainWriter
+    conflict_center: true
+    identity_registry: sync_identity_registry.yaml#/targets/reminder_intent
+    variants:
+      event:
+        fact_schema: sync/v1/reminder_intent_event_fact.schema.json
+        patch_schema: sync/v1/reminder_intent_event_patch.schema.json
+        fields:
+          owner_type:
+            direction: both
+            schema:
+              const: event
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          owner_id:
+            direction: both
+            schema: &id002
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          is_enabled:
+            direction: both
+            schema:
+              type: boolean
+            nullable: false
+            merge_key: schedule
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          templates:
+            direction: both
+            schema:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - remind_at
+                - advance_minutes
+                - method
+                - message
+                - is_enabled
+                - source
+                properties:
+                  remind_at:
+                    type:
+                    - string
+                    - 'null'
+                    format: date-time
+                    pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
+                  advance_minutes:
+                    type:
+                    - integer
+                    - 'null'
+                    minimum: 0
+                    maximum: 2147483647
+                  method:
+                    enum:
+                    - ring
+                    - popup
+                  message:
+                    type:
+                    - string
+                    - 'null'
+                  is_enabled:
+                    type: boolean
+                  source:
+                    type: string
+                    enum:
+                    - manual
+                    - auto
+                    - ai_extraction
+                    - sync
+                    - import
+                    - wechat
+                oneOf:
+                - properties:
+                    remind_at: *id001
+                    advance_minutes:
+                      type: 'null'
+                - properties:
+                    remind_at:
+                      type: 'null'
+                    advance_minutes:
+                      type: integer
+              uniqueItems: true
+            nullable: false
+            merge_key: schedule
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          schedule:
+          - is_enabled
+          - templates
+        immutable_fact: false
+      anniversary:
+        fact_schema: sync/v1/reminder_intent_anniversary_fact.schema.json
+        patch_schema: sync/v1/reminder_intent_anniversary_patch.schema.json
+        fields:
+          owner_type:
+            direction: both
+            schema:
+              const: anniversary
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          owner_id:
+            direction: both
+            schema: *id002
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          is_enabled:
+            direction: both
+            schema:
+              type: boolean
+            nullable: false
+            merge_key: schedule
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          templates:
+            direction: both
+            schema:
+              type: array
+              maxItems: 5
+              uniqueItems: true
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - advance_days
+                - local_time
+                - timezone_mode
+                - method
+                - is_enabled
+                properties:
+                  advance_days:
+                    type: integer
+                    minimum: 0
+                    maximum: 365
+                  local_time:
+                    type: string
+                    pattern: ^(?:[01][0-9]|2[0-3]):[0-5][0-9]$
+                  timezone_mode:
+                    const: follow_device
+                  method:
+                    const: popup
+                  is_enabled:
+                    type: boolean
+            nullable: false
+            merge_key: schedule
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          schedule:
+          - is_enabled
+          - templates
+        immutable_fact: false
+      habit:
+        fact_schema: sync/v1/reminder_intent_habit_fact.schema.json
+        patch_schema: sync/v1/reminder_intent_habit_patch.schema.json
+        fields:
+          owner_type:
+            direction: both
+            schema:
+              const: habit
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          owner_id:
+            direction: both
+            schema: *id002
+            nullable: false
+            merge_key: null
+            server_generated: false
+            create: true
+            update: false
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: false
+            role: identity
+          is_enabled:
+            direction: both
+            schema:
+              type: boolean
+            nullable: false
+            merge_key: schedule
+            server_generated: false
+            create: true
+            update: true
+            clear: false
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+          template:
+            direction: both
+            schema:
+              type:
+              - object
+              - 'null'
+              additionalProperties: false
+              required:
+              - local_time
+              - timezone_mode
+              - method
+              properties:
+                local_time:
+                  type: string
+                  pattern: ^(?:[01][0-9]|2[0-3]):[0-5][0-9]$
+                timezone_mode:
+                  const: follow_device
+                method:
+                  const: popup
+            nullable: true
+            merge_key: schedule
+            server_generated: false
+            create: true
+            update: true
+            clear: true
+            import: true
+            sensitive: false
+            conflict_center: true
+            role: fact
+        merge_groups:
+          schedule:
+          - is_enabled
+          - template
+        immutable_fact: false
+excluded_targets:
+- notification
+- reminder
+- alarm
+- work
+- ring_settings
+- search_history
+- permission
+- attachment
+- ai
+- wechat
+- widget
+- guest
+source_projections_sha256:
+  anniversary/anniversary_recurrence_response.schema.json: f93a3f5fdee9ca3dc18f9fea2cb4df3182bf7d3f29a5c4a79992a07c781a9800
+  anniversary/anniversary_response.schema.json: 0f23edf7ddd4750bc99efb6311521fe690e156fc1f0242e563096c7971bf1535
+  appearance/local_appearance_response.schema.json: 530b272f091060f2e5f5e14fe88ba6aa41aa94fd0fae04e5ad9bbcc02ba82ec4
+  category/category_response.schema.json: d35ff932e853fd17fadb43d1ef8ca4008f85bae34b24e67f59adbc284200c029
+  event/event_occurrence_state_response.schema.json: 5ad1eca8599c2a7f990b0bd4500b7c2acdaf6c52b35bef44b29f2525d907f74b
+  event/event_response.schema.json: a6664d7f2865de72bf2088aac8a843591c50006e6202434f57fff1fb6e8336c8
+  habit/habit_check_in_response.schema.json: 6878efd3b78a3e66d41d8db422df67410635f8d5c30b3cb581cade7482d2f023
+  habit/habit_recurrence_response.schema.json: 58dc143d5f49a541ef0a06805477fc8436dbb323288956c5dc3d43d00e7357a9
+  habit/habit_response.schema.json: 984a0f8c2010c84c7a04b168b225d7f35d81c69156e9b2984c65d03891bec9ef
+  recurrence/recurrence_response.schema.json: 91be1d2dce9da0f9dca17ca9805125609e45708171190206745c71c029ebe62e
+  reminder/reminder_draft_request.schema.json: c33fc0b2354d3a3e566d8bff340abb0402133295c9ab0bda73569f7ce155b5e2
+  user/user_account_response.schema.json: cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8
+  user/user_profile_response.schema.json: edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319

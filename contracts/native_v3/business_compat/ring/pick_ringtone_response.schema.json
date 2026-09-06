@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/ring/pick_ringtone_response.schema.json",
+  "title": "PickRingtoneResponse",
+  "description": "Result of the Android ringtone picker. User cancellation is a successful cancelled result, not an error.",
+  "x-contract-version": 3,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "selection_status",
+    "state"
+  ],
+  "properties": {
+    "selection_status": {
+      "type": "string",
+      "enum": [
+        "selected",
+        "cancelled"
+      ]
+    },
+    "state": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/ring/ring_state_snapshot.schema.json"
+    }
+  },
+  "x-contract-domain": "native",
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

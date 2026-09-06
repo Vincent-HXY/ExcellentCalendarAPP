@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/habit_reconcile_reminders_request_payload.schema.json",
+  "title": "SyncV1 habit_reconcile_reminders_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "integrated",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Internal bounded Habit-only reconciliation. It never enters ordinary 72-hour recovery summary semantics. cursor is an opaque C++ continuation and limit bounds one transaction.",
+  "x-habit-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "timezone",
+    "trigger_source",
+    "cursor",
+    "limit"
+  ],
+  "properties": {
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "x-format": "iana-timezone"
+    },
+    "trigger_source": {
+      "type": "string",
+      "enum": [
+        "app_start",
+        "device_boot",
+        "app_update",
+        "date_changed",
+        "time_changed",
+        "timezone_changed",
+        "permission_restored",
+        "manual_retry"
+      ]
+    },
+    "cursor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "Opaque seek-after continuation. A valid cursor remains resumable when the boundary Habit is deleted between pages."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    }
+  }
+}

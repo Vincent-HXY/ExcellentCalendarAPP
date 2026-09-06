@@ -1,0 +1,121 @@
+{
+  "spike_version": 1,
+  "passed": true,
+  "errors": [],
+  "cases": [
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-23-cloud",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-23-device_transfer",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-24-cloud",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-24-device_transfer",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-30-cloud",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-30-device_transfer",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-31-cloud",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-31-device_transfer",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-33-cloud",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-33-device_transfer",
+      "actual": {
+        "exported_entries": [],
+        "guest_entries_exported": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-backup-two-destinations",
+      "actual": {
+        "distinct_new_installations": true,
+        "distinct_new_guests": true,
+        "active_restored_entries": 0,
+        "restored_account_or_broker_or_lease_or_lineage_allowed": false,
+        "guest_rehome_performed": false
+      },
+      "passed": true
+    }
+  ],
+  "scope": "25 synthetic data categories, API23/24/30/31/33 XML policy selection and two-destination restore decisions",
+  "actual_cloud_transport_executed": false,
+  "actual_device_transfer_executed": false,
+  "api23_or_api24_os_executed": false,
+  "production_restore_owner_implemented": false,
+  "tests_run": 4,
+  "source_sha256": {
+    "contracts/fixtures/sync/v1/backup_policy_vectors.json": "3c0ec38f981ff0fc909ab10f64074f240db6c40c5a2fbff3fbd1a57290541370",
+    "contracts/spikes/sync_v1/android_key_build_result.json": "101bb5ee1fe7599bd97e3af1bfd69a8f9e5fe9c335d116ec337db5c1d422899d",
+    "contracts/spikes/sync_v1/android_key_probe/res/xml/backup_rules.xml": "2f88b1870f4e6f3522392f81747bd1c391b9bcb469ce9ce646ef01b7658fe2ab",
+    "contracts/spikes/sync_v1/android_key_probe/res/xml/data_extraction_rules.xml": "e938efa179df4aed4818fc329d0d35f4dec7a0e505e505f9c4e9034784fc8714",
+    "contracts/spikes/sync_v1/android_key_probe/res/xml-v24/backup_rules.xml": "8544f54ce3727aada9ff42ffe6677521198702de2afa106c1e08ef69e39a0024",
+    "contracts/spikes/sync_v1/android_key_spike_result.json": "7d59b38b5a3f2ed44fa1829e4430c8b7210fb66ef2e3b60c3749b0a46c262fea",
+    "contracts/spikes/sync_v1/backup_policy_reference.py": "63679aa2d50cea8211228ed51b4ac520997cee8c0eea1a17673ea8b519bc5486",
+    "contracts/spikes/sync_v1/build_android_key_contract.py": "4bee3f09d7ea782169108fe2d7fbd07eca137b9164168b0ef8da287fd3ea9c5b",
+    "contracts/spikes/sync_v1/build_backup_policy_fixtures.py": "abce07bd40ce12569c196d8f81eb5e64f83a1e1460f38acc8635f64915d9842c",
+    "contracts/spikes/sync_v1/domain_reference.py": "4d3559aca4203d9adbe6ad6314616012267c2d5b904c3ae3bca3eeb968943971",
+    "contracts/spikes/sync_v1/identity_reference.py": "10b5eb81fff9ef943de0ed51ec3f61e5cd16cbf319daebcae8e08cc86f19802e",
+    "contracts/spikes/sync_v1/run_backup_policy_spike.py": "f6bad675ddfc629c9a0b55a84cbf245adfb40444927be19d252eb34bc6912efc",
+    "contracts/spikes/sync_v1/schema_validation_reference.py": "d969e1b383cb008d6e4381742c479893a3a6f931044af76bfc3d410b4f091ffd",
+    "contracts/tests/test_sync_backup_policy.py": "f164d9372fb1347b50eafdd0992decb3a6977b051b069dcc8083222dca259d97",
+    "contracts/workspace/android_backup_policy_v1.yaml": "339957dcd960fabdc8115469a7400291ef904f5a1aa7f0443e9c85d77ee0725d"
+  }
+}

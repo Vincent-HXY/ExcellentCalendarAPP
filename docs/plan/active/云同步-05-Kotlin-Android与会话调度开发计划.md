@@ -1,6 +1,6 @@
 # 云同步-05：Kotlin / Android 与会话调度开发计划
 
-> 状态：ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED
+> 状态：ACTIVE PLAN / CONTRACT FROZEN / IMPLEMENTATION NOT STARTED
 > 建立时间：2026-09-04
 > 上位计划：[云同步-01：Local-first 多设备同步开发计划](./云同步-01-Local-first多设备同步开发计划.md)
 > 协议基线：[云同步-02：Contracts 与数据模型开发计划](./云同步-02-Contracts与数据模型开发计划.md)
@@ -8,6 +8,8 @@
 > 依赖计划：云同步-03（C++/SQLite）、云同步-04（Cloud Backend）
 > 下游计划：云同步-06（Flutter）与真实跨层集成
 > 文内语义锚点：第 5–16 节定义 Android 编排与生命周期；第 17–20 节只登记实施、验证和交接证据，不得重述或扩展状态机。
+
+> 协议输入锁：`contracts/sync/sync_v1_revision_lock.json` 中的 `05_kotlin_android` 与其他三端锁定同一 revision/hash/fixture manifest。只在 `contracts/run_sync_v1_validation.py` 默认入口通过后按该机器版本实施；本层生产 implementation/release status 仍为 planned。
 
 ## 1. 目标与完成口径
 

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/calendar_range_summary_request_payload.schema.json",
+  "title": "SyncV1 calendar_range_summary_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "integrated",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Requests a non-empty, half-open local-date range [range_start_date, range_end_date) in one explicit IANA timezone. Semantic validation limits the range to 42 natural days.",
+  "x-calendar-view-revision": 1,
+  "x-semantic-errors": {
+    "empty_or_reversed_range": "CALENDAR_RANGE_INVALID",
+    "more_than_42_natural_days": "CALENDAR_RANGE_TOO_LARGE",
+    "invalid_timezone": "TIMEZONE_ID_INVALID"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "range_start_date",
+    "range_end_date",
+    "timezone"
+  ],
+  "properties": {
+    "range_start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "range_end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    }
+  }
+}

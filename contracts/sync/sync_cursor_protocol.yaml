@@ -1,0 +1,70 @@
+version: 1
+version_domain: sync_cursor_private/v1
+implementation_status: planned
+release_status: planned
+rule_anchor: cloud-sync-02/6.3,12
+owner: backend.cursor_codec_and_key_ring
+public_wire: canonical_unpadded_base64url_opaque_string
+client_interpretation: forbidden
+encoding:
+  byte_order: big_endian
+  claims_bytes: 133
+  mac_bytes: 32
+  total_bytes: 165
+  token_characters: 220
+  unknown_length_magic_kind_version_or_noncanonical_base64url: SYNC_CURSOR_INVALID
+  unsigned_integer_maximum: 9007199254740991
+  fields:
+    - {name: magic, offset: 0, bytes: 8, constant_ascii: ECSCUR01}
+    - {name: kind, offset: 8, bytes: 1, values: {sync: 0, bootstrap: 1}}
+    - {name: key_id, offset: 9, bytes: 16, type: uuid_v4}
+    - {name: account_id, offset: 25, bytes: 16, type: canonical_uuid}
+    - {name: device_id, offset: 41, bytes: 16, type: uuid_v4}
+    - {name: protocol_version, offset: 57, bytes: 4, constant: 1}
+    - {name: account_generation, offset: 61, bytes: 8, type: safe_unsigned_integer}
+    - {name: snapshot_upper_bound, offset: 69, bytes: 8, type: safe_unsigned_integer}
+    - {name: position, offset: 77, bytes: 8, type: safe_unsigned_integer}
+    - {name: bootstrap_id, offset: 85, bytes: 16, type: uuid_v4_or_all_zero_for_sync}
+    - {name: sync_transport_generation, offset: 101, bytes: 8, type: safe_unsigned_integer}
+    - {name: expires_at_epoch_seconds, offset: 109, bytes: 8, type: safe_unsigned_integer}
+    - {name: retention_floor_server_sequence, offset: 117, bytes: 8, type: safe_unsigned_integer}
+    - {name: resolved_cleanup_before_epoch_seconds, offset: 125, bytes: 8, type: safe_unsigned_integer}
+    - {name: mac, offset: 133, bytes: 32, type: HMAC_SHA256}
+authentication:
+  key_bytes: 32
+  key_location: Backend_private_secret_store_never_HTTP_Native_logs_or_client_cache
+  domain_prefix_utf8: "ExcellentCalendar.SyncCursor.v1\n"
+  mac_input: domain_prefix_followed_by_exact_claims_bytes_0_through_132
+  comparison: constant_time
+  trust_selection: only_preconfigured_key_id_then_verify_mac_before_interpreting_claims
+  normal_key_retirement: all_accounts_issued_ranges_strictly_below_current_floor_or_older_generation_and_all_referencing_bootstrap_sessions_expired
+  missing_retirement_watermark: retain_verification_key
+  durable_usage_model: ../storage/cloud_sync_postgresql_v1.yaml#/new_tables/sync_cursor_key_usage
+  cleanup_order: delete_expired_bootstrap_sessions_then_eligible_usage_rows_then_secret_only_after_all_account_usage_rows_are_absent
+  emergency_key_compromise: separate_security_event_and_explicit_rebuild_not_normal_rotation
+sync:
+  bootstrap_id: all_zero_bytes
+  sync_transport_generation: 0
+  expires_at_epoch_seconds: 0
+  position: covered_server_sequence_less_than_or_equal_to_fixed_snapshot_upper_bound
+  valid_floor: position_greater_than_or_equal_to_current_retention_floor
+  expiry: retention_floor_not_wall_clock
+  terminal_position: snapshot_upper_bound
+bootstrap:
+  bootstrap_id: nonzero_uuid_v4
+  position: next_materialized_page_ordinal
+  transport_generation: exact_creation_binding
+  expires_at_epoch_seconds: creation_server_epoch_seconds_plus_86400
+  expiry_boundary: now_greater_than_or_equal_to_expires_at
+errors:
+  authenticated_wrong_account: SYNC_CURSOR_ACCOUNT_MISMATCH
+  authenticated_wrong_device: SYNC_CURSOR_DEVICE_MISMATCH
+  sync_generation: SYNC_CURSOR_GENERATION_MISMATCH
+  sync_below_floor: SYNC_CURSOR_EXPIRED
+  bootstrap_generation: SYNC_BOOTSTRAP_GENERATION_CHANGED
+  bootstrap_transport: SYNC_TRANSPORT_GENERATION_MISMATCH
+  bootstrap_expired: SYNC_BOOTSTRAP_EXPIRED
+evidence:
+  fixture: fixtures/sync/v1/cursor_vectors.json
+  runner: spikes/sync_v1/run_cursor_spike.py
+  product_producer_implemented: false

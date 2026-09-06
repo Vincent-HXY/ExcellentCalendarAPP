@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/proof/signed_proof_claims.schema.json",
+  "title": "SyncV1 signed_proof_claims",
+  "x-contract-domain": "sync_proof",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.1,7.6,8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proof_version",
+    "algorithm",
+    "key_id",
+    "account_id",
+    "purpose",
+    "claims_sha256"
+  ],
+  "properties": {
+    "proof_version": {
+      "const": 1
+    },
+    "algorithm": {
+      "const": "rsa_pss_sha256"
+    },
+    "key_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "account_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "purpose": {
+      "enum": [
+        "device_fence",
+        "import_range_close",
+        "account_deleted"
+      ]
+    },
+    "claims_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "x-exposure": "backend_and_kotlin_jni_cpp_only_never_flutter_event_or_diagnostics"
+}

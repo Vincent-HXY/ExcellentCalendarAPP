@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/proof/account_deleted_claim_data.schema.json",
+  "title": "SyncV1 account_deleted_claim_data",
+  "x-contract-domain": "sync_proof",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.1,7.6,8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "account_id",
+    "state"
+  ],
+  "properties": {
+    "account_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "state": {
+      "const": "deleted"
+    }
+  },
+  "x-exposure": "backend_and_kotlin_jni_cpp_only_never_flutter_event_or_diagnostics"
+}

@@ -1,0 +1,115 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "owner_type",
+    "owner_id",
+    "is_enabled",
+    "templates"
+  ],
+  "properties": {
+    "owner_type": {
+      "const": "event"
+    },
+    "owner_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "is_enabled": {
+      "type": "boolean"
+    },
+    "templates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "remind_at",
+          "advance_minutes",
+          "method",
+          "message",
+          "is_enabled",
+          "source"
+        ],
+        "properties": {
+          "remind_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+          },
+          "advance_minutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "method": {
+            "enum": [
+              "ring",
+              "popup"
+            ]
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_enabled": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "auto",
+              "ai_extraction",
+              "sync",
+              "import",
+              "wechat"
+            ]
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "remind_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              },
+              "advance_minutes": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "properties": {
+              "remind_at": {
+                "type": "null"
+              },
+              "advance_minutes": {
+                "type": "integer"
+              }
+            }
+          }
+        ]
+      },
+      "uniqueItems": true
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/v1/reminder_intent_event_fact.schema.json",
+  "title": "SyncV1 reminder_intent_event fact",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.2,7.7"
+}

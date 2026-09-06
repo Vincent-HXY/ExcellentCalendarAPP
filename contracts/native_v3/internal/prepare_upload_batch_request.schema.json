@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal/prepare_upload_batch_request.schema.json",
+  "title": "SyncV1 prepare_upload_batch_request",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.3",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding",
+        "run_intent",
+        "run_id",
+        "max_items",
+        "max_bytes",
+        "logout_operation_id"
+      ],
+      "properties": {
+        "binding": {
+          "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/transport_binding.schema.json"
+        },
+        "run_intent": {
+          "const": "normal"
+        },
+        "run_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "max_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "logout_operation_id": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding",
+        "run_intent",
+        "run_id",
+        "max_items",
+        "max_bytes",
+        "logout_operation_id"
+      ],
+      "properties": {
+        "binding": {
+          "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/transport_binding.schema.json"
+        },
+        "run_intent": {
+          "const": "logout_final"
+        },
+        "run_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "max_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "logout_operation_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding",
+        "run_intent",
+        "run_id",
+        "max_items",
+        "max_bytes",
+        "logout_operation_id"
+      ],
+      "properties": {
+        "binding": {
+          "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/transport_binding.schema.json"
+        },
+        "run_intent": {
+          "const": "receipt_ack_flush"
+        },
+        "run_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "max_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "logout_operation_id": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding",
+        "run_intent",
+        "run_id",
+        "max_items",
+        "max_bytes",
+        "logout_operation_id"
+      ],
+      "properties": {
+        "binding": {
+          "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/transport_binding.schema.json"
+        },
+        "run_intent": {
+          "const": "reenable_pull_only"
+        },
+        "run_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "max_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "logout_operation_id": {
+          "type": "null"
+        }
+      }
+    }
+  ],
+  "x-semantic-rules": [
+    "only Broker's matching durable logout operation authorizes paused logout_final",
+    "ack flush requires dirty watermark; reenable requires persisted pull gate; clear-rebuild never calls prepare",
+    "C++ persists exact full request, identity, cursor and bytes; Kotlin adds only authenticated transport headers"
+  ],
+  "x-exposure": "kotlin_jni_cpp_only"
+}

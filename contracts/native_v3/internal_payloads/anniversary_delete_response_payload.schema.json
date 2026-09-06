@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/anniversary_delete_response_payload.schema.json",
+  "title": "SyncV1 anniversary_delete_response_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "C++ delete logical-commit result. Future Reminder cancellation is part of the commit; Android schedule reconciliation is a post-commit effect.",
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "anniversary",
+    "schedule_reconciliation_required"
+  ],
+  "properties": {
+    "anniversary": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/anniversary/deleted_anniversary_response.schema.json"
+    },
+    "schedule_reconciliation_required": {
+      "type": "boolean"
+    }
+  },
+  "x-native-compatibility-revision": "anniversary_opaque_category_v1"
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/backend_sync_conflict_list_response.schema.json",
+  "title": "SyncV1 backend_sync_conflict_list_response",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.5,8,12",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "next_page_token",
+    "read_snapshot_revision"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 100,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/sync/backend_sync_conflict_summary.schema.json"
+      }
+    },
+    "next_page_token": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 16,
+      "maxLength": 2048,
+      "pattern": "^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}[AEIMQUYcgkosw048]|[A-Za-z0-9_-][AQgw])?$"
+    },
+    "read_snapshot_revision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  }
+}

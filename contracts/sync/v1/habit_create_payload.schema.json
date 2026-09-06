@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/v1/habit_create_payload.schema.json",
+  "title": "SyncV1 habit_create_payload",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.1-7.3,7.7",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fact",
+    "owned_dependencies"
+  ],
+  "properties": {
+    "fact": {
+      "allOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/sync/v1/habit_fact.schema.json"
+        },
+        {
+          "properties": {
+            "first_check_in_at": {
+              "type": "null"
+            },
+            "deleted_at": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "owned_dependencies": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 2,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/sync/sync_owned_dependency.schema.json"
+      }
+    }
+  }
+}

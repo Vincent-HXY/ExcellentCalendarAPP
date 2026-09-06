@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/habit_list_response_payload.schema.json",
+  "title": "SyncV1 habit_list_response_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "integrated",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Paginated card-ready Habit list with stable C++ ordering plus a global, page-independent home progress aggregate.",
+  "x-habit-revision": 1,
+  "x-order": "lifecycle group; active incomplete-or-partial, skipped, done; reminder local_time null-last; created_at; id",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "pagination",
+    "today_progress"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/habit/habit_summary_response.schema.json"
+      }
+    },
+    "pagination": {
+      "allOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/common/pagination_response.schema.json"
+        },
+        {
+          "properties": {
+            "total": {
+              "maximum": 9007199254740991
+            },
+            "page": {
+              "maximum": 9007199254740991
+            },
+            "page_size": {
+              "maximum": 100
+            },
+            "next_cursor": {
+              "minLength": 1,
+              "maxLength": 512
+            }
+          }
+        }
+      ]
+    },
+    "today_progress": {
+      "$ref": "https://excellent-calendar.local/contracts/habit/habit_today_progress_response.schema.json",
+      "description": "Computed over every non-deleted Habit, independent of pagination and list filters."
+    }
+  }
+}

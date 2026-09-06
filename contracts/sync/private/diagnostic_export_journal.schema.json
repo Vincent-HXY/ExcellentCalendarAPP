@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/private/diagnostic_export_journal.schema.json",
+  "title": "SyncV1 diagnostic_export_journal",
+  "x-contract-domain": "android_private",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.6/IMP-08,IMP-10;8.2;13",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "export_id",
+    "sha256",
+    "boot_id",
+    "created_elapsed_ms",
+    "ttl_seconds",
+    "state"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "export_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "boot_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "created_elapsed_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "ttl_seconds": {
+      "const": 900
+    },
+    "state": {
+      "enum": [
+        "ready",
+        "shared"
+      ]
+    }
+  },
+  "x-owner": "Kotlin WorkspaceLifecycle / private persistence; diagnostics safe projection only",
+  "x-sensitive": true,
+  "x-exposure": "kotlin_local_only_never_HTTP_MethodChannel_EventChannel_or_JNI"
+}

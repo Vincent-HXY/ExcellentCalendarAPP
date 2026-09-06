@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/workspace/import_cleanup_confirm_request.schema.json",
+  "title": "SyncV1 import_cleanup_confirm_request",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.6/IMP-09",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workspace_id",
+    "runtime_instance_id",
+    "session_generation",
+    "guest_receipt",
+    "server_result"
+  ],
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "runtime_instance_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "session_generation": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "guest_receipt": {
+      "$ref": "https://excellent-calendar.local/contracts/sync/guest_import_cleanup_receipt.schema.json"
+    },
+    "server_result": {
+      "$ref": "https://excellent-calendar.local/contracts/sync/import_cleanup_confirm_response.schema.json"
+    }
+  }
+}

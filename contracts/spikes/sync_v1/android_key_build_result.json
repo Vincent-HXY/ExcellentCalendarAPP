@@ -1,0 +1,152 @@
+{
+  "spike_version": 1,
+  "passed": true,
+  "scope": "build-only APK assembly; device lifecycle is recorded by the resumable phase runner",
+  "product_package_touched": false,
+  "production_manifest_activated": false,
+  "full_v6_account_migration_verified": false,
+  "actual_cloud_backup_or_restore_executed": false,
+  "actual_device_to_device_transfer_executed": false,
+  "api23_os_executed": false,
+  "api24_os_executed": false,
+  "android_x86_os_executed": false,
+  "source_sha256": {
+    "contracts/spikes/sync_v1/run_android_key_spike.py": "8cbe3e22b2fa53c35996f427d522db49cfa0fbaff83a67244a1f2aabb2aaf0f9",
+    "contracts/spikes/sync_v1/build_android_abi_apks.py": "931a8ea0d3df34afa4bde99d826e15e6ada8b2cdffd0e05eadcf3a619097a353",
+    "contracts/spikes/sync_v1/build_android_key_contract.py": "4bee3f09d7ea782169108fe2d7fbd07eca137b9164168b0ef8da287fd3ea9c5b",
+    "contracts/spikes/sync_v1/android_key_probe/keystore_cipher_jni.cpp": "94e634382680c50a7ab0060dd99a8bccb5bb45ac9aa62e368b2f80d196d0a682",
+    "contracts/spikes/sync_v1/android_key_probe/res/xml/backup_rules.xml": "2f88b1870f4e6f3522392f81747bd1c391b9bcb469ce9ce646ef01b7658fe2ab",
+    "contracts/spikes/sync_v1/android_key_probe/res/xml/data_extraction_rules.xml": "e938efa179df4aed4818fc329d0d35f4dec7a0e505e505f9c4e9034784fc8714",
+    "contracts/spikes/sync_v1/android_key_probe/res/xml-v24/backup_rules.xml": "8544f54ce3727aada9ff42ffe6677521198702de2afa106c1e08ef69e39a0024",
+    "contracts/spikes/sync_v1/android_key_probe/SyncStorageInstrumentation.java": "30b2a1f96ec5b6fc116e53c07fe6ed98a9ea380fa48c925dad745395a0d9a59a",
+    "contracts/storage/account_key_wrapping_v1.yaml": "3037e47cc659487344c431e481f7964e709d7a1e41052d249849b6108533c240",
+    "contracts/workspace/android_backup_policy_v1.yaml": "339957dcd960fabdc8115469a7400291ef904f5a1aa7f0443e9c85d77ee0725d",
+    "contracts/sync/proof/proof_key_revocation_record.schema.json": "7dc423ebbca08195dc4622b21ef616341af03ca1c78cfee1c89abb5cd115dda3",
+    "contracts/spikes/sync_v1/licenses/aes.c-NOTICE.txt": "db35fb38a4ed7969a8353fc3a5a212174015b911ddcda6ec13b1e5480c676d62",
+    "contracts/spikes/sync_v1/licenses/blake2b.c-NOTICE.txt": "0dea81b5030b2ebff759ed04a498be04e852d42c2a5739bbb5139ad130c11abf",
+    "contracts/spikes/sync_v1/licenses/blake2s.c-NOTICE.txt": "0dea81b5030b2ebff759ed04a498be04e852d42c2a5739bbb5139ad130c11abf",
+    "contracts/spikes/sync_v1/licenses/LibTomCrypt-LICENSE.txt": "8f196cb13afd271f5e267fd29543fc454596382ad580e7592709492843996ac8",
+    "contracts/spikes/sync_v1/licenses/SQLCipher-LICENSE.txt": "2a2826f6acf46fa650730cf42cbb22a642be33a7ef119c9c4f4bf6daf3bef48e",
+    "contracts/spikes/sync_v1/licenses/SQLite-LICENSE.txt": "595e823c2ada6c839679e693bee1f4d7f88e2d34ac99a913ae41e3d43fb10c7d"
+  },
+  "builds": {
+    "arm64-v8a": {
+      "jni_sha256": "8398088c28a8caf4ed1eb4f022fcf30b33c42566348987d8395fdffc21d5690a",
+      "sqlcipher_archive_sha256": "a73654d1ed96ec3b56e83c3ade3d48aa7a5964eb3f611f6ade74b1b8a99baac2",
+      "ltc_archive_sha256": "54170c1245dd4ba272666a5382a86511104d2eb7d5efd04d8a2c47bc0996dc63"
+    },
+    "armeabi-v7a": {
+      "jni_sha256": "4aeb2ee804a0d02a32e5b21b036350b8cb464d9fd5566ac34186d999f801afcd",
+      "sqlcipher_archive_sha256": "03aae77ec877fb1c722df3696dcaf77940de79358142155f98f973e0ee523ddd",
+      "ltc_archive_sha256": "8bec69a9df68f9716a4af23e88f4e89ff8bd5073e5966d9189d9c8632e6e5f5b"
+    },
+    "x86_64": {
+      "jni_sha256": "ede22ed295783c3d59ec9e08a942b77a4ce8fd424e6a5d77be134ce197cfc130",
+      "sqlcipher_archive_sha256": "c2cbf54d7a614a5b4b986b07584cda962253404e6be199c543a844e872074b25",
+      "ltc_archive_sha256": "64fad6e6f89f7de6cac587134d75847269f474dd694700dfb0eb9a4a354c269d"
+    },
+    "apk_1": {
+      "sha256": "93dc6281b76580001677cdf88638bf003288108f78deb779f3550148cf579f65",
+      "compiled_backup_resources": {
+        "res/xml/backup_rules.xml": "e5ba862baceccbb2132f8c1a99ccd07cc3ea74b2461e4042a8d58519a907dbad",
+        "res/xml-v24/backup_rules.xml": "05024ae8f80c3922e80b9689d6971562382a36d80a753e23beaa08b06d174cf5",
+        "res/xml/data_extraction_rules.xml": "57969fbb62778542700ad119d42d1a1a80f07f4be368a0bf4a45eb0f6237a453"
+      },
+      "manifest_sha256": "59fe7a27fa27a93b6292f494c73a427ba2a599153652d85cfb2d54212a83baab",
+      "no_internet_permission": true,
+      "allow_backup": false
+    },
+    "apk_2": {
+      "sha256": "ba95dc3669c00bbd315796118d2192bb9bd8bf35d3285365d95ff105575e19ad",
+      "compiled_backup_resources": {
+        "res/xml/backup_rules.xml": "e5ba862baceccbb2132f8c1a99ccd07cc3ea74b2461e4042a8d58519a907dbad",
+        "res/xml-v24/backup_rules.xml": "05024ae8f80c3922e80b9689d6971562382a36d80a753e23beaa08b06d174cf5",
+        "res/xml/data_extraction_rules.xml": "57969fbb62778542700ad119d42d1a1a80f07f4be368a0bf4a45eb0f6237a453"
+      },
+      "manifest_sha256": "c3c7b0a8e9635bdbc8fe3829700b261d260e3d9ff982667f9b102407b838e11b",
+      "no_internet_permission": true,
+      "allow_backup": false
+    },
+    "apk_1_arm64-v8a": {
+      "sha256": "b84cc95eabec2a33503486ea65c9277bcb941b4ac890d59ccad43963031c914d",
+      "compiled_backup_resources": {
+        "res/xml/backup_rules.xml": "e5ba862baceccbb2132f8c1a99ccd07cc3ea74b2461e4042a8d58519a907dbad",
+        "res/xml-v24/backup_rules.xml": "05024ae8f80c3922e80b9689d6971562382a36d80a753e23beaa08b06d174cf5",
+        "res/xml/data_extraction_rules.xml": "57969fbb62778542700ad119d42d1a1a80f07f4be368a0bf4a45eb0f6237a453"
+      },
+      "manifest_sha256": "59fe7a27fa27a93b6292f494c73a427ba2a599153652d85cfb2d54212a83baab",
+      "no_internet_permission": true,
+      "allow_backup": false,
+      "packaged_abis": [
+        "arm64-v8a"
+      ],
+      "packaged_license_contents_verified": true,
+      "derived_from_apk_sha256": "93dc6281b76580001677cdf88638bf003288108f78deb779f3550148cf579f65"
+    },
+    "apk_1_armeabi-v7a": {
+      "sha256": "bd996cb1285ead77cc42e7f1f313b040732f13c006b0f8376c689b81c7734c93",
+      "compiled_backup_resources": {
+        "res/xml/backup_rules.xml": "e5ba862baceccbb2132f8c1a99ccd07cc3ea74b2461e4042a8d58519a907dbad",
+        "res/xml-v24/backup_rules.xml": "05024ae8f80c3922e80b9689d6971562382a36d80a753e23beaa08b06d174cf5",
+        "res/xml/data_extraction_rules.xml": "57969fbb62778542700ad119d42d1a1a80f07f4be368a0bf4a45eb0f6237a453"
+      },
+      "manifest_sha256": "59fe7a27fa27a93b6292f494c73a427ba2a599153652d85cfb2d54212a83baab",
+      "no_internet_permission": true,
+      "allow_backup": false,
+      "packaged_abis": [
+        "armeabi-v7a"
+      ],
+      "packaged_license_contents_verified": true,
+      "derived_from_apk_sha256": "93dc6281b76580001677cdf88638bf003288108f78deb779f3550148cf579f65"
+    },
+    "apk_2_arm64-v8a": {
+      "sha256": "8ad909d30a123fa627e4aa11c9f505b6632f4a33e3f73a1a252b467b83f58dd2",
+      "compiled_backup_resources": {
+        "res/xml/backup_rules.xml": "e5ba862baceccbb2132f8c1a99ccd07cc3ea74b2461e4042a8d58519a907dbad",
+        "res/xml-v24/backup_rules.xml": "05024ae8f80c3922e80b9689d6971562382a36d80a753e23beaa08b06d174cf5",
+        "res/xml/data_extraction_rules.xml": "57969fbb62778542700ad119d42d1a1a80f07f4be368a0bf4a45eb0f6237a453"
+      },
+      "manifest_sha256": "c3c7b0a8e9635bdbc8fe3829700b261d260e3d9ff982667f9b102407b838e11b",
+      "no_internet_permission": true,
+      "allow_backup": false,
+      "packaged_abis": [
+        "arm64-v8a"
+      ],
+      "packaged_license_contents_verified": true,
+      "derived_from_apk_sha256": "ba95dc3669c00bbd315796118d2192bb9bd8bf35d3285365d95ff105575e19ad"
+    },
+    "apk_2_armeabi-v7a": {
+      "sha256": "22f3c23c3d89942eb5ae09bfc7d66cd81451e5e8156207bb61d9c084e993295b",
+      "compiled_backup_resources": {
+        "res/xml/backup_rules.xml": "e5ba862baceccbb2132f8c1a99ccd07cc3ea74b2461e4042a8d58519a907dbad",
+        "res/xml-v24/backup_rules.xml": "05024ae8f80c3922e80b9689d6971562382a36d80a753e23beaa08b06d174cf5",
+        "res/xml/data_extraction_rules.xml": "57969fbb62778542700ad119d42d1a1a80f07f4be368a0bf4a45eb0f6237a453"
+      },
+      "manifest_sha256": "c3c7b0a8e9635bdbc8fe3829700b261d260e3d9ff982667f9b102407b838e11b",
+      "no_internet_permission": true,
+      "allow_backup": false,
+      "packaged_abis": [
+        "armeabi-v7a"
+      ],
+      "packaged_license_contents_verified": true,
+      "derived_from_apk_sha256": "ba95dc3669c00bbd315796118d2192bb9bd8bf35d3285365d95ff105575e19ad"
+    }
+  },
+  "consumers": {},
+  "errors": [],
+  "cleanup_errors": [],
+  "backup_resource_matrix": {
+    "api23_domains": 5,
+    "api24_domains": 9,
+    "api31_cloud_domains": 9,
+    "api31_transfer_domains": 9
+  },
+  "device": {
+    "abi": "arm64-v8a,armeabi-v7a,armeabi",
+    "sdk": "33",
+    "model": "RMX3687"
+  },
+  "build_only": true,
+  "scratch": "C:\\Users\\vincent\\AppData\\Local\\Temp\\excellent-calendar-android-keystore-ex90d3wn",
+  "pinned_cipher_evidence_sha256": "dfe224b53b4dc0032b99b0bf38390f4168e134c859d3bf5331ecee3e5ea7c774"
+}

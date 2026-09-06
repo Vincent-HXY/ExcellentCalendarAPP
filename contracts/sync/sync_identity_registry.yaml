@@ -1,0 +1,187 @@
+version: 1
+protocol: sync_protocol/v1
+implementation_status: planned
+release_status: planned
+rule_anchor: cloud-sync-02/6.1,7.6,7.7
+source_of_truth:
+  - docs/plan/active/云同步-01-Local-first多设备同步开发计划.md#8
+  - contracts/identity.yaml
+  - docs/domains/habit_check_in.md
+  - docs/architecture/decisions/ADR-Sync-05-Category生命周期与弱引用.md
+canonical_uuid:
+  scope: new_sync_identity_and_account_workspace_writers_not_historical_guest_reinterpretation
+  case: lowercase
+  variant: rfc_4122
+  reject_noncanonical_input: true
+  never_normalize_opaque_references: true
+namespaces:
+  import_lineage:
+    derive: UUIDv5(DNS,excellent-calendar.local/sync-protocol-v1/import-lineage)
+    name: canonical_account_id + LF + canonical_source_workspace_id + LF + decimal_source_epoch
+  habit_check_in:
+    derive: UUIDv5(DNS,excellent-calendar.local/sync-protocol-v1/habit-check-in)
+    name: compact_UTF8_JSON_array(habit_id,check_date)
+  reminder_intent:
+    derive: UUIDv5(DNS,excellent-calendar.local/sync-protocol-v1/reminder-intent)
+    name: compact_UTF8_JSON_array(owner_type,owner_id)
+identity_array:
+  encoding: UTF-8
+  whitespace: none
+  escaping: RFC_8259
+  unicode_normalization: none
+  floating_numbers: forbidden
+  version_domain: sync_identity/v1
+  jcs_object_digest_is_not_an_identity_name: true
+targets:
+  category:
+    current_identity: id
+    current_writer: cpp_core/src/application/category_service.cpp
+    current_schema: category/category_response.schema.json
+    wire_identity: id
+    identity_kind: canonical_uuid_v4
+    reference_policy: weak_exact_category_reference
+    mapping: allocate_once_persistent_uuid_v4_ledger
+  event:
+    current_identity: id
+    current_writer: cpp_core/src/application/create_event_workflow_service.cpp
+    current_schema: event/event_response.schema.json
+    wire_identity: id
+    identity_kind: canonical_uuid
+    v5_reader_identity: UUID_syntax_lexeme_preserved_including_uppercase_and_non_v4
+    references: {category_id: weak_exact_category_reference, recurrence_id: event_recurrence_family}
+    mapping: allocate_once_persistent_uuid_v4_ledger
+  event_recurrence:
+    current_identity: [recurrence_id, revision]
+    current_writer: cpp_core/src/application/recurring_event_workflow_service.cpp
+    current_schema: recurrence/recurrence_response.schema.json
+    wire_identity: lowercase_recurrence_uuid + '#' + decimal_revision
+    identity_kind: immutable_composite
+    mapping: remap_family_once_preserve_revision
+  event_occurrence_state:
+    current_identity: [event_id, recurrence_revision, occurrence_key]
+    current_writer: cpp_core/src/application/recurring_event_workflow_service.cpp
+    current_schema: event/event_occurrence_state_response.schema.json
+    wire_identity: occurrence_key
+    identity_kind: existing_occurrence_uuid_v5
+    mapping: recompute_existing_identity_with_remapped_event_and_proven_original_local_start
+    identity_proof: original_local_start
+    old_v5_proof: Core_bounded_reconstruction_must_match_exactly_one_original_key_otherwise_zero_write_failure
+    old_v5_lookup:
+      rule_anchor: cloud-sync-02/4.2,7.6
+      inputs: immutable_original_recurrence_revision_and_source_event_uuid_lexeme_plus_stored_occurrence_key_and_start
+      timed_window: stored_utc_start_minus_2_days_through_stored_utc_start_plus_1_second_half_open
+      all_day_window: stored_local_date_minus_2_days_through_stored_local_date_plus_1_day_half_open
+      current_core_limit: 200
+      selection: exact_source_occurrence_key_and_exact_stored_start_must_match_one_candidate
+      utc_collision: retain_distinct_original_civil_keys_even_when_two_occurrences_resolve_to_the_same_instant
+      remap: use_original_local_start_and_target_event_uuid_with_the_existing_occurrence_namespace
+      missing_or_ambiguous: reject_entire_preview_or_import_before_mapping_outbox_or_source_retirement_writes
+      constraints: isolated_current_v2_daily_weekly_monthly_and_pinned_tzdb_2026c_evidence_not_a_wide_revision_writer
+    backend_must_not_expand_recurrence: true
+  anniversary:
+    current_identity: id
+    current_writer: cpp_core/src/application/anniversary_workflow_service.cpp
+    current_schema: anniversary/anniversary_response.schema.json
+    wire_identity: id
+    identity_kind: canonical_uuid
+    v5_reader_identity: UUID_syntax_lexeme_preserved_including_uppercase_and_non_v4
+    references: {category_id: weak_exact_category_reference, recurrence_id: anniversary_recurrence}
+    mapping: allocate_once_persistent_uuid_v4_ledger
+    compatibility: native_v3/anniversary_compatibility.json
+  anniversary_recurrence:
+    current_identity: recurrence_id
+    current_writer: cpp_core/src/application/anniversary_workflow_service.cpp
+    current_schema: anniversary/anniversary_recurrence_response.schema.json
+    wire_identity: recurrence_id
+    identity_kind: canonical_uuid
+    mapping: allocate_once_persistent_uuid_v4_ledger
+  habit:
+    current_identity: id
+    current_writer: cpp_core/src/application/habit_service.cpp
+    current_schema: habit/habit_response.schema.json
+    wire_identity: id
+    identity_kind: canonical_uuid_v4
+    references: {category_id: weak_exact_category_reference, recurrence_id: habit_recurrence}
+    mapping: allocate_once_persistent_uuid_v4_ledger
+  habit_recurrence:
+    current_identity: id
+    current_writer: cpp_core/src/application/habit_service.cpp
+    current_schema: habit/habit_recurrence_response.schema.json
+    wire_identity: id
+    identity_kind: canonical_uuid_v4
+    mapping: allocate_once_persistent_uuid_v4_ledger
+  habit_check_in:
+    current_identity: [habit_id, check_date]
+    current_local_alias: id
+    current_writer: cpp_core/src/application/habit_service.cpp
+    current_schema: habit/habit_check_in_response.schema.json
+    wire_identity: UUIDv5(habit_check_in_namespace,compact_array(habit_id,check_date))
+    identity_kind: derived_logical_uuid_v5
+    excluded_source_fields: {id: device_local_uuid_v4_row_alias_not_cross_device_business_identity}
+    mapping: derive_from_remapped_habit_and_unchanged_civil_date
+    local_apply: upsert_by_habit_and_date_preserve_existing_row_alias_otherwise_allocate_uuid_v4
+    clear_restore_identity: unchanged_including_tombstones
+  reminder_intent:
+    current_identity: target_owned_configuration
+    current_local_aliases: [template_key, reminder_id, occurrence_key]
+    current_writer: cpp_core/src/application/recurring_event_workflow_service.cpp
+    additional_writers:
+      - cpp_core/src/application/anniversary_workflow_service.cpp
+      - cpp_core/src/application/habit_service.cpp
+    wire_identity: UUIDv5(reminder_intent_namespace,compact_array(owner_type,owner_id))
+    identity_kind: derived_logical_uuid_v5
+    mapping: derive_from_remapped_owner
+    aggregation: one_complete_target_specific_configuration_per_owner
+    concurrent_schedule_edits: one_atomic_schedule_merge_key
+    local_apply: reconcile_current_configuration_without_copying_schedule_or_delivery_facts
+  user_preferences:
+    current_identity: account_id
+    current_schema: user/user_preferences_response.schema.json
+    wire_identity: authenticated_principal_account_id
+    identity_kind: principal_singleton
+    mapping: destination_principal_only_portable_color_whitelist
+  account_profile:
+    current_identity: account_id
+    current_schema: user/current_user_response.schema.json
+    wire_identity: authenticated_principal_account_id
+    identity_kind: principal_singleton
+    mapping: forbidden_download_only
+import_mapping:
+  primary_key: [lineage_id, source_target_type, source_id]
+  allocation: retain_canonical_uuid_v4_source_id_if_unoccupied_otherwise_os_random_uuid_v4_once_in_durable_preview_ledger
+  determinism: lookup_of_immutable_persisted_assignment_not_a_stateless_uuid_v5_derivation
+  retry: never_reallocate_existing_assignment
+  recovery: restore_mapping_ledger_from_same_lineage_server_evidence_before_successor
+  manifest: bind_every_source_target_pair_and_mapping_digest
+  ownership_collision: reject_canonical_commit_zero_write_never_overwrite_unrelated_target
+  reference_graph: remap_all_strong_edges_and_exact_matching_category_edges_before_hashing
+  absent_weak_reference: preserve_original_string_including_empty_uppercase_and_unicode
+  missing_strong_reference: reject_whole_graph
+  successor_delete_set: all_historical_typed_mappings_in_this_lineage_minus_current_source_graph_excluding_private_family_assignments
+  epoch_isolation: completed_prior_epoch_mapping_never_enters_successor_delete_set
+legacy_inputs:
+  active_v5_checker: mandatory_unchanged
+  legacy_v1_opaque_entity_stores:
+    source: legacy_events_and_legacy_reminders_preserved_by_unchanged_json_v1_compat_to_sqlite_v4_then_v5
+    wire_source_id: literal_legacy-v1/event/_plus_canonical_unpadded_base64url_of_exact_original_id_utf8
+    max_encoded_source_id_characters: 256
+    namespace: separate_from_modern_uuid_even_when_original_v1_id_looks_like_a_uuid
+    target_id: allocate_once_persistent_uuid_v4_ledger_never_interpret_encoded_source_as_target
+    portable_event: live_nonrecurring_timed_event_with_persisted_valid_iana_timezone_and_all_current_typed_invariants
+    absent_v1_fields: [recurrence_revision, start_date, end_date, immutable_recurrence_rule]
+    no_reconstruction: do_not_invent_recurrence_civil_dates_timezone_or_missing_references
+    portable_reminder: nondeleted_pending_or_scheduled_event_configuration_including_disabled_configuration
+    reminder_mapping: aggregate_by_remapped_event_owner_expand_each_allowed_method_preserve_enabled_message_source
+    relative_reminder: stored_remind_at_must_equal_event_start_minus_advance_minutes_otherwise_reject
+    terminal_execution_history: stays_in_guest_no_notification_or_delivery_fact_upload
+    unsupported_live_data: fail_entire_preview_before_lease_mapping_outbox_or_retirement_no_skip_no_truncate
+    weak_category_reference: preserve_exact_original_string_no_synthesized_category
+    oracle: contracts/spikes/sync_v1/legacy_identity_reference.py
+  invalid_v5_anniversary_category: reject_migration_zero_write
+verification:
+  reference_oracle: contracts/spikes/sync_v1/identity_reference.py
+  production_owners_implemented: false
+  legacy_occurrence_reconstruction_verified: false
+  current_v5_original_civil_lookup_spike_verified: true
+  original_civil_report: contracts/spikes/sync_v1/occurrence_identity_spike_result.json
+  four_language_consumers_verified: false

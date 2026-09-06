@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/ring/active_ring_item.schema.json",
+  "title": "ActiveRingItem",
+  "description": "Privacy-safe identity for one active ring delivery. Event title/content and Reminder message/body are deliberately absent; Flutter fetches Event detail after unlock through the existing Event Gateway.",
+  "x-contract-version": 3,
+  "x-sensitive-field-exclusions": [
+    "title",
+    "content",
+    "body",
+    "message",
+    "ringtone_uri"
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notification_id",
+    "delivery_id",
+    "delivery_attempt_id",
+    "reminder_id",
+    "event_id",
+    "recovery_batch_id",
+    "planned_at",
+    "added_at",
+    "workspace_id",
+    "workspace_kind"
+  ],
+  "properties": {
+    "notification_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "delivery_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "delivery_attempt_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "reminder_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "recovery_batch_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "planned_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "added_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "workspace_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "workspace_kind": {
+      "enum": [
+        "local",
+        "account"
+      ]
+    }
+  },
+  "x-contract-domain": "native",
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

@@ -1,0 +1,418 @@
+{
+  "fixture_version": 1,
+  "scope": "four resolution modes and four consumed business rejections on real synthetic SQLite roots; owned revisions remain separate",
+  "cases": [
+    {
+      "id": "FX-CONFLICT-RESOLUTION-KEEP-LOCAL",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,12",
+      "input": {
+        "scenario": "KEEP-LOCAL",
+        "baseline": {
+          "target_type": "category",
+          "target_id": "00000002-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000002-1111-4111-8111-111111111111",
+            "name": "工作",
+            "description": null,
+            "color": "#39AFBD",
+            "icon": null,
+            "sort_order": 1,
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null,
+            "reorder_revision": 0
+          }
+        },
+        "dependencies": [],
+        "remote_patch": {
+          "name": "远端选择"
+        },
+        "local_patch": {
+          "name": "本机选择"
+        },
+        "mode": "keep_local",
+        "manual_candidate": null,
+        "expected_conflict_version": 1,
+        "conflict_id_binding": "actual-created-conflict-id"
+      },
+      "expected": {
+        "status": "accepted",
+        "failure_code": null,
+        "value": "本机选择",
+        "current_kind": "resolved",
+        "device_highest": 2,
+        "change_groups": 3,
+        "applied_keys": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "FX-CONFLICT-RESOLUTION-KEEP-REMOTE",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,12",
+      "input": {
+        "scenario": "KEEP-REMOTE",
+        "baseline": {
+          "target_type": "category",
+          "target_id": "00000002-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000002-1111-4111-8111-111111111111",
+            "name": "工作",
+            "description": null,
+            "color": "#39AFBD",
+            "icon": null,
+            "sort_order": 1,
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null,
+            "reorder_revision": 0
+          }
+        },
+        "dependencies": [],
+        "remote_patch": {
+          "name": "远端选择"
+        },
+        "local_patch": {
+          "name": "本机选择"
+        },
+        "mode": "keep_remote",
+        "manual_candidate": null,
+        "expected_conflict_version": 1,
+        "conflict_id_binding": "actual-created-conflict-id"
+      },
+      "expected": {
+        "status": "accepted",
+        "failure_code": null,
+        "value": "远端选择",
+        "current_kind": "resolved",
+        "device_highest": 2,
+        "change_groups": 3,
+        "applied_keys": []
+      }
+    },
+    {
+      "id": "FX-CONFLICT-RESOLUTION-PER-FIELD",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,12",
+      "input": {
+        "scenario": "PER-FIELD",
+        "baseline": {
+          "target_type": "category",
+          "target_id": "00000002-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000002-1111-4111-8111-111111111111",
+            "name": "工作",
+            "description": null,
+            "color": "#39AFBD",
+            "icon": null,
+            "sort_order": 1,
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null,
+            "reorder_revision": 0
+          }
+        },
+        "dependencies": [],
+        "remote_patch": {
+          "name": "远端选择"
+        },
+        "local_patch": {
+          "name": "本机选择"
+        },
+        "mode": "per_field",
+        "manual_candidate": null,
+        "expected_conflict_version": 1,
+        "conflict_id_binding": "actual-created-conflict-id"
+      },
+      "expected": {
+        "status": "accepted",
+        "failure_code": null,
+        "value": "本机选择",
+        "current_kind": "resolved",
+        "device_highest": 2,
+        "change_groups": 3,
+        "applied_keys": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "FX-CONFLICT-RESOLUTION-MANUAL",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,12",
+      "input": {
+        "scenario": "MANUAL",
+        "baseline": {
+          "target_type": "category",
+          "target_id": "00000002-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000002-1111-4111-8111-111111111111",
+            "name": "工作",
+            "description": null,
+            "color": "#39AFBD",
+            "icon": null,
+            "sort_order": 1,
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null,
+            "reorder_revision": 0
+          }
+        },
+        "dependencies": [],
+        "remote_patch": {
+          "name": "远端选择"
+        },
+        "local_patch": {
+          "name": "本机选择"
+        },
+        "mode": "manual_edit",
+        "manual_candidate": {
+          "target_type": "category",
+          "target_id": "00000002-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000002-1111-4111-8111-111111111111",
+            "name": "手动结果",
+            "description": null,
+            "color": "#39AFBD",
+            "icon": null,
+            "sort_order": 1,
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null,
+            "reorder_revision": 0
+          }
+        },
+        "expected_conflict_version": 1,
+        "conflict_id_binding": "actual-created-conflict-id"
+      },
+      "expected": {
+        "status": "accepted",
+        "failure_code": null,
+        "value": "手动结果",
+        "current_kind": "resolved",
+        "device_highest": 2,
+        "change_groups": 3,
+        "applied_keys": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "FX-CONFLICT-RESOLUTION-NOT-FOUND",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,12",
+      "input": {
+        "scenario": "NOT-FOUND",
+        "baseline": {
+          "target_type": "category",
+          "target_id": "00000002-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000002-1111-4111-8111-111111111111",
+            "name": "工作",
+            "description": null,
+            "color": "#39AFBD",
+            "icon": null,
+            "sort_order": 1,
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null,
+            "reorder_revision": 0
+          }
+        },
+        "dependencies": [],
+        "remote_patch": {
+          "name": "远端选择"
+        },
+        "local_patch": {
+          "name": "本机选择"
+        },
+        "mode": "keep_remote",
+        "manual_candidate": null,
+        "expected_conflict_version": 1,
+        "conflict_id_binding": "missing-random-uuid"
+      },
+      "expected": {
+        "status": "rejected",
+        "failure_code": "SYNC_CONFLICT_NOT_FOUND",
+        "value": "工作",
+        "current_kind": "missing",
+        "device_highest": 1,
+        "change_groups": 0,
+        "applied_keys": []
+      }
+    },
+    {
+      "id": "FX-CONFLICT-RESOLUTION-VERSION-MISMATCH",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,12",
+      "input": {
+        "scenario": "VERSION-MISMATCH",
+        "baseline": {
+          "target_type": "category",
+          "target_id": "00000002-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000002-1111-4111-8111-111111111111",
+            "name": "工作",
+            "description": null,
+            "color": "#39AFBD",
+            "icon": null,
+            "sort_order": 1,
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null,
+            "reorder_revision": 0
+          }
+        },
+        "dependencies": [],
+        "remote_patch": {
+          "name": "远端选择"
+        },
+        "local_patch": {
+          "name": "本机选择"
+        },
+        "mode": "keep_local",
+        "manual_candidate": null,
+        "expected_conflict_version": 2,
+        "conflict_id_binding": "actual-created-conflict-id"
+      },
+      "expected": {
+        "status": "rejected",
+        "failure_code": "SYNC_CONFLICT_VERSION_MISMATCH",
+        "value": "远端选择",
+        "current_kind": "unresolved",
+        "device_highest": 2,
+        "change_groups": 2,
+        "applied_keys": []
+      }
+    },
+    {
+      "id": "FX-CONFLICT-RESOLUTION-ALREADY-RESOLVED",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,12",
+      "input": {
+        "scenario": "ALREADY-RESOLVED",
+        "baseline": {
+          "target_type": "category",
+          "target_id": "00000002-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000002-1111-4111-8111-111111111111",
+            "name": "工作",
+            "description": null,
+            "color": "#39AFBD",
+            "icon": null,
+            "sort_order": 1,
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null,
+            "reorder_revision": 0
+          }
+        },
+        "dependencies": [],
+        "remote_patch": {
+          "name": "远端选择"
+        },
+        "local_patch": {
+          "name": "本机选择"
+        },
+        "mode": "keep_local",
+        "manual_candidate": null,
+        "expected_conflict_version": 1,
+        "conflict_id_binding": "actual-created-conflict-id"
+      },
+      "expected": {
+        "status": "rejected",
+        "failure_code": "SYNC_CONFLICT_ALREADY_RESOLVED",
+        "value": "远端选择",
+        "current_kind": "resolved",
+        "device_highest": 2,
+        "change_groups": 3,
+        "applied_keys": []
+      }
+    },
+    {
+      "id": "FX-CONFLICT-RESOLUTION-DOMAIN-REJECTED",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/6.2-6.3,7.5,12",
+      "input": {
+        "scenario": "DOMAIN-REJECTED",
+        "baseline": {
+          "target_type": "habit",
+          "target_id": "00000007-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000007-1111-4111-8111-111111111111",
+            "title": "阅读",
+            "description": null,
+            "category_id": "legacy-category😀",
+            "recurrence_id": "00000008-1111-4111-8111-111111111111",
+            "target_count_hundredths": 500,
+            "unit": "页",
+            "start_date": "2026-09-01",
+            "end_date": "2026-09-30",
+            "ended_date": null,
+            "is_active": true,
+            "first_check_in_at": "2026-09-05T01:00:00Z",
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null
+          }
+        },
+        "dependencies": [
+          {
+            "target_type": "habit_recurrence",
+            "target_id": "00000008-1111-4111-8111-111111111111",
+            "fact": {
+              "id": "00000008-1111-4111-8111-111111111111",
+              "frequency": "daily",
+              "interval": 1,
+              "timezone_mode": "follow_device",
+              "created_at": "2026-09-05T01:00:00Z",
+              "updated_at": "2026-09-05T01:00:00Z",
+              "deleted_at": null
+            }
+          }
+        ],
+        "remote_patch": {
+          "title": "远端选择"
+        },
+        "local_patch": {
+          "title": "本机选择"
+        },
+        "mode": "manual_edit",
+        "manual_candidate": {
+          "target_type": "habit",
+          "target_id": "00000007-1111-4111-8111-111111111111",
+          "fact": {
+            "id": "00000007-1111-4111-8111-111111111111",
+            "title": "阅读",
+            "description": null,
+            "category_id": "legacy-category😀",
+            "recurrence_id": "00000008-1111-4111-8111-111111111111",
+            "target_count_hundredths": 500,
+            "unit": "页",
+            "start_date": "2026-10-01",
+            "end_date": "2026-09-30",
+            "ended_date": null,
+            "is_active": true,
+            "first_check_in_at": "2026-09-05T01:00:00Z",
+            "created_at": "2026-09-05T01:00:00Z",
+            "updated_at": "2026-09-05T01:00:00Z",
+            "deleted_at": null
+          }
+        },
+        "expected_conflict_version": 1,
+        "conflict_id_binding": "actual-created-conflict-id"
+      },
+      "expected": {
+        "status": "rejected",
+        "failure_code": "HABIT_DATE_RANGE_INVALID",
+        "value": "远端选择",
+        "current_kind": "unresolved",
+        "device_highest": 2,
+        "change_groups": 2,
+        "applied_keys": []
+      }
+    }
+  ]
+}

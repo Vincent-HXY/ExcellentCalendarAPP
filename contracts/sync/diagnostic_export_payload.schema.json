@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/diagnostic_export_payload.schema.json",
+  "title": "SyncV1 diagnostic_export_payload",
+  "x-contract-domain": "android_private",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.6/IMP-08,IMP-10;8.2;13",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "native",
+    "android_api_bucket",
+    "transport_state",
+    "work_pending",
+    "network_available"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "native": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/diagnostic_snapshot_response.schema.json"
+    },
+    "android_api_bucket": {
+      "enum": [
+        "23",
+        "24_30",
+        "31_plus"
+      ]
+    },
+    "transport_state": {
+      "enum": [
+        "idle",
+        "running",
+        "offline",
+        "retry_wait",
+        "auth_required",
+        "blocked"
+      ]
+    },
+    "work_pending": {
+      "type": "boolean"
+    },
+    "network_available": {
+      "type": "boolean"
+    }
+  },
+  "x-owner": "Kotlin WorkspaceLifecycle / private persistence; diagnostics safe projection only"
+}

@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_conflict_summary.schema.json",
+  "title": "SyncV1 sync_conflict_summary",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.5,8,12",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conflict_id",
+        "conflict_version",
+        "target_type",
+        "target_id",
+        "source_device_id",
+        "received_at",
+        "conflicting_merge_keys",
+        "auto_merged_group_count",
+        "status",
+        "resolved_at",
+        "retain_until"
+      ],
+      "properties": {
+        "conflict_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "conflict_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "target_type": {
+          "enum": [
+            "category",
+            "event",
+            "event_recurrence",
+            "event_occurrence_state",
+            "anniversary",
+            "anniversary_recurrence",
+            "habit",
+            "habit_recurrence",
+            "habit_check_in",
+            "reminder_intent"
+          ]
+        },
+        "target_id": {
+          "type": "string",
+          "minLength": 36,
+          "maxLength": 53
+        },
+        "source_device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "received_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "conflicting_merge_keys": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/sync/sync_merge_key.schema.json"
+          }
+        },
+        "auto_merged_group_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "status": {
+          "enum": [
+            "unresolved",
+            "resolving"
+          ]
+        },
+        "resolved_at": {
+          "type": "null"
+        },
+        "retain_until": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conflict_id",
+        "conflict_version",
+        "target_type",
+        "target_id",
+        "source_device_id",
+        "received_at",
+        "conflicting_merge_keys",
+        "auto_merged_group_count",
+        "status",
+        "resolved_at",
+        "retain_until"
+      ],
+      "properties": {
+        "conflict_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "conflict_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "target_type": {
+          "enum": [
+            "category",
+            "event",
+            "event_recurrence",
+            "event_occurrence_state",
+            "anniversary",
+            "anniversary_recurrence",
+            "habit",
+            "habit_recurrence",
+            "habit_check_in",
+            "reminder_intent"
+          ]
+        },
+        "target_id": {
+          "type": "string",
+          "minLength": 36,
+          "maxLength": 53
+        },
+        "source_device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "received_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "conflicting_merge_keys": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/sync/sync_merge_key.schema.json"
+          }
+        },
+        "auto_merged_group_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "status": {
+          "const": "resolved"
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "retain_until": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        }
+      }
+    }
+  ]
+}

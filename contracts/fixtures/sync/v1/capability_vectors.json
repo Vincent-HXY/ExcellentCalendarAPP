@@ -1,0 +1,466 @@
+{
+  "fixture_version": 1,
+  "scope": "planned Schema boundary examples; not product or four-language evidence",
+  "cases": [
+    {
+      "id": "FX-CAPABILITY-guest_binding",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "local",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": null,
+        "session_generation": null
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-binding_missing_workspace_id",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_kind": "local",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": null,
+        "session_generation": null
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-binding_missing_workspace_kind",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": null,
+        "session_generation": null
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-binding_missing_runtime_instance_id",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "local",
+        "device_id": null,
+        "session_generation": null
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-binding_missing_device_id",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "local",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "session_generation": null
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-binding_missing_session_generation",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "local",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": null
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-guest_device_forbidden",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "local",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "session_generation": null
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-account_max",
+      "family": "FX-COUNTER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 9007199254740991
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-account_generation_overflow",
+      "family": "FX-COUNTER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 9007199254740992
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-account_generation_negative",
+      "family": "FX-COUNTER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "session_generation": -1
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-account_generation_string",
+      "family": "FX-COUNTER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "session_generation": "1"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-account_generation_bool",
+      "family": "FX-COUNTER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "session_generation": true
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-account_generation_fraction",
+      "family": "FX-COUNTER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1.5
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-account_generation_null",
+      "family": "FX-COUNTER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "session_generation": null
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-account_no_device",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/internal/runtime_binding.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": null,
+        "session_generation": 9007199254740991
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-run_now",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "sync/run_sync_now_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-run_forbids_client_sequence",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "sync/run_sync_now_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "client_sequence": "forbidden"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-run_forbids_cursor",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "sync/run_sync_now_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "cursor": "forbidden"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-run_forbids_run_intent",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "sync/run_sync_now_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "run_intent": "forbidden"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-run_forbids_logout_operation_id",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "sync/run_sync_now_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "logout_operation_id": "forbidden"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-run_forbids_refresh_token",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "sync/run_sync_now_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "refresh_token": "forbidden"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-native_result_v3",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/common/native_result.schema.json",
+      "input": {
+        "ok": true,
+        "data": {},
+        "error": null,
+        "contract_version": 3,
+        "request_id": "fixed-test"
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-native_result_v2_rejected",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/common/native_result.schema.json",
+      "input": {
+        "ok": true,
+        "data": {},
+        "error": null,
+        "contract_version": 2,
+        "request_id": "fixed-test"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-native_result_failure_has_no_error",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/common/native_result.schema.json",
+      "input": {
+        "ok": false,
+        "data": {},
+        "error": null,
+        "contract_version": 3,
+        "request_id": "fixed-test"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-tap_v6",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/notification/notification_tap_payload_v6_writer.schema.json",
+      "input": {
+        "notification_id": "11111111-1111-4111-8111-111111111111",
+        "delivery_id": "22222222-2222-4222-8222-222222222222",
+        "delivery_attempt_id": "33333333-3333-4333-8333-333333333333",
+        "kind": "reminder",
+        "reminder_id": "33333333-3333-4333-8333-333333333333",
+        "recovery_batch_id": null,
+        "target_type": "event",
+        "target_id": "33333333-3333-4333-8333-333333333333",
+        "occurrence_key": null,
+        "route": null,
+        "opened_at": "2026-09-05T00:00:00Z",
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "local"
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-tap_v6_missing_workspace_id",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/notification/notification_tap_payload_v6_writer.schema.json",
+      "input": {
+        "notification_id": "11111111-1111-4111-8111-111111111111",
+        "delivery_id": "22222222-2222-4222-8222-222222222222",
+        "delivery_attempt_id": "33333333-3333-4333-8333-333333333333",
+        "kind": "reminder",
+        "reminder_id": "33333333-3333-4333-8333-333333333333",
+        "recovery_batch_id": null,
+        "target_type": "event",
+        "target_id": "33333333-3333-4333-8333-333333333333",
+        "occurrence_key": null,
+        "route": null,
+        "opened_at": "2026-09-05T00:00:00Z",
+        "workspace_kind": "local"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-tap_v6_missing_workspace_kind",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/notification/notification_tap_payload_v6_writer.schema.json",
+      "input": {
+        "notification_id": "11111111-1111-4111-8111-111111111111",
+        "delivery_id": "22222222-2222-4222-8222-222222222222",
+        "delivery_attempt_id": "33333333-3333-4333-8333-333333333333",
+        "kind": "reminder",
+        "reminder_id": "33333333-3333-4333-8333-333333333333",
+        "recovery_batch_id": null,
+        "target_type": "event",
+        "target_id": "33333333-3333-4333-8333-333333333333",
+        "occurrence_key": null,
+        "route": null,
+        "opened_at": "2026-09-05T00:00:00Z",
+        "workspace_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-CAPABILITY-tap_v6_unknown_kind",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/5,6.1,8.3-8.4",
+      "schema": "native_v3/notification/notification_tap_payload_v6_writer.schema.json",
+      "input": {
+        "notification_id": "11111111-1111-4111-8111-111111111111",
+        "delivery_id": "22222222-2222-4222-8222-222222222222",
+        "delivery_attempt_id": "33333333-3333-4333-8333-333333333333",
+        "kind": "reminder",
+        "reminder_id": "33333333-3333-4333-8333-333333333333",
+        "recovery_batch_id": null,
+        "target_type": "event",
+        "target_id": "33333333-3333-4333-8333-333333333333",
+        "occurrence_key": null,
+        "route": null,
+        "opened_at": "2026-09-05T00:00:00Z",
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "shared"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    }
+  ]
+}

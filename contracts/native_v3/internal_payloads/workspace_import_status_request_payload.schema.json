@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/workspace_import_status_request_payload.schema.json",
+  "title": "SyncV1 workspace_import_status_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.6/IMP-06",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workspace_id",
+    "runtime_instance_id",
+    "session_generation",
+    "query",
+    "server_snapshot"
+  ],
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "runtime_instance_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "session_generation": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "query": {
+      "$ref": "https://excellent-calendar.local/contracts/sync/import_status_request.schema.json"
+    },
+    "server_snapshot": {
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/sync/import_status_response.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

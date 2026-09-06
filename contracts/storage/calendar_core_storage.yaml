@@ -4,7 +4,8 @@ implementation_status: integrated
 format_name: excellent_calendar_core_sqlite
 storage_format_version: 5
 active_format_contract: calendar_core_v5
-latest_declared_format_version: 5
+planned_format_contract: calendar_core_v6
+latest_declared_format_version: 6
 legacy_json_sections_role: migration_source_payload_codec_and_downgrade_guard_only
 
 directories:
@@ -1072,3 +1073,698 @@ calendar_core_v3:
       - failure after migration prepare and after every Store replacement
       - corrupted v2 record, corrupted migration record, unknown version, and mixed-version directory rejection
       - exact preservation of soft deletion and delivery audit fields
+
+calendar_core_v6:
+  format_name: excellent_calendar_core_sqlite
+  storage_format_version: 6
+  implementation_status: planned
+  release_status: planned
+  source_contract: calendar_core_v5
+  source_v5_contract_sha256: dcd92464591cae3f74b2454d4b80021298acab1874ac6f946b45c89d8fe5db79
+  rule_anchor: cloud-sync-02/10
+  sqlite:
+    application_id: 1162035532
+    user_version: 6
+    journal_mode: WAL
+    synchronous: FULL
+    transaction_begin: BEGIN IMMEDIATE
+    foreign_keys: enabled
+    bundled_version: 3.53.4
+    version_upgrade_forbidden: true
+  inherited_v5_objects:
+    tables: 20
+    indexes: 24
+    store_generations: 17
+    rows: preserve_record_key_position_payload_json_bytes
+    node_hash: dcd92464591cae3f74b2454d4b80021298acab1874ac6f946b45c89d8fe5db79
+  new_tables:
+    workspace_metadata: CREATE TABLE workspace_metadata(singleton INTEGER PRIMARY KEY CHECK(singleton=1),workspace_id TEXT NOT NULL,workspace_kind
+      TEXT NOT NULL CHECK(workspace_kind IN ('local','account')),account_id TEXT,schema_version INTEGER NOT NULL CHECK(schema_version=6),encryption_profile
+      TEXT NOT NULL CHECK(encryption_profile IN ('guest_plaintext_v1','account_sqlcipher_v1')),created_at TEXT NOT NULL,current_import_source_epoch
+      INTEGER CHECK(current_import_source_epoch IS NULL OR (typeof(current_import_source_epoch)='integer' AND current_import_source_epoch BETWEEN
+      0 AND 9007199254740991)),previous_epoch_cleanup_pending INTEGER CHECK(previous_epoch_cleanup_pending IS NULL OR (typeof(previous_epoch_cleanup_pending)='integer'
+      AND previous_epoch_cleanup_pending BETWEEN 0 AND 9007199254740991)),source_epoch_exhausted INTEGER CHECK(source_epoch_exhausted IS NULL
+      OR (typeof(source_epoch_exhausted)='integer' AND source_epoch_exhausted IN (0,1))),native_state_revision INTEGER NOT NULL CHECK(typeof(native_state_revision)='integer'
+      AND native_state_revision BETWEEN 0 AND 9007199254740991),UNIQUE(workspace_id),CHECK((workspace_kind='local' AND account_id IS NULL AND
+      encryption_profile='guest_plaintext_v1' AND current_import_source_epoch IS NOT NULL AND source_epoch_exhausted IS NOT NULL) OR (workspace_kind='account'
+      AND account_id IS NOT NULL AND encryption_profile='account_sqlcipher_v1' AND current_import_source_epoch IS NULL AND previous_epoch_cleanup_pending
+      IS NULL AND source_epoch_exhausted IS NULL)),CHECK(source_epoch_exhausted IS NULL OR source_epoch_exhausted=0 OR current_import_source_epoch=9007199254740991),CHECK(previous_epoch_cleanup_pending
+      IS NULL OR previous_epoch_cleanup_pending<current_import_source_epoch OR (source_epoch_exhausted=1 AND current_import_source_epoch=9007199254740991
+      AND previous_epoch_cleanup_pending=9007199254740991))) WITHOUT ROWID
+    workspace_preferences: CREATE TABLE workspace_preferences(singleton INTEGER PRIMARY KEY CHECK(singleton=1),timezone TEXT NOT NULL CHECK(length(timezone)>=1),habit_progress_color
+      TEXT NOT NULL CHECK(habit_progress_color IN ('teal','blue','indigo','green','orange','rose','purple')),default_reminder_methods_json TEXT
+      NOT NULL CHECK(json_valid(default_reminder_methods_json)),auto_enable_reminders_on_other_devices INTEGER NOT NULL CHECK(typeof(auto_enable_reminders_on_other_devices)='integer'
+      AND auto_enable_reminders_on_other_devices IN (0,1)),preferences_revision INTEGER NOT NULL CHECK(typeof(preferences_revision)='integer'
+      AND preferences_revision BETWEEN 0 AND 9007199254740991)) WITHOUT ROWID
+    account_profile_cache: CREATE TABLE account_profile_cache(singleton INTEGER PRIMARY KEY CHECK(singleton=1),profile_revision INTEGER NOT NULL
+      CHECK(typeof(profile_revision)='integer' AND profile_revision BETWEEN 0 AND 9007199254740991),preferences_revision INTEGER NOT NULL CHECK(typeof(preferences_revision)='integer'
+      AND preferences_revision BETWEEN 0 AND 9007199254740991),received_at TEXT NOT NULL,server_updated_at TEXT NOT NULL,payload_version INTEGER
+      NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash
+      TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*')) WITHOUT ROWID
+    sync_state: CREATE TABLE sync_state(singleton INTEGER PRIMARY KEY CHECK(singleton=1),device_id TEXT NOT NULL,sync_transport_generation INTEGER
+      NOT NULL CHECK(typeof(sync_transport_generation)='integer' AND sync_transport_generation BETWEEN 0 AND 9007199254740991),next_client_sequence
+      INTEGER CHECK(next_client_sequence IS NULL OR (typeof(next_client_sequence)='integer' AND next_client_sequence BETWEEN 1 AND 9007199254740991)),client_sequence_exhausted
+      INTEGER NOT NULL CHECK(typeof(client_sequence_exhausted)='integer' AND client_sequence_exhausted IN (0,1)),highest_local_client_sequence
+      INTEGER NOT NULL CHECK(typeof(highest_local_client_sequence)='integer' AND highest_local_client_sequence BETWEEN 0 AND 9007199254740991),local_receipt_ack_through
+      INTEGER NOT NULL CHECK(typeof(local_receipt_ack_through)='integer' AND local_receipt_ack_through BETWEEN 0 AND 9007199254740991),server_accepted_ack_through
+      INTEGER NOT NULL CHECK(typeof(server_accepted_ack_through)='integer' AND server_accepted_ack_through BETWEEN 0 AND 9007199254740991),ack_watermark_dirty
+      INTEGER NOT NULL CHECK(typeof(ack_watermark_dirty)='integer' AND ack_watermark_dirty IN (0,1)),cursor TEXT,account_generation INTEGER CHECK(account_generation
+      IS NULL OR (typeof(account_generation)='integer' AND account_generation BETWEEN 0 AND 9007199254740991)),server_sequence INTEGER CHECK(server_sequence
+      IS NULL OR (typeof(server_sequence)='integer' AND server_sequence BETWEEN 0 AND 9007199254740991)),receipt_cleanup_through INTEGER NOT NULL
+      CHECK(typeof(receipt_cleanup_through)='integer' AND receipt_cleanup_through BETWEEN 0 AND 9007199254740991),change_cleanup_through INTEGER
+      NOT NULL CHECK(typeof(change_cleanup_through)='integer' AND change_cleanup_through BETWEEN 0 AND 9007199254740991),sync_enabled INTEGER
+      NOT NULL CHECK(typeof(sync_enabled)='integer' AND sync_enabled IN (0,1)),sync_policy_revision INTEGER NOT NULL CHECK(typeof(sync_policy_revision)='integer'
+      AND sync_policy_revision BETWEEN 0 AND 9007199254740991),reenable_pull_required INTEGER NOT NULL CHECK(typeof(reenable_pull_required)='integer'
+      AND reenable_pull_required IN (0,1)),next_notice_sequence INTEGER CHECK(next_notice_sequence IS NULL OR (typeof(next_notice_sequence)='integer'
+      AND next_notice_sequence BETWEEN 1 AND 9007199254740991)),last_claimed_notice_sequence INTEGER NOT NULL CHECK(typeof(last_claimed_notice_sequence)='integer'
+      AND last_claimed_notice_sequence BETWEEN 0 AND 9007199254740991),unresolved_conflict_count INTEGER NOT NULL CHECK(typeof(unresolved_conflict_count)='integer'
+      AND unresolved_conflict_count BETWEEN 0 AND 9007199254740991),failed_local_change_count INTEGER NOT NULL CHECK(typeof(failed_local_change_count)='integer'
+      AND failed_local_change_count BETWEEN 0 AND 9007199254740991),backlog_count INTEGER NOT NULL CHECK(typeof(backlog_count)='integer' AND backlog_count
+      BETWEEN 0 AND 9007199254740991),transport_terminal_code TEXT,transport_terminal_evidence_hash TEXT CHECK(length(transport_terminal_evidence_hash)=64
+      AND transport_terminal_evidence_hash NOT GLOB '*[^0-9a-f]*'),transport_terminal_binding_json TEXT CHECK(json_valid(transport_terminal_binding_json)
+      OR transport_terminal_binding_json IS NULL),UNIQUE(device_id),CHECK(server_accepted_ack_through<=local_receipt_ack_through AND local_receipt_ack_through<=highest_local_client_sequence),CHECK((client_sequence_exhausted=0
+      AND next_client_sequence IS NOT NULL AND next_client_sequence=highest_local_client_sequence+1) OR (client_sequence_exhausted=1 AND next_client_sequence
+      IS NULL AND highest_local_client_sequence=9007199254740991)),CHECK((transport_terminal_code IS NULL AND transport_terminal_evidence_hash
+      IS NULL AND transport_terminal_binding_json IS NULL) OR (transport_terminal_code IS NOT NULL AND transport_terminal_evidence_hash IS NOT
+      NULL AND transport_terminal_binding_json IS NOT NULL))) WITHOUT ROWID
+    sync_local_device_causal_anchors: CREATE TABLE sync_local_device_causal_anchors(device_id TEXT NOT NULL,target_type TEXT NOT NULL CHECK(target_type
+      IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,merge_key TEXT NOT NULL,client_sequence INTEGER NOT NULL CHECK(typeof(client_sequence)='integer' AND client_sequence BETWEEN
+      1 AND 9007199254740991),resulting_field_version INTEGER NOT NULL CHECK(typeof(resulting_field_version)='integer' AND resulting_field_version
+      BETWEEN 0 AND 9007199254740991),PRIMARY KEY(device_id,target_type,target_id,merge_key),FOREIGN KEY(device_id) REFERENCES sync_state(device_id))
+      WITHOUT ROWID
+    sync_awaiting_change_groups: CREATE TABLE sync_awaiting_change_groups(change_group_id TEXT NOT NULL,last_server_sequence INTEGER NOT NULL
+      CHECK(typeof(last_server_sequence)='integer' AND last_server_sequence BETWEEN 1 AND 9007199254740991),target_type TEXT NOT NULL CHECK(target_type
+      IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,mutation_id TEXT NOT NULL,client_sequence INTEGER NOT NULL CHECK(typeof(client_sequence)='integer' AND client_sequence BETWEEN
+      1 AND 9007199254740991),receipt_hash TEXT NOT NULL CHECK(length(receipt_hash)=64 AND receipt_hash NOT GLOB '*[^0-9a-f]*'),created_at TEXT
+      NOT NULL,PRIMARY KEY(change_group_id,target_type,target_id)) WITHOUT ROWID
+    sync_policy_operation_receipts: CREATE TABLE sync_policy_operation_receipts(singleton INTEGER PRIMARY KEY CHECK(singleton=1),operation_id
+      TEXT NOT NULL,expected_policy_revision INTEGER NOT NULL CHECK(typeof(expected_policy_revision)='integer' AND expected_policy_revision BETWEEN
+      0 AND 9007199254740991),resulting_policy_revision INTEGER NOT NULL CHECK(typeof(resulting_policy_revision)='integer' AND resulting_policy_revision
+      BETWEEN 0 AND 9007199254740991),sync_enabled INTEGER NOT NULL CHECK(typeof(sync_enabled)='integer' AND sync_enabled IN (0,1)),request_hash
+      TEXT NOT NULL CHECK(length(request_hash)=64 AND request_hash NOT GLOB '*[^0-9a-f]*'),result_hash TEXT NOT NULL CHECK(length(result_hash)=64
+      AND result_hash NOT GLOB '*[^0-9a-f]*'),UNIQUE(operation_id),CHECK(resulting_policy_revision=expected_policy_revision+1)) WITHOUT ROWID
+    sync_conflict_notice_queue: CREATE TABLE sync_conflict_notice_queue(device_id TEXT NOT NULL,notice_sequence INTEGER NOT NULL CHECK(typeof(notice_sequence)='integer'
+      AND notice_sequence BETWEEN 1 AND 9007199254740991),notice_id TEXT NOT NULL,conflict_ids_json TEXT NOT NULL CHECK(json_valid(conflict_ids_json)),account_generation
+      INTEGER NOT NULL CHECK(typeof(account_generation)='integer' AND account_generation BETWEEN 0 AND 9007199254740991),upper_bound INTEGER NOT
+      NULL CHECK(typeof(upper_bound)='integer' AND upper_bound BETWEEN 0 AND 9007199254740991),PRIMARY KEY(device_id,notice_sequence),UNIQUE(notice_id),FOREIGN
+      KEY(device_id) REFERENCES sync_state(device_id)) WITHOUT ROWID
+    sync_conflict_notice_journal: CREATE TABLE sync_conflict_notice_journal(device_id TEXT NOT NULL,account_generation INTEGER NOT NULL CHECK(typeof(account_generation)='integer'
+      AND account_generation BETWEEN 0 AND 9007199254740991),upper_bound INTEGER NOT NULL CHECK(typeof(upper_bound)='integer' AND upper_bound
+      BETWEEN 0 AND 9007199254740991),conflict_id TEXT NOT NULL,was_unresolved_at_start INTEGER NOT NULL CHECK(typeof(was_unresolved_at_start)='integer'
+      AND was_unresolved_at_start IN (0,1)),seen_created INTEGER NOT NULL CHECK(typeof(seen_created)='integer' AND seen_created IN (0,1)),seen_resolved
+      INTEGER NOT NULL CHECK(typeof(seen_resolved)='integer' AND seen_resolved IN (0,1)),PRIMARY KEY(device_id,account_generation,upper_bound,conflict_id),FOREIGN
+      KEY(device_id) REFERENCES sync_state(device_id)) WITHOUT ROWID
+    sync_outbox: CREATE TABLE sync_outbox(mutation_id TEXT NOT NULL,device_id TEXT NOT NULL,client_sequence INTEGER NOT NULL CHECK(typeof(client_sequence)='integer'
+      AND client_sequence BETWEEN 1 AND 9007199254740991),target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,operation_type TEXT NOT NULL,base_entity_version INTEGER NOT NULL CHECK(typeof(base_entity_version)='integer' AND base_entity_version
+      BETWEEN 0 AND 9007199254740991),causal_predecessors_json TEXT NOT NULL CHECK(json_valid(causal_predecessors_json)),payload_version INTEGER
+      NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash
+      TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),route TEXT NOT NULL CHECK(route IN ('exchange','conflict_resolution','import_range')),state
+      TEXT NOT NULL CHECK(state IN ('pending','prepared','sent')),attempt_count INTEGER NOT NULL CHECK(typeof(attempt_count)='integer' AND attempt_count
+      BETWEEN 0 AND 9007199254740991),prepared_request_id TEXT,created_at TEXT NOT NULL,PRIMARY KEY(mutation_id),UNIQUE(device_id,client_sequence),FOREIGN
+      KEY(device_id) REFERENCES sync_state(device_id),CHECK((state='pending' AND prepared_request_id IS NULL) OR (state IN ('prepared','sent')
+      AND prepared_request_id IS NOT NULL))) WITHOUT ROWID
+    sync_prepared_requests: CREATE TABLE sync_prepared_requests(request_id TEXT NOT NULL,device_id TEXT NOT NULL,sync_transport_generation INTEGER
+      NOT NULL CHECK(typeof(sync_transport_generation)='integer' AND sync_transport_generation BETWEEN 0 AND 9007199254740991),runtime_instance_id
+      TEXT NOT NULL,run_intent TEXT NOT NULL,payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN
+      1 AND 9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64
+      AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY KEY(request_id),FOREIGN KEY(device_id) REFERENCES sync_state(device_id)) WITHOUT ROWID
+    sync_failed_local_changes: CREATE TABLE sync_failed_local_changes(failed_change_id TEXT NOT NULL,mutation_id TEXT NOT NULL,target_type TEXT
+      NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,failed_change_revision INTEGER NOT NULL CHECK(typeof(failed_change_revision)='integer' AND failed_change_revision BETWEEN
+      0 AND 9007199254740991),base_entity_version INTEGER NOT NULL CHECK(typeof(base_entity_version)='integer' AND base_entity_version BETWEEN
+      0 AND 9007199254740991),merge_keys_json TEXT NOT NULL CHECK(json_valid(merge_keys_json)),causal_predecessors_json TEXT NOT NULL CHECK(json_valid(causal_predecessors_json)),local_candidate_json
+      TEXT NOT NULL CHECK(json_valid(local_candidate_json)),manual_draft_json TEXT CHECK(json_valid(manual_draft_json) OR manual_draft_json IS
+      NULL),failure_code TEXT NOT NULL,failure_context_json TEXT CHECK(json_valid(failure_context_json) OR failure_context_json IS NULL),superseding_mutation_id
+      TEXT,state TEXT NOT NULL CHECK(state IN ('active','superseded_pending')),payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer'
+      AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL
+      CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY KEY(failed_change_id),UNIQUE(mutation_id)) WITHOUT ROWID
+    sync_entity_state: CREATE TABLE sync_entity_state(target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,entity_version INTEGER NOT NULL CHECK(typeof(entity_version)='integer' AND entity_version BETWEEN 0 AND 9007199254740991),last_server_sequence
+      INTEGER NOT NULL CHECK(typeof(last_server_sequence)='integer' AND last_server_sequence BETWEEN 0 AND 9007199254740991),field_versions_json
+      TEXT NOT NULL CHECK(json_valid(field_versions_json)),awaiting_server_adjudication_keys_json TEXT CHECK(json_valid(awaiting_server_adjudication_keys_json)
+      OR awaiting_server_adjudication_keys_json IS NULL),PRIMARY KEY(target_type,target_id)) WITHOUT ROWID
+    sync_server_baselines: CREATE TABLE sync_server_baselines(target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,entity_version INTEGER NOT NULL CHECK(typeof(entity_version)='integer' AND entity_version BETWEEN 0 AND 9007199254740991),payload_version
+      INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL
+      CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(target_type,target_id)) WITHOUT ROWID
+    sync_deleted_entity_anchors: CREATE TABLE sync_deleted_entity_anchors(target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,delete_entity_version INTEGER NOT NULL CHECK(typeof(delete_entity_version)='integer' AND delete_entity_version BETWEEN 1 AND
+      9007199254740991),delete_server_sequence INTEGER NOT NULL CHECK(typeof(delete_server_sequence)='integer' AND delete_server_sequence BETWEEN
+      1 AND 9007199254740991),import_lineage_id TEXT,source_workspace_id TEXT,source_epoch INTEGER CHECK(source_epoch IS NULL OR (typeof(source_epoch)='integer'
+      AND source_epoch BETWEEN 0 AND 9007199254740991)),source_target_type TEXT,source_id TEXT,PRIMARY KEY(target_type,target_id),CHECK((import_lineage_id
+      IS NULL AND source_workspace_id IS NULL AND source_epoch IS NULL AND source_target_type IS NULL AND source_id IS NULL) OR (import_lineage_id
+      IS NOT NULL AND source_workspace_id IS NOT NULL AND source_epoch IS NOT NULL AND source_target_type IS NOT NULL AND source_id IS NOT NULL)))
+      WITHOUT ROWID
+    sync_change_receipts: CREATE TABLE sync_change_receipts(account_generation INTEGER NOT NULL CHECK(typeof(account_generation)='integer' AND
+      account_generation BETWEEN 0 AND 9007199254740991),server_sequence INTEGER NOT NULL CHECK(typeof(server_sequence)='integer' AND server_sequence
+      BETWEEN 1 AND 9007199254740991),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),applied_at
+      TEXT NOT NULL,PRIMARY KEY(account_generation,server_sequence)) WITHOUT ROWID
+    sync_upload_receipts: CREATE TABLE sync_upload_receipts(device_id TEXT NOT NULL,client_sequence INTEGER NOT NULL CHECK(typeof(client_sequence)='integer'
+      AND client_sequence BETWEEN 1 AND 9007199254740991),mutation_id TEXT NOT NULL,payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer'
+      AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL
+      CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),received_at TEXT NOT NULL,PRIMARY KEY(device_id,client_sequence),UNIQUE(mutation_id),FOREIGN
+      KEY(device_id) REFERENCES sync_state(device_id)) WITHOUT ROWID
+    sync_conflicts: CREATE TABLE sync_conflicts(conflict_id TEXT NOT NULL,target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,conflict_version INTEGER NOT NULL CHECK(typeof(conflict_version)='integer' AND conflict_version BETWEEN 1 AND 9007199254740991),status
+      TEXT NOT NULL CHECK(status IN ('unresolved','resolving','resolved')),source_device_id TEXT NOT NULL,received_at TEXT NOT NULL,resolved_at
+      TEXT,retain_until TEXT,payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json
+      TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(conflict_id),CHECK((status='resolved' AND resolved_at IS NOT NULL AND retain_until IS NOT NULL) OR (status!='resolved' AND resolved_at
+      IS NULL AND retain_until IS NULL))) WITHOUT ROWID
+    sync_import_batches: CREATE TABLE sync_import_batches(batch_id TEXT NOT NULL,lease_operation_id TEXT NOT NULL,protected_owner_binding_digest
+      TEXT NOT NULL CHECK(length(protected_owner_binding_digest)=64 AND protected_owner_binding_digest NOT GLOB '*[^0-9a-f]*'),outbox_mutation_digest
+      TEXT NOT NULL CHECK(length(outbox_mutation_digest)=64 AND outbox_mutation_digest NOT GLOB '*[^0-9a-f]*'),lineage_id TEXT NOT NULL,predecessor_batch_id
+      TEXT,source_workspace_id TEXT NOT NULL,source_epoch INTEGER NOT NULL CHECK(typeof(source_epoch)='integer' AND source_epoch BETWEEN 0 AND
+      9007199254740991),source_snapshot_hash TEXT NOT NULL CHECK(length(source_snapshot_hash)=64 AND source_snapshot_hash NOT GLOB '*[^0-9a-f]*'),origin_device_id
+      TEXT NOT NULL,sync_transport_generation INTEGER NOT NULL CHECK(typeof(sync_transport_generation)='integer' AND sync_transport_generation
+      BETWEEN 0 AND 9007199254740991),import_revision INTEGER NOT NULL CHECK(typeof(import_revision)='integer' AND import_revision BETWEEN 0 AND
+      9007199254740991),begin_client_sequence INTEGER NOT NULL CHECK(typeof(begin_client_sequence)='integer' AND begin_client_sequence BETWEEN
+      1 AND 9007199254740991),terminal_client_sequence INTEGER NOT NULL CHECK(typeof(terminal_client_sequence)='integer' AND terminal_client_sequence
+      BETWEEN 1 AND 9007199254740991),per_target_counts_json TEXT NOT NULL CHECK(json_valid(per_target_counts_json)),portable_preference_count
+      INTEGER NOT NULL CHECK(typeof(portable_preference_count)='integer' AND portable_preference_count BETWEEN 0 AND 9007199254740991),total_item_count
+      INTEGER NOT NULL CHECK(typeof(total_item_count)='integer' AND total_item_count BETWEEN 0 AND 9007199254740991),source_fact_count INTEGER
+      NOT NULL CHECK(typeof(source_fact_count)='integer' AND source_fact_count BETWEEN 0 AND 9007199254740991),total_canonical_bytes INTEGER NOT
+      NULL CHECK(typeof(total_canonical_bytes)='integer' AND total_canonical_bytes BETWEEN 0 AND 9007199254740991),mapping_digest TEXT NOT NULL
+      CHECK(length(mapping_digest)=64 AND mapping_digest NOT GLOB '*[^0-9a-f]*'),manifest_hash TEXT NOT NULL CHECK(length(manifest_hash)=64 AND
+      manifest_hash NOT GLOB '*[^0-9a-f]*'),takeover_reason TEXT,range_close_proof_id TEXT,stage TEXT NOT NULL CHECK(stage IN ('local_staging','server_staging','repair_required','server_confirmed','publish_applied','cleanup_pending','completed','superseded','abandoned')),reconciliation_state
+      TEXT NOT NULL CHECK(reconciliation_state IN ('not_required','full_successor_required','cleanup_recovery_required')),resume_disposition TEXT
+      NOT NULL CHECK(resume_disposition IN ('none','resume_upload','resume_publish','close_range_then_successor','create_successor','resume_cleanup','terminal')),abandon_confirmation
+      TEXT NOT NULL CHECK(abandon_confirmation IN ('not_requested','pending','confirmed','unconfirmed','not_applicable')),server_expires_at TEXT,error_code
+      TEXT,server_status_snapshot_json TEXT CHECK(json_valid(server_status_snapshot_json) OR server_status_snapshot_json IS NULL),payload_version
+      INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL
+      CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(batch_id),UNIQUE(lease_operation_id),CHECK(terminal_client_sequence=begin_client_sequence+total_item_count+1),CHECK(total_item_count<=50000
+      AND total_canonical_bytes<=134217728),CHECK(source_fact_count<=total_item_count-portable_preference_count)) WITHOUT ROWID
+    sync_import_items: CREATE TABLE sync_import_items(batch_id TEXT NOT NULL,ordinal INTEGER NOT NULL CHECK(typeof(ordinal)='integer' AND ordinal
+      BETWEEN 0 AND 9007199254740991),target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,mutation_id TEXT NOT NULL,operation_type TEXT NOT NULL,status TEXT NOT NULL CHECK(status IN ('pending','staged','terminal')),payload_version
+      INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL
+      CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(batch_id,ordinal),UNIQUE(batch_id,target_type,target_id),FOREIGN KEY(batch_id) REFERENCES sync_import_batches(batch_id) ON DELETE CASCADE)
+      WITHOUT ROWID
+    sync_import_mappings: CREATE TABLE sync_import_mappings(lineage_id TEXT NOT NULL,source_workspace_id TEXT NOT NULL,source_epoch INTEGER NOT
+      NULL CHECK(typeof(source_epoch)='integer' AND source_epoch BETWEEN 0 AND 9007199254740991),source_target_type TEXT NOT NULL,source_id TEXT
+      NOT NULL,target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,first_published_batch_id TEXT,last_published_batch_id TEXT,provenance_version INTEGER NOT NULL CHECK(typeof(provenance_version)='integer'
+      AND provenance_version BETWEEN 0 AND 9007199254740991),PRIMARY KEY(lineage_id,source_workspace_id,source_epoch,source_target_type,source_id),UNIQUE(target_type,target_id),CHECK(source_target_type=target_type),CHECK(target_type
+      NOT IN ('user_preferences','account_profile')),CHECK((provenance_version=0 AND first_published_batch_id IS NULL AND last_published_batch_id
+      IS NULL) OR (provenance_version>0 AND first_published_batch_id IS NOT NULL AND last_published_batch_id IS NOT NULL))) WITHOUT ROWID
+    sync_import_recurrence_families: CREATE TABLE sync_import_recurrence_families(lineage_id TEXT NOT NULL,source_recurrence_id TEXT NOT NULL,target_recurrence_id
+      TEXT NOT NULL,PRIMARY KEY(lineage_id,source_recurrence_id),UNIQUE(target_recurrence_id)) WITHOUT ROWID
+    sync_import_publish_staging: CREATE TABLE sync_import_publish_staging(publish_group_id TEXT NOT NULL,batch_id TEXT NOT NULL,account_generation
+      INTEGER NOT NULL CHECK(typeof(account_generation)='integer' AND account_generation BETWEEN 0 AND 9007199254740991),begin_server_sequence
+      INTEGER NOT NULL CHECK(typeof(begin_server_sequence)='integer' AND begin_server_sequence BETWEEN 1 AND 9007199254740991),total_chunk_count
+      INTEGER NOT NULL CHECK(typeof(total_chunk_count)='integer' AND total_chunk_count BETWEEN 0 AND 9007199254740991),total_item_count INTEGER
+      NOT NULL CHECK(typeof(total_item_count)='integer' AND total_item_count BETWEEN 0 AND 9007199254740991),received_chunk_count INTEGER NOT
+      NULL CHECK(typeof(received_chunk_count)='integer' AND received_chunk_count BETWEEN 0 AND 9007199254740991),manifest_hash TEXT NOT NULL CHECK(length(manifest_hash)=64
+      AND manifest_hash NOT GLOB '*[^0-9a-f]*'),mapping_digest TEXT NOT NULL CHECK(length(mapping_digest)=64 AND mapping_digest NOT GLOB '*[^0-9a-f]*'),commit_received
+      INTEGER NOT NULL CHECK(typeof(commit_received)='integer' AND commit_received IN (0,1)),PRIMARY KEY(publish_group_id),CHECK(received_chunk_count<=total_chunk_count))
+      WITHOUT ROWID
+    sync_import_publish_chunks: CREATE TABLE sync_import_publish_chunks(publish_group_id TEXT NOT NULL,chunk_ordinal INTEGER NOT NULL CHECK(typeof(chunk_ordinal)='integer'
+      AND chunk_ordinal BETWEEN 0 AND 9007199254740991),server_sequence INTEGER NOT NULL CHECK(typeof(server_sequence)='integer' AND server_sequence
+      BETWEEN 1 AND 9007199254740991),payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND
+      9007199254740991),payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND
+      payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY KEY(publish_group_id,chunk_ordinal),FOREIGN KEY(publish_group_id) REFERENCES sync_import_publish_staging(publish_group_id)
+      ON DELETE CASCADE) WITHOUT ROWID
+    sync_import_publish_markers: CREATE TABLE sync_import_publish_markers(batch_id TEXT NOT NULL,lineage_id TEXT NOT NULL,publish_group_id TEXT
+      NOT NULL,commit_server_sequence INTEGER NOT NULL CHECK(typeof(commit_server_sequence)='integer' AND commit_server_sequence BETWEEN 1 AND
+      9007199254740991),payload_version INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json
+      TEXT NOT NULL CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(batch_id)) WITHOUT ROWID
+    sync_import_range_close_receipts: CREATE TABLE sync_import_range_close_receipts(proof_id TEXT NOT NULL,batch_id TEXT NOT NULL,resulting_import_revision
+      INTEGER NOT NULL CHECK(typeof(resulting_import_revision)='integer' AND resulting_import_revision BETWEEN 0 AND 9007199254740991),payload_version
+      INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL
+      CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(proof_id)) WITHOUT ROWID
+    sync_transport_fence_receipts: CREATE TABLE sync_transport_fence_receipts(operation_id TEXT NOT NULL,expected_transport_generation INTEGER
+      NOT NULL CHECK(typeof(expected_transport_generation)='integer' AND expected_transport_generation BETWEEN 0 AND 9007199254740991),resulting_transport_generation
+      INTEGER NOT NULL CHECK(typeof(resulting_transport_generation)='integer' AND resulting_transport_generation BETWEEN 0 AND 9007199254740991),payload_version
+      INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL
+      CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(operation_id),CHECK(resulting_transport_generation=expected_transport_generation+1)) WITHOUT ROWID
+    guest_import_cleanup_receipts: CREATE TABLE guest_import_cleanup_receipts(source_workspace_id TEXT NOT NULL,source_epoch INTEGER NOT NULL
+      CHECK(typeof(source_epoch)='integer' AND source_epoch BETWEEN 0 AND 9007199254740991),lineage_id TEXT NOT NULL,through_published_batch_id
+      TEXT NOT NULL,import_revision INTEGER NOT NULL CHECK(typeof(import_revision)='integer' AND import_revision BETWEEN 0 AND 9007199254740991),source_snapshot_hash
+      TEXT NOT NULL CHECK(length(source_snapshot_hash)=64 AND source_snapshot_hash NOT GLOB '*[^0-9a-f]*'),mapping_digest TEXT NOT NULL CHECK(length(mapping_digest)=64
+      AND mapping_digest NOT GLOB '*[^0-9a-f]*'),cleaned_at TEXT NOT NULL,receipt_hash TEXT NOT NULL CHECK(length(receipt_hash)=64 AND receipt_hash
+      NOT GLOB '*[^0-9a-f]*'),state TEXT NOT NULL CHECK(state IN ('pending_confirmation','completed','account_deleted')),PRIMARY KEY(source_workspace_id,source_epoch))
+      WITHOUT ROWID
+    guest_import_source_leases: CREATE TABLE guest_import_source_leases(source_workspace_id TEXT NOT NULL,source_epoch INTEGER NOT NULL CHECK(typeof(source_epoch)='integer'
+      AND source_epoch BETWEEN 0 AND 9007199254740991),lineage_id TEXT NOT NULL,protected_owner_binding_digest TEXT NOT NULL CHECK(length(protected_owner_binding_digest)=64
+      AND protected_owner_binding_digest NOT GLOB '*[^0-9a-f]*'),source_snapshot_hash TEXT NOT NULL CHECK(length(source_snapshot_hash)=64 AND
+      source_snapshot_hash NOT GLOB '*[^0-9a-f]*'),reserved_operation_id TEXT NOT NULL,active_batch_id TEXT,active_manifest_hash TEXT CHECK(length(active_manifest_hash)=64
+      AND active_manifest_hash NOT GLOB '*[^0-9a-f]*'),begin_client_sequence INTEGER CHECK(begin_client_sequence IS NULL OR (typeof(begin_client_sequence)='integer'
+      AND begin_client_sequence BETWEEN 1 AND 9007199254740991)),terminal_client_sequence INTEGER CHECK(terminal_client_sequence IS NULL OR (typeof(terminal_client_sequence)='integer'
+      AND terminal_client_sequence BETWEEN 1 AND 9007199254740991)),state TEXT NOT NULL CHECK(state IN ('reserved','active','published_cleanup_pending')),lease_revision
+      INTEGER NOT NULL CHECK(typeof(lease_revision)='integer' AND lease_revision BETWEEN 0 AND 9007199254740991),PRIMARY KEY(source_workspace_id),CHECK((state='reserved'
+      AND active_batch_id IS NULL AND active_manifest_hash IS NULL AND begin_client_sequence IS NULL AND terminal_client_sequence IS NULL) OR
+      (state!='reserved' AND active_batch_id IS NOT NULL AND active_manifest_hash IS NOT NULL AND begin_client_sequence IS NOT NULL AND terminal_client_sequence
+      IS NOT NULL AND terminal_client_sequence>begin_client_sequence))) WITHOUT ROWID
+    guest_import_source_lease_terminals: CREATE TABLE guest_import_source_lease_terminals(release_receipt_hash TEXT NOT NULL CHECK(length(release_receipt_hash)=64
+      AND release_receipt_hash NOT GLOB '*[^0-9a-f]*'),source_workspace_id TEXT NOT NULL,source_epoch INTEGER NOT NULL CHECK(typeof(source_epoch)='integer'
+      AND source_epoch BETWEEN 0 AND 9007199254740991),lineage_id TEXT NOT NULL,protected_owner_binding_digest TEXT NOT NULL CHECK(length(protected_owner_binding_digest)=64
+      AND protected_owner_binding_digest NOT GLOB '*[^0-9a-f]*'),expected_source_lease_revision INTEGER NOT NULL CHECK(typeof(expected_source_lease_revision)='integer'
+      AND expected_source_lease_revision BETWEEN 0 AND 9007199254740991),proof_kind TEXT NOT NULL CHECK(proof_kind IN ('prepublish_abandon_range_terminal','prepublish_abandon_crypto_destroyed','cleanup_completed','account_deleted')),proof_receipt_hash
+      TEXT NOT NULL CHECK(length(proof_receipt_hash)=64 AND proof_receipt_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY KEY(release_receipt_hash)) WITHOUT
+      ROWID
+    guest_import_source_lease_replacements: CREATE TABLE guest_import_source_lease_replacements(source_workspace_id TEXT NOT NULL,operation_id
+      TEXT NOT NULL,source_epoch INTEGER NOT NULL CHECK(typeof(source_epoch)='integer' AND source_epoch BETWEEN 0 AND 9007199254740991),payload_version
+      INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL
+      CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(source_workspace_id),UNIQUE(operation_id),FOREIGN KEY(source_workspace_id) REFERENCES guest_import_source_leases(source_workspace_id)
+      DEFERRABLE INITIALLY DEFERRED) WITHOUT ROWID
+    guest_import_audit_anchors: CREATE TABLE guest_import_audit_anchors(target_type TEXT NOT NULL CHECK(target_type IN ('category','event','event_recurrence','event_occurrence_state','anniversary','anniversary_recurrence','habit','habit_recurrence','habit_check_in','reminder_intent','user_preferences','account_profile')),target_id
+      TEXT NOT NULL,reminder_id TEXT NOT NULL,source_epoch INTEGER NOT NULL CHECK(typeof(source_epoch)='integer' AND source_epoch BETWEEN 0 AND
+      9007199254740991),lineage_id TEXT NOT NULL,retired_reason TEXT NOT NULL CHECK(retired_reason IN ('source_migrated')),retired_at TEXT NOT
+      NULL,occurrence_key TEXT,template_key TEXT,PRIMARY KEY(target_type,target_id,reminder_id)) WITHOUT ROWID
+    habit_check_in_operations: CREATE TABLE habit_check_in_operations(operation_id TEXT NOT NULL,habit_id TEXT NOT NULL,check_date TEXT NOT NULL,operation_type
+      TEXT NOT NULL CHECK(operation_type IN ('increment','decrement','replace_total','clear')),amount_hundredths INTEGER CHECK(amount_hundredths
+      IS NULL OR (typeof(amount_hundredths)='integer' AND amount_hundredths BETWEEN 1 AND 9007199254740991)),operation_hash TEXT NOT NULL CHECK(length(operation_hash)=64
+      AND operation_hash NOT GLOB '*[^0-9a-f]*'),mutation_id TEXT NOT NULL,applied_state TEXT NOT NULL CHECK(applied_state IN ('pending','accepted','conflict','rejected')),effect_change_group_id
+      TEXT,effect_group_last_server_sequence INTEGER CHECK(effect_group_last_server_sequence IS NULL OR (typeof(effect_group_last_server_sequence)='integer'
+      AND effect_group_last_server_sequence BETWEEN 1 AND 9007199254740991)),PRIMARY KEY(operation_id),UNIQUE(mutation_id),CHECK((operation_type
+      IN ('increment','decrement') AND amount_hundredths IS NOT NULL) OR operation_type='replace_total' OR (operation_type='clear' AND amount_hundredths
+      IS NULL)),CHECK((effect_change_group_id IS NULL)=(effect_group_last_server_sequence IS NULL)),CHECK(applied_state='accepted' OR effect_change_group_id
+      IS NULL)) WITHOUT ROWID
+    sync_habit_check_in_aliases: CREATE TABLE sync_habit_check_in_aliases(sync_entity_id TEXT NOT NULL,local_alias_id TEXT NOT NULL,habit_id TEXT
+      NOT NULL,check_date TEXT NOT NULL,PRIMARY KEY(sync_entity_id),UNIQUE(local_alias_id),UNIQUE(habit_id,check_date)) WITHOUT ROWID
+    sync_bootstrap_sessions: CREATE TABLE sync_bootstrap_sessions(bootstrap_id TEXT NOT NULL,device_id TEXT NOT NULL,sync_transport_generation
+      INTEGER NOT NULL CHECK(typeof(sync_transport_generation)='integer' AND sync_transport_generation BETWEEN 0 AND 9007199254740991),account_generation
+      INTEGER NOT NULL CHECK(typeof(account_generation)='integer' AND account_generation BETWEEN 0 AND 9007199254740991),upper_bound INTEGER NOT
+      NULL CHECK(typeof(upper_bound)='integer' AND upper_bound BETWEEN 0 AND 9007199254740991),highest_client_sequence INTEGER NOT NULL CHECK(typeof(highest_client_sequence)='integer'
+      AND highest_client_sequence BETWEEN 0 AND 9007199254740991),client_confirmed_through INTEGER NOT NULL CHECK(typeof(client_confirmed_through)='integer'
+      AND client_confirmed_through BETWEEN 0 AND 9007199254740991),next_client_sequence INTEGER CHECK(next_client_sequence IS NULL OR (typeof(next_client_sequence)='integer'
+      AND next_client_sequence BETWEEN 1 AND 9007199254740991)),client_sequence_exhausted INTEGER NOT NULL CHECK(typeof(client_sequence_exhausted)='integer'
+      AND client_sequence_exhausted IN (0,1)),next_page_ordinal INTEGER NOT NULL CHECK(typeof(next_page_ordinal)='integer' AND next_page_ordinal
+      BETWEEN 0 AND 9007199254740991),retention_floor_server_sequence INTEGER NOT NULL CHECK(typeof(retention_floor_server_sequence)='integer'
+      AND retention_floor_server_sequence BETWEEN 0 AND 9007199254740991),resolved_conflict_cleanup_before TEXT NOT NULL,snapshot_item_count INTEGER
+      NOT NULL CHECK(typeof(snapshot_item_count)='integer' AND snapshot_item_count BETWEEN 0 AND 9007199254740991),snapshot_items_hash TEXT NOT
+      NULL CHECK(length(snapshot_items_hash)=64 AND snapshot_items_hash NOT GLOB '*[^0-9a-f]*'),total_page_count INTEGER NOT NULL CHECK(typeof(total_page_count)='integer'
+      AND total_page_count BETWEEN 1 AND 9007199254740991),page_item_limit INTEGER NOT NULL CHECK(page_item_limit BETWEEN 1 AND 500),next_cursor
+      TEXT,terminal_cursor TEXT,expires_at TEXT NOT NULL,state TEXT NOT NULL CHECK(state IN ('staging','ready_to_finalize')),PRIMARY KEY(bootstrap_id),UNIQUE(device_id),FOREIGN
+      KEY(device_id) REFERENCES sync_state(device_id),CHECK(client_confirmed_through<=highest_client_sequence),CHECK(retention_floor_server_sequence<=upper_bound),CHECK(next_page_ordinal<=total_page_count))
+      WITHOUT ROWID
+    sync_bootstrap_page_receipts: CREATE TABLE sync_bootstrap_page_receipts(bootstrap_id TEXT NOT NULL,page_ordinal INTEGER NOT NULL CHECK(typeof(page_ordinal)='integer'
+      AND page_ordinal BETWEEN 0 AND 9007199254740991),page_hash TEXT NOT NULL CHECK(length(page_hash)=64 AND page_hash NOT GLOB '*[^0-9a-f]*'),request_cursor
+      TEXT,next_cursor TEXT,PRIMARY KEY(bootstrap_id,page_ordinal),FOREIGN KEY(bootstrap_id) REFERENCES sync_bootstrap_sessions(bootstrap_id)
+      ON DELETE CASCADE) WITHOUT ROWID
+    sync_bootstrap_items: CREATE TABLE sync_bootstrap_items(bootstrap_id TEXT NOT NULL,item_ordinal INTEGER NOT NULL CHECK(typeof(item_ordinal)='integer'
+      AND item_ordinal BETWEEN 0 AND 9007199254740991),kind TEXT NOT NULL CHECK(kind IN ('fact_after_image','tombstone','deleted_entity_anchor','unresolved_conflict','import_publish_marker','requesting_device_causal_anchor')),payload_version
+      INTEGER NOT NULL CHECK(typeof(payload_version)='integer' AND payload_version BETWEEN 1 AND 9007199254740991),payload_json TEXT NOT NULL
+      CHECK(json_valid(payload_json)),payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64 AND payload_hash NOT GLOB '*[^0-9a-f]*'),PRIMARY
+      KEY(bootstrap_id,item_ordinal),FOREIGN KEY(bootstrap_id) REFERENCES sync_bootstrap_sessions(bootstrap_id) ON DELETE CASCADE) WITHOUT ROWID
+  new_indexes:
+    ux_sync_import_active_source: CREATE UNIQUE INDEX ux_sync_import_active_source ON sync_import_batches(source_workspace_id,source_epoch) WHERE
+      stage IN ('local_staging','server_staging')
+    ix_sync_outbox_state_sequence: CREATE INDEX ix_sync_outbox_state_sequence ON sync_outbox(device_id,state,client_sequence)
+    ix_sync_failed_entity: CREATE INDEX ix_sync_failed_entity ON sync_failed_local_changes(target_type,target_id,state)
+    ix_sync_effect_gate_entity: CREATE INDEX ix_sync_effect_gate_entity ON sync_awaiting_change_groups(target_type,target_id)
+    ix_sync_conflict_status: CREATE INDEX ix_sync_conflict_status ON sync_conflicts(status,received_at,conflict_id)
+    ix_sync_conflict_retention: CREATE INDEX ix_sync_conflict_retention ON sync_conflicts(status,retain_until)
+    ix_sync_import_lineage: CREATE INDEX ix_sync_import_lineage ON sync_import_batches(lineage_id,import_revision)
+    ix_sync_import_items_identity: CREATE INDEX ix_sync_import_items_identity ON sync_import_items(target_type,target_id,batch_id)
+    ix_sync_mapping_target: CREATE INDEX ix_sync_mapping_target ON sync_import_mappings(target_type,target_id)
+    ix_sync_upload_receipts_age: CREATE INDEX ix_sync_upload_receipts_age ON sync_upload_receipts(received_at,client_sequence)
+    ix_sync_bootstrap_expiry: CREATE INDEX ix_sync_bootstrap_expiry ON sync_bootstrap_sessions(expires_at)
+    ix_guest_audit_reminder: CREATE INDEX ix_guest_audit_reminder ON guest_import_audit_anchors(reminder_id)
+  new_triggers:
+    guard_account_profile_cache_insert_workspace: CREATE TRIGGER guard_account_profile_cache_insert_workspace BEFORE INSERT ON account_profile_cache
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_account_profile_cache_update_workspace: CREATE TRIGGER guard_account_profile_cache_update_workspace BEFORE UPDATE ON account_profile_cache
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_state_insert_workspace: CREATE TRIGGER guard_sync_state_insert_workspace BEFORE INSERT ON sync_state WHEN COALESCE((SELECT workspace_kind
+      FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_state_update_workspace: CREATE TRIGGER guard_sync_state_update_workspace BEFORE UPDATE ON sync_state WHEN COALESCE((SELECT workspace_kind
+      FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_local_device_causal_anchors_insert_workspace: CREATE TRIGGER guard_sync_local_device_causal_anchors_insert_workspace BEFORE INSERT
+      ON sync_local_device_causal_anchors WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN
+      SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_local_device_causal_anchors_update_workspace: CREATE TRIGGER guard_sync_local_device_causal_anchors_update_workspace BEFORE UPDATE
+      ON sync_local_device_causal_anchors WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN
+      SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_awaiting_change_groups_insert_workspace: CREATE TRIGGER guard_sync_awaiting_change_groups_insert_workspace BEFORE INSERT ON sync_awaiting_change_groups
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_awaiting_change_groups_update_workspace: CREATE TRIGGER guard_sync_awaiting_change_groups_update_workspace BEFORE UPDATE ON sync_awaiting_change_groups
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_policy_operation_receipts_insert_workspace: CREATE TRIGGER guard_sync_policy_operation_receipts_insert_workspace BEFORE INSERT
+      ON sync_policy_operation_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT
+      RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_policy_operation_receipts_update_workspace: CREATE TRIGGER guard_sync_policy_operation_receipts_update_workspace BEFORE UPDATE
+      ON sync_policy_operation_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT
+      RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_conflict_notice_queue_insert_workspace: CREATE TRIGGER guard_sync_conflict_notice_queue_insert_workspace BEFORE INSERT ON sync_conflict_notice_queue
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_conflict_notice_queue_update_workspace: CREATE TRIGGER guard_sync_conflict_notice_queue_update_workspace BEFORE UPDATE ON sync_conflict_notice_queue
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_conflict_notice_journal_insert_workspace: CREATE TRIGGER guard_sync_conflict_notice_journal_insert_workspace BEFORE INSERT ON sync_conflict_notice_journal
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_conflict_notice_journal_update_workspace: CREATE TRIGGER guard_sync_conflict_notice_journal_update_workspace BEFORE UPDATE ON sync_conflict_notice_journal
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_outbox_insert_workspace: CREATE TRIGGER guard_sync_outbox_insert_workspace BEFORE INSERT ON sync_outbox WHEN COALESCE((SELECT workspace_kind
+      FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_outbox_update_workspace: CREATE TRIGGER guard_sync_outbox_update_workspace BEFORE UPDATE ON sync_outbox WHEN COALESCE((SELECT workspace_kind
+      FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_outbox_immutable: CREATE TRIGGER guard_sync_outbox_immutable BEFORE UPDATE ON sync_outbox WHEN NEW.mutation_id!=OLD.mutation_id
+      OR NEW.device_id!=OLD.device_id OR NEW.client_sequence!=OLD.client_sequence OR NEW.payload_hash!=OLD.payload_hash OR NEW.payload_json!=OLD.payload_json
+      OR NEW.target_type!=OLD.target_type OR NEW.target_id!=OLD.target_id OR NEW.operation_type!=OLD.operation_type OR NEW.base_entity_version!=OLD.base_entity_version
+      OR NEW.causal_predecessors_json!=OLD.causal_predecessors_json OR NEW.route!=OLD.route OR NEW.created_at!=OLD.created_at BEGIN SELECT RAISE(ABORT,'SYNC_SEQUENCE_REPLAY_MISMATCH');
+      END
+    guard_sync_prepared_requests_insert_workspace: CREATE TRIGGER guard_sync_prepared_requests_insert_workspace BEFORE INSERT ON sync_prepared_requests
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_prepared_requests_update_workspace: CREATE TRIGGER guard_sync_prepared_requests_update_workspace BEFORE UPDATE ON sync_prepared_requests
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_failed_local_changes_insert_workspace: CREATE TRIGGER guard_sync_failed_local_changes_insert_workspace BEFORE INSERT ON sync_failed_local_changes
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_failed_local_changes_update_workspace: CREATE TRIGGER guard_sync_failed_local_changes_update_workspace BEFORE UPDATE ON sync_failed_local_changes
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_entity_state_insert_workspace: CREATE TRIGGER guard_sync_entity_state_insert_workspace BEFORE INSERT ON sync_entity_state WHEN
+      COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_entity_state_update_workspace: CREATE TRIGGER guard_sync_entity_state_update_workspace BEFORE UPDATE ON sync_entity_state WHEN
+      COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_server_baselines_insert_workspace: CREATE TRIGGER guard_sync_server_baselines_insert_workspace BEFORE INSERT ON sync_server_baselines
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_server_baselines_update_workspace: CREATE TRIGGER guard_sync_server_baselines_update_workspace BEFORE UPDATE ON sync_server_baselines
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_deleted_entity_anchors_insert_workspace: CREATE TRIGGER guard_sync_deleted_entity_anchors_insert_workspace BEFORE INSERT ON sync_deleted_entity_anchors
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_deleted_entity_anchors_update_workspace: CREATE TRIGGER guard_sync_deleted_entity_anchors_update_workspace BEFORE UPDATE ON sync_deleted_entity_anchors
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_change_receipts_insert_workspace: CREATE TRIGGER guard_sync_change_receipts_insert_workspace BEFORE INSERT ON sync_change_receipts
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_change_receipts_update_workspace: CREATE TRIGGER guard_sync_change_receipts_update_workspace BEFORE UPDATE ON sync_change_receipts
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_upload_receipts_insert_workspace: CREATE TRIGGER guard_sync_upload_receipts_insert_workspace BEFORE INSERT ON sync_upload_receipts
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_upload_receipts_update_workspace: CREATE TRIGGER guard_sync_upload_receipts_update_workspace BEFORE UPDATE ON sync_upload_receipts
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_conflicts_insert_workspace: CREATE TRIGGER guard_sync_conflicts_insert_workspace BEFORE INSERT ON sync_conflicts WHEN COALESCE((SELECT
+      workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_conflicts_update_workspace: CREATE TRIGGER guard_sync_conflicts_update_workspace BEFORE UPDATE ON sync_conflicts WHEN COALESCE((SELECT
+      workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_import_batches_insert_workspace: CREATE TRIGGER guard_sync_import_batches_insert_workspace BEFORE INSERT ON sync_import_batches
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_batches_update_workspace: CREATE TRIGGER guard_sync_import_batches_update_workspace BEFORE UPDATE ON sync_import_batches
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_items_insert_workspace: CREATE TRIGGER guard_sync_import_items_insert_workspace BEFORE INSERT ON sync_import_items WHEN
+      COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_items_update_workspace: CREATE TRIGGER guard_sync_import_items_update_workspace BEFORE UPDATE ON sync_import_items WHEN
+      COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_mappings_insert_workspace: CREATE TRIGGER guard_sync_import_mappings_insert_workspace BEFORE INSERT ON sync_import_mappings
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_mappings_update_workspace: CREATE TRIGGER guard_sync_import_mappings_update_workspace BEFORE UPDATE ON sync_import_mappings
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_import_mapping_identity: "CREATE TRIGGER guard_import_mapping_identity BEFORE UPDATE ON sync_import_mappings\n        WHEN NEW.lineage_id\
+      \ IS NOT OLD.lineage_id OR NEW.source_workspace_id IS NOT OLD.source_workspace_id OR NEW.source_epoch IS NOT OLD.source_epoch\n        \
+      \  OR NEW.source_target_type IS NOT OLD.source_target_type OR NEW.source_id IS NOT OLD.source_id OR NEW.target_type IS NOT OLD.target_type\n\
+      \          OR NEW.target_id IS NOT OLD.target_id OR NEW.provenance_version<OLD.provenance_version\n          OR (OLD.first_published_batch_id\
+      \ IS NOT NULL AND NEW.first_published_batch_id IS NOT OLD.first_published_batch_id)\n          OR (NEW.last_published_batch_id IS NOT OLD.last_published_batch_id\
+      \ AND NEW.provenance_version<=OLD.provenance_version)\n        BEGIN SELECT RAISE(ABORT,'IMPORT_LINEAGE_MISMATCH'); END"
+    guard_import_mapping_retention: CREATE TRIGGER guard_import_mapping_retention BEFORE DELETE ON sync_import_mappings BEGIN SELECT RAISE(ABORT,'IMPORT_LINEAGE_MISMATCH');
+      END
+    guard_sync_import_recurrence_families_insert_workspace: CREATE TRIGGER guard_sync_import_recurrence_families_insert_workspace BEFORE INSERT
+      ON sync_import_recurrence_families WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN
+      SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_import_recurrence_families_update_workspace: CREATE TRIGGER guard_sync_import_recurrence_families_update_workspace BEFORE UPDATE
+      ON sync_import_recurrence_families WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN
+      SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_import_family_update: CREATE TRIGGER guard_import_family_update BEFORE UPDATE ON sync_import_recurrence_families BEGIN SELECT RAISE(ABORT,'IMPORT_LINEAGE_MISMATCH');
+      END
+    guard_import_family_delete: CREATE TRIGGER guard_import_family_delete BEFORE DELETE ON sync_import_recurrence_families BEGIN SELECT RAISE(ABORT,'IMPORT_LINEAGE_MISMATCH');
+      END
+    guard_sync_import_publish_staging_insert_workspace: CREATE TRIGGER guard_sync_import_publish_staging_insert_workspace BEFORE INSERT ON sync_import_publish_staging
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_publish_staging_update_workspace: CREATE TRIGGER guard_sync_import_publish_staging_update_workspace BEFORE UPDATE ON sync_import_publish_staging
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_publish_chunks_insert_workspace: CREATE TRIGGER guard_sync_import_publish_chunks_insert_workspace BEFORE INSERT ON sync_import_publish_chunks
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_publish_chunks_update_workspace: CREATE TRIGGER guard_sync_import_publish_chunks_update_workspace BEFORE UPDATE ON sync_import_publish_chunks
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_publish_markers_insert_workspace: CREATE TRIGGER guard_sync_import_publish_markers_insert_workspace BEFORE INSERT ON sync_import_publish_markers
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_publish_markers_update_workspace: CREATE TRIGGER guard_sync_import_publish_markers_update_workspace BEFORE UPDATE ON sync_import_publish_markers
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_import_range_close_receipts_insert_workspace: CREATE TRIGGER guard_sync_import_range_close_receipts_insert_workspace BEFORE INSERT
+      ON sync_import_range_close_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN
+      SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_import_range_close_receipts_update_workspace: CREATE TRIGGER guard_sync_import_range_close_receipts_update_workspace BEFORE UPDATE
+      ON sync_import_range_close_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN
+      SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_transport_fence_receipts_insert_workspace: CREATE TRIGGER guard_sync_transport_fence_receipts_insert_workspace BEFORE INSERT ON
+      sync_transport_fence_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT
+      RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_sync_transport_fence_receipts_update_workspace: CREATE TRIGGER guard_sync_transport_fence_receipts_update_workspace BEFORE UPDATE ON
+      sync_transport_fence_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT
+      RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_cleanup_receipts_insert_workspace: CREATE TRIGGER guard_guest_import_cleanup_receipts_insert_workspace BEFORE INSERT ON
+      guest_import_cleanup_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local' BEGIN SELECT
+      RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_cleanup_receipts_update_workspace: CREATE TRIGGER guard_guest_import_cleanup_receipts_update_workspace BEFORE UPDATE ON
+      guest_import_cleanup_receipts WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local' BEGIN SELECT
+      RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_source_leases_insert_workspace: CREATE TRIGGER guard_guest_import_source_leases_insert_workspace BEFORE INSERT ON guest_import_source_leases
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_guest_import_source_leases_update_workspace: CREATE TRIGGER guard_guest_import_source_leases_update_workspace BEFORE UPDATE ON guest_import_source_leases
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_guest_import_source_lease_terminals_insert_workspace: CREATE TRIGGER guard_guest_import_source_lease_terminals_insert_workspace BEFORE
+      INSERT ON guest_import_source_lease_terminals WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local'
+      BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_source_lease_terminals_update_workspace: CREATE TRIGGER guard_guest_import_source_lease_terminals_update_workspace BEFORE
+      UPDATE ON guest_import_source_lease_terminals WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local'
+      BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_source_lease_replacements_insert_workspace: CREATE TRIGGER guard_guest_import_source_lease_replacements_insert_workspace
+      BEFORE INSERT ON guest_import_source_lease_replacements WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local'
+      BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_source_lease_replacements_update_workspace: CREATE TRIGGER guard_guest_import_source_lease_replacements_update_workspace
+      BEFORE UPDATE ON guest_import_source_lease_replacements WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local'
+      BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH'); END
+    guard_guest_import_audit_anchors_insert_workspace: CREATE TRIGGER guard_guest_import_audit_anchors_insert_workspace BEFORE INSERT ON guest_import_audit_anchors
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_guest_import_audit_anchors_update_workspace: CREATE TRIGGER guard_guest_import_audit_anchors_update_workspace BEFORE UPDATE ON guest_import_audit_anchors
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='local' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_habit_check_in_operations_insert_workspace: CREATE TRIGGER guard_habit_check_in_operations_insert_workspace BEFORE INSERT ON habit_check_in_operations
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_habit_check_in_operations_update_workspace: CREATE TRIGGER guard_habit_check_in_operations_update_workspace BEFORE UPDATE ON habit_check_in_operations
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_habit_operation_identity: "CREATE TRIGGER guard_habit_operation_identity BEFORE UPDATE ON habit_check_in_operations\n        WHEN NEW.operation_id\
+      \ IS NOT OLD.operation_id OR NEW.habit_id IS NOT OLD.habit_id OR NEW.check_date IS NOT OLD.check_date\n          OR NEW.operation_type IS\
+      \ NOT OLD.operation_type OR NEW.amount_hundredths IS NOT OLD.amount_hundredths OR NEW.operation_hash IS NOT OLD.operation_hash\n       \
+      \   OR (OLD.applied_state='accepted' AND (NEW.applied_state IS NOT OLD.applied_state OR NEW.mutation_id IS NOT OLD.mutation_id\n       \
+      \     OR NEW.effect_change_group_id IS NOT OLD.effect_change_group_id OR NEW.effect_group_last_server_sequence IS NOT OLD.effect_group_last_server_sequence))\n\
+      \        BEGIN SELECT RAISE(ABORT,'SYNC_HABIT_OPERATION_ID_REUSED'); END"
+    guard_habit_operation_retention: CREATE TRIGGER guard_habit_operation_retention BEFORE DELETE ON habit_check_in_operations BEGIN SELECT RAISE(ABORT,'SYNC_HABIT_OPERATION_ID_REUSED');
+      END
+    guard_sync_habit_check_in_aliases_insert_workspace: CREATE TRIGGER guard_sync_habit_check_in_aliases_insert_workspace BEFORE INSERT ON sync_habit_check_in_aliases
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_habit_check_in_aliases_update_workspace: CREATE TRIGGER guard_sync_habit_check_in_aliases_update_workspace BEFORE UPDATE ON sync_habit_check_in_aliases
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_bootstrap_sessions_insert_workspace: CREATE TRIGGER guard_sync_bootstrap_sessions_insert_workspace BEFORE INSERT ON sync_bootstrap_sessions
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_bootstrap_sessions_update_workspace: CREATE TRIGGER guard_sync_bootstrap_sessions_update_workspace BEFORE UPDATE ON sync_bootstrap_sessions
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_bootstrap_page_receipts_insert_workspace: CREATE TRIGGER guard_sync_bootstrap_page_receipts_insert_workspace BEFORE INSERT ON sync_bootstrap_page_receipts
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_bootstrap_page_receipts_update_workspace: CREATE TRIGGER guard_sync_bootstrap_page_receipts_update_workspace BEFORE UPDATE ON sync_bootstrap_page_receipts
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_bootstrap_items_insert_workspace: CREATE TRIGGER guard_sync_bootstrap_items_insert_workspace BEFORE INSERT ON sync_bootstrap_items
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+    guard_sync_bootstrap_items_update_workspace: CREATE TRIGGER guard_sync_bootstrap_items_update_workspace BEFORE UPDATE ON sync_bootstrap_items
+      WHEN COALESCE((SELECT workspace_kind FROM workspace_metadata WHERE singleton=1),'')!='account' BEGIN SELECT RAISE(ABORT,'WORKSPACE_ACCOUNT_MISMATCH');
+      END
+  payload_codecs:
+    workspace_preferences:
+      columns:
+        default_reminder_methods_json: sync/v1/user_preferences_fact.schema.json#/properties/default_reminder_methods
+      note: Exactly the four portable fields; IANA validation is mandatory at the codec boundary. No locale, generic settings or first-day setting.
+    account_profile_cache:
+      columns:
+        payload_json: user/account_profile_snapshot.schema.json
+    sync_conflict_notice_queue:
+      columns:
+        conflict_ids_json: nonempty_sorted_unique_uuid_array
+    sync_outbox:
+      columns:
+        payload_json: sync/sync_mutation.schema.json
+        causal_predecessors_json: sync/sync_mutation.schema.json#/oneOf/0/properties/causal_predecessors
+      cross_checks:
+      - indexed columns equal mutation envelope
+      - JCS hash excludes only envelope created_at
+      - causal predecessor is earlier than client sequence
+    sync_prepared_requests:
+      columns:
+        payload_json: sync/native_prepared_exchange_request.schema.json
+    sync_failed_local_changes:
+      columns:
+        payload_json: sync/sync_mutation.schema.json
+        local_candidate_json: target_specific_fact
+        manual_draft_json: target_specific_patch
+        failure_context_json: sync/sync_error_registry.yaml
+    sync_entity_state:
+      columns:
+        field_versions_json: target_registry_merge_key_safe_integer_map
+        awaiting_server_adjudication_keys_json: target_registry_unique_merge_keys
+    sync_server_baselines:
+      columns:
+        payload_json: sync/sync_fact_after_image.schema.json
+    sync_upload_receipts:
+      columns:
+        payload_json: sync/sync_terminal_upload_result.schema.json
+    sync_conflicts:
+      columns:
+        payload_json: sync/sync_conflict_detail.schema.json
+    sync_import_batches:
+      columns:
+        payload_json: sync/sync_import_manifest.schema.json
+        server_status_snapshot_json: sync/import_status_response.schema.json
+      state_registry: workspace/native_import_status_response.schema.json
+    sync_import_items:
+      columns:
+        payload_json: sync/sync_mutation.schema.json
+    sync_import_publish_chunks:
+      columns:
+        payload_json: sync/sync_import_publish_item.schema.json
+    sync_import_publish_markers:
+      columns:
+        payload_json: sync/sync_import_publish_marker.schema.json
+    sync_import_range_close_receipts:
+      columns:
+        payload_json: sync/import_range_close_proof.schema.json
+    sync_transport_fence_receipts:
+      columns:
+        payload_json: sync/sync_device_fence_response.schema.json
+    guest_import_source_lease_replacements:
+      columns:
+        payload_json: storage/guest_import_source_lease_backup.schema.json
+      hash: SHA-256 JCS of the exact previous active lease
+      retention: until matching successor is active or old active lease is restored
+    sync_bootstrap_items:
+      columns:
+        payload_json: sync/sync_bootstrap_item.schema.json
+  required_tables:
+    inherited_count: 20
+    new_count: 37
+    total_count: 57
+  required_indexes:
+    inherited_count: 24
+    new_count: 12
+    total_count: 36
+  payload_codec_revisions:
+    events:
+      from: 3
+      to: 4
+      changed_field: recurrence_revision
+      nullable: true
+    recurrence_versions:
+      from: 3
+      to: 4
+      changed_field: revision
+      nullable: false
+    event_occurrence_states:
+      from: 3
+      to: 4
+      changed_field: recurrence_revision
+      nullable: false
+    reminders:
+      from: 4
+      to: 5
+      changed_field: recurrence_revision
+      nullable: true
+  payload_codec_revision_rules:
+    only_change: recurrence revision uses exact checked int64 in 1..9007199254740991 instead of current C++ int32
+    all_other_fields: preserve previous exact keys/null/enum/domain semantics
+    migration_payload_rewrite: forbidden
+    existing_legal_v5_records: remain valid byte-for-byte
+    new_wide_v6_records: validate with the v6 codec; must not be routed through or downcast into the frozen v5 int32 codec
+    native_v2: preserve old schemas and runtime; v5 runtime refuses user_version=6
+    native_v3: planned reader and writer must use the same exact safe integer across Event/Recurrence/OccurrenceState/Reminder and occurrence
+      identity formatting
+  migration:
+    source_version: 5
+    target_version: 6
+    input_gate: complete_frozen_v5_checker_before_any_v6_write
+    transaction: BEGIN IMMEDIATE
+    metadata_updates:
+      storage_format_version: '6'
+      payload_codec_version.events: '4'
+      payload_codec_version.recurrence_versions: '4'
+      payload_codec_version.event_occurrence_states: '4'
+      payload_codec_version.reminders: '5'
+    metadata_additions:
+      sync_protocol_version: '1'
+      workspace_schema_version: '1'
+    history:
+      migration_id: calendar_core_sqlite_v5_to_v6
+      source_format: excellent_calendar_core_sqlite
+      source_version: 5
+      target_version: 6
+    steps:
+    - freeze writers and pass complete v5 checker
+    - begin immediate and recheck v5 identity
+    - create exact added objects
+    - insert workspace and portable preference seed
+    - for account require encrypted binding and authoritative device sequence/policy seed
+    - update exact metadata and append one history row
+    - set user_version=6
+    - full v6 schema metadata history relation and codec validation
+    - commit
+    rollback: all added objects rows metadata history and user_version roll back together
+    downgrade: v2/v5 runtime rejects v6 before any write; no reverse migration
+  validation:
+    ddl: exact normalized CREATE of all objects; reject unknown and same-name different definition
+    quick_check: required
+    foreign_key_check: required
+    json: json_valid is only a syntax guard; exact target codec + schema + identity/hash/merge registry checks required before write and on open
+    inherited_payloads: preserve old bytes; only the four declared recurrence-counter codec revisions and source_migrated audit-anchor relationship
+      closure may change reader rules
+    guest_outbox: all account-only tables reject guest inserts/updates
+    encryption: account must be opened with SQLCipher key and workspace/account/device AAD verified outside SQL before queries

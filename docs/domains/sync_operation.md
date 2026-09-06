@@ -8,6 +8,8 @@
 
 2026-09-05 CT0执行补充：旧 `sync.apply` 和两个Sync概念Schema已明确封存为deprecated/blocked，保留形状只供兼容墓碑；不允许按下表构造上传。新typed Sync Protocol尚未冻结；参见[CT0审计与决策记录](../plan/active/云同步-02-CT0审计与决策记录.md)，七项ADR为Proposed，当前DECISION REQUIRED。
 
+当前入口：七项 Sync ADR 的设计方向已接受，完整强类型目标见 [Sync v1 模型](./sync_v1_model.md)、`contracts/sync/sync_field_registry.yaml` 与 [冻结验收记录](../plan/active/云同步-02-冻结验收与交付记录.md)。唯一状态为 `contracts/sync/ct0_gate_status.json`，封版摘要为 `sync_v1_revision_lock.json`。以下旧表仅为历史占位，不能作为新 payload；开头的日期记录保留其当时状态。
+
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `id` | `string` | 是 | 同步操作 ID |

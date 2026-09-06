@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_requesting_device_causal_anchor.schema.json",
+  "title": "SyncV1 sync_requesting_device_causal_anchor",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.1,6.3,7.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "key",
+    "client_sequence",
+    "resulting_field_version"
+  ],
+  "properties": {
+    "kind": {
+      "const": "requesting_device_causal_anchor"
+    },
+    "key": {
+      "$ref": "https://excellent-calendar.local/contracts/sync/sync_merge_key.schema.json"
+    },
+    "client_sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "resulting_field_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    }
+  }
+}

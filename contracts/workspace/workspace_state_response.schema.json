@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/workspace/workspace_state_response.schema.json",
+  "title": "SyncV1 workspace_state_response",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route_state",
+        "active_workspace_id",
+        "workspace_kind",
+        "runtime_instance_id",
+        "lock_reason",
+        "active_route_revision",
+        "counts",
+        "active_import"
+      ],
+      "properties": {
+        "route_state": {
+          "const": "ready"
+        },
+        "active_workspace_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "workspace_kind": {
+          "enum": [
+            "local",
+            "account"
+          ]
+        },
+        "runtime_instance_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "lock_reason": {
+          "type": "null"
+        },
+        "active_route_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_count",
+            "anniversary_count",
+            "habit_count",
+            "category_count"
+          ],
+          "properties": {
+            "event_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "anniversary_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "habit_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "category_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "active_import": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "import_lineage_id",
+            "import_batch_id",
+            "source_workspace_id",
+            "source_epoch",
+            "import_revision"
+          ],
+          "properties": {
+            "import_lineage_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "import_batch_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "source_workspace_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "source_epoch": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "import_revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route_state",
+        "active_workspace_id",
+        "workspace_kind",
+        "runtime_instance_id",
+        "lock_reason",
+        "active_route_revision",
+        "counts",
+        "active_import"
+      ],
+      "properties": {
+        "route_state": {
+          "const": "locked"
+        },
+        "active_workspace_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "workspace_kind": {
+          "enum": [
+            "local",
+            "account"
+          ]
+        },
+        "runtime_instance_id": {
+          "type": "null"
+        },
+        "lock_reason": {
+          "$ref": "https://excellent-calendar.local/contracts/sync/sync_error_code.schema.json"
+        },
+        "active_route_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "counts": {
+          "type": "null"
+        },
+        "active_import": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route_state",
+        "active_workspace_id",
+        "workspace_kind",
+        "runtime_instance_id",
+        "lock_reason",
+        "active_route_revision",
+        "counts",
+        "active_import"
+      ],
+      "properties": {
+        "route_state": {
+          "const": "empty"
+        },
+        "active_workspace_id": {
+          "type": "null"
+        },
+        "workspace_kind": {
+          "type": "null"
+        },
+        "runtime_instance_id": {
+          "type": "null"
+        },
+        "lock_reason": {
+          "type": "null"
+        },
+        "active_route_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "counts": {
+          "type": "null"
+        },
+        "active_import": {
+          "type": "null"
+        }
+      }
+    }
+  ]
+}

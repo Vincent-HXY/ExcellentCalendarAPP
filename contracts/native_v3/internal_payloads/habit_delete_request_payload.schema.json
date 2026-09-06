@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/habit_delete_request_payload.schema.json",
+  "title": "SyncV1 habit_delete_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "integrated",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Soft-deletes one Habit and cancels its open Reminder chain atomically. V1 has no restore or hard-delete capability.",
+  "x-habit-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "expected_updated_at",
+    "timezone"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expected_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "x-format": "iana-timezone"
+    }
+  }
+}

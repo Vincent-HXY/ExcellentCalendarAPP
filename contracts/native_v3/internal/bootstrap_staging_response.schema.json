@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal/bootstrap_staging_response.schema.json",
+  "title": "SyncV1 bootstrap_staging_response",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "binding",
+    "bootstrap_id",
+    "next_page_ordinal",
+    "staged_item_count",
+    "terminal_page_received",
+    "page_set_digest"
+  ],
+  "properties": {
+    "binding": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/transport_binding.schema.json"
+    },
+    "bootstrap_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "next_page_ordinal": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "staged_item_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "terminal_page_received": {
+      "type": "boolean"
+    },
+    "page_set_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "x-exposure": "kotlin_jni_cpp_only"
+}

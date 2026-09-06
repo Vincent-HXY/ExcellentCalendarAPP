@@ -1,0 +1,91 @@
+{
+  "spike_version": 1,
+  "passed": true,
+  "scope": "strict capsule authentication and isolated typed SQLite acceptance",
+  "production_activated": false,
+  "all_import_saga_crash_points_verified": false,
+  "android_persistent_revocation_store_verified": false,
+  "account_deletion_backend_producer_implemented": false,
+  "android_x86_os_executed": false,
+  "consumers": {
+    "java21": {
+      "passed": true,
+      "cases": 49,
+      "actual_output_sha256": "1bdc191fde4f615f7e49ef511356408bcea59acea6571aeaffc46fe80abc9a38"
+    },
+    "windows_cng_cpp": {
+      "passed": true,
+      "cases": 49,
+      "actual_output_sha256": "1bdc191fde4f615f7e49ef511356408bcea59acea6571aeaffc46fe80abc9a38"
+    },
+    "android_cpp_jni_arm64-v8a": {
+      "passed": true,
+      "cases": 49,
+      "actual_output_sha256": "1bdc191fde4f615f7e49ef511356408bcea59acea6571aeaffc46fe80abc9a38"
+    },
+    "android_cpp_jni_armeabi-v7a": {
+      "passed": true,
+      "cases": 49,
+      "actual_output_sha256": "1bdc191fde4f615f7e49ef511356408bcea59acea6571aeaffc46fe80abc9a38"
+    }
+  },
+  "builds": {
+    "windows_cng_cpp": "57a04ea7e0b3bc73d63f4a73b59ddcefab4b3a3de00c1f2dd02c952acc71cfc4",
+    "arm64-v8a": "7ff240a054988fb6dd8c7afe9708a24e8f91694925f57459ac06ed97286fda7f",
+    "armeabi-v7a": "c74e93f14184c517dd4a03eba6e1712a72b69bb5b967cdcb8ca696fd10311b42",
+    "x86_64": "7295550759f24e8f499739c96b8616e44721c6f34f0297e9152c110fb3d0ae3c"
+  },
+  "errors": [],
+  "cleanup_errors": [],
+  "typed_atomic_acceptance": {
+    "passed": true,
+    "tests": 12,
+    "fixed_cases": 45,
+    "output_sha256": "f859133e1f0ed7b9195bf9050e19477f8ff76a4b8e6d7fd37261f8c9a07316bc"
+  },
+  "dex_sha256": "73b168243a08d7fc54c6503702b9b5845dc5b4f311eac2486f3fe1bb3a3e133d",
+  "device": {
+    "abi": "arm64-v8a,armeabi-v7a,armeabi",
+    "sdk": "33",
+    "model": "RMX3687"
+  },
+  "source_sha256": {
+    "contracts/spikes/sync_v1/run_proof_capsule_spike.py": "9593d0595ddf739f18a1783cd670df05570a66a5ea129eefe46fb6919a827de8",
+    "contracts/spikes/sync_v1/proof_capsule_probe.cpp": "edf2d444806c8276ed30fa298a564b0032e8371c74bef37835cfc14ccf053269",
+    "contracts/spikes/sync_v1/ProofCapsuleProbe.java": "5ea839c443baa92c8cce22a0038b4ef6dd28286c0d581338d9b2b475e8f010d1",
+    "contracts/spikes/sync_v1/ProofCapsuleAndroidProbe.java": "90c18a300f34a67ce9a4eed5bee86802f8fdc648b5cb8534fb3a83a14d9a6dc2",
+    "contracts/spikes/sync_v1/proof_signature_probe.cpp": "f2a0ae132bbfb1e05aaaa4d28deec66040bd9ac00aa6b5c68311f0660bcb9e5a",
+    "contracts/spikes/sync_v1/ProofSignatureProbe.java": "4efd5ece7d5d100a510190375048e8e85d073795bf4123905845caffed0d37b7",
+    "contracts/spikes/sync_v1/jcs_probe.cpp": "c0cfaf9ec662f4e56c40b91ffff7122046f1e89e44428d3d694d7a2a4b0e364f",
+    "contracts/spikes/sync_v1/JcsProbe.java": "a62bb4bc296613e86f74ec3b068f84705f28ec62d8638cb57e510007addd36ce",
+    "contracts/spikes/sync_v1/sha256_probe.hpp": "98d1dc05941fd613ac9f5b04f4121d9a777f2670abd9799ae9c53b1c470f2922",
+    "contracts/spikes/sync_v1/proof_reference.py": "13484f29e9e6dd90299b9636c0579c6bd6a1b42202ef891648f74ef5d9cc920e",
+    "contracts/spikes/sync_v1/build_proof_capsule_fixtures.py": "d07c8372b3deaff680133b1833f1228afef1bad19285b313f4cceb22c22e8e85",
+    "contracts/spikes/sync_v1/build_sync_proof_contracts.py": "2db11af7626c66a7c2a36b6e537f28483c5443bbbc6be2bfbfbb4d951927c2bc",
+    "contracts/spikes/sync_v1/sqlite_reference.py": "37fe91b62dfd9149fc288a805d788a3efc14e5a7816173355ba6608e4c5e2e12",
+    "contracts/spikes/sync_v1/protocol_reference.py": "32b727dacf3b8e3c8e81bef64779ef7886f8afbba2ec80353e0fa46b310d85e3",
+    "contracts/spikes/sync_v1/domain_reference.py": "4d3559aca4203d9adbe6ad6314616012267c2d5b904c3ae3bca3eeb968943971",
+    "contracts/spikes/sync_v1/schema_validation_reference.py": "d969e1b383cb008d6e4381742c479893a3a6f931044af76bfc3d410b4f091ffd",
+    "contracts/spikes/sync_v1/identity_reference.py": "10b5eb81fff9ef943de0ed51ec3f61e5cd16cbf319daebcae8e08cc86f19802e",
+    "contracts/spikes/sync_v1/counter_reference.py": "60aa11741eda581a26a6dc1d2d1937d10ecb35a747a49a82f6d4acc22a4cd3da",
+    "contracts/tests/test_sync_proofs.py": "18123f1bb0586862e08198fe7205c7116f3cc26334b0c2085e09f30f2c3dff11",
+    "contracts/fixtures/sync/v1/proof_capsule_vectors.json": "f5b927563dfc47a71891ad7b596264eac20c402851ff175948d6b864b23248f9",
+    "contracts/fixtures/sync/v1/proof_capsule_seeds.json": "6787f4b8fff5ccedbeb4e1082ffc44a122cd8a811d8c58ffae2e55b221458db4",
+    "contracts/sync/sync_proof_protocol.yaml": "a26db8ab74c73e49df6fc2e146364882533471a955e97b7443980ff18ac1148a",
+    "contracts/sync/sync_device_fence_response.schema.json": "f54febd94f29463a31dfd3d070ca1a5281a0a1d698ea64df775e983c4127b931",
+    "contracts/sync/import_range_close_proof.schema.json": "4f329c3459e1b25dabfef7cc3dfde6b229933712c802b511b8e5028a3f9e2bbb",
+    "contracts/sync/sync_import_manifest.schema.json": "dd6ba4fa2d740dab08cbf198cf62e1d070a1fdbf9108279dec74252aea03c8a5",
+    "contracts/sync/sync_sequence_recovery_bundle.schema.json": "330751c07362d99070ee87ca8cf1788b06b0af24aedd296f531456479f9859bd",
+    "contracts/sync/proof/account_deleted_claim_data.schema.json": "734645adbe12969264d98f079765781db380a5c8cac8f8ea1545edc92736db06",
+    "contracts/sync/proof/proof_key_revocation_record.schema.json": "7dc423ebbca08195dc4622b21ef616341af03ca1c78cfee1c89abb5cd115dda3",
+    "contracts/sync/proof/proof_trust_store.schema.json": "42b35c8dd5e7df297c37b7c0998ef2bcb11d0d025b7079de6f34869143365da9",
+    "contracts/sync/proof/signed_proof_capsule.schema.json": "3cbee46f341075e085e71f5e44bcbb7252487f2c0ff73cbc76c5d5f4090f540c",
+    "contracts/sync/proof/signed_proof_claims.schema.json": "77d091d21ca4f91e9db26b2ddcbe0118004bccf8fa5daeaa80fe874866644bf0",
+    "contracts/spikes/sync_v1/import_contract_reference.py": "7b85f9aa6d6cec08d2a2a61d484d90a113a67233ccaedf0b5ec59581f0011f08",
+    "contracts/spikes/sync_v1/bootstrap_reference.py": "ccb9918db43fbed12590c357f38908017f3f0db55ffed1a1a72a4afcacb6e297",
+    "contracts/spikes/sync_v1/cursor_reference.py": "b61293e2f6b7c4a796faba2048e57683ff255aec25bc45e9ab9b194869eeb743",
+    "contracts/spikes/sync_v1/build_target_fixtures.py": "df4c7342ed1eca4c71ccd4428e4105c9a554a2649f829f142089dda550258cf9",
+    "contracts/spikes/sync_v1/build_sync_domain_contracts.py": "325019499a88e1ae25bded8e1f1e3490e62e3026400a0903186756f435744150",
+    "contracts/sync/sync_protocol_invariants.yaml": "2926baea24d374436e6c53ad59df2c8ead3502fc1d70ab2ea9376827ae325871"
+  }
+}

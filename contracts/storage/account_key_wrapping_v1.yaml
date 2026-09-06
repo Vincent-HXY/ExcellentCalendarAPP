@@ -1,0 +1,85 @@
+version: 1
+implementation_status: planned
+release_status: planned
+rule_anchor: cloud-sync-02/4.2,8.3,10
+dek:
+  algorithm: SQLCipher binary database key
+  bytes: 32
+  generation: OS-backed cryptographic random per account workspace
+  json_allowed: false
+kek:
+  provider: AndroidKeyStore
+  algorithm: AES
+  bits: 256
+  mode: GCM
+  padding: NoPadding
+  tag_bits: 128
+  purposes:
+  - encrypt
+  - decrypt
+  randomized_encryption_required: true
+  user_authentication_required: false
+  user_auth_reason: background sync/reminders must not depend on a per-use unlock
+    prompt; session and workspace lifecycle remain independently enforced
+  exportable: false
+  hardware_security_level: record actual KeyInfo; do not claim TEE/StrongBox without
+    evidence
+  minimum_android_api: 23
+binary_wrapper:
+  bytes: 136
+  byte_order: big_endian
+  uuid_encoding: 16 raw bytes, UUIDv4 RFC variant, no text/JSON encoding
+  fields:
+  - name: magic
+    offset: 0
+    bytes: 8
+    constant_ascii: ECSKEY01
+  - name: installation_id
+    offset: 8
+    bytes: 16
+  - name: workspace_id
+    offset: 24
+    bytes: 16
+  - name: account_id
+    offset: 40
+    bytes: 16
+  - name: storage_format_version
+    offset: 56
+    bytes: 4
+    constant: 6
+  - name: wrapping_instance_id
+    offset: 60
+    bytes: 16
+  - name: nonce
+    offset: 76
+    bytes: 12
+  - name: ciphertext_and_tag
+    offset: 88
+    bytes: 48
+  aad: exact bytes [0,76), reconstructed with expected authenticated installation/workspace/account/storage
+    binding and the validated wrapping UUID
+  nonce: obtained from initialized AndroidKeyStore Cipher; never caller selected or
+    reused
+  unknown_or_truncated_record: reject without fallback
+durability:
+  location: Kotlin private noBackupFilesDir, independently excluded from all backup/transfer
+    domains
+  write: AtomicFile finishWrite including sync before a corresponding account open
+    is authorized; failure leaves prior record or no committed open seed
+  raw_material: never in JSON, event, logs, ordinary cache, SQLite metadata or temp
+    files; clear caller/JNI copies and close SQLCipher handles
+  crypto_destroy: durable lifecycle tombstone/fence policy first where required; delete
+    this workspace's Keystore alias and wrapped material; ciphertext files may be
+    removed later; key absence never triggers key recreation for that database
+  reinstall: fresh installation UUID and new registration; restored old wrapper/account
+    files remain locked and cannot reuse a recreated alias
+  retention: retain_30d keeps the same wrapper/key only until the separately authenticated
+    retention deadline; this format does not grant retention
+evidence:
+  runner: spikes/sync_v1/run_android_key_spike.py
+  report: spikes/sync_v1/android_key_spike_result.json
+  scope: isolated APK plus native SQLCipher feasibility; production owners and final
+    product APK are not implemented
+primary_sources:
+- https://developer.android.com/privacy-and-security/keystore
+- https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec.Builder

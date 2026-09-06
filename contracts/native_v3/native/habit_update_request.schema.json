@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/native/habit_update_request.schema.json",
+  "title": "SyncV1 habit_update_request",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "binding",
+    "payload"
+  ],
+  "properties": {
+    "binding": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/runtime_binding.schema.json"
+    },
+    "payload": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/habit_update_request_payload.schema.json"
+    }
+  }
+}

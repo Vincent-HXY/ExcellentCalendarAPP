@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/habit/habit_notification_action_payload_v6_writer.schema.json",
+  "title": "SyncV1 habit_notification_action_payload_v6_writer",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.4",
+  "allOf": [
+    {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/habit/habit_notification_action_payload.schema.json"
+    },
+    {
+      "required": [
+        "workspace_id",
+        "workspace_kind"
+      ]
+    }
+  ]
+}

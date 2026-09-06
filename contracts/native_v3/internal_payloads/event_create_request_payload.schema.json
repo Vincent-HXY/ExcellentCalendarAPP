@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/event_create_request_payload.schema.json",
+  "title": "SyncV1 event_create_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Contract v2 Event create payload. All four time fields are explicit; the unused pair must be null.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "start_at",
+    "end_at",
+    "start_date",
+    "end_date",
+    "is_all_day",
+    "timezone",
+    "source"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "start_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "end_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "start_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "end_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "is_all_day": {
+      "type": "boolean"
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "importance": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "unimportant_noturgent",
+        "important_noturgent",
+        "unimportant_urgent",
+        "important_urgent",
+        null
+      ]
+    },
+    "location": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "ai_extraction",
+        "sync",
+        "import",
+        "wechat"
+      ]
+    },
+    "recurrence": {
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/recurrence/event_recurrence_rule_input.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reminders": {
+      "type": "array",
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/reminder/reminder_draft_request.schema.json"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "is_all_day": {
+            "const": false
+          }
+        },
+        "required": [
+          "is_all_day"
+        ]
+      },
+      "then": {
+        "properties": {
+          "start_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "start_date": {
+            "type": "null"
+          },
+          "end_date": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "is_all_day": {
+            "const": true
+          }
+        },
+        "required": [
+          "is_all_day"
+        ]
+      },
+      "then": {
+        "properties": {
+          "start_at": {
+            "type": "null"
+          },
+          "end_at": {
+            "type": "null"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reminders": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "https://excellent-calendar.local/contracts/reminder/reminder_draft_request.schema.json"
+                },
+                {
+                  "properties": {
+                    "methods": {
+                      "not": {
+                        "const": [
+                          "ring"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "methods"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recurrence": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "recurrence"
+        ]
+      },
+      "then": {
+        "properties": {
+          "reminders": {
+            "type": "array",
+            "items": {
+              "$ref": "https://excellent-calendar.local/contracts/reminder/recurring_reminder_draft_request.schema.json"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

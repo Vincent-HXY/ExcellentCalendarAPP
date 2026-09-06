@@ -1,0 +1,42 @@
+version: 1
+implementation_status: planned
+release_status: planned
+rule_anchor: cloud-sync-02/7.7
+selection: first_candidate_in_original_order_that_is_legal_for_target
+no_intersection: no_automatic_selection
+preference_changes_existing_reminders: false
+preference:
+  min_items: 0
+  max_items: 2
+  unique: true
+  enum:
+  - ring
+  - popup
+  order_significant: true
+targets:
+- target_type: event
+  is_all_day: false
+  has_recurrence: false
+  allowed:
+  - ring
+  - popup
+- target_type: event
+  is_all_day: false
+  has_recurrence: true
+  allowed:
+  - popup
+- target_type: event
+  is_all_day: true
+  has_recurrence: false
+  allowed:
+  - popup
+- target_type: event
+  is_all_day: true
+  has_recurrence: true
+  allowed: []
+- target_type: habit
+  allowed:
+  - popup
+- target_type: anniversary
+  allowed:
+  - popup

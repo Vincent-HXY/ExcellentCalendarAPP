@@ -1,0 +1,1125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_import_commit_result.schema.json",
+  "title": "SyncV1 sync_import_commit_result",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.2,7.6/IMP-03",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt",
+        "per_key_results",
+        "import_batch_id",
+        "status",
+        "effect",
+        "conflict_ids",
+        "import_stage",
+        "import_disposition",
+        "error",
+        "publish_group_id",
+        "commit_server_sequence",
+        "canonical_digest",
+        "import_revision"
+      ],
+      "properties": {
+        "receipt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "receipt_id",
+            "device_id",
+            "client_sequence",
+            "mutation_id",
+            "payload_hash"
+          ],
+          "properties": {
+            "receipt_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "device_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "client_sequence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "mutation_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "payload_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "per_key_results": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 0,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key",
+                  "causal_disposition",
+                  "resulting_field_version",
+                  "effective_prior_sequence",
+                  "effective_prior_version"
+                ],
+                "properties": {
+                  "key": {
+                    "$ref": "https://excellent-calendar.local/contracts/sync/sync_merge_key.schema.json"
+                  },
+                  "causal_disposition": {
+                    "const": "applied"
+                  },
+                  "resulting_field_version": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "effective_prior_sequence": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "effective_prior_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key",
+                  "causal_disposition",
+                  "resulting_field_version",
+                  "effective_prior_sequence",
+                  "effective_prior_version"
+                ],
+                "properties": {
+                  "key": {
+                    "$ref": "https://excellent-calendar.local/contracts/sync/sync_merge_key.schema.json"
+                  },
+                  "causal_disposition": {
+                    "const": "no_effect"
+                  },
+                  "resulting_field_version": {
+                    "type": "null"
+                  },
+                  "effective_prior_sequence": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "effective_prior_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "import_batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "status": {
+          "const": "accepted"
+        },
+        "effect": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "effect_change_group_id",
+            "effect_group_last_server_sequence"
+          ],
+          "properties": {
+            "effect_change_group_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "effect_group_last_server_sequence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "conflict_ids": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          }
+        },
+        "import_stage": {
+          "const": "server_confirmed"
+        },
+        "import_disposition": {
+          "const": "server_confirmed"
+        },
+        "error": {
+          "type": "null"
+        },
+        "publish_group_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "commit_server_sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "canonical_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "import_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt",
+        "per_key_results",
+        "import_batch_id",
+        "status",
+        "effect",
+        "conflict_ids",
+        "import_stage",
+        "import_disposition",
+        "error",
+        "next_revision"
+      ],
+      "properties": {
+        "receipt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "receipt_id",
+            "device_id",
+            "client_sequence",
+            "mutation_id",
+            "payload_hash"
+          ],
+          "properties": {
+            "receipt_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "device_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "client_sequence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "mutation_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "payload_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "per_key_results": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 0,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key",
+                  "causal_disposition",
+                  "resulting_field_version",
+                  "effective_prior_sequence",
+                  "effective_prior_version"
+                ],
+                "properties": {
+                  "key": {
+                    "$ref": "https://excellent-calendar.local/contracts/sync/sync_merge_key.schema.json"
+                  },
+                  "causal_disposition": {
+                    "const": "applied"
+                  },
+                  "resulting_field_version": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "effective_prior_sequence": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "effective_prior_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key",
+                  "causal_disposition",
+                  "resulting_field_version",
+                  "effective_prior_sequence",
+                  "effective_prior_version"
+                ],
+                "properties": {
+                  "key": {
+                    "$ref": "https://excellent-calendar.local/contracts/sync/sync_merge_key.schema.json"
+                  },
+                  "causal_disposition": {
+                    "const": "no_effect"
+                  },
+                  "resulting_field_version": {
+                    "type": "null"
+                  },
+                  "effective_prior_sequence": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "effective_prior_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "import_batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "status": {
+          "const": "rejected"
+        },
+        "effect": {
+          "type": "null"
+        },
+        "conflict_ids": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 0,
+          "items": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          }
+        },
+        "import_stage": {
+          "const": "repair_required"
+        },
+        "import_disposition": {
+          "const": "repair_required"
+        },
+        "error": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ALL_DAY_RECURRING_REMINDER_NOT_SUPPORTED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ANNIVERSARY_CALENDAR_UNSUPPORTED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ANNIVERSARY_DATE_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ANNIVERSARY_NOT_FOUND"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ANNIVERSARY_REMINDER_CONFIG_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ANNIVERSARY_REMINDER_TEMPLATE_DUPLICATE"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ANNIVERSARY_REMINDER_TEMPLATE_LIMIT_EXCEEDED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ANNIVERSARY_TARGET_DELETED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ANNIVERSARY_TITLE_EMPTY"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "APPEARANCE_COLOR_TOKEN_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "CATEGORY_NAME_EMPTY"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "CATEGORY_NOT_FOUND"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "EVENT_NOT_FOUND"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "EVENT_TIME_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "EVENT_TITLE_EMPTY"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_ALREADY_ENDED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_CHALLENGE_TOO_LONG"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_CHECK_IN_DATE_OUT_OF_RANGE"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_CHECK_IN_FUTURE_DATE"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_CHECK_IN_NOT_FOUND"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_CHECK_IN_STATE_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_DATE_RANGE_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_END_NOT_EARLY"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_HISTORY_IMMUTABLE"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_NOT_FOUND"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_NOT_STARTED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_REMINDER_CONFIG_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_START_DATE_LOCKED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_TARGET_DELETED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_TARGET_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_TARGET_LOCKED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "HABIT_TITLE_EMPTY"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "IMPORT_DUPLICATE_IDENTITY"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "IMPORT_REFERENCE_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "IMPORT_SOURCE_CHANGED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "OCCURRENCE_NOT_FOUND"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "OCCURRENCE_OPERATION_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "RECURRENCE_RULE_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "RECURRENCE_TARGET_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "REMINDER_METHOD_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "REMINDER_METHOD_UNSUPPORTED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "REMINDER_TARGET_NOT_FOUND"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "REMINDER_TIME_INVALID"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "SYNC_CHANGE_GROUP_TOO_LARGE"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "SYNC_ENTITY_CONFLICT_BLOCKED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "context"
+              ],
+              "properties": {
+                "code": {
+                  "const": "SYNC_IMPORT_CAPACITY_EXCEEDED"
+                },
+                "context": {
+                  "type": "null"
+                }
+              }
+            }
+          ]
+        },
+        "next_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    }
+  ]
+}

@@ -1,12 +1,14 @@
 # 云同步-04：CloudBackend 开发计划
 
-> 状态：ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED
+> 状态：ACTIVE PLAN / CONTRACT FROZEN / IMPLEMENTATION NOT STARTED
 > 建立时间：2026-09-04
 > 上位计划：[云同步-01：Local-first 多设备同步开发计划](./云同步-01-Local-first多设备同步开发计划.md)
 > 协议与数据前置：[云同步-02：Contracts 与数据模型开发计划](./云同步-02-Contracts与数据模型开发计划.md)
 > 负责范围：`cloud_backend/**` 内的 Spring Boot API、Application、Domain、PostgreSQL/Flyway、同步清理任务、测试与测试服务器制品
 > 协作下游：云同步-03（C++/SQLite）、云同步-05（Kotlin/Android）、云同步-06（Flutter）及真实跨层集成
 > 文内语义锚点：第 5–13 节定义 Backend 设计；第 14–19 节只描述实施顺序、测试证据、部署和交接门禁，不得形成第二套协议定义。
+
+> 协议输入锁：`contracts/sync/sync_v1_revision_lock.json` 中的 `04_cloud_backend` 与其他三端锁定同一 revision/hash/fixture manifest。只在 `contracts/run_sync_v1_validation.py` 默认入口通过后按该机器版本实施；本层生产 implementation/release status 仍为 planned。
 
 ## 1. 目标、状态与完成口径
 

@@ -1,13 +1,15 @@
 # ADR-Sync-03：账号 SQLite 加密候选
 
-Status: Proposed / DECISION REQUIRED
+Status: Accepted (Plan 02 isolated feasibility verified; product integration remains planned)
 Date: 2026-09-05
+
+Acceptance: 用户在本任务后续消息中明确接受“SQLCipher 原生 C 加密候选”，并授权自主完成可逆、只读和已授权工作。新增依赖方向已获接受；本文各项实验和分发审查仍以实际证据为准，不能将接受候选解释为加密已交付。
 
 ## Context
 
 当前产品使用普通 SQLite 3.53.4，`calendar_core_v5.sqlite.version_upgrade_forbidden=true`。云同步-01 §7 和云同步-02 §4.2/§18 要求先接受新 Native 依赖与可行性证据，不能以私有目录替代加密。
 
-## Reviewable Proposal
+## Accepted Candidate
 
 建议评估 **SQLCipher Community 4.18.0 的原生 C 接口**，使用其社区 Android crypto provider 的固定来源和版本；不直接引入 Android AAR，也不升级 Flutter、SDK、NDK 或当前 SQLite 3.53.4。
 
@@ -29,7 +31,7 @@ Date: 2026-09-05
 
 顶层许可证初审结论：SQLCipher core 要求保留源码及二进制分发通知、免责声明并限制借作者名义背书；SQLite runtime 为 public domain，但构建辅助工具有独立许可；所选 LibTomCrypt fork 提供 public-domain/WTFPL 双选项，候选采用其 public-domain 选项并保留原 LICENSE。建议在随包第三方许可说明中保留完整原文，并从应用内离线可达。上述条款基于实际固定文件；最终选入的逐文件声明、生成代码及分发清单仍需审查，不将初审标为完整许可门禁通过。C 接口方案不复制 Android wrapper；若后续复制其 JNI 代码，需要追加 Android 来源通知审查。
 
-## Proposed Data and Key Boundary
+## Data and Key Boundary
 
 - 每个账号 workspace 独立随机 256-bit DEK，Keystore 包装，AAD 绑定 installation/workspace/schema/account binding。Guest v6 继续独立明文 profile。
 - JNI 使用二进制 key 参数；不进 JSON、Event、日志、Registry 或普通缓存。关闭时释放明文，销毁先处理包装材料，文件删除可以后续收尾。
@@ -40,16 +42,18 @@ Date: 2026-09-05
 
 | 门禁 | 实验与通过条件 | 本次状态 |
 | --- | --- | --- |
-| 依赖与许可证 | 固定 SQLCipher/provider 原始源码及摘要；批准新增依赖和许可展示位置 | 已固定 core/provider commit、读取15份来源文件并核对顶层许可；逐文件/最终分发审查与引入批准未完成，产品依赖未改 |
-| ABI/API | 当前 NDK 下 arm64-v8a、armeabi-v7a、x86_64 构建；实际链接所需 sqlite3 API | 候选包三ABI符号与探针链接通过；SQLCipher源码构建未验证 |
-| ABI runtime | 三 ABI 打开/写入/重开、wrong key/profile/binding 显式失败 | 未验证 |
-| 明文泄漏 | WAL/checkpoint/temp/full-disk 错误路径和日志检查 | 未验证 |
-| 数据迁移 | 冻结 v5 checker→guest v6；独立 account encrypted fresh；完整失败回滚 | 未验证 |
-| 恢复 | 每个提交点强杀、WAL 重放、key 丢失、磁盘耗尽 | 未验证 |
-| 规模 | 20,000 条组合事实的打开、查询、写入和同步压力数据 | 未验证 |
+| 依赖与许可证 | 固定 SQLCipher/provider 原始源码及摘要；批准新增依赖和许可展示位置 | 用户接受候选；固定源码重建及427份runtime/provider文件来源清单、6份完整许可/署名通知已交付；未来APK须离线提供第三方许可入口，产品依赖和UI未改 |
+| ABI/API | 当前 NDK 下 arm64-v8a、armeabi-v7a、x86_64 构建；实际链接所需 sqlite3 API | 以现有NDK28.2和SQLite3.53.4固定core源码构建通过；不采用Android标签中3.53.1的gitlink，不引入AAR/SDK37 |
+| ABI runtime | 三 ABI 打开/写入/重开、wrong key/profile/binding 显式失败 | Windows、三ABI NDK/Bionic静态程序的QEMU-user及真实arm64/arm32 Android均通过；不把QEMU-user记为三台Android OS设备 |
+| 明文泄漏 | WAL/checkpoint/temp/full-disk 错误路径和日志检查 | 合成业务sentinel不在DB/WAL/日志中；temp_store=MEMORY的20,000行排序未打开临时文件；VFS注入SQLITE_FULL后事实/Outbox一起回滚 |
+| 数据迁移 | 冻结 v5 checker→guest v6；独立 account encrypted fresh；完整失败回滚 | Plan 02 独立 v5→guest v6 checker、128 回滚边界及 account encrypted fresh 已验证；产品加密 v6 完整业务图仍由 03/05 实现验收 |
+| 恢复 | 每个提交点强杀、WAL 重放、key 丢失、磁盘耗尽 | 独立进程在提交前、WAL sync中、提交后和checkpoint中被真实终止，重开完整性及事务一致性通过；无key/错key/错page profile拒绝。Keystore及电源突然断电行为仍属单独证据 |
+| 规模 | 20,000 条组合事实的打开、查询、写入和同步压力数据 | 20,000行合成加密读写通过；全target组合图和同步容量尚待CT1/CT4交付，不以普通行测试冒充整图容量 |
 
 本 ADR 的审批对象是上述候选与受隔离的验证工作，不是生产发布。可行性未通过前，`runtime.open_workspace` binary-key 签名、加密 profile、保留账号缓存和 v6 冻结均不能报告完成。失败后回到本 ADR 选择候选，不静默更换密码库或降低保护。
 
-可复现包/link证据位于 `contracts/spikes/sync_v1/encryption_package_audit.json`；实际AAR也声明 `minCompileSdk=37`。20,000条探针尚未设备运行，不能将其源码存在或链接成功计为性能/WAL/密钥矩阵通过。
+原包/link证据位于 `contracts/spikes/sync_v1/encryption_package_audit.json`，保留为历史的包级审计。后续实际源码和恢复证据见 [cipher_source_spike_result.json](../../../contracts/spikes/sync_v1/cipher_source_spike_result.json)，逐文件来源与通知见 [cipher_runtime_source_audit.json](../../../contracts/spikes/sync_v1/cipher_runtime_source_audit.json)。实际AAR声明 `minCompileSdk=37`，本候选不依赖它。
+
+固定provider的 `rng_get_bytes` 在OS随机源失败后原会尝试ANSI时钟采样。候选使用已记录的 [require_os_rng.patch](../../../contracts/spikes/sync_v1/require_os_rng.patch) 和 `EXCELLENT_CALENDAR_REQUIRE_OS_RNG` 禁止该回退；六个执行环境均运行实际provider函数的OS随机源故障注入，确认返回0而非降级随机数。此项源修订是已授权候选的fail-closed收紧，不能脱离补丁及其源码摘要复用实验结果。
 
 API 行为依据：[SQLCipher API](https://www.zetetic.net/sqlcipher/sqlcipher-api/)；设置 key 成功本身不能证明数据库能够用该 key 读取，探针必须实际读取。

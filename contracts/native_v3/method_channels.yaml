@@ -1,0 +1,2362 @@
+version: 3
+implementation_status: planned
+release_status: planned
+rule_anchor: cloud-sync-02/8
+activation: same_apk_only_after_frozen_revision_and_all_consumer_gates
+channel: excellent_calendar/native_v3
+preserved_v2: method_channels.yaml
+methods:
+  runtime.device_timezone:
+    module: runtime
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: runtime/device_timezone_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: RuntimeMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: runtime.device_timezone
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: CommonNativeEmptyRequestV3
+      dart_response: RuntimeDeviceTimezoneResponseV3
+      kotlin_request: CommonNativeEmptyRequestV3
+      kotlin_response: RuntimeDeviceTimezoneResponseV3
+    planned_gateway: RuntimeGatewayV3
+  runtime.resolve_local_datetime:
+    module: runtime
+    request: runtime/resolve_local_datetime_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: runtime/resolve_local_datetime_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: RuntimeMethodHandlerV3
+    native_calls:
+    - runtime.resolve_local_datetime
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: runtime.resolve_local_datetime
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: RuntimeResolveLocalDatetimeRequestV3
+      dart_response: RuntimeResolveLocalDatetimeResponseV3
+      kotlin_request: RuntimeResolveLocalDatetimeRequestV3
+      kotlin_response: RuntimeResolveLocalDatetimeResponseV3
+    planned_gateway: RuntimeGatewayV3
+  runtime.localize_instants:
+    module: runtime
+    request: runtime/localize_instants_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: runtime/localize_instants_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: RuntimeMethodHandlerV3
+    native_calls:
+    - runtime.localize_instants
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: runtime.localize_instants
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: RuntimeLocalizeInstantsRequestV3
+      dart_response: RuntimeLocalizeInstantsResponseV3
+      kotlin_request: RuntimeLocalizeInstantsRequestV3
+      kotlin_response: RuntimeLocalizeInstantsResponseV3
+    planned_gateway: RuntimeGatewayV3
+  event.create:
+    module: event
+    request: native_v3/method/event_create_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_create_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.create
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.create
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventCreateRequestV3
+      dart_response: MethodEventCreateResponseV3
+      kotlin_request: MethodEventCreateRequestV3
+      kotlin_response: MethodEventCreateResponseV3
+    planned_gateway: EventGatewayV3
+  event.update:
+    module: event
+    request: native_v3/method/event_update_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_update_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.update
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.update
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventUpdateRequestV3
+      dart_response: MethodEventUpdateResponseV3
+      kotlin_request: MethodEventUpdateRequestV3
+      kotlin_response: MethodEventUpdateResponseV3
+    planned_gateway: EventGatewayV3
+  event.delete:
+    module: event
+    request: native_v3/method/event_delete_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_delete_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.delete
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.delete
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventDeleteRequestV3
+      dart_response: MethodEventDeleteResponseV3
+      kotlin_request: MethodEventDeleteRequestV3
+      kotlin_response: MethodEventDeleteResponseV3
+    planned_gateway: EventGatewayV3
+  event.search:
+    module: event
+    request: native_v3/method/event_search_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_search_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.search
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.search
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventSearchRequestV3
+      dart_response: MethodEventSearchResponseV3
+      kotlin_request: MethodEventSearchRequestV3
+      kotlin_response: MethodEventSearchResponseV3
+    planned_gateway: EventGatewayV3
+  event.detail:
+    module: event
+    request: native_v3/method/event_detail_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_detail_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.detail
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.detail
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventDetailRequestV3
+      dart_response: MethodEventDetailResponseV3
+      kotlin_request: MethodEventDetailRequestV3
+      kotlin_response: MethodEventDetailResponseV3
+    planned_gateway: EventGatewayV3
+  event.complete:
+    module: event
+    request: native_v3/method/event_complete_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_complete_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.complete
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.complete
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventCompleteRequestV3
+      dart_response: MethodEventCompleteResponseV3
+      kotlin_request: MethodEventCompleteRequestV3
+      kotlin_response: MethodEventCompleteResponseV3
+    planned_gateway: EventGatewayV3
+  event.reopen:
+    module: event
+    request: native_v3/method/event_reopen_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_reopen_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.reopen
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.reopen
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventReopenRequestV3
+      dart_response: MethodEventReopenResponseV3
+      kotlin_request: MethodEventReopenRequestV3
+      kotlin_response: MethodEventReopenResponseV3
+    planned_gateway: EventGatewayV3
+  event.list_occurrences:
+    module: event
+    request: native_v3/method/event_list_occurrences_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_list_occurrences_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.list_occurrences
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.list_occurrences
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventListOccurrencesRequestV3
+      dart_response: MethodEventListOccurrencesResponseV3
+      kotlin_request: MethodEventListOccurrencesRequestV3
+      kotlin_response: MethodEventListOccurrencesResponseV3
+    planned_gateway: EventGatewayV3
+  event_occurrence.complete:
+    module: event
+    request: native_v3/method/event_occurrence_complete_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_occurrence_complete_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event_occurrence.complete
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event_occurrence.complete
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventOccurrenceCompleteRequestV3
+      dart_response: MethodEventOccurrenceCompleteResponseV3
+      kotlin_request: MethodEventOccurrenceCompleteRequestV3
+      kotlin_response: MethodEventOccurrenceCompleteResponseV3
+    planned_gateway: Event_OccurrenceGatewayV3
+  event_occurrence.reopen:
+    module: event
+    request: native_v3/method/event_occurrence_reopen_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_occurrence_reopen_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event_occurrence.reopen
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event_occurrence.reopen
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventOccurrenceReopenRequestV3
+      dart_response: MethodEventOccurrenceReopenResponseV3
+      kotlin_request: MethodEventOccurrenceReopenRequestV3
+      kotlin_response: MethodEventOccurrenceReopenResponseV3
+    planned_gateway: Event_OccurrenceGatewayV3
+  event_occurrence.skip:
+    module: event
+    request: native_v3/method/event_occurrence_skip_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_occurrence_skip_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event_occurrence.skip
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event_occurrence.skip
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventOccurrenceSkipRequestV3
+      dart_response: MethodEventOccurrenceSkipResponseV3
+      kotlin_request: MethodEventOccurrenceSkipRequestV3
+      kotlin_response: MethodEventOccurrenceSkipResponseV3
+    planned_gateway: Event_OccurrenceGatewayV3
+  event_occurrence.cancel:
+    module: event
+    request: native_v3/method/event_occurrence_cancel_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_occurrence_cancel_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event_occurrence.cancel
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event_occurrence.cancel
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventOccurrenceCancelRequestV3
+      dart_response: MethodEventOccurrenceCancelResponseV3
+      kotlin_request: MethodEventOccurrenceCancelRequestV3
+      kotlin_response: MethodEventOccurrenceCancelResponseV3
+    planned_gateway: Event_OccurrenceGatewayV3
+  event.complete_series:
+    module: event
+    request: native_v3/method/event_complete_series_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_complete_series_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.complete_series
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.complete_series
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventCompleteSeriesRequestV3
+      dart_response: MethodEventCompleteSeriesResponseV3
+      kotlin_request: MethodEventCompleteSeriesRequestV3
+      kotlin_response: MethodEventCompleteSeriesResponseV3
+    planned_gateway: EventGatewayV3
+  event.reopen_series:
+    module: event
+    request: native_v3/method/event_reopen_series_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_reopen_series_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.reopen_series
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.reopen_series
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventReopenSeriesRequestV3
+      dart_response: MethodEventReopenSeriesResponseV3
+      kotlin_request: MethodEventReopenSeriesRequestV3
+      kotlin_response: MethodEventReopenSeriesResponseV3
+    planned_gateway: EventGatewayV3
+  event.cancel_series:
+    module: event
+    request: native_v3/method/event_cancel_series_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/event_cancel_series_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: EventMethodHandlerV3
+    native_calls:
+    - event.cancel_series
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: event.cancel_series
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodEventCancelSeriesRequestV3
+      dart_response: MethodEventCancelSeriesResponseV3
+      kotlin_request: MethodEventCancelSeriesRequestV3
+      kotlin_response: MethodEventCancelSeriesResponseV3
+    planned_gateway: EventGatewayV3
+  reminder.create:
+    module: reminder
+    request: native_v3/method/reminder_create_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/reminder_create_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: ReminderMethodHandlerV3
+    native_calls:
+    - reminder.create
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: reminder.create
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodReminderCreateRequestV3
+      dart_response: MethodReminderCreateResponseV3
+      kotlin_request: MethodReminderCreateRequestV3
+      kotlin_response: MethodReminderCreateResponseV3
+    planned_gateway: ReminderGatewayV3
+  reminder.update:
+    module: reminder
+    request: native_v3/method/reminder_update_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/reminder_update_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: ReminderMethodHandlerV3
+    native_calls:
+    - reminder.update
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: reminder.update
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodReminderUpdateRequestV3
+      dart_response: MethodReminderUpdateResponseV3
+      kotlin_request: MethodReminderUpdateRequestV3
+      kotlin_response: MethodReminderUpdateResponseV3
+    planned_gateway: ReminderGatewayV3
+  reminder.cancel:
+    module: reminder
+    request: native_v3/method/reminder_cancel_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/reminder_cancel_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: ReminderMethodHandlerV3
+    native_calls:
+    - reminder.cancel
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: reminder.cancel
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodReminderCancelRequestV3
+      dart_response: MethodReminderCancelResponseV3
+      kotlin_request: MethodReminderCancelRequestV3
+      kotlin_response: MethodReminderCancelResponseV3
+    planned_gateway: ReminderGatewayV3
+  reminder.list:
+    module: reminder
+    request: native_v3/method/reminder_list_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/reminder_list_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: ReminderMethodHandlerV3
+    native_calls:
+    - reminder.list
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: reminder.list
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodReminderListRequestV3
+      dart_response: MethodReminderListResponseV3
+      kotlin_request: MethodReminderListRequestV3
+      kotlin_response: MethodReminderListResponseV3
+    planned_gateway: ReminderGatewayV3
+  reminder.reconcile_schedule:
+    module: reminder
+    request: native_v3/method/reminder_reconcile_schedule_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/reminder_reconcile_schedule_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: ReminderMethodHandlerV3
+    native_calls:
+    - reminder.list_schedulable
+    - reminder.mark_scheduled
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: reminder.reconcile_schedule
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodReminderReconcileScheduleRequestV3
+      dart_response: MethodReminderReconcileScheduleResponseV3
+      kotlin_request: MethodReminderReconcileScheduleRequestV3
+      kotlin_response: MethodReminderReconcileScheduleResponseV3
+    planned_gateway: ReminderGatewayV3
+  notification.initialize:
+    module: notification
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: notification/notification_initialize_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: NotificationMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: notification.initialize
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: CommonNativeEmptyRequestV3
+      dart_response: NotificationNotificationInitializeResponseV3
+      kotlin_request: CommonNativeEmptyRequestV3
+      kotlin_response: NotificationNotificationInitializeResponseV3
+    planned_gateway: NotificationGatewayV3
+  notification.permission_status:
+    module: notification
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: notification/notification_permission_status_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: NotificationMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: notification.permission_status
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: CommonNativeEmptyRequestV3
+      dart_response: NotificationNotificationPermissionStatusResponseV3
+      kotlin_request: CommonNativeEmptyRequestV3
+      kotlin_response: NotificationNotificationPermissionStatusResponseV3
+    planned_gateway: NotificationGatewayV3
+  notification.request_permission:
+    module: notification
+    request: notification/request_notification_permission_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: notification/request_notification_permission_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: NotificationMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: notification.request_permission
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: NotificationRequestNotificationPermissionRequestV3
+      dart_response: NotificationRequestNotificationPermissionResponseV3
+      kotlin_request: NotificationRequestNotificationPermissionRequestV3
+      kotlin_response: NotificationRequestNotificationPermissionResponseV3
+    planned_gateway: NotificationGatewayV3
+  notification.open_settings:
+    module: notification
+    request: notification/open_notification_settings_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: common/native_operation_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: NotificationMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: notification.open_settings
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: NotificationOpenNotificationSettingsRequestV3
+      dart_response: CommonNativeOperationResponseV3
+      kotlin_request: NotificationOpenNotificationSettingsRequestV3
+      kotlin_response: CommonNativeOperationResponseV3
+    planned_gateway: NotificationGatewayV3
+  notification.get_initial_tap_payload:
+    module: notification
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/business_compat/notification/notification_tap_payload_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: NotificationMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: notification.get_initial_tap_payload
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: CommonNativeEmptyRequestV3
+      dart_response: BusinessCompatNotificationNotificationTapPayloadResponseV3
+      kotlin_request: CommonNativeEmptyRequestV3
+      kotlin_response: BusinessCompatNotificationNotificationTapPayloadResponseV3
+    planned_gateway: NotificationGatewayV3
+  notification.list:
+    module: notification
+    request: native_v3/method/notification_list_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/notification_list_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: NotificationMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: notification.list
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodNotificationListRequestV3
+      dart_response: MethodNotificationListResponseV3
+      kotlin_request: MethodNotificationListRequestV3
+      kotlin_response: MethodNotificationListResponseV3
+    planned_gateway: NotificationGatewayV3
+  ring.get_state:
+    module: ring
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/business_compat/ring/ring_state_snapshot.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: RingMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: ring.get_state
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: CommonNativeEmptyRequestV3
+      dart_response: BusinessCompatRingRingStateSnapshotV3
+      kotlin_request: CommonNativeEmptyRequestV3
+      kotlin_response: BusinessCompatRingRingStateSnapshotV3
+    planned_gateway: RingGatewayV3
+  ring.pick_ringtone:
+    module: ring
+    request: ring/pick_ringtone_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/business_compat/ring/pick_ringtone_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: RingMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: ring.pick_ringtone
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: RingPickRingtoneRequestV3
+      dart_response: BusinessCompatRingPickRingtoneResponseV3
+      kotlin_request: RingPickRingtoneRequestV3
+      kotlin_response: BusinessCompatRingPickRingtoneResponseV3
+    planned_gateway: RingGatewayV3
+  ring.update_settings:
+    module: ring
+    request: ring/update_ring_settings_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/business_compat/ring/ring_state_snapshot.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: RingMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: ring.update_settings
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: RingUpdateRingSettingsRequestV3
+      dart_response: BusinessCompatRingRingStateSnapshotV3
+      kotlin_request: RingUpdateRingSettingsRequestV3
+      kotlin_response: BusinessCompatRingRingStateSnapshotV3
+    planned_gateway: RingGatewayV3
+  ring.test:
+    module: ring
+    request: ring/ring_test_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/business_compat/ring/ring_state_snapshot.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: RingMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: ring.test
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: RingRingTestRequestV3
+      dart_response: BusinessCompatRingRingStateSnapshotV3
+      kotlin_request: RingRingTestRequestV3
+      kotlin_response: BusinessCompatRingRingStateSnapshotV3
+    planned_gateway: RingGatewayV3
+  ring.stop_active:
+    module: ring
+    request: native_v3/method/ring_stop_active_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/ring_stop_active_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: RingMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: ring.stop_active
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodRingStopActiveRequestV3
+      dart_response: MethodRingStopActiveResponseV3
+      kotlin_request: MethodRingStopActiveRequestV3
+      kotlin_response: MethodRingStopActiveResponseV3
+    planned_gateway: RingGatewayV3
+  ring.snooze_active:
+    module: ring
+    request: native_v3/method/ring_snooze_active_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/ring_snooze_active_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: RingMethodHandlerV3
+    native_calls:
+    - reminder.snooze
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: ring.snooze_active
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodRingSnoozeActiveRequestV3
+      dart_response: MethodRingSnoozeActiveResponseV3
+      kotlin_request: MethodRingSnoozeActiveRequestV3
+      kotlin_response: MethodRingSnoozeActiveResponseV3
+    planned_gateway: RingGatewayV3
+  ring.complete_item:
+    module: ring
+    request: native_v3/method/ring_complete_item_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/ring_complete_item_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: RingMethodHandlerV3
+    native_calls:
+    - event.complete
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: ring.complete_item
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodRingCompleteItemRequestV3
+      dart_response: MethodRingCompleteItemResponseV3
+      kotlin_request: MethodRingCompleteItemRequestV3
+      kotlin_response: MethodRingCompleteItemResponseV3
+    planned_gateway: RingGatewayV3
+  habit.create:
+    module: habit
+    request: native_v3/method/habit_create_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_create_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.create
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.create
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitCreateRequestV3
+      dart_response: MethodHabitCreateResponseV3
+      kotlin_request: MethodHabitCreateRequestV3
+      kotlin_response: MethodHabitCreateResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.update:
+    module: habit
+    request: native_v3/method/habit_update_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_update_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.update
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.update
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitUpdateRequestV3
+      dart_response: MethodHabitUpdateResponseV3
+      kotlin_request: MethodHabitUpdateRequestV3
+      kotlin_response: MethodHabitUpdateResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.list:
+    module: habit
+    request: native_v3/method/habit_list_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_list_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.list
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.list
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitListRequestV3
+      dart_response: MethodHabitListResponseV3
+      kotlin_request: MethodHabitListRequestV3
+      kotlin_response: MethodHabitListResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.detail:
+    module: habit
+    request: native_v3/method/habit_detail_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_detail_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.detail
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.detail
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitDetailRequestV3
+      dart_response: MethodHabitDetailResponseV3
+      kotlin_request: MethodHabitDetailRequestV3
+      kotlin_response: MethodHabitDetailResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.end:
+    module: habit
+    request: native_v3/method/habit_end_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_end_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.end
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.end
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitEndRequestV3
+      dart_response: MethodHabitEndResponseV3
+      kotlin_request: MethodHabitEndRequestV3
+      kotlin_response: MethodHabitEndResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.delete:
+    module: habit
+    request: native_v3/method/habit_delete_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_delete_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.delete
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.delete
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitDeleteRequestV3
+      dart_response: MethodHabitDeleteResponseV3
+      kotlin_request: MethodHabitDeleteRequestV3
+      kotlin_response: MethodHabitDeleteResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.check_in:
+    module: habit
+    request: native_v3/method/habit_check_in_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_check_in_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.check_in
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.check_in
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitCheckInRequestV3
+      dart_response: MethodHabitCheckInResponseV3
+      kotlin_request: MethodHabitCheckInRequestV3
+      kotlin_response: MethodHabitCheckInResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.clear_check_in:
+    module: habit
+    request: native_v3/method/habit_clear_check_in_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_clear_check_in_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.clear_check_in
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.clear_check_in
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitClearCheckInRequestV3
+      dart_response: MethodHabitClearCheckInResponseV3
+      kotlin_request: MethodHabitClearCheckInRequestV3
+      kotlin_response: MethodHabitClearCheckInResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.list_daily_statuses:
+    module: habit
+    request: native_v3/method/habit_list_daily_statuses_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_list_daily_statuses_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.list_daily_statuses
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.list_daily_statuses
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitListDailyStatusesRequestV3
+      dart_response: MethodHabitListDailyStatusesResponseV3
+      kotlin_request: MethodHabitListDailyStatusesRequestV3
+      kotlin_response: MethodHabitListDailyStatusesResponseV3
+    planned_gateway: HabitGatewayV3
+  habit.set_reminder:
+    module: habit
+    request: native_v3/method/habit_set_reminder_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/habit_set_reminder_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: HabitMethodHandlerV3
+    native_calls:
+    - habit.set_reminder
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: habit.set_reminder
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodHabitSetReminderRequestV3
+      dart_response: MethodHabitSetReminderResponseV3
+      kotlin_request: MethodHabitSetReminderRequestV3
+      kotlin_response: MethodHabitSetReminderResponseV3
+    planned_gateway: HabitGatewayV3
+  appearance.get_local:
+    module: appearance
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: appearance/local_appearance_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: AppearanceMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: appearance.get_local
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: CommonNativeEmptyRequestV3
+      dart_response: AppearanceLocalAppearanceResponseV3
+      kotlin_request: CommonNativeEmptyRequestV3
+      kotlin_response: AppearanceLocalAppearanceResponseV3
+    planned_gateway: AppearanceGatewayV3
+  appearance.update_local:
+    module: appearance
+    request: appearance/update_local_appearance_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: appearance/local_appearance_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_local
+    kotlin_owner: AppearanceMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: appearance.update_local
+    route_policy: global_local_capability
+    planned_dtos:
+      dart_request: AppearanceUpdateLocalAppearanceRequestV3
+      dart_response: AppearanceLocalAppearanceResponseV3
+      kotlin_request: AppearanceUpdateLocalAppearanceRequestV3
+      kotlin_response: AppearanceLocalAppearanceResponseV3
+    planned_gateway: AppearanceGatewayV3
+  category.list:
+    module: category
+    request: native_v3/method/category_list_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/category_list_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: CategoryMethodHandlerV3
+    native_calls:
+    - category.list
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: category.list
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodCategoryListRequestV3
+      dart_response: MethodCategoryListResponseV3
+      kotlin_request: MethodCategoryListRequestV3
+      kotlin_response: MethodCategoryListResponseV3
+    planned_gateway: CategoryGatewayV3
+  category.create:
+    module: category
+    request: native_v3/method/category_create_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/category_create_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: CategoryMethodHandlerV3
+    native_calls:
+    - category.create
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: category.create
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodCategoryCreateRequestV3
+      dart_response: MethodCategoryCreateResponseV3
+      kotlin_request: MethodCategoryCreateRequestV3
+      kotlin_response: MethodCategoryCreateResponseV3
+    planned_gateway: CategoryGatewayV3
+  anniversary.create:
+    module: anniversary
+    request: native_v3/method/anniversary_create_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/anniversary_create_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: AnniversaryMethodHandlerV3
+    native_calls:
+    - anniversary.create
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: anniversary.create
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAnniversaryCreateRequestV3
+      dart_response: MethodAnniversaryCreateResponseV3
+      kotlin_request: MethodAnniversaryCreateRequestV3
+      kotlin_response: MethodAnniversaryCreateResponseV3
+    planned_gateway: AnniversaryGatewayV3
+  anniversary.update:
+    module: anniversary
+    request: native_v3/method/anniversary_update_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/anniversary_update_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: AnniversaryMethodHandlerV3
+    native_calls:
+    - anniversary.update
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: anniversary.update
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAnniversaryUpdateRequestV3
+      dart_response: MethodAnniversaryUpdateResponseV3
+      kotlin_request: MethodAnniversaryUpdateRequestV3
+      kotlin_response: MethodAnniversaryUpdateResponseV3
+    planned_gateway: AnniversaryGatewayV3
+  anniversary.delete:
+    module: anniversary
+    request: native_v3/method/anniversary_delete_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/anniversary_delete_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: AnniversaryMethodHandlerV3
+    native_calls:
+    - anniversary.delete
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: anniversary.delete
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAnniversaryDeleteRequestV3
+      dart_response: MethodAnniversaryDeleteResponseV3
+      kotlin_request: MethodAnniversaryDeleteRequestV3
+      kotlin_response: MethodAnniversaryDeleteResponseV3
+    planned_gateway: AnniversaryGatewayV3
+  anniversary.detail:
+    module: anniversary
+    request: native_v3/method/anniversary_detail_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/anniversary_detail_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: AnniversaryMethodHandlerV3
+    native_calls:
+    - anniversary.detail
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: anniversary.detail
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAnniversaryDetailRequestV3
+      dart_response: MethodAnniversaryDetailResponseV3
+      kotlin_request: MethodAnniversaryDetailRequestV3
+      kotlin_response: MethodAnniversaryDetailResponseV3
+    planned_gateway: AnniversaryGatewayV3
+  anniversary.list:
+    module: anniversary
+    request: native_v3/method/anniversary_list_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/anniversary_list_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: AnniversaryMethodHandlerV3
+    native_calls:
+    - anniversary.list
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: anniversary.list
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAnniversaryListRequestV3
+      dart_response: MethodAnniversaryListResponseV3
+      kotlin_request: MethodAnniversaryListRequestV3
+      kotlin_response: MethodAnniversaryListResponseV3
+    planned_gateway: AnniversaryGatewayV3
+  anniversary.preview_countdown:
+    module: anniversary
+    request: native_v3/method/anniversary_preview_countdown_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/anniversary_preview_countdown_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: AnniversaryMethodHandlerV3
+    native_calls:
+    - anniversary.preview_countdown
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: anniversary.preview_countdown
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAnniversaryPreviewCountdownRequestV3
+      dart_response: MethodAnniversaryPreviewCountdownResponseV3
+      kotlin_request: MethodAnniversaryPreviewCountdownRequestV3
+      kotlin_response: MethodAnniversaryPreviewCountdownResponseV3
+    planned_gateway: AnniversaryGatewayV3
+  anniversary.set_reminders_enabled:
+    module: anniversary
+    request: native_v3/method/anniversary_set_reminders_enabled_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/anniversary_set_reminders_enabled_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: AnniversaryMethodHandlerV3
+    native_calls:
+    - anniversary.set_reminders_enabled
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: anniversary.set_reminders_enabled
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAnniversarySetRemindersEnabledRequestV3
+      dart_response: MethodAnniversarySetRemindersEnabledResponseV3
+      kotlin_request: MethodAnniversarySetRemindersEnabledRequestV3
+      kotlin_response: MethodAnniversarySetRemindersEnabledResponseV3
+    planned_gateway: AnniversaryGatewayV3
+  anniversary.list_occurrences:
+    module: anniversary
+    request: native_v3/method/anniversary_list_occurrences_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/anniversary_list_occurrences_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: AnniversaryMethodHandlerV3
+    native_calls:
+    - anniversary.list_occurrences
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: anniversary.list_occurrences
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAnniversaryListOccurrencesRequestV3
+      dart_response: MethodAnniversaryListOccurrencesResponseV3
+      kotlin_request: MethodAnniversaryListOccurrencesRequestV3
+      kotlin_response: MethodAnniversaryListOccurrencesResponseV3
+    planned_gateway: AnniversaryGatewayV3
+  calendar.range_summary:
+    module: calendar
+    request: native_v3/method/calendar_range_summary_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/calendar_range_summary_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: CalendarMethodHandlerV3
+    native_calls:
+    - calendar.range_summary
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: calendar.range_summary
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodCalendarRangeSummaryRequestV3
+      dart_response: MethodCalendarRangeSummaryResponseV3
+      kotlin_request: MethodCalendarRangeSummaryRequestV3
+      kotlin_response: MethodCalendarRangeSummaryResponseV3
+    planned_gateway: CalendarGatewayV3
+  calendar.list_day_items:
+    module: calendar
+    request: native_v3/method/calendar_list_day_items_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/calendar_list_day_items_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: CalendarMethodHandlerV3
+    native_calls:
+    - calendar.list_day_items
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: calendar.list_day_items
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodCalendarListDayItemsRequestV3
+      dart_response: MethodCalendarListDayItemsResponseV3
+      kotlin_request: MethodCalendarListDayItemsRequestV3
+      kotlin_response: MethodCalendarListDayItemsResponseV3
+    planned_gateway: CalendarGatewayV3
+  search.query:
+    module: search
+    request: native_v3/method/search_query_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/search_query_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    implementation_path: kotlin_jni_workflow
+    kotlin_owner: SearchMethodHandlerV3
+    native_calls:
+    - search.query
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: search.query
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodSearchQueryRequestV3
+      dart_response: MethodSearchQueryResponseV3
+      kotlin_request: MethodSearchQueryRequestV3
+      kotlin_response: MethodSearchQueryResponseV3
+    planned_gateway: SearchGatewayV3
+  search.get_local_history:
+    module: search
+    request: native_v3/method/search_get_local_history_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/search_get_local_history_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: SearchMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: search.get_local_history
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodSearchGetLocalHistoryRequestV3
+      dart_response: MethodSearchGetLocalHistoryResponseV3
+      kotlin_request: MethodSearchGetLocalHistoryRequestV3
+      kotlin_response: MethodSearchGetLocalHistoryResponseV3
+    planned_gateway: SearchGatewayV3
+  search.replace_local_history:
+    module: search
+    request: native_v3/method/search_replace_local_history_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/search_replace_local_history_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: SearchMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: search.replace_local_history
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodSearchReplaceLocalHistoryRequestV3
+      dart_response: MethodSearchReplaceLocalHistoryResponseV3
+      kotlin_request: MethodSearchReplaceLocalHistoryRequestV3
+      kotlin_response: MethodSearchReplaceLocalHistoryResponseV3
+    planned_gateway: SearchGatewayV3
+  ai.extract:
+    module: ai
+    request: native_v3/method/ai_extract_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/ai_extract_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: AiMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: ai.extract
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAiExtractRequestV3
+      dart_response: MethodAiExtractResponseV3
+      kotlin_request: MethodAiExtractRequestV3
+      kotlin_response: MethodAiExtractResponseV3
+    planned_gateway: AiGatewayV3
+  sync.apply:
+    module: sync
+    request: native_v3/method/sync_apply_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/sync_apply_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: SyncMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: sync.apply
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodSyncApplyRequestV3
+      dart_response: MethodSyncApplyResponseV3
+      kotlin_request: MethodSyncApplyRequestV3
+      kotlin_response: MethodSyncApplyResponseV3
+    planned_gateway: SyncGatewayV3
+  auth.refresh_token.store:
+    module: auth
+    request: native_v3/method/auth_refresh_token_store_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/auth_refresh_token_store_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: AuthMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: auth.refresh_token.store
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAuthRefreshTokenStoreRequestV3
+      dart_response: MethodAuthRefreshTokenStoreResponseV3
+      kotlin_request: MethodAuthRefreshTokenStoreRequestV3
+      kotlin_response: MethodAuthRefreshTokenStoreResponseV3
+    planned_gateway: AuthGatewayV3
+  auth.refresh_token.read:
+    module: auth
+    request: native_v3/method/auth_refresh_token_read_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/auth_refresh_token_read_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: AuthMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: auth.refresh_token.read
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAuthRefreshTokenReadRequestV3
+      dart_response: MethodAuthRefreshTokenReadResponseV3
+      kotlin_request: MethodAuthRefreshTokenReadRequestV3
+      kotlin_response: MethodAuthRefreshTokenReadResponseV3
+    planned_gateway: AuthGatewayV3
+  auth.refresh_token.delete:
+    module: auth
+    request: native_v3/method/auth_refresh_token_delete_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/auth_refresh_token_delete_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: AuthMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: auth.refresh_token.delete
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAuthRefreshTokenDeleteRequestV3
+      dart_response: MethodAuthRefreshTokenDeleteResponseV3
+      kotlin_request: MethodAuthRefreshTokenDeleteRequestV3
+      kotlin_response: MethodAuthRefreshTokenDeleteResponseV3
+    planned_gateway: AuthGatewayV3
+  auth.refresh_token.exists:
+    module: auth
+    request: native_v3/method/auth_refresh_token_exists_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/method/auth_refresh_token_exists_response.schema.json
+    implementation_status: not_implemented
+    release_status: blocked
+    implementation_path: reserved_not_implemented
+    kotlin_owner: AuthMethodHandlerV3
+    native_calls: []
+    http_operations: []
+    on_unsupported: notImplemented_no_success_adapter
+    preserved_v2_operation: auth.refresh_token.exists
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: MethodAuthRefreshTokenExistsRequestV3
+      dart_response: MethodAuthRefreshTokenExistsResponseV3
+      kotlin_request: MethodAuthRefreshTokenExistsRequestV3
+      kotlin_response: MethodAuthRefreshTokenExistsResponseV3
+    planned_gateway: AuthGatewayV3
+  auth.session.adopt:
+    module: auth
+    request: auth/session_adopt_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: auth/session_status_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SessionCredentialBroker
+    implementation_path: kotlin_workflow
+    native_calls:
+    - runtime.open_workspace
+    http_operations:
+    - user.get_current
+    - device.register
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: AuthSessionAdoptRequestV3
+      dart_response: AuthSessionStatusResponseV3
+      kotlin_request: AuthSessionAdoptRequestV3
+      kotlin_response: AuthSessionStatusResponseV3
+    planned_gateway: AuthGatewayV3
+  auth.session.get_access_token:
+    module: auth
+    request: auth/session_get_access_token_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: auth/session_access_token_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SessionCredentialBroker
+    implementation_path: kotlin_workflow
+    native_calls: []
+    http_operations:
+    - auth.token.refresh
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: AuthSessionGetAccessTokenRequestV3
+      dart_response: AuthSessionAccessTokenResponseV3
+      kotlin_request: AuthSessionGetAccessTokenRequestV3
+      kotlin_response: AuthSessionAccessTokenResponseV3
+    planned_gateway: AuthGatewayV3
+  auth.session.get_status:
+    module: auth
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: auth/session_status_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SessionCredentialBroker
+    implementation_path: kotlin_local
+    native_calls: []
+    http_operations: []
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: CommonNativeEmptyRequestV3
+      dart_response: AuthSessionStatusResponseV3
+      kotlin_request: CommonNativeEmptyRequestV3
+      kotlin_response: AuthSessionStatusResponseV3
+    planned_gateway: AuthGatewayV3
+  auth.session.logout:
+    module: auth
+    request: auth/session_logout_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: auth/session_logout_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SessionCredentialBroker
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.prepare_upload_batch
+    - sync.acknowledge_upload
+    - sync.apply_download_batch
+    - runtime.close_workspace
+    http_operations:
+    - sync.exchange
+    - auth.logout
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: AuthSessionLogoutRequestV3
+      dart_response: AuthSessionLogoutResponseV3
+      kotlin_request: AuthSessionLogoutRequestV3
+      kotlin_response: AuthSessionLogoutResponseV3
+    planned_gateway: AuthGatewayV3
+  auth.session.clear_local:
+    module: auth
+    request: auth/session_clear_local_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: auth/session_cache_result.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SessionCredentialBroker
+    implementation_path: kotlin_workflow
+    native_calls:
+    - runtime.close_workspace
+    http_operations: []
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: AuthSessionClearLocalRequestV3
+      dart_response: AuthSessionCacheResultV3
+      kotlin_request: AuthSessionClearLocalRequestV3
+      kotlin_response: AuthSessionCacheResultV3
+    planned_gateway: AuthGatewayV3
+  auth.session.reauthenticate:
+    module: auth
+    request: auth/session_reauthenticate_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: auth/session_reauthenticate_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SessionCredentialBroker
+    implementation_path: kotlin_workflow
+    native_calls: []
+    http_operations:
+    - auth.reauthenticate
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: AuthSessionReauthenticateRequestV3
+      dart_response: AuthSessionReauthenticateResponseV3
+      kotlin_request: AuthSessionReauthenticateRequestV3
+      kotlin_response: AuthSessionReauthenticateResponseV3
+    planned_gateway: AuthGatewayV3
+  workspace.get_state:
+    module: workspace
+    request: workspace/get_workspace_state_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: workspace/workspace_state_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - workspace.get_state
+    http_operations: []
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: WorkspaceGetWorkspaceStateRequestV3
+      dart_response: WorkspaceWorkspaceStateResponseV3
+      kotlin_request: WorkspaceGetWorkspaceStateRequestV3
+      kotlin_response: WorkspaceWorkspaceStateResponseV3
+    planned_gateway: WorkspaceGatewayV3
+  workspace.list:
+    module: workspace
+    request: common/native_empty_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: workspace/workspace_list_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceRegistry
+    implementation_path: kotlin_local
+    native_calls: []
+    http_operations: []
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: CommonNativeEmptyRequestV3
+      dart_response: WorkspaceWorkspaceListResponseV3
+      kotlin_request: CommonNativeEmptyRequestV3
+      kotlin_response: WorkspaceWorkspaceListResponseV3
+    planned_gateway: WorkspaceGatewayV3
+  workspace.activate:
+    module: workspace
+    request: workspace/activate_workspace_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: workspace/workspace_state_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - runtime.close_workspace
+    - runtime.open_workspace
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: WorkspaceActivateWorkspaceRequestV3
+      dart_response: WorkspaceWorkspaceStateResponseV3
+      kotlin_request: WorkspaceActivateWorkspaceRequestV3
+      kotlin_response: WorkspaceWorkspaceStateResponseV3
+    planned_gateway: WorkspaceGatewayV3
+  workspace.import_preview:
+    module: workspace
+    request: workspace/import_preview_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: workspace/import_preview_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceImportCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - workspace.import_preview
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: WorkspaceImportPreviewRequestV3
+      dart_response: WorkspaceImportPreviewResponseV3
+      kotlin_request: WorkspaceImportPreviewRequestV3
+      kotlin_response: WorkspaceImportPreviewResponseV3
+    planned_gateway: WorkspaceGatewayV3
+  workspace.import_commit:
+    module: workspace
+    request: workspace/import_commit_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: workspace/import_status_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceImportCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - workspace.import_accept_range_close
+    - workspace.import_commit
+    http_operations:
+    - sync.import.takeover
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: WorkspaceImportCommitRequestV3
+      dart_response: WorkspaceImportStatusResponseV3
+      kotlin_request: WorkspaceImportCommitRequestV3
+      kotlin_response: WorkspaceImportStatusResponseV3
+    planned_gateway: WorkspaceGatewayV3
+  workspace.import_status:
+    module: workspace
+    request: workspace/import_status_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: workspace/import_status_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceImportCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - workspace.import_status
+    http_operations:
+    - sync.import.status
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: WorkspaceImportStatusRequestV3
+      dart_response: WorkspaceImportStatusResponseV3
+      kotlin_request: WorkspaceImportStatusRequestV3
+      kotlin_response: WorkspaceImportStatusResponseV3
+    planned_gateway: WorkspaceGatewayV3
+  workspace.import_abandon:
+    module: workspace
+    request: workspace/import_abandon_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: workspace/import_status_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceImportCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - workspace.import_abandon
+    - workspace.import_accept_range_close
+    http_operations:
+    - sync.import.abandon
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: WorkspaceImportAbandonRequestV3
+      dart_response: WorkspaceImportStatusResponseV3
+      kotlin_request: WorkspaceImportAbandonRequestV3
+      kotlin_response: WorkspaceImportStatusResponseV3
+    planned_gateway: WorkspaceGatewayV3
+  workspace.clear_account_cache:
+    module: workspace
+    request: workspace/clear_account_cache_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: workspace/workspace_state_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.accept_transport_fence
+    - runtime.close_workspace
+    - runtime.open_workspace
+    - sync.begin_bootstrap
+    - sync.apply_bootstrap_page
+    - sync.finalize_bootstrap
+    http_operations:
+    - sync.import.status
+    - sync.import.takeover
+    - sync.import.abandon
+    - sync.device_fence
+    - sync.bootstrap
+    - sync.import.cleanup_confirm
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: WorkspaceClearAccountCacheRequestV3
+      dart_response: WorkspaceWorkspaceStateResponseV3
+      kotlin_request: WorkspaceClearAccountCacheRequestV3
+      kotlin_response: WorkspaceWorkspaceStateResponseV3
+    planned_gateway: WorkspaceGatewayV3
+  sync.get_status:
+    module: sync
+    request: sync/get_sync_status_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/sync_status_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncStatusAggregator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.get_status
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncGetSyncStatusRequestV3
+      dart_response: SyncSyncStatusResponseV3
+      kotlin_request: SyncGetSyncStatusRequestV3
+      kotlin_response: SyncSyncStatusResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.claim_conflict_notice:
+    module: sync
+    request: sync/claim_conflict_notice_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/claim_conflict_notice_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.claim_conflict_notice
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncClaimConflictNoticeRequestV3
+      dart_response: SyncClaimConflictNoticeResponseV3
+      kotlin_request: SyncClaimConflictNoticeRequestV3
+      kotlin_response: SyncClaimConflictNoticeResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.export_diagnostics:
+    module: sync
+    request: sync/export_diagnostics_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/export_diagnostics_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncDiagnosticExporter
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.build_diagnostic_snapshot
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncExportDiagnosticsRequestV3
+      dart_response: SyncExportDiagnosticsResponseV3
+      kotlin_request: SyncExportDiagnosticsRequestV3
+      kotlin_response: SyncExportDiagnosticsResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.set_enabled:
+    module: sync
+    request: sync/set_sync_enabled_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/sync_status_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.set_enabled
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncSetSyncEnabledRequestV3
+      dart_response: SyncSyncStatusResponseV3
+      kotlin_request: SyncSetSyncEnabledRequestV3
+      kotlin_response: SyncSyncStatusResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.run_now:
+    module: sync
+    request: sync/run_sync_now_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/run_sync_now_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.prepare_upload_batch
+    - sync.acknowledge_upload
+    - sync.apply_download_batch
+    http_operations:
+    - sync.exchange
+    - sync.conflict.resolve
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncRunSyncNowRequestV3
+      dart_response: SyncRunSyncNowResponseV3
+      kotlin_request: SyncRunSyncNowRequestV3
+      kotlin_response: SyncRunSyncNowResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.conflict.list:
+    module: sync
+    request: sync/list_sync_conflicts_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/sync_conflict_list_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncConflictCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.conflict.list
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncListSyncConflictsRequestV3
+      dart_response: SyncSyncConflictListResponseV3
+      kotlin_request: SyncListSyncConflictsRequestV3
+      kotlin_response: SyncSyncConflictListResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.conflict.detail:
+    module: sync
+    request: sync/get_sync_conflict_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/native_sync_conflict_detail_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncConflictCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.conflict.detail
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncGetSyncConflictRequestV3
+      dart_response: SyncNativeSyncConflictDetailResponseV3
+      kotlin_request: SyncGetSyncConflictRequestV3
+      kotlin_response: SyncNativeSyncConflictDetailResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.conflict.resolve:
+    module: sync
+    request: sync/resolve_sync_conflict_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/sync_conflict_resolution_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncConflictCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.conflict.resolve
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncResolveSyncConflictRequestV3
+      dart_response: SyncSyncConflictResolutionResponseV3
+      kotlin_request: SyncResolveSyncConflictRequestV3
+      kotlin_response: SyncSyncConflictResolutionResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.failed_change.list:
+    module: sync
+    request: sync/list_sync_failed_local_changes_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/sync_failed_local_change_list_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncConflictCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.failed_change.list
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncListSyncFailedLocalChangesRequestV3
+      dart_response: SyncSyncFailedLocalChangeListResponseV3
+      kotlin_request: SyncListSyncFailedLocalChangesRequestV3
+      kotlin_response: SyncSyncFailedLocalChangeListResponseV3
+    planned_gateway: SyncGatewayV3
+  sync.failed_change.detail:
+    module: sync
+    request: sync/get_sync_failed_local_change_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/sync_failed_local_change_detail.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncConflictCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.failed_change.detail
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncGetSyncFailedLocalChangeRequestV3
+      dart_response: SyncSyncFailedLocalChangeDetailV3
+      kotlin_request: SyncGetSyncFailedLocalChangeRequestV3
+      kotlin_response: SyncSyncFailedLocalChangeDetailV3
+    planned_gateway: SyncGatewayV3
+  sync.failed_change.discard:
+    module: sync
+    request: sync/discard_sync_failed_local_change_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: sync/discard_sync_failed_local_change_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: SyncConflictCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.failed_change.discard
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SyncDiscardSyncFailedLocalChangeRequestV3
+      dart_response: SyncDiscardSyncFailedLocalChangeResponseV3
+      kotlin_request: SyncDiscardSyncFailedLocalChangeRequestV3
+      kotlin_response: SyncDiscardSyncFailedLocalChangeResponseV3
+    planned_gateway: SyncGatewayV3
+  device.list:
+    module: device
+    request: device/method_device_list_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: device/method_device_list_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: DeviceCoordinator
+    implementation_path: kotlin_workflow
+    native_calls: []
+    http_operations:
+    - device.list
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: DeviceMethodDeviceListRequestV3
+      dart_response: DeviceMethodDeviceListResponseV3
+      kotlin_request: DeviceMethodDeviceListRequestV3
+      kotlin_response: DeviceMethodDeviceListResponseV3
+    planned_gateway: DeviceGatewayV3
+  device.rename:
+    module: device
+    request: device/method_rename_device_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: device/method_rename_device_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: DeviceCoordinator
+    implementation_path: kotlin_workflow
+    native_calls: []
+    http_operations:
+    - device.rename
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: DeviceMethodRenameDeviceRequestV3
+      dart_response: DeviceMethodRenameDeviceResponseV3
+      kotlin_request: DeviceMethodRenameDeviceRequestV3
+      kotlin_response: DeviceMethodRenameDeviceResponseV3
+    planned_gateway: DeviceGatewayV3
+  device.update_settings:
+    module: device
+    request: device/method_update_device_settings_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: device/method_update_device_settings_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: DeviceSettingsCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - sync.set_enabled
+    http_operations:
+    - device.update_settings
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: DeviceMethodUpdateDeviceSettingsRequestV3
+      dart_response: DeviceMethodUpdateDeviceSettingsResponseV3
+      kotlin_request: DeviceMethodUpdateDeviceSettingsRequestV3
+      kotlin_response: DeviceMethodUpdateDeviceSettingsResponseV3
+    planned_gateway: DeviceGatewayV3
+  device.revoke:
+    module: device
+    request: device/method_revoke_device_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: device/method_revoke_device_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: DeviceCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - runtime.open_workspace
+    http_operations:
+    - device.revoke
+    - device.register
+    route_policy: schema_declared_recovery_or_session_cas
+    planned_dtos:
+      dart_request: DeviceMethodRevokeDeviceRequestV3
+      dart_response: DeviceMethodRevokeDeviceResponseV3
+      kotlin_request: DeviceMethodRevokeDeviceRequestV3
+      kotlin_response: DeviceMethodRevokeDeviceResponseV3
+    planned_gateway: DeviceGatewayV3
+  preferences.get:
+    module: preferences
+    request: preferences/get_preferences_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: preferences/preferences_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: PreferencesCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - preferences.get
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: PreferencesGetPreferencesRequestV3
+      dart_response: PreferencesPreferencesResponseV3
+      kotlin_request: PreferencesGetPreferencesRequestV3
+      kotlin_response: PreferencesPreferencesResponseV3
+    planned_gateway: PreferencesGatewayV3
+  preferences.update:
+    module: preferences
+    request: preferences/update_preferences_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: preferences/preferences_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: PreferencesCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - preferences.update
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: PreferencesUpdatePreferencesRequestV3
+      dart_response: PreferencesPreferencesResponseV3
+      kotlin_request: PreferencesUpdatePreferencesRequestV3
+      kotlin_response: PreferencesPreferencesResponseV3
+    planned_gateway: PreferencesGatewayV3
+  search.get_workspace_history:
+    module: search
+    request: native_v3/search/get_workspace_history_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/search/workspace_history_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceSearchHistoryStore
+    implementation_path: kotlin_local
+    native_calls: []
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SearchGetWorkspaceHistoryRequestV3
+      dart_response: SearchWorkspaceHistoryResponseV3
+      kotlin_request: SearchGetWorkspaceHistoryRequestV3
+      kotlin_response: SearchWorkspaceHistoryResponseV3
+    planned_gateway: SearchGatewayV3
+  search.replace_workspace_history:
+    module: search
+    request: native_v3/search/replace_workspace_history_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/search/workspace_history_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: WorkspaceSearchHistoryStore
+    implementation_path: kotlin_local
+    native_calls: []
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: SearchReplaceWorkspaceHistoryRequestV3
+      dart_response: SearchWorkspaceHistoryResponseV3
+      kotlin_request: SearchReplaceWorkspaceHistoryRequestV3
+      kotlin_response: SearchWorkspaceHistoryResponseV3
+    planned_gateway: SearchGatewayV3
+  profile.get_cached:
+    module: profile
+    request: user/get_cached_profile_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: user/cached_profile_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: ProfileCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - profile.get_cached
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: UserGetCachedProfileRequestV3
+      dart_response: UserCachedProfileResponseV3
+      kotlin_request: UserGetCachedProfileRequestV3
+      kotlin_response: UserCachedProfileResponseV3
+    planned_gateway: ProfileGatewayV3
+  profile.accept_server_snapshot:
+    module: profile
+    request: user/accept_server_profile_snapshot_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: user/cached_profile_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: ProfileCoordinator
+    implementation_path: kotlin_workflow
+    native_calls:
+    - profile.accept_server_snapshot
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    planned_dtos:
+      dart_request: UserAcceptServerProfileSnapshotRequestV3
+      dart_response: UserCachedProfileResponseV3
+      kotlin_request: UserAcceptServerProfileSnapshotRequestV3
+      kotlin_response: UserCachedProfileResponseV3
+    planned_gateway: ProfileGatewayV3
+  category.update:
+    module: category
+    request: native_v3/category/update_category_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/category/category_lifecycle_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: CategoryMethodHandlerV3
+    implementation_path: kotlin_jni_workflow
+    native_calls:
+    - category.update
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    business_cas: expected_native_state_revision
+    atomicity: workspace fact and account Outbox in one C++ transaction; guest has
+      zero Outbox; deletion never rewrites weak references
+    planned_dtos:
+      dart_request: CategoryUpdateCategoryRequestV3
+      dart_response: CategoryCategoryLifecycleResponseV3
+      kotlin_request: CategoryUpdateCategoryRequestV3
+      kotlin_response: CategoryCategoryLifecycleResponseV3
+    planned_gateway: CategoryGatewayV3
+  category.delete:
+    module: category
+    request: native_v3/category/delete_category_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/category/category_lifecycle_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: CategoryMethodHandlerV3
+    implementation_path: kotlin_jni_workflow
+    native_calls:
+    - category.delete
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    business_cas: expected_native_state_revision
+    atomicity: workspace fact and account Outbox in one C++ transaction; guest has
+      zero Outbox; deletion never rewrites weak references
+    planned_dtos:
+      dart_request: CategoryDeleteCategoryRequestV3
+      dart_response: CategoryCategoryLifecycleResponseV3
+      kotlin_request: CategoryDeleteCategoryRequestV3
+      kotlin_response: CategoryCategoryLifecycleResponseV3
+    planned_gateway: CategoryGatewayV3
+  category.restore:
+    module: category
+    request: native_v3/category/restore_category_request.schema.json
+    result:
+      envelope: native_v3/common/native_result.schema.json
+      data: native_v3/category/category_lifecycle_response.schema.json
+    implementation_status: planned
+    release_status: planned
+    kotlin_owner: CategoryMethodHandlerV3
+    implementation_path: kotlin_jni_workflow
+    native_calls:
+    - category.restore
+    http_operations: []
+    route_policy: explicit_workspace_and_route_cas
+    business_cas: expected_native_state_revision
+    atomicity: workspace fact and account Outbox in one C++ transaction; guest has
+      zero Outbox; deletion never rewrites weak references
+    planned_dtos:
+      dart_request: CategoryRestoreCategoryRequestV3
+      dart_response: CategoryCategoryLifecycleResponseV3
+      kotlin_request: CategoryRestoreCategoryRequestV3
+      kotlin_response: CategoryCategoryLifecycleResponseV3
+    planned_gateway: CategoryGatewayV3
+event_channels:
+  channel: excellent_calendar/events_v3
+  envelope: native_v3/common/native_event.schema.json
+  events:
+    sync.status_changed:
+      schema: sync/sync_status_response.schema.json
+      identity:
+      - workspace_id
+      - runtime_instance_id
+      - active_route_revision
+      - status_revision
+      recovery_method: sync.get_status
+      delivery: may_repeat_or_drop_subscribe_then_query
+    workspace.state_changed:
+      schema: workspace/workspace_route_state.schema.json
+      identity:
+      - route_state
+      - active_route_revision
+      recovery_method: workspace.get_state
+      delivery: may_repeat_or_drop_subscribe_then_query
+    reminder.status_changed:
+      schema: native_v3/events/reminder_status_changed.schema.json
+      preserved_v2_event: reminder.status_changed
+      identity:
+      - workspace_id
+      - runtime_instance_id
+      - active_route_revision
+      recovery_method: reminder.list
+      delivery: preserve_v2_delivery_and_recovery
+      implementation_status: planned
+      release_status: planned
+    notification.delivered:
+      schema: native_v3/events/notification_delivered.schema.json
+      preserved_v2_event: notification.delivered
+      identity:
+      - workspace_id
+      - runtime_instance_id
+      - active_route_revision
+      recovery_method: null
+      delivery: advisory_delivery_event_may_drop_no_fake_notification_list
+      implementation_status: planned
+      release_status: planned
+    notification.opened:
+      schema: native_v3/notification/notification_tap_payload_v6_writer.schema.json
+      preserved_v2_event: notification.opened
+      identity:
+      - workspace_id
+      recovery_method: notification.get_initial_tap_payload
+      delivery: preserve_v2_delivery_and_recovery
+      implementation_status: planned
+      release_status: planned
+    ring.state_changed:
+      schema: native_v3/business_compat/ring/ring_state_changed_event.schema.json
+      preserved_v2_event: ring.state_changed
+      identity:
+      - state.runtime_instance_id
+      - state.sequence
+      recovery_method: ring.get_state
+      delivery: preserve_v2_delivery_and_recovery
+      implementation_status: planned
+      release_status: planned

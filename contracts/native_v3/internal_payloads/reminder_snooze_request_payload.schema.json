@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/reminder_snooze_request_payload.schema.json",
+  "title": "SyncV1 reminder_snooze_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Internal Kotlin-to-C++ snooze request. Duration is intentionally absent and fixed by Contract at 10 minutes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_delivery_id"
+  ],
+  "properties": {
+    "source_delivery_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

@@ -1,10 +1,12 @@
 # 云同步-03：C++ Core 与 SQLite v6 开发计划
 
-> 状态：ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED
+> 状态：ACTIVE PLAN / CONTRACT FROZEN / IMPLEMENTATION NOT STARTED
 > 上位统筹：`docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`
 > 协议与数据真相源：`docs/plan/active/云同步-02-Contracts与数据模型开发计划.md`
 > 实施范围：`cpp_core/**`；本文只制定计划，不执行实现
 > 文内语义锚点：第 5–15 节定义 C++/SQLite 设计；第 16–19 节只描述实施顺序、测试证据和交接门禁，冲突时必须回到前述章节及冻结 Contract。
+
+> 协议输入锁：`contracts/sync/sync_v1_revision_lock.json` 中的 `03_cpp_sqlite` 与其他三端锁定同一 revision/hash/fixture manifest。只在 `contracts/run_sync_v1_validation.py` 默认入口通过后按该机器版本实施；本层生产 implementation/release status 仍为 planned。
 
 ## 1. 计划结论
 

@@ -1,0 +1,248 @@
+version: 3
+implementation_status: planned
+release_status: planned
+rule_anchor: cloud-sync-02/5,6.1,8.4
+schemas:
+- source: calendar/calendar_day_item_page.schema.json
+  target: native_v3/business_compat/calendar/calendar_day_item_page.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: ff09f6f57a2b1914d323ee6d6a21324bef3a843c99e338be2d7f3537171e3d97
+- source: calendar/calendar_event_item.schema.json
+  target: native_v3/business_compat/calendar/calendar_event_item.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 33c0a85f76e37df15e697306f5500d6eaa98ddec9b9f46581d57d5b35ec69fc4
+- source: event/event_detail_response.schema.json
+  target: native_v3/business_compat/event/event_detail_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 9cddb85a1598a1000a171f038c023f6fc759f2c22f24b75fbcaca50978e67bb4
+- source: event/event_list_response.schema.json
+  target: native_v3/business_compat/event/event_list_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: fe75c53e4ceb80b34280dcfe282d8a999d147eb752a4d8827fecb2c5a5087957
+- source: event/event_occurrence_list_response.schema.json
+  target: native_v3/business_compat/event/event_occurrence_list_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: d3b4af7226e014d733e9b53d2e5b72a9a2dfaa162e862ad3edcbb4c8102c447d
+- source: event/event_occurrence_operation_request.schema.json
+  target: native_v3/business_compat/event/event_occurrence_operation_request.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 70ee2e56ce08b61d813c3f3eeae8dbd2f59ad22036d8a145b0de054de8e34849
+- source: event/event_occurrence_response.schema.json
+  target: native_v3/business_compat/event/event_occurrence_response.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 799ab5a35565ffa47249136d8eb708833e39cda2308e3be792669510ffab8866
+- source: event/event_occurrence_state_response.schema.json
+  target: native_v3/business_compat/event/event_occurrence_state_response.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: fe37a3e926346d95debc252b0ac69bbc24fa37c46abc3cec4565d2ef9ee84d8d
+- source: event/event_response.schema.json
+  target: native_v3/business_compat/event/event_response.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 427ef9df50f5e6dc2256af0e721c92f6563b75eeb29ea89ad97643886efde7a6
+- source: event/event_series_operation_request.schema.json
+  target: native_v3/business_compat/event/event_series_operation_request.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 33e7f9ed9197acbdf789610b906dfdec13900337b4ac066f9fd52f20028dacb9
+- source: event/list_event_occurrences_request.schema.json
+  target: native_v3/business_compat/event/list_event_occurrences_request.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 832105e3e112adafcb7fe1515aef16f46df06dcffb424263521c376bbe1ebc91
+- source: habit/habit_notification_action_payload.schema.json
+  target: native_v3/business_compat/habit/habit_notification_action_payload.schema.json
+  changes:
+  - paired_optional_workspace_routing_legacy_reader
+  source_semantic_sha256: 97e84bf84919cd4ff6f07eb0e1798517ffdf62162edc9ad4cf196ab9192f3129
+- source: notification/notification_tap_payload.schema.json
+  target: native_v3/business_compat/notification/notification_tap_payload.schema.json
+  changes:
+  - paired_optional_workspace_routing_legacy_reader
+  source_semantic_sha256: 11e6876e540f2413b6972b76104722c69f8c4a58b904119e17e0d693c59426b2
+- source: notification/notification_tap_payload_response.schema.json
+  target: native_v3/business_compat/notification/notification_tap_payload_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 9aeebb905f084ef3a7e50ecf866970808fc8663c9c54f7f09ab94e4ad26e0013
+- source: notification/prepared_notification_payload.schema.json
+  target: native_v3/business_compat/notification/prepared_notification_payload.schema.json
+  changes:
+  - paired_optional_workspace_routing_legacy_reader
+  source_semantic_sha256: 58c25f14e3b8d49ca87f9710ec2d6ba0ce0f568a1f58215ac36fa695d3562ce6
+- source: recurrence/recurrence_response.schema.json
+  target: native_v3/business_compat/recurrence/recurrence_response.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 7cf4e371ecd6aeceb3287b223bbe2b6d20a5f685a7cefd6552403684198252ef
+- source: reminder/finalize_delivery_response.schema.json
+  target: native_v3/business_compat/reminder/finalize_delivery_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 3771c7d6344bf14b77007e069fd8cc1863e5a5e36f77bbe279599b57faf13daa
+- source: reminder/list_reminders_request.schema.json
+  target: native_v3/business_compat/reminder/list_reminders_request.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 2886cd1e755ac8b593acdbcba632ebadc5f22c22b4a4e9532660fd0d8aa29e04
+- source: reminder/plan_recovery_response.schema.json
+  target: native_v3/business_compat/reminder/plan_recovery_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 22790888460a2359f773179843e3622502a9fba2221803d0bf20be5e026fc39e
+- source: reminder/prepare_delivery_response.schema.json
+  target: native_v3/business_compat/reminder/prepare_delivery_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 8c1f711fe87fd82fc04701075004a8e991777a48790c63a5421e1bdb5ce2ac93
+- source: reminder/reminder_list_response.schema.json
+  target: native_v3/business_compat/reminder/reminder_list_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: ec9007f8952960783558b76cdc6613c8305551d078b15f56e4746a8205f823ba
+- source: reminder/reminder_response.schema.json
+  target: native_v3/business_compat/reminder/reminder_response.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 170960f8d3fb57cff2a9ef8fda8170967e19eccf8d035ca2b5ca5c918730ff25
+- source: reminder/schedulable_reminder_list_response.schema.json
+  target: native_v3/business_compat/reminder/schedulable_reminder_list_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: f6d269e84e84a6a7c40e9af0418c2ea2a998eed4ae906df3a25f80dc2f8f6afa
+- source: reminder/snooze_reminder_response.schema.json
+  target: native_v3/business_compat/reminder/snooze_reminder_response.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: 27314d752d6b88e693ffbf6bb2d09e9e3b5bfcb7551898cee2cd488997057ee9
+- source: ring/active_ring_item.schema.json
+  target: native_v3/business_compat/ring/active_ring_item.schema.json
+  changes:
+  - required_workspace_routing_each_active_delivery
+  source_semantic_sha256: d395a9f29f0a4c54c8eaa87534b962e8c8b12ced7146c1b11a48a9dfdf1a5bd5
+- source: ring/active_ring_session.schema.json
+  target: native_v3/business_compat/ring/active_ring_session.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: b227c8bd408897c2f0f665401592621c7d2f459db5ba862772a42273284f3080
+- source: ring/pick_ringtone_response.schema.json
+  target: native_v3/business_compat/ring/pick_ringtone_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: bf9e33af993511f7586499cb61074b622147f3ad1bbe39cf778ac58e7dc64bd4
+- source: ring/ring_snooze_active_response.schema.json
+  target: native_v3/business_compat/ring/ring_snooze_active_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 98b3cb76d19d775fd41de8c466f9e23446519a375cc5de8b38db2ac1625db764
+- source: ring/ring_state_changed_event.schema.json
+  target: native_v3/business_compat/ring/ring_state_changed_event.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: bce64f8e22087e16f2f87e86ea241b46cdd80c34e824574d17e245f4a1e09a30
+- source: ring/ring_state_snapshot.schema.json
+  target: native_v3/business_compat/ring/ring_state_snapshot.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 83b6027c5fd2486e0e1d278876c47f4556ad4da4468fb8c2dbd1088db0842f8d
+- source: search/search_event_item.schema.json
+  target: native_v3/business_compat/search/search_event_item.schema.json
+  changes:
+  - checked_recurrence_revision_int64_safe_range
+  source_semantic_sha256: ddcc4bae5d7a6b03dc0b6db03d396153049385216c5d1bbc3f69060b8f07ed5e
+- source: search/search_query_response.schema.json
+  target: native_v3/business_compat/search/search_query_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 1c19f589a86c2c0f0d05aed059616e8257737ec0e79c9173f9e63e6a0c58d118
+- source: search/search_section_response.schema.json
+  target: native_v3/business_compat/search/search_section_response.schema.json
+  changes:
+  - transitive_ref_only
+  source_semantic_sha256: 218ec6d9de04b5a98e41b5c887ac2f24232330abc7f04026085dc3cc8d4d6e08
+schema_mapping:
+  anniversary/anniversary_delete_commit_response.schema.json: native_v3/anniversary/anniversary_delete_commit_response.schema.json
+  anniversary/anniversary_delete_operation_response.schema.json: native_v3/anniversary/anniversary_delete_operation_response.schema.json
+  anniversary/anniversary_detail_response.schema.json: native_v3/anniversary/anniversary_detail_response.schema.json
+  anniversary/anniversary_detail_view_response.schema.json: native_v3/anniversary/anniversary_detail_view_response.schema.json
+  anniversary/anniversary_list_response.schema.json: native_v3/anniversary/anniversary_list_response.schema.json
+  anniversary/anniversary_mutation_response.schema.json: native_v3/anniversary/anniversary_mutation_response.schema.json
+  anniversary/anniversary_occurrence_list_response.schema.json: native_v3/anniversary/anniversary_occurrence_list_response.schema.json
+  anniversary/anniversary_occurrence_summary_response.schema.json: native_v3/anniversary/anniversary_occurrence_summary_response.schema.json
+  anniversary/anniversary_response.schema.json: native_v3/anniversary/anniversary_response.schema.json
+  anniversary/anniversary_summary_response.schema.json: native_v3/anniversary/anniversary_summary_response.schema.json
+  anniversary/create_anniversary_request.schema.json: native_v3/anniversary/create_anniversary_request.schema.json
+  anniversary/deleted_anniversary_response.schema.json: native_v3/anniversary/deleted_anniversary_response.schema.json
+  anniversary/list_anniversaries_request.schema.json: native_v3/anniversary/list_anniversaries_request.schema.json
+  anniversary/list_anniversary_occurrences_request.schema.json: native_v3/anniversary/list_anniversary_occurrences_request.schema.json
+  anniversary/update_anniversary_request.schema.json: native_v3/anniversary/update_anniversary_request.schema.json
+  calendar/calendar_day_item_page.schema.json: native_v3/business_compat/calendar/calendar_day_item_page.schema.json
+  calendar/calendar_event_item.schema.json: native_v3/business_compat/calendar/calendar_event_item.schema.json
+  event/event_detail_response.schema.json: native_v3/business_compat/event/event_detail_response.schema.json
+  event/event_list_response.schema.json: native_v3/business_compat/event/event_list_response.schema.json
+  event/event_occurrence_list_response.schema.json: native_v3/business_compat/event/event_occurrence_list_response.schema.json
+  event/event_occurrence_operation_request.schema.json: native_v3/business_compat/event/event_occurrence_operation_request.schema.json
+  event/event_occurrence_response.schema.json: native_v3/business_compat/event/event_occurrence_response.schema.json
+  event/event_occurrence_state_response.schema.json: native_v3/business_compat/event/event_occurrence_state_response.schema.json
+  event/event_response.schema.json: native_v3/business_compat/event/event_response.schema.json
+  event/event_series_operation_request.schema.json: native_v3/business_compat/event/event_series_operation_request.schema.json
+  event/list_event_occurrences_request.schema.json: native_v3/business_compat/event/list_event_occurrences_request.schema.json
+  habit/habit_notification_action_payload.schema.json: native_v3/business_compat/habit/habit_notification_action_payload.schema.json
+  notification/notification_tap_payload.schema.json: native_v3/business_compat/notification/notification_tap_payload.schema.json
+  notification/notification_tap_payload_response.schema.json: native_v3/business_compat/notification/notification_tap_payload_response.schema.json
+  notification/prepared_notification_payload.schema.json: native_v3/business_compat/notification/prepared_notification_payload.schema.json
+  recurrence/recurrence_response.schema.json: native_v3/business_compat/recurrence/recurrence_response.schema.json
+  reminder/finalize_delivery_response.schema.json: native_v3/business_compat/reminder/finalize_delivery_response.schema.json
+  reminder/list_reminders_request.schema.json: native_v3/business_compat/reminder/list_reminders_request.schema.json
+  reminder/plan_recovery_response.schema.json: native_v3/business_compat/reminder/plan_recovery_response.schema.json
+  reminder/prepare_delivery_response.schema.json: native_v3/business_compat/reminder/prepare_delivery_response.schema.json
+  reminder/reminder_list_response.schema.json: native_v3/business_compat/reminder/reminder_list_response.schema.json
+  reminder/reminder_response.schema.json: native_v3/business_compat/reminder/reminder_response.schema.json
+  reminder/schedulable_reminder_list_response.schema.json: native_v3/business_compat/reminder/schedulable_reminder_list_response.schema.json
+  reminder/snooze_reminder_response.schema.json: native_v3/business_compat/reminder/snooze_reminder_response.schema.json
+  ring/active_ring_item.schema.json: native_v3/business_compat/ring/active_ring_item.schema.json
+  ring/active_ring_session.schema.json: native_v3/business_compat/ring/active_ring_session.schema.json
+  ring/pick_ringtone_response.schema.json: native_v3/business_compat/ring/pick_ringtone_response.schema.json
+  ring/ring_snooze_active_response.schema.json: native_v3/business_compat/ring/ring_snooze_active_response.schema.json
+  ring/ring_state_changed_event.schema.json: native_v3/business_compat/ring/ring_state_changed_event.schema.json
+  ring/ring_state_snapshot.schema.json: native_v3/business_compat/ring/ring_state_snapshot.schema.json
+  search/search_event_item.schema.json: native_v3/business_compat/search/search_event_item.schema.json
+  search/search_query_response.schema.json: native_v3/business_compat/search/search_query_response.schema.json
+  search/search_section_response.schema.json: native_v3/business_compat/search/search_section_response.schema.json
+writer_schema_mapping:
+  notification/notification_tap_payload.schema.json: native_v3/notification/notification_tap_payload_v6_writer.schema.json
+  notification/prepared_notification_payload.schema.json: native_v3/notification/prepared_notification_payload_v6_writer.schema.json
+  habit/habit_notification_action_payload.schema.json: native_v3/habit/habit_notification_action_payload_v6_writer.schema.json
+recurrence_revision:
+  wire_minimum: 1
+  wire_maximum: 9007199254740991
+  old_cpp_reader_maximum: 2147483647
+  cpp: checked std::int64_t
+  kotlin: exact Long
+  dart: exact int
+  java: exact long
+  storage_codec_revisions: storage/calendar_core_storage.yaml#/calendar_core_v6/payload_codec_revisions
+  legacy_v2_schema: unchanged; its absent maximum does not prove that the int32 production
+    decoder accepts larger values
+  legacy_v5: exact historical codecs and rows; four v6 metadata codec bumps authorize
+    only the recurrence counter width change
+  v3_dispatch: only workspace-bound v6 runtimes; never send a v6 record to the v2/v5
+    int32 reader
+notification:
+  legacy_reader: workspace pair absent or both present; never one present/null
+  v6_writer: both workspace fields required for prepared, tap and Habit action payloads;
+    reminder.prepare_delivery uses writer refs recursively
+  legacy_route: only a uniquely identified legacy workspace; ambiguity refuses routing;
+    no target-id scan across databases
+  hidden_account: unavailable until the same account is authenticated and unlockable;
+    never auto-login
+  guest_source_label: 本机
+  upload: workspace routing is local-only and excluded from all Sync facts

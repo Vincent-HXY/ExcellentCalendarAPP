@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/reminder/list_reminders_request.schema.json",
+  "title": "ListRemindersRequest",
+  "description": "Request payload for viewing reminder tasks with optional filtering, sorting, and pagination.",
+  "x-contract-version": 3,
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "target_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "event",
+        "habit",
+        "anniversary",
+        null
+      ]
+    },
+    "target_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recurrence_revision": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "occurrence_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "remind_at_from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "remind_at_to": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ring",
+          "popup",
+          "wechat"
+        ]
+      }
+    },
+    "status": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "scheduled",
+          "sent",
+          "failed",
+          "cancelled",
+          "expired"
+        ]
+      }
+    },
+    "is_enabled": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "include_deleted": {
+      "type": "boolean",
+      "default": false
+    },
+    "pagination": {
+      "$ref": "https://excellent-calendar.local/contracts/common/pagination_request.schema.json"
+    },
+    "sort_by": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "remind_at",
+        "created_at",
+        "updated_at",
+        "status",
+        "target_type",
+        null
+      ]
+    },
+    "sort_direction": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "asc",
+        "desc",
+        null
+      ]
+    }
+  },
+  "x-contract-domain": "native",
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

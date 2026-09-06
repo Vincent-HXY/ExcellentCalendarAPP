@@ -1,0 +1,385 @@
+{
+  "fixture_version": 1,
+  "scope": "materialized bootstrap and fresh promotion; pending rebase is separately required",
+  "samples": {
+    "all_kinds": [
+      {
+        "kind": "fact_after_image",
+        "target_type": "category",
+        "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "fact": {
+          "id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "name": "合成分类 1",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 1,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": null,
+          "reorder_revision": 0
+        },
+        "entity_version": 1,
+        "import_provenance": {
+          "import_lineage_id": "d760167d-e978-5f04-bd4f-cc2e0de32a89",
+          "source_workspace_id": "44444444-4444-4444-8444-444444444444",
+          "source_epoch": 0,
+          "source_target_type": "category",
+          "source_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+        },
+        "field_versions": [
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "color"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "description"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "icon"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "lifecycle"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "name"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "ordering"
+            },
+            "field_version": 1
+          }
+        ]
+      },
+      {
+        "kind": "tombstone",
+        "target_type": "category",
+        "target_id": "00000002-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "fact": {
+          "id": "00000002-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "name": "合成分类 2",
+          "description": null,
+          "color": "#39AFBD",
+          "icon": null,
+          "sort_order": 1,
+          "created_at": "2026-09-05T01:00:00Z",
+          "updated_at": "2026-09-05T01:00:00Z",
+          "deleted_at": "2026-09-05T01:00:00Z",
+          "reorder_revision": 0
+        },
+        "entity_version": 1,
+        "import_provenance": null,
+        "field_versions": [
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000002-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "color"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000002-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "description"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000002-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "icon"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000002-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "lifecycle"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000002-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "name"
+            },
+            "field_version": 1
+          },
+          {
+            "key": {
+              "target_type": "category",
+              "target_id": "00000002-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "merge_key": "ordering"
+            },
+            "field_version": 1
+          }
+        ],
+        "deleted_at": "2026-09-05T01:00:00Z",
+        "delete_server_sequence": 5
+      },
+      {
+        "kind": "deleted_entity_anchor",
+        "target_type": "category",
+        "target_id": "00000003-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "entity_version": 2,
+        "delete_server_sequence": 6,
+        "import_provenance": null
+      },
+      {
+        "kind": "unresolved_conflict",
+        "conflict": {
+          "conflict_id": "00000064-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "conflict_version": 1,
+          "target_type": "category",
+          "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "status": "unresolved",
+          "source_device_id": "22222222-2222-4222-8222-222222222222",
+          "received_at": "2026-09-05T01:00:00Z",
+          "conflicting_groups": [
+            {
+              "key": {
+                "target_type": "category",
+                "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "merge_key": "name"
+              },
+              "server_candidate": {
+                "kind": "value",
+                "projection": {
+                  "target_type": "category",
+                  "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                  "merge_key": "name",
+                  "value": {
+                    "name": "合成分类 1"
+                  }
+                }
+              },
+              "local_candidate": {
+                "kind": "value",
+                "projection": {
+                  "target_type": "category",
+                  "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                  "merge_key": "name",
+                  "value": {
+                    "name": "本地保留"
+                  }
+                }
+              }
+            }
+          ],
+          "auto_merged_groups": [],
+          "recovery_snapshot": {
+            "target_type": "category",
+            "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "fact": {
+              "id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "name": "合成分类 1",
+              "description": null,
+              "color": "#39AFBD",
+              "icon": null,
+              "sort_order": 1,
+              "created_at": "2026-09-05T01:00:00Z",
+              "updated_at": "2026-09-05T01:00:00Z",
+              "deleted_at": null,
+              "reorder_revision": 0
+            }
+          }
+        }
+      },
+      {
+        "kind": "import_publish_marker",
+        "import_publish_group_id": "33333333-3333-4333-8333-333333333333",
+        "import_lineage_id": "d760167d-e978-5f04-bd4f-cc2e0de32a89",
+        "import_batch_id": "33333333-3333-4333-8333-333333333333",
+        "source_workspace_id": "44444444-4444-4444-8444-444444444444",
+        "source_epoch": 0,
+        "manifest_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "mapping_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "begin_server_sequence": 1,
+        "commit_server_sequence": 3,
+        "total_chunk_count": 1,
+        "total_item_count": 1,
+        "publish_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+        "snapshot_provenance_digest": "3eecd89884a4d263099c93d55d177b9fb3a147eba34c8f0cef0d9dbffd780153",
+        "snapshot_provenance_count": 1
+      },
+      {
+        "kind": "requesting_device_causal_anchor",
+        "key": {
+          "target_type": "category",
+          "target_id": "00000001-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "merge_key": "name"
+        },
+        "client_sequence": 1,
+        "resulting_field_version": 1
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "FX-BOOTSTRAP-EMPTY",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "empty"
+      },
+      "expected": {
+        "pages": 1,
+        "items": 0,
+        "visible_before_finalize": 0
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-SIX-UNION-KINDS",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "six_kinds"
+      },
+      "expected": {
+        "pages": 3,
+        "items": 6,
+        "visible_before_finalize": 0
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-500-ITEMS",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "five_hundred"
+      },
+      "expected": {
+        "pages": 4,
+        "items": 500,
+        "visible_before_finalize": 0
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-FIXED-SNAPSHOT",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "fixed_snapshot"
+      },
+      "expected": {
+        "old_upper_bound": 100,
+        "new_live_items": 3,
+        "snapshot_items": 2
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-RECOVERY-WATERMARK",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "recovery"
+      },
+      "expected": {
+        "local_ack": 4,
+        "server_ack": 2,
+        "next_sequence": 5
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-EXHAUSTED-READONLY",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "exhausted"
+      },
+      "expected": {
+        "local_ack": 9007199254740991,
+        "next_sequence": null,
+        "exhausted": true
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-GENERATION-CHANGED",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "generation"
+      },
+      "expected": {
+        "error": "SYNC_BOOTSTRAP_GENERATION_CHANGED"
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-TTL-BOUNDARY",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "expired"
+      },
+      "expected": {
+        "error": "SYNC_BOOTSTRAP_EXPIRED"
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-LOST-FIRST-RESPONSE",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "first_loss"
+      },
+      "expected": {
+        "same_bootstrap_id": true,
+        "same_page_bytes": true
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-HIGH-WATERMARK-SUPERSEDES",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3,10-11",
+      "validation": "isolated_sqlite_snapshot_and_fresh_apply",
+      "input": {
+        "scenario": "supersede"
+      },
+      "expected": {
+        "new_bootstrap_id": true,
+        "old_cursor_error": "SYNC_BOOTSTRAP_EXPIRED"
+      }
+    }
+  ]
+}

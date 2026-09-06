@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/ring/ring_snooze_active_response.schema.json",
+  "title": "RingSnoozeActiveResponse",
+  "description": "Ordered partial-result response for ring.snooze_active. Successful items are removed from state; failed items remain active.",
+  "x-contract-version": 3,
+  "x-result-invariants": [
+    "results preserves the request delivery_ids order.",
+    "succeeded_count plus failed_count equals results.length.",
+    "Only succeeded delivery_ids are absent from state.active_session.items after the operation."
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "results",
+    "succeeded_count",
+    "failed_count",
+    "state"
+  ],
+  "properties": {
+    "results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/ring/ring_snooze_item_result.schema.json"
+      }
+    },
+    "succeeded_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "failed_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "state": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/ring/ring_state_snapshot.schema.json"
+    }
+  },
+  "x-contract-domain": "native",
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

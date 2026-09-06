@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/habit_check_in_request_payload.schema.json",
+  "title": "SyncV1 habit_check_in_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "integrated",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Kotlin-to-C++ set/upsert command. A Flutter manual request is normalized to the manual branch; only the non-exported Android notification action path may construct the notification_action branch.",
+  "x-habit-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "habit_id",
+    "check_date",
+    "status",
+    "completed_count_hundredths",
+    "note",
+    "source",
+    "occurrence_key",
+    "action_id",
+    "timezone"
+  ],
+  "properties": {
+    "habit_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "check_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "done",
+        "partial",
+        "skipped"
+      ]
+    },
+    "completed_count_hundredths": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "notification_action"
+      ]
+    },
+    "occurrence_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "action_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "x-format": "iana-timezone"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "partial"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "completed_count_hundredths": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "skipped"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "completed_count_hundredths": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "oneOf": [
+    {
+      "title": "ManualSet",
+      "properties": {
+        "source": {
+          "const": "manual"
+        },
+        "occurrence_key": {
+          "type": "null"
+        },
+        "action_id": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "title": "NotificationComplete",
+      "properties": {
+        "source": {
+          "const": "notification_action"
+        },
+        "status": {
+          "const": "done"
+        },
+        "completed_count_hundredths": {
+          "type": "null"
+        },
+        "note": {
+          "type": "null"
+        },
+        "occurrence_key": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "action_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    }
+  ]
+}

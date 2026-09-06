@@ -1,0 +1,27 @@
+version: 1
+version_domain: sync_protocol/v1
+implementation_status: planned
+release_status: planned
+rule_anchor: cloud-sync-01/9.1,9.4;cloud-sync-02/6.2,7.1-7.5,8
+preparation:
+  owner: core_resolution_writer_in_same_transaction_as_frozen_outbox
+  retry: preserve_exact_mutation_id_sequence_hash_and_prepared_children
+  inputs: authoritative_graph_typed_conflict_version_and_explicit_ui_choice
+  child_values: selected_conflict_projections_only_no_unrelated_edits
+  event_manual_timing: derive_matching_recurrence_start_and_timezone_from_manual_root
+  event_new_revision: same_recurrence_id_checked_max_existing_revision_plus_one
+  remote_unchanged_child: no_new_revision_or_false_success_anchor
+backend:
+  route: shared_device_sequence_receipt_transport_fence_owner
+  request_failure: malformed_hash_causal_proof_or_transport_binding_zero_write
+  business_failure: exact_consumed_rejection_preserves_current_conflict_and_no_effect_receipt
+  readonly: identity_audit_server_generated_and_habit_history_fields_remain_protected
+  transaction: new_revision_owner_pointer_field_anchors_resolved_delta_change_receipt_and_device_highest
+  prior_revisions: retained_unchanged_for_existing_occurrence_and_history_readers
+local:
+  effect_gate: all_prepared_child_keys_bound_to_exact_terminal_and_complete_group
+  bootstrap: complete_graph_and_requesting_device_anchors_restore_without_echo_upload
+  losing_manual: immutable_root_and_child_candidates_survive_apply_bootstrap_restart
+evidence_scope:
+  verified: [event_immutable_revision, event_reminder_mutable_child, unpublished_event_revision, local_receipt_apply_bootstrap]
+  separate_required_evidence: [anniversary_and_habit_owned_lifecycle, deletion_cascades, import_generated_conflicts, four_language_consumers]

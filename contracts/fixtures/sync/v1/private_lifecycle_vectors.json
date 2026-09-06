@@ -1,0 +1,678 @@
+{
+  "fixture_version": 1,
+  "scope": "Shape/authorization inputs; OS primitives are independently verified",
+  "cases": [
+    {
+      "id": "FX-PRIVATE-crypto_destroy_final_receipt",
+      "family": "FX-IMPORT-CLEANUP",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "workspace/private/crypto_destroy_final_receipt.schema.json",
+      "input": {
+        "schema_version": 1,
+        "account_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_id": "22222222-2222-4222-8222-222222222222",
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "sync_transport_generation": 1,
+        "lifecycle_revision": 2,
+        "expected_source_lease_revision": 3,
+        "protected_owner_binding_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "source_workspace_id": "44444444-4444-4444-8444-444444444444",
+        "source_epoch": 0,
+        "import_lineage_id": "22222222-2222-4222-8222-222222222222",
+        "import_batch_id": "33333333-3333-4333-8333-333333333333",
+        "manifest_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "account_key_identity_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "final",
+        "reason": "clear_rebuild"
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-PRIVATE-crypto_destroy_final_receipt-extra",
+      "family": "FX-IMPORT-CLEANUP",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "workspace/private/crypto_destroy_final_receipt.schema.json",
+      "input": {
+        "schema_version": 1,
+        "account_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_id": "22222222-2222-4222-8222-222222222222",
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "sync_transport_generation": 1,
+        "lifecycle_revision": 2,
+        "expected_source_lease_revision": 3,
+        "protected_owner_binding_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "source_workspace_id": "44444444-4444-4444-8444-444444444444",
+        "source_epoch": 0,
+        "import_lineage_id": "22222222-2222-4222-8222-222222222222",
+        "import_batch_id": "33333333-3333-4333-8333-333333333333",
+        "manifest_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "account_key_identity_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "final",
+        "reason": "clear_rebuild",
+        "unexpected": 1
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-crypto_destroy_final_receipt-missing-version",
+      "family": "FX-IMPORT-CLEANUP",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "workspace/private/crypto_destroy_final_receipt.schema.json",
+      "input": {
+        "account_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_id": "22222222-2222-4222-8222-222222222222",
+        "operation_id": "33333333-3333-4333-8333-333333333333",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "sync_transport_generation": 1,
+        "lifecycle_revision": 2,
+        "expected_source_lease_revision": 3,
+        "protected_owner_binding_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "source_workspace_id": "44444444-4444-4444-8444-444444444444",
+        "source_epoch": 0,
+        "import_lineage_id": "22222222-2222-4222-8222-222222222222",
+        "import_batch_id": "33333333-3333-4333-8333-333333333333",
+        "manifest_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "account_key_identity_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "final",
+        "reason": "clear_rebuild"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-remote_snapshot_cache",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "device/private/remote_snapshot_cache.schema.json",
+      "input": {
+        "schema_version": 1,
+        "account_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "captured_at": "2026-09-06T07:00:00Z",
+        "snapshot": {
+          "registration_pending": false,
+          "current_device_id": "33333333-3333-4333-8333-333333333333",
+          "devices": []
+        }
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-PRIVATE-remote_snapshot_cache-extra",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "device/private/remote_snapshot_cache.schema.json",
+      "input": {
+        "schema_version": 1,
+        "account_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "captured_at": "2026-09-06T07:00:00Z",
+        "snapshot": {
+          "registration_pending": false,
+          "current_device_id": "33333333-3333-4333-8333-333333333333",
+          "devices": []
+        },
+        "unexpected": 1
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-remote_snapshot_cache-missing-version",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "device/private/remote_snapshot_cache.schema.json",
+      "input": {
+        "account_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_id": "22222222-2222-4222-8222-222222222222",
+        "device_id": "33333333-3333-4333-8333-333333333333",
+        "captured_at": "2026-09-06T07:00:00Z",
+        "snapshot": {
+          "registration_pending": false,
+          "current_device_id": "33333333-3333-4333-8333-333333333333",
+          "devices": []
+        }
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic_export_payload",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic_export_payload-extra",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false,
+        "unexpected": 1
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic_export_payload-missing-version",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic_export_journal",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/private/diagnostic_export_journal.schema.json",
+      "input": {
+        "schema_version": 1,
+        "export_id": "33333333-3333-4333-8333-333333333333",
+        "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "boot_id": "44444444-4444-4444-8444-444444444444",
+        "created_elapsed_ms": 10,
+        "ttl_seconds": 900,
+        "state": "ready"
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic_export_journal-extra",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/private/diagnostic_export_journal.schema.json",
+      "input": {
+        "schema_version": 1,
+        "export_id": "33333333-3333-4333-8333-333333333333",
+        "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "boot_id": "44444444-4444-4444-8444-444444444444",
+        "created_elapsed_ms": 10,
+        "ttl_seconds": 900,
+        "state": "ready",
+        "unexpected": 1
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic_export_journal-missing-version",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/private/diagnostic_export_journal.schema.json",
+      "input": {
+        "export_id": "33333333-3333-4333-8333-333333333333",
+        "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "boot_id": "44444444-4444-4444-8444-444444444444",
+        "created_elapsed_ms": 10,
+        "ttl_seconds": 900,
+        "state": "ready"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-title",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "title": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-business_payload",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "business_payload": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-conflict_candidate",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "conflict_candidate": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-token",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "token": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-cursor",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "cursor": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-account_id",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "account_id": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-device_id",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "device_id": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-directory",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "directory": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "FX-PRIVATE-diagnostic-denies-key_alias",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/7.6/IMP-10,8.2,13",
+      "schema": "sync/diagnostic_export_payload.schema.json",
+      "input": {
+        "schema_version": 1,
+        "native": {
+          "schema_version": 1,
+          "native_contract_version": 3,
+          "sync_protocol_version": 1,
+          "storage_format_version": 6,
+          "sync_enabled": false,
+          "pending_count_bucket": "1_99",
+          "oldest_pending_age_bucket": "under_72h",
+          "outbox_bytes_bucket": "under_64mib",
+          "failed_count": 0,
+          "unresolved_count": 0,
+          "unclaimed_notice_count": 0,
+          "native_blocked_reason": null,
+          "ack_watermark_dirty": true,
+          "bootstrap_active": false,
+          "import_active": true,
+          "key_alias": "must never be exported"
+        },
+        "android_api_bucket": "31_plus",
+        "transport_state": "offline",
+        "work_pending": true,
+        "network_available": false
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    }
+  ],
+  "samples": {
+    "workspace/private/crypto_destroy_final_receipt.schema.json": {
+      "schema_version": 1,
+      "account_id": "11111111-1111-4111-8111-111111111111",
+      "workspace_id": "22222222-2222-4222-8222-222222222222",
+      "operation_id": "33333333-3333-4333-8333-333333333333",
+      "device_id": "33333333-3333-4333-8333-333333333333",
+      "sync_transport_generation": 1,
+      "lifecycle_revision": 2,
+      "expected_source_lease_revision": 3,
+      "protected_owner_binding_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "source_workspace_id": "44444444-4444-4444-8444-444444444444",
+      "source_epoch": 0,
+      "import_lineage_id": "22222222-2222-4222-8222-222222222222",
+      "import_batch_id": "33333333-3333-4333-8333-333333333333",
+      "manifest_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "account_key_identity_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+      "state": "final",
+      "reason": "clear_rebuild"
+    },
+    "device/private/remote_snapshot_cache.schema.json": {
+      "schema_version": 1,
+      "account_id": "11111111-1111-4111-8111-111111111111",
+      "workspace_id": "22222222-2222-4222-8222-222222222222",
+      "device_id": "33333333-3333-4333-8333-333333333333",
+      "captured_at": "2026-09-06T07:00:00Z",
+      "snapshot": {
+        "registration_pending": false,
+        "current_device_id": "33333333-3333-4333-8333-333333333333",
+        "devices": []
+      }
+    },
+    "sync/diagnostic_export_payload.schema.json": {
+      "schema_version": 1,
+      "native": {
+        "schema_version": 1,
+        "native_contract_version": 3,
+        "sync_protocol_version": 1,
+        "storage_format_version": 6,
+        "sync_enabled": false,
+        "pending_count_bucket": "1_99",
+        "oldest_pending_age_bucket": "under_72h",
+        "outbox_bytes_bucket": "under_64mib",
+        "failed_count": 0,
+        "unresolved_count": 0,
+        "unclaimed_notice_count": 0,
+        "native_blocked_reason": null,
+        "ack_watermark_dirty": true,
+        "bootstrap_active": false,
+        "import_active": true
+      },
+      "android_api_bucket": "31_plus",
+      "transport_state": "offline",
+      "work_pending": true,
+      "network_available": false
+    },
+    "sync/private/diagnostic_export_journal.schema.json": {
+      "schema_version": 1,
+      "export_id": "33333333-3333-4333-8333-333333333333",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "boot_id": "44444444-4444-4444-8444-444444444444",
+      "created_elapsed_ms": 10,
+      "ttl_seconds": 900,
+      "state": "ready"
+    }
+  }
+}

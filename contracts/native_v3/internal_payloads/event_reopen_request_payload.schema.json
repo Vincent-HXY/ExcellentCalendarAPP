@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/event_reopen_request_payload.schema.json",
+  "title": "SyncV1 event_reopen_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Reopens one completed non-recurring Event and restores only future Reminder tasks cancelled with event_completed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

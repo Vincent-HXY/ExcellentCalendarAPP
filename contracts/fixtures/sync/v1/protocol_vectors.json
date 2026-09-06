@@ -1,0 +1,1974 @@
+{
+  "fixture_version": 1,
+  "scope": "schema_shapes_and_reference_decisions_not_signature_verification_or_full_saga",
+  "cases": [
+    {
+      "id": "FX-RUN-ack-only-empty-valid",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/6.2",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "ack_only",
+        "cursor": null,
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 0
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-RUN-ack-only-forbids-cursor",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/6.2",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "ack_only",
+        "cursor": "AAAAAAAAAAAAAAAA",
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 0
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-RUN-ack-only-forbids-download_limit",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/6.2",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "ack_only",
+        "cursor": null,
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 1
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-RUN-ack-only-forbids-acknowledged_client_sequence_through",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/6.2",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "ack_only",
+        "cursor": null,
+        "acknowledged_client_sequence_through": null,
+        "upload_mutations": [],
+        "download_limit": 0
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-RUN-ack-only-forbids-account_id",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/6.2",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "ack_only",
+        "cursor": null,
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 0,
+        "account_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-RUN-normal-pull-only-valid",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/6.2",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "normal",
+        "cursor": "AAAAAAAAAAAAAAAA",
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 500
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CURSOR-opaque-cursor-null",
+      "family": "FX-CURSOR",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "normal",
+        "cursor": null,
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CURSOR-opaque-cursor-padding",
+      "family": "FX-CURSOR",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "normal",
+        "cursor": "AAAAAAAAAAAAAAA=",
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CURSOR-opaque-cursor-impossible-length",
+      "family": "FX-CURSOR",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "normal",
+        "cursor": "AAAAAAAAAAAAAAAAA",
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CURSOR-opaque-cursor-nonzero-unused-bits",
+      "family": "FX-CURSOR",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "normal",
+        "cursor": "AAAAAAAAAAAAAAAAAB",
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CURSOR-opaque-cursor-too-long",
+      "family": "FX-CURSOR",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_exchange_request.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "mode": "normal",
+        "cursor": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "acknowledged_client_sequence_through": 0,
+        "upload_mutations": [],
+        "download_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SEQUENCE-fresh-sequence-bundle",
+      "family": "FX-SEQUENCE",
+      "rule_anchor": "cloud-sync-02/6.1",
+      "validation": "schema_only",
+      "schema": "sync/sync_sequence_recovery_bundle.schema.json",
+      "input": {
+        "sync_transport_generation": 1,
+        "highest_client_sequence": 0,
+        "next_client_sequence": 1,
+        "client_confirmed_through": 0,
+        "client_sequence_exhausted": false
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SEQUENCE-exhausted-sequence-bundle",
+      "family": "FX-SEQUENCE",
+      "rule_anchor": "cloud-sync-02/6.1",
+      "validation": "schema_only",
+      "schema": "sync/sync_sequence_recovery_bundle.schema.json",
+      "input": {
+        "sync_transport_generation": 1,
+        "highest_client_sequence": 9007199254740991,
+        "next_client_sequence": null,
+        "client_confirmed_through": 0,
+        "client_sequence_exhausted": true
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SEQUENCE-exhausted-cannot-have-next",
+      "family": "FX-SEQUENCE",
+      "rule_anchor": "cloud-sync-02/6.1",
+      "validation": "schema_only",
+      "schema": "sync/sync_sequence_recovery_bundle.schema.json",
+      "input": {
+        "sync_transport_generation": 1,
+        "highest_client_sequence": 9007199254740991,
+        "next_client_sequence": 1,
+        "client_confirmed_through": 0,
+        "client_sequence_exhausted": true
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-empty-terminal-page",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_bootstrap_page_response.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "bootstrap_id": "22222222-2222-4222-8222-222222222222",
+        "account_generation": 0,
+        "snapshot_upper_bound": 0,
+        "device_highest_client_sequence_at_snapshot": 0,
+        "device_client_confirmed_through_at_snapshot": 0,
+        "device_next_client_sequence_at_snapshot": 1,
+        "device_client_sequence_exhausted_at_snapshot": false,
+        "retention_floor_server_sequence": 0,
+        "resolved_conflict_cleanup_before": "2026-09-05T01:00:00Z",
+        "expires_at": "2026-09-06T01:00:00Z",
+        "page_ordinal": 0,
+        "page_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "items": [],
+        "next_bootstrap_cursor": null,
+        "has_more": false,
+        "terminal_sync_cursor": "AAAAAAAAAAAAAAAA",
+        "snapshot_item_count": 0,
+        "snapshot_items_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "total_page_count": 1,
+        "page_item_limit": 500
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-terminal-page-invalid-has_more",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_bootstrap_page_response.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "bootstrap_id": "22222222-2222-4222-8222-222222222222",
+        "account_generation": 0,
+        "snapshot_upper_bound": 0,
+        "device_highest_client_sequence_at_snapshot": 0,
+        "device_client_confirmed_through_at_snapshot": 0,
+        "device_next_client_sequence_at_snapshot": 1,
+        "device_client_sequence_exhausted_at_snapshot": false,
+        "retention_floor_server_sequence": 0,
+        "resolved_conflict_cleanup_before": "2026-09-05T01:00:00Z",
+        "expires_at": "2026-09-06T01:00:00Z",
+        "page_ordinal": 0,
+        "page_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "items": [],
+        "next_bootstrap_cursor": null,
+        "has_more": true,
+        "terminal_sync_cursor": "AAAAAAAAAAAAAAAA",
+        "snapshot_item_count": 0,
+        "snapshot_items_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "total_page_count": 1,
+        "page_item_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-terminal-page-invalid-next_bootstrap_cursor",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_bootstrap_page_response.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "bootstrap_id": "22222222-2222-4222-8222-222222222222",
+        "account_generation": 0,
+        "snapshot_upper_bound": 0,
+        "device_highest_client_sequence_at_snapshot": 0,
+        "device_client_confirmed_through_at_snapshot": 0,
+        "device_next_client_sequence_at_snapshot": 1,
+        "device_client_sequence_exhausted_at_snapshot": false,
+        "retention_floor_server_sequence": 0,
+        "resolved_conflict_cleanup_before": "2026-09-05T01:00:00Z",
+        "expires_at": "2026-09-06T01:00:00Z",
+        "page_ordinal": 0,
+        "page_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "items": [],
+        "next_bootstrap_cursor": "AAAAAAAAAAAAAAAA",
+        "has_more": false,
+        "terminal_sync_cursor": "AAAAAAAAAAAAAAAA",
+        "snapshot_item_count": 0,
+        "snapshot_items_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "total_page_count": 1,
+        "page_item_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-terminal-page-invalid-terminal_sync_cursor",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_bootstrap_page_response.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "bootstrap_id": "22222222-2222-4222-8222-222222222222",
+        "account_generation": 0,
+        "snapshot_upper_bound": 0,
+        "device_highest_client_sequence_at_snapshot": 0,
+        "device_client_confirmed_through_at_snapshot": 0,
+        "device_next_client_sequence_at_snapshot": 1,
+        "device_client_sequence_exhausted_at_snapshot": false,
+        "retention_floor_server_sequence": 0,
+        "resolved_conflict_cleanup_before": "2026-09-05T01:00:00Z",
+        "expires_at": "2026-09-06T01:00:00Z",
+        "page_ordinal": 0,
+        "page_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "items": [],
+        "next_bootstrap_cursor": null,
+        "has_more": false,
+        "terminal_sync_cursor": null,
+        "snapshot_item_count": 0,
+        "snapshot_items_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "total_page_count": 1,
+        "page_item_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-terminal-page-invalid-device_next_client_sequence_at_snapshot",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_bootstrap_page_response.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "bootstrap_id": "22222222-2222-4222-8222-222222222222",
+        "account_generation": 0,
+        "snapshot_upper_bound": 0,
+        "device_highest_client_sequence_at_snapshot": 0,
+        "device_client_confirmed_through_at_snapshot": 0,
+        "device_next_client_sequence_at_snapshot": null,
+        "device_client_sequence_exhausted_at_snapshot": false,
+        "retention_floor_server_sequence": 0,
+        "resolved_conflict_cleanup_before": "2026-09-05T01:00:00Z",
+        "expires_at": "2026-09-06T01:00:00Z",
+        "page_ordinal": 0,
+        "page_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "items": [],
+        "next_bootstrap_cursor": null,
+        "has_more": false,
+        "terminal_sync_cursor": "AAAAAAAAAAAAAAAA",
+        "snapshot_item_count": 0,
+        "snapshot_items_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "total_page_count": 1,
+        "page_item_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-BOOTSTRAP-terminal-page-invalid-device_client_confirmed_through_at_snapshot",
+      "family": "FX-BOOTSTRAP",
+      "rule_anchor": "cloud-sync-02/6.3",
+      "validation": "schema_only",
+      "schema": "sync/sync_bootstrap_page_response.schema.json",
+      "input": {
+        "protocol_version": 1,
+        "device_id": "11111111-1111-4111-8111-111111111111",
+        "sync_transport_generation": 0,
+        "bootstrap_id": "22222222-2222-4222-8222-222222222222",
+        "account_generation": 0,
+        "snapshot_upper_bound": 0,
+        "device_highest_client_sequence_at_snapshot": 0,
+        "device_client_confirmed_through_at_snapshot": null,
+        "device_next_client_sequence_at_snapshot": 1,
+        "device_client_sequence_exhausted_at_snapshot": false,
+        "retention_floor_server_sequence": 0,
+        "resolved_conflict_cleanup_before": "2026-09-05T01:00:00Z",
+        "expires_at": "2026-09-06T01:00:00Z",
+        "page_ordinal": 0,
+        "page_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "items": [],
+        "next_bootstrap_cursor": null,
+        "has_more": false,
+        "terminal_sync_cursor": "AAAAAAAAAAAAAAAA",
+        "snapshot_item_count": 0,
+        "snapshot_items_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "total_page_count": 1,
+        "page_item_limit": 500
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-WORKSPACE-route-empty",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "workspace/workspace_route_state.schema.json",
+      "input": {
+        "route_state": "empty",
+        "active_workspace_id": null,
+        "workspace_kind": null,
+        "runtime_instance_id": null,
+        "lock_reason": null,
+        "active_route_revision": 0
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-WORKSPACE-route-empty-forbids-private-key",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "workspace/workspace_route_state.schema.json",
+      "input": {
+        "route_state": "empty",
+        "active_workspace_id": null,
+        "workspace_kind": null,
+        "runtime_instance_id": null,
+        "lock_reason": null,
+        "active_route_revision": 0,
+        "key_alias": "synthetic-private"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-WORKSPACE-route-empty-forbids-old-runtime",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "workspace/workspace_route_state.schema.json",
+      "input": {
+        "route_state": "empty",
+        "active_workspace_id": null,
+        "workspace_kind": null,
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "lock_reason": null,
+        "active_route_revision": 0
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-WORKSPACE-route-ready",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "workspace/workspace_route_state.schema.json",
+      "input": {
+        "route_state": "ready",
+        "active_workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "lock_reason": null,
+        "active_route_revision": 0
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-WORKSPACE-route-ready-forbids-private-key",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "workspace/workspace_route_state.schema.json",
+      "input": {
+        "route_state": "ready",
+        "active_workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "lock_reason": null,
+        "active_route_revision": 0,
+        "key_alias": "synthetic-private"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-WORKSPACE-route-locked",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "workspace/workspace_route_state.schema.json",
+      "input": {
+        "route_state": "locked",
+        "active_workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": null,
+        "lock_reason": "WORKSPACE_KEY_UNAVAILABLE",
+        "active_route_revision": 0
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-WORKSPACE-route-locked-forbids-private-key",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "workspace/workspace_route_state.schema.json",
+      "input": {
+        "route_state": "locked",
+        "active_workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": null,
+        "lock_reason": "WORKSPACE_KEY_UNAVAILABLE",
+        "active_route_revision": 0,
+        "key_alias": "synthetic-private"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-WORKSPACE-route-locked-forbids-old-runtime",
+      "family": "FX-WORKSPACE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "workspace/workspace_route_state.schema.json",
+      "input": {
+        "route_state": "locked",
+        "active_workspace_id": "11111111-1111-4111-8111-111111111111",
+        "workspace_kind": "account",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "lock_reason": "WORKSPACE_KEY_UNAVAILABLE",
+        "active_route_revision": 0
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-empty",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "empty",
+        "session_generation": null,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-empty-no-refresh-token",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "empty",
+        "session_generation": null,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        },
+        "refresh_token": "synthetic"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-pending_adoption",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "pending_adoption",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-pending_adoption-no-refresh-token",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "pending_adoption",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        },
+        "refresh_token": "synthetic"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-registration_pending",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "registration_pending",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": true,
+          "can_open_account_workspace": false
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-registration_pending-no-refresh-token",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "registration_pending",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": true,
+          "can_open_account_workspace": false
+        },
+        "refresh_token": "synthetic"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-active",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "active",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": true,
+          "can_manage_devices": true,
+          "can_open_account_workspace": true
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-active-no-refresh-token",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "active",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": true,
+          "can_manage_devices": true,
+          "can_open_account_workspace": true
+        },
+        "refresh_token": "synthetic"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-refreshing",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "refreshing",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": true,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-refreshing-no-refresh-token",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "refreshing",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": true,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        },
+        "refresh_token": "synthetic"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-reauth_required",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "reauth_required",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-reauth_required-no-refresh-token",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "reauth_required",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        },
+        "refresh_token": "synthetic"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-terminating",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "terminating",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-session-terminating-no-refresh-token",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/session_status_response.schema.json",
+      "input": {
+        "state": "terminating",
+        "session_generation": 0,
+        "capabilities": {
+          "can_request_access_token": false,
+          "can_manage_devices": false,
+          "can_open_account_workspace": false
+        },
+        "refresh_token": "synthetic"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-capability-unregistered-device.list",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "backend_capability",
+      "input": {
+        "registration_state": "unregistered",
+        "operation": "device.list"
+      },
+      "expected": {
+        "value": false,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-capability-unregistered-auth.token.refresh",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "backend_capability",
+      "input": {
+        "registration_state": "unregistered",
+        "operation": "auth.token.refresh"
+      },
+      "expected": {
+        "value": true,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-capability-pending_registration-device.list",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "backend_capability",
+      "input": {
+        "registration_state": "pending_registration",
+        "operation": "device.list"
+      },
+      "expected": {
+        "value": true,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-capability-pending_registration-device.revoke",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "backend_capability",
+      "input": {
+        "registration_state": "pending_registration",
+        "operation": "device.revoke"
+      },
+      "expected": {
+        "value": true,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-capability-pending_registration-preferences.update",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "backend_capability",
+      "input": {
+        "registration_state": "pending_registration",
+        "operation": "preferences.update"
+      },
+      "expected": {
+        "value": false,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-capability-pending_registration-sync.exchange",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "backend_capability",
+      "input": {
+        "registration_state": "pending_registration",
+        "operation": "sync.exchange"
+      },
+      "expected": {
+        "value": false,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-capability-unregistered-future.unknown",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "backend_capability",
+      "input": {
+        "registration_state": "unregistered",
+        "operation": "future.unknown"
+      },
+      "expected": {
+        "value": false,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-capability-pending_registration-future.unknown",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "backend_capability",
+      "input": {
+        "registration_state": "pending_registration",
+        "operation": "future.unknown"
+      },
+      "expected": {
+        "value": false,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-device-name-normalize",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "device_name",
+      "input": {
+        "manufacturer": " Google\t",
+        "model": "Google  Pixel\n 9"
+      },
+      "expected": {
+        "value": "Google Pixel 9",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-device-name-empty",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "device_name",
+      "input": {
+        "manufacturer": "",
+        "model": "　"
+      },
+      "expected": {
+        "value": "Android 设备",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-SESSION-DEVICE-device-name-codepoint-boundary",
+      "family": "FX-SESSION-DEVICE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "device_name",
+      "input": {
+        "manufacturer": "牌",
+        "model": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      },
+      "expected": {
+        "value": "牌 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-0",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "local",
+        "globally_blocked": true
+      },
+      "expected": {
+        "value": "local_only",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-1",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "identity_valid": false,
+        "globally_blocked": true
+      },
+      "expected": {
+        "value": "auth_required",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-2",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "globally_blocked": true,
+        "rebuilding": true
+      },
+      "expected": {
+        "value": "blocked",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-3",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "rebuilding": true,
+        "running": true
+      },
+      "expected": {
+        "value": "rebuilding",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-4",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "running": true,
+        "enabled": false
+      },
+      "expected": {
+        "value": "syncing",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-5",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "logout_authorized_queued": true,
+        "enabled": false
+      },
+      "expected": {
+        "value": "queued",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-6",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "enabled": false,
+        "pending": 2,
+        "online": false
+      },
+      "expected": {
+        "value": "paused",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-7",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "pending": 2,
+        "online": false,
+        "ordinary_queued": true
+      },
+      "expected": {
+        "value": "offline_pending",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-8",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "ordinary_queued": true,
+        "recoverable_failure": true
+      },
+      "expected": {
+        "value": "queued",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-9",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account",
+        "recoverable_failure": true
+      },
+      "expected": {
+        "value": "failed",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RUN-phase-priority-10",
+      "family": "FX-RUN",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "sync_phase",
+      "input": {
+        "workspace_kind": "account"
+      },
+      "expected": {
+        "value": "idle",
+        "error": null
+      }
+    },
+    {
+      "id": "FX-MAINTENANCE-retry-first",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/12",
+      "validation": "reference_decision",
+      "operation": "retry_delay",
+      "input": {
+        "attempt": 0,
+        "jitter_fraction": 1
+      },
+      "expected": {
+        "value": 5,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-MAINTENANCE-retry-last",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/12",
+      "validation": "reference_decision",
+      "operation": "retry_delay",
+      "input": {
+        "attempt": 7,
+        "jitter_fraction": 1
+      },
+      "expected": {
+        "value": 640,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-MAINTENANCE-retry-hint",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/12",
+      "validation": "reference_decision",
+      "operation": "retry_delay",
+      "input": {
+        "attempt": 0,
+        "jitter_fraction": 0,
+        "retry_after": 60,
+        "retry_after_header": 60
+      },
+      "expected": {
+        "value": 60,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-MAINTENANCE-retry-mismatch",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/12",
+      "validation": "reference_decision",
+      "operation": "retry_delay",
+      "input": {
+        "attempt": 0,
+        "jitter_fraction": 0,
+        "retry_after": 60,
+        "retry_after_header": 30
+      },
+      "expected": {
+        "value": null,
+        "error": "SYNC_PAYLOAD_INVALID"
+      }
+    },
+    {
+      "id": "FX-MAINTENANCE-retry-exhausted",
+      "family": "FX-MAINTENANCE",
+      "rule_anchor": "cloud-sync-02/12",
+      "validation": "reference_decision",
+      "operation": "retry_delay",
+      "input": {
+        "attempt": 8,
+        "jitter_fraction": 0
+      },
+      "expected": {
+        "value": null,
+        "error": "RETRY_BUDGET_EXHAUSTED"
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-private-trusted-deadline",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/private/retention_deadline_record.schema.json",
+      "input": {
+        "retention_started_at": "2026-08-06T00:00:00Z",
+        "retained_until": "2026-09-05T00:00:00Z",
+        "server_time_anchor": "2026-08-06T00:00:00Z",
+        "elapsed_realtime_at_anchor": 1000,
+        "boot_id": "11111111-1111-4111-8111-111111111111",
+        "retention_clock_state": "trusted",
+        "lifecycle_revision": 1
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-retained-cannot-null-deadline",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "auth/private/retention_deadline_record.schema.json",
+      "input": {
+        "retention_started_at": "2026-08-06T00:00:00Z",
+        "retained_until": null,
+        "server_time_anchor": "2026-08-06T00:00:00Z",
+        "elapsed_realtime_at_anchor": 1000,
+        "boot_id": "11111111-1111-4111-8111-111111111111",
+        "retention_clock_state": "trusted",
+        "lifecycle_revision": 1
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-retention-reboot",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "retention_due",
+      "input": {
+        "record": {
+          "retention_started_at": "2026-08-06T00:00:00Z",
+          "retained_until": "2026-09-05T00:00:00Z",
+          "server_time_anchor": "2026-08-06T00:00:00Z",
+          "elapsed_realtime_at_anchor": 1000,
+          "boot_id": "11111111-1111-4111-8111-111111111111",
+          "retention_clock_state": "trusted",
+          "lifecycle_revision": 1
+        },
+        "current_boot_id": "22222222-2222-4222-8222-222222222222",
+        "elapsed_ms": 9007199254740991
+      },
+      "expected": {
+        "value": false,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-retention-before",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "retention_due",
+      "input": {
+        "record": {
+          "retention_started_at": "2026-08-06T00:00:00Z",
+          "retained_until": "2026-09-05T00:00:00Z",
+          "server_time_anchor": "2026-08-06T00:00:00Z",
+          "elapsed_realtime_at_anchor": 1000,
+          "boot_id": "11111111-1111-4111-8111-111111111111",
+          "retention_clock_state": "trusted",
+          "lifecycle_revision": 1
+        },
+        "https_time_lower_bound": "2026-09-04T23:59:59Z"
+      },
+      "expected": {
+        "value": false,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-retention-due",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "retention_due",
+      "input": {
+        "record": {
+          "retention_started_at": "2026-08-06T00:00:00Z",
+          "retained_until": "2026-09-05T00:00:00Z",
+          "server_time_anchor": "2026-08-06T00:00:00Z",
+          "elapsed_realtime_at_anchor": 1000,
+          "boot_id": "11111111-1111-4111-8111-111111111111",
+          "retention_clock_state": "trusted",
+          "lifecycle_revision": 1
+        },
+        "https_time_lower_bound": "2026-09-05T00:00:00Z"
+      },
+      "expected": {
+        "value": true,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-retention-same-boot",
+      "family": "FX-RETENTION-NOTIFY",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "reference_decision",
+      "operation": "retention_due",
+      "input": {
+        "record": {
+          "retention_started_at": "2026-08-06T00:00:00Z",
+          "retained_until": "2026-09-05T00:00:00Z",
+          "server_time_anchor": "2026-08-06T00:00:00Z",
+          "elapsed_realtime_at_anchor": 1000,
+          "boot_id": "11111111-1111-4111-8111-111111111111",
+          "retention_clock_state": "trusted",
+          "lifecycle_revision": 1
+        },
+        "current_boot_id": "11111111-1111-4111-8111-111111111111",
+        "elapsed_ms": 2592001000
+      },
+      "expected": {
+        "value": true,
+        "error": null
+      }
+    },
+    {
+      "id": "FX-PREFERENCE-workspace-history-valid",
+      "family": "FX-PREFERENCE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "native_v3/search/workspace_history_response.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "active_route_revision": 1,
+        "history_revision": 0,
+        "normalized_display_keywords": [
+          "项目 😀",
+          "会议"
+        ]
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-PREFERENCE-workspace-history-too-long",
+      "family": "FX-PREFERENCE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "native_v3/search/workspace_history_response.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "active_route_revision": 1,
+        "history_revision": 0,
+        "normalized_display_keywords": [
+          "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        ]
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-PREFERENCE-workspace-history-no-target-id",
+      "family": "FX-PREFERENCE",
+      "rule_anchor": "cloud-sync-02/8",
+      "validation": "schema_only",
+      "schema": "native_v3/search/workspace_history_response.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "active_route_revision": 1,
+        "history_revision": 0,
+        "normalized_display_keywords": [
+          "项目 😀",
+          "会议"
+        ],
+        "target_id": "22222222-2222-4222-8222-222222222222"
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CROSS-LAYER-error-SYNC_CLIENT_SEQUENCE_EXHAUSTED",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/12,13.2",
+      "validation": "schema_only",
+      "schema": "native_v3/common/native_error.schema.json",
+      "input": {
+        "code": "SYNC_CLIENT_SEQUENCE_EXHAUSTED",
+        "message": "固定测试错误",
+        "retryable": false,
+        "context": {
+          "counter_kind": "client_sequence"
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CROSS-LAYER-error-SYNC_CLIENT_SEQUENCE_EXHAUSTED-null-context",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/12,13.2",
+      "validation": "schema_only",
+      "schema": "native_v3/common/native_error.schema.json",
+      "input": {
+        "code": "SYNC_CLIENT_SEQUENCE_EXHAUSTED",
+        "message": "固定测试错误",
+        "retryable": false,
+        "context": null
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CROSS-LAYER-error-SYNC_COUNTER_EXHAUSTED",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/12,13.2",
+      "validation": "schema_only",
+      "schema": "native_v3/common/native_error.schema.json",
+      "input": {
+        "code": "SYNC_COUNTER_EXHAUSTED",
+        "message": "固定测试错误",
+        "retryable": false,
+        "context": {
+          "counter_kind": "recurrence_revision"
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CROSS-LAYER-error-SYNC_COUNTER_EXHAUSTED-null-context",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/12,13.2",
+      "validation": "schema_only",
+      "schema": "native_v3/common/native_error.schema.json",
+      "input": {
+        "code": "SYNC_COUNTER_EXHAUSTED",
+        "message": "固定测试错误",
+        "retryable": false,
+        "context": null
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CROSS-LAYER-error-RETENTION_TRUSTED_TIME_REQUIRED",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/12,13.2",
+      "validation": "schema_only",
+      "schema": "native_v3/common/native_error.schema.json",
+      "input": {
+        "code": "RETENTION_TRUSTED_TIME_REQUIRED",
+        "message": "固定测试错误",
+        "retryable": false,
+        "context": {
+          "logout_operation_id": "11111111-1111-4111-8111-111111111111",
+          "logout_risk_revision": 1,
+          "allowed_cache_policies": [
+            "destroy_now"
+          ]
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CROSS-LAYER-error-RETENTION_TRUSTED_TIME_REQUIRED-null-context",
+      "family": "FX-CROSS-LAYER",
+      "rule_anchor": "cloud-sync-02/12,13.2",
+      "validation": "schema_only",
+      "schema": "native_v3/common/native_error.schema.json",
+      "input": {
+        "code": "RETENTION_TRUSTED_TIME_REQUIRED",
+        "message": "固定测试错误",
+        "retryable": false,
+        "context": null
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-keep_local",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/resolve_sync_conflict_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "expected_conflict_version": 1,
+        "resolution": {
+          "mode": "keep_local",
+          "group_choices": [],
+          "manual_candidate": null
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-no-sequence-keep_local",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/resolve_sync_conflict_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "expected_conflict_version": 1,
+        "resolution": {
+          "mode": "keep_local",
+          "group_choices": [],
+          "manual_candidate": null
+        },
+        "client_sequence": 1
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-keep_remote",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/resolve_sync_conflict_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "expected_conflict_version": 1,
+        "resolution": {
+          "mode": "keep_remote",
+          "group_choices": [],
+          "manual_candidate": null
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-no-sequence-keep_remote",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/resolve_sync_conflict_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "expected_conflict_version": 1,
+        "resolution": {
+          "mode": "keep_remote",
+          "group_choices": [],
+          "manual_candidate": null
+        },
+        "client_sequence": 1
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-per_field",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/resolve_sync_conflict_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "expected_conflict_version": 1,
+        "resolution": {
+          "mode": "per_field",
+          "group_choices": [
+            {
+              "key": {
+                "target_type": "category",
+                "target_id": "11111111-1111-4111-8111-111111111111",
+                "merge_key": "name"
+              },
+              "source": "local"
+            }
+          ],
+          "manual_candidate": null
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-no-sequence-per_field",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/resolve_sync_conflict_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "expected_conflict_version": 1,
+        "resolution": {
+          "mode": "per_field",
+          "group_choices": [
+            {
+              "key": {
+                "target_type": "category",
+                "target_id": "11111111-1111-4111-8111-111111111111",
+                "merge_key": "name"
+              },
+              "source": "local"
+            }
+          ],
+          "manual_candidate": null
+        },
+        "client_sequence": 1
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-manual_edit",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/resolve_sync_conflict_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "expected_conflict_version": 1,
+        "resolution": {
+          "mode": "manual_edit",
+          "group_choices": [],
+          "manual_candidate": {
+            "target_type": "category",
+            "target_id": "00000002-1111-4111-8111-111111111111",
+            "fact": {
+              "id": "00000002-1111-4111-8111-111111111111",
+              "name": "工作",
+              "description": null,
+              "color": "#39AFBD",
+              "icon": null,
+              "sort_order": 1,
+              "created_at": "2026-09-05T01:00:00Z",
+              "updated_at": "2026-09-05T01:00:00Z",
+              "deleted_at": null,
+              "reorder_revision": 0
+            }
+          }
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-no-sequence-manual_edit",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/resolve_sync_conflict_request.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "expected_active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "expected_conflict_version": 1,
+        "resolution": {
+          "mode": "manual_edit",
+          "group_choices": [],
+          "manual_candidate": {
+            "target_type": "category",
+            "target_id": "00000002-1111-4111-8111-111111111111",
+            "fact": {
+              "id": "00000002-1111-4111-8111-111111111111",
+              "name": "工作",
+              "description": null,
+              "color": "#39AFBD",
+              "icon": null,
+              "sort_order": 1,
+              "created_at": "2026-09-05T01:00:00Z",
+              "updated_at": "2026-09-05T01:00:00Z",
+              "deleted_at": null,
+              "reorder_revision": 0
+            }
+          }
+        },
+        "client_sequence": 1
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-CONFLICT-public-resolve-queued",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/sync_conflict_resolution_response.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "disposition": "queued",
+        "status": "resolving",
+        "conflict_version": 1,
+        "status_revision": 2
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-CONFLICT-queue-cannot-be-resolved",
+      "family": "FX-CONFLICT",
+      "rule_anchor": "cloud-sync-02/7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/sync_conflict_resolution_response.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "active_route_revision": 0,
+        "conflict_id": "22222222-2222-4222-8222-222222222222",
+        "disposition": "queued",
+        "status": "resolved",
+        "conflict_version": 1,
+        "status_revision": 2
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "FX-FAILED-LOCAL-failed-preference-candidate",
+      "family": "FX-FAILED-LOCAL",
+      "rule_anchor": "cloud-sync-02/6.2,7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/sync_failed_local_change_detail.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "active_route_revision": 0,
+        "summary": {
+          "failed_change_id": "22222222-2222-4222-8222-222222222222",
+          "failed_change_revision": 1,
+          "target_type": "user_preferences",
+          "target_id": "00000001-1111-4111-8111-111111111111",
+          "created_at": "2026-09-05T01:00:00Z",
+          "failure": {
+            "code": "SYNC_CHANGE_GROUP_TOO_LARGE",
+            "context": null
+          },
+          "state": "active"
+        },
+        "local_candidate": {
+          "target_type": "user_preferences",
+          "target_id": "00000001-1111-4111-8111-111111111111",
+          "fact": {
+            "timezone": "Asia/Shanghai",
+            "habit_progress_color": "teal",
+            "default_reminder_methods": [
+              "ring",
+              "popup"
+            ],
+            "auto_enable_reminders_on_other_devices": false
+          }
+        },
+        "manual_draft": null,
+        "server_baseline": {
+          "kind": "unavailable"
+        },
+        "can_edit_as_new": true,
+        "can_discard": true
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-FAILED-LOCAL-failed-cannot-auto-retry",
+      "family": "FX-FAILED-LOCAL",
+      "rule_anchor": "cloud-sync-02/6.2,7.5,8",
+      "validation": "schema_only",
+      "schema": "sync/sync_failed_local_change_detail.schema.json",
+      "input": {
+        "workspace_id": "11111111-1111-4111-8111-111111111111",
+        "runtime_instance_id": "22222222-2222-4222-8222-222222222222",
+        "active_route_revision": 0,
+        "summary": {
+          "failed_change_id": "22222222-2222-4222-8222-222222222222",
+          "failed_change_revision": 1,
+          "target_type": "user_preferences",
+          "target_id": "00000001-1111-4111-8111-111111111111",
+          "created_at": "2026-09-05T01:00:00Z",
+          "failure": {
+            "code": "SYNC_CHANGE_GROUP_TOO_LARGE",
+            "context": null
+          },
+          "state": "active"
+        },
+        "local_candidate": {
+          "target_type": "user_preferences",
+          "target_id": "00000001-1111-4111-8111-111111111111",
+          "fact": {
+            "timezone": "Asia/Shanghai",
+            "habit_progress_color": "teal",
+            "default_reminder_methods": [
+              "ring",
+              "popup"
+            ],
+            "auto_enable_reminders_on_other_devices": false
+          }
+        },
+        "manual_draft": null,
+        "server_baseline": {
+          "kind": "unavailable"
+        },
+        "can_edit_as_new": true,
+        "can_discard": true,
+        "retry_original_sequence": true
+      },
+      "expected": {
+        "valid": false
+      }
+    }
+  ]
+}

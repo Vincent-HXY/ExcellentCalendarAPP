@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/import_takeover_response.schema.json",
+  "title": "SyncV1 import_takeover_response",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.6/IMP-07",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "disposition",
+        "proof",
+        "current_head"
+      ],
+      "properties": {
+        "disposition": {
+          "enum": [
+            "range_closed",
+            "already_range_closed"
+          ]
+        },
+        "proof": {
+          "$ref": "https://excellent-calendar.local/contracts/sync/import_range_close_proof.schema.json"
+        },
+        "current_head": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "current_head_batch_id",
+            "current_import_revision"
+          ],
+          "properties": {
+            "current_head_batch_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "current_import_revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "disposition",
+        "publication",
+        "current_head"
+      ],
+      "properties": {
+        "disposition": {
+          "const": "already_confirmed"
+        },
+        "publication": {
+          "$ref": "https://excellent-calendar.local/contracts/sync/import_publication_evidence.schema.json"
+        },
+        "current_head": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "current_head_batch_id",
+            "current_import_revision"
+          ],
+          "properties": {
+            "current_head_batch_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "current_import_revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      }
+    }
+  ]
+}

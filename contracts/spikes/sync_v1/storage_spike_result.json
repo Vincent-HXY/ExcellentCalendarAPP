@@ -1,0 +1,4127 @@
+{
+  "spike_version": 1,
+  "passed": true,
+  "production_migration_activated": false,
+  "account_encrypted_full_graph_verified": false,
+  "android_migration_verified": false,
+  "errors": [],
+  "sqlite": {
+    "passed": true,
+    "tests_run": 11,
+    "frozen_checker": "unchanged_production_cpp_v5",
+    "new_tables": 37,
+    "new_indexes": 12,
+    "transaction_rollback_boundaries": 128
+  },
+  "postgres": {
+    "passed": true,
+    "product_migration_executed": false,
+    "new_tables": 40,
+    "ddl_transaction_rollback": true,
+    "concurrent_last_allocation_winners": 1,
+    "columns": [
+      {
+        "type": "uuid",
+        "table": "account_profile_revisions",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "account_profile_revisions",
+        "column": "profile_revision",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "account_profile_revisions",
+        "column": "preferences_revision",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "account_profile_revisions",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "email_action_challenges",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "email_action_challenges",
+        "column": "user_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "email_action_challenges",
+        "column": "purpose",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "email_action_challenges",
+        "column": "target_email",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "email_action_challenges",
+        "column": "code_hash",
+        "nullable": "YES"
+      },
+      {
+        "type": "character varying",
+        "table": "email_action_challenges",
+        "column": "link_token_hash",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "table": "email_action_challenges",
+        "column": "failed_attempt_count",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "email_action_challenges",
+        "column": "max_attempts",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "email_action_challenges",
+        "column": "expires_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "email_action_challenges",
+        "column": "resend_available_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "email_action_challenges",
+        "column": "consumed_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "email_action_challenges",
+        "column": "invalidated_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "email_action_challenges",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "email_change_requests",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "email_change_requests",
+        "column": "user_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "email_change_requests",
+        "column": "old_email",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "email_change_requests",
+        "column": "new_email",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "email_change_requests",
+        "column": "challenge_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "email_change_requests",
+        "column": "status",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "email_change_requests",
+        "column": "expires_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "email_change_requests",
+        "column": "completed_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "email_change_requests",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "idempotency_records",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "idempotency_records",
+        "column": "scope",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "idempotency_records",
+        "column": "key_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "idempotency_records",
+        "column": "request_digest",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "table": "idempotency_records",
+        "column": "response_status",
+        "nullable": "YES"
+      },
+      {
+        "type": "bytea",
+        "table": "idempotency_records",
+        "column": "response_body",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "idempotency_records",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "idempotency_records",
+        "column": "expires_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "password_credentials",
+        "column": "user_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "password_credentials",
+        "column": "password_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "password_credentials",
+        "column": "algorithm",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "password_credentials",
+        "column": "password_changed_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "reauth_grants",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "reauth_grants",
+        "column": "token_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "reauth_grants",
+        "column": "session_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "reauth_grants",
+        "column": "actor_device_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "reauth_grants",
+        "column": "attempted_installation_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "reauth_grants",
+        "column": "target_device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "reauth_grants",
+        "column": "purpose",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "reauth_grants",
+        "column": "issued_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "reauth_grants",
+        "column": "expires_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "reauth_grants",
+        "column": "consumed_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "refresh_token_grants",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "refresh_token_grants",
+        "column": "session_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "refresh_token_grants",
+        "column": "token_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "refresh_token_grants",
+        "column": "parent_grant_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "refresh_token_grants",
+        "column": "issued_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "refresh_token_grants",
+        "column": "expires_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "refresh_token_grants",
+        "column": "consumed_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "refresh_token_grants",
+        "column": "revoked_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_account_sequences",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_account_sequences",
+        "column": "account_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_account_sequences",
+        "column": "highest_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_account_sequences",
+        "column": "next_server_sequence",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_account_sequences",
+        "column": "retention_floor",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_bootstrap_items",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_bootstrap_items",
+        "column": "bootstrap_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_items",
+        "column": "ordinal",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_bootstrap_items",
+        "column": "kind",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_bootstrap_items",
+        "column": "target_type",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_bootstrap_items",
+        "column": "entity_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_bootstrap_items",
+        "column": "conflict_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_bootstrap_items",
+        "column": "merge_key",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "table": "sync_bootstrap_items",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_bootstrap_items",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_bootstrap_items",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_bootstrap_sessions",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_bootstrap_sessions",
+        "column": "bootstrap_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_bootstrap_sessions",
+        "column": "device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_bootstrap_sessions",
+        "column": "cursor_key_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "sync_bootstrap_sessions",
+        "column": "protocol_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_sessions",
+        "column": "sync_transport_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_sessions",
+        "column": "account_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_sessions",
+        "column": "upper_bound",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_sessions",
+        "column": "retention_floor_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_bootstrap_sessions",
+        "column": "resolved_conflict_cleanup_before",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_sessions",
+        "column": "highest_client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_sessions",
+        "column": "client_confirmed_through",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_bootstrap_sessions",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_bootstrap_sessions",
+        "column": "expires_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_bootstrap_sessions",
+        "column": "superseded_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_sessions",
+        "column": "total_item_count",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_bootstrap_sessions",
+        "column": "snapshot_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_bootstrap_sessions",
+        "column": "total_page_count",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "sync_bootstrap_sessions",
+        "column": "page_item_limit",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_change_groups",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_change_groups",
+        "column": "group_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_change_groups",
+        "column": "account_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_change_groups",
+        "column": "first_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_change_groups",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_change_groups",
+        "column": "kind",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_change_groups",
+        "column": "group_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_change_groups",
+        "column": "canonical_bytes",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_change_groups",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_change_items",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_change_items",
+        "column": "group_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_change_items",
+        "column": "server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_change_items",
+        "column": "ordinal",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "sync_change_items",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_change_items",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_change_items",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_conflict_tombstone_pins",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_conflict_tombstone_pins",
+        "column": "conflict_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_conflict_tombstone_pins",
+        "column": "target_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_conflict_tombstone_pins",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_conflicts",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_conflicts",
+        "column": "conflict_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_conflicts",
+        "column": "target_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_conflicts",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_conflicts",
+        "column": "conflict_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_conflicts",
+        "column": "source_device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_conflicts",
+        "column": "status",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_conflicts",
+        "column": "received_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_conflicts",
+        "column": "resolved_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_conflicts",
+        "column": "retain_until",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "table": "sync_conflicts",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_conflicts",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_conflicts",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_cursor_key_usage",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_cursor_key_usage",
+        "column": "key_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_cursor_key_usage",
+        "column": "account_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_cursor_key_usage",
+        "column": "maximum_snapshot_upper_bound",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_cursor_key_usage",
+        "column": "bootstrap_valid_through",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_deleted_entity_anchors",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_deleted_entity_anchors",
+        "column": "target_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_deleted_entity_anchors",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_deleted_entity_anchors",
+        "column": "delete_entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_deleted_entity_anchors",
+        "column": "delete_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_deleted_entity_anchors",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_deleted_entity_anchors",
+        "column": "source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_deleted_entity_anchors",
+        "column": "source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_deleted_entity_anchors",
+        "column": "source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_device_causal_anchors",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_device_causal_anchors",
+        "column": "device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_device_causal_anchors",
+        "column": "target_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_device_causal_anchors",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_device_causal_anchors",
+        "column": "merge_key",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_device_causal_anchors",
+        "column": "client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_device_causal_anchors",
+        "column": "resulting_field_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_device_fence_receipts",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_device_fence_receipts",
+        "column": "device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_device_fence_receipts",
+        "column": "operation_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_device_fence_receipts",
+        "column": "expected_transport_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_device_fence_receipts",
+        "column": "resulting_transport_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_device_fence_receipts",
+        "column": "reason",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "sync_device_fence_receipts",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_device_fence_receipts",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_device_fence_receipts",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_device_state",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_device_state",
+        "column": "device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_device_state",
+        "column": "sync_transport_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_device_state",
+        "column": "highest_client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_device_state",
+        "column": "client_confirmed_through",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_device_state",
+        "column": "blocked_reason",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_device_state",
+        "column": "last_cursor_hash",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_device_state",
+        "column": "account_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_device_state",
+        "column": "last_sync_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_entity_field_versions",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_entity_field_versions",
+        "column": "target_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_entity_field_versions",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_entity_field_versions",
+        "column": "merge_key",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_entity_field_versions",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_anniversary",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_anniversary",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_anniversary",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_anniversary",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_anniversary",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary",
+        "column": "title",
+        "nullable": "NO"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_anniversary",
+        "column": "date",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary",
+        "column": "calendar_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary",
+        "column": "category_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary",
+        "column": "recurrence_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary",
+        "column": "note",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary",
+        "column": "importance",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_anniversary",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_anniversary",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_anniversary",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "recurrence_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "frequency",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "interval",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_anniversary_recurrence",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_category",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_category",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_category",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_category",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_category",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_category",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_category",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_category",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_category",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_category",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_category",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_category",
+        "column": "name",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_category",
+        "column": "description",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_category",
+        "column": "color",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_category",
+        "column": "icon",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_category",
+        "column": "sort_order",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_category",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_category",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_category",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_category",
+        "column": "reorder_revision",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_event",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "title",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "content",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event",
+        "column": "start_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event",
+        "column": "end_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_event",
+        "column": "start_date",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_event",
+        "column": "end_date",
+        "nullable": "YES"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_event",
+        "column": "is_all_day",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_event",
+        "column": "has_recurrence",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "status",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event",
+        "column": "completed_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event",
+        "column": "recurrence_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event",
+        "column": "recurrence_revision",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "category_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "importance",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "location",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "timezone",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event",
+        "column": "source",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "event_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "recurrence_revision",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "occurrence_key",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "occurrence_start_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "occurrence_start_date",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "status",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "state_changed_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "reopened_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_occurrence_state",
+        "column": "original_local_start",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_recurrence",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_recurrence",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_recurrence",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_recurrence",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_event_recurrence",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_recurrence",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_recurrence",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_recurrence",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_recurrence",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_recurrence",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_event_recurrence",
+        "column": "recurrence_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_recurrence",
+        "column": "revision",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_recurrence",
+        "column": "frequency",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_recurrence",
+        "column": "interval",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_recurrence",
+        "column": "start_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_event_recurrence",
+        "column": "start_date",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_recurrence",
+        "column": "timezone",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_event_recurrence",
+        "column": "day_of_month",
+        "nullable": "YES"
+      },
+      {
+        "type": "ARRAY",
+        "table": "sync_fact_event_recurrence",
+        "column": "days_of_week",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_recurrence",
+        "column": "month_of_year",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_recurrence",
+        "column": "end_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_event_recurrence",
+        "column": "count",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_event_recurrence",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_habit",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit",
+        "column": "title",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit",
+        "column": "description",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit",
+        "column": "category_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit",
+        "column": "recurrence_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit",
+        "column": "target_count_hundredths",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit",
+        "column": "unit",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_habit",
+        "column": "start_date",
+        "nullable": "NO"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_habit",
+        "column": "end_date",
+        "nullable": "NO"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_habit",
+        "column": "ended_date",
+        "nullable": "YES"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_habit",
+        "column": "is_active",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit",
+        "column": "first_check_in_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit_check_in",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_check_in",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_check_in",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_check_in",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_habit_check_in",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_check_in",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit_check_in",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit_check_in",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_check_in",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_check_in",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit_check_in",
+        "column": "habit_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "date",
+        "table": "sync_fact_habit_check_in",
+        "column": "check_date",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_check_in",
+        "column": "status",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_check_in",
+        "column": "completed_count_hundredths",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_check_in",
+        "column": "target_count_snapshot_hundredths",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_check_in",
+        "column": "unit_snapshot",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_check_in",
+        "column": "completed_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_check_in",
+        "column": "note",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_check_in",
+        "column": "source",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_check_in",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_check_in",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_check_in",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit_recurrence",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_recurrence",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_recurrence",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_recurrence",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_habit_recurrence",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_recurrence",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit_recurrence",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit_recurrence",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_recurrence",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_recurrence",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_habit_recurrence",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_recurrence",
+        "column": "frequency",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_habit_recurrence",
+        "column": "interval",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_habit_recurrence",
+        "column": "timezone_mode",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_recurrence",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_recurrence",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_habit_recurrence",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_reminder_intent",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_reminder_intent",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_reminder_intent",
+        "column": "owner_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_reminder_intent",
+        "column": "owner_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_reminder_intent",
+        "column": "is_enabled",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_reminder_intent",
+        "column": "entity_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_reminder_intent",
+        "column": "last_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_reminder_intent",
+        "column": "event_owner_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_reminder_intent",
+        "column": "anniversary_owner_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_reminder_intent",
+        "column": "habit_owner_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_fact_reminder_intent",
+        "column": "is_tombstone",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_reminder_intent",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_fact_reminder_intent",
+        "column": "tombstone_expires_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_reminder_intent",
+        "column": "import_lineage_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_fact_reminder_intent",
+        "column": "import_source_workspace_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_fact_reminder_intent",
+        "column": "import_source_epoch",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_fact_reminder_intent",
+        "column": "import_source_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_habit_check_in_operations",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_habit_check_in_operations",
+        "column": "operation_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_habit_check_in_operations",
+        "column": "habit_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "date",
+        "table": "sync_habit_check_in_operations",
+        "column": "check_date",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_habit_check_in_operations",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_habit_check_in_operations",
+        "column": "operation_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_habit_check_in_operations",
+        "column": "amount_hundredths",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_habit_check_in_operations",
+        "column": "operation_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_habit_check_in_operations",
+        "column": "applied",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_habit_check_in_operations",
+        "column": "effect_group_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_habit_check_in_operations",
+        "column": "effect_group_last_server_sequence",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_habit_check_in_operations",
+        "column": "effect_entity_version",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_habit_completion_barriers",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_habit_completion_barriers",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_habit_completion_barriers",
+        "column": "completion_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_absent_batch_fences",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_absent_batch_fences",
+        "column": "batch_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_absent_batch_fences",
+        "column": "origin_device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_absent_batch_fences",
+        "column": "origin_transport_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_absent_batch_fences",
+        "column": "manifest_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_absent_batch_fences",
+        "column": "begin_client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_absent_batch_fences",
+        "column": "terminal_client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_absent_batch_fences",
+        "column": "resolved_fence_operation_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "table": "sync_import_absent_batch_fences",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_import_absent_batch_fences",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_absent_batch_fences",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_batches",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_batches",
+        "column": "batch_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_batches",
+        "column": "lineage_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_batches",
+        "column": "predecessor_batch_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_batches",
+        "column": "origin_device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_batches",
+        "column": "origin_transport_generation",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_batches",
+        "column": "begin_client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_batches",
+        "column": "terminal_client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_batches",
+        "column": "total_item_count",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_batches",
+        "column": "total_canonical_bytes",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_batches",
+        "column": "manifest_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_batches",
+        "column": "mapping_digest",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_batches",
+        "column": "source_snapshot_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_batches",
+        "column": "stage",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_import_batches",
+        "column": "capacity_rejected",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_import_batches",
+        "column": "expires_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_import_batches",
+        "column": "published_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "table": "sync_import_batches",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_import_batches",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_batches",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_lineages",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_lineages",
+        "column": "lineage_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_lineages",
+        "column": "source_workspace_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_lineages",
+        "column": "source_epoch",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_lineages",
+        "column": "current_head_batch_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_lineages",
+        "column": "import_revision",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_import_lineages",
+        "column": "ever_published",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_lineages",
+        "column": "cleanup_confirmed_through_batch_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_lineages",
+        "column": "cleanup_confirmed_through_revision",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_mappings",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_mappings",
+        "column": "lineage_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_mappings",
+        "column": "source_workspace_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_mappings",
+        "column": "source_epoch",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_mappings",
+        "column": "target_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_mappings",
+        "column": "source_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_mappings",
+        "column": "target_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_mappings",
+        "column": "first_published_batch_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_mappings",
+        "column": "last_published_batch_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_mappings",
+        "column": "provenance_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_publish_markers",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_publish_markers",
+        "column": "batch_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_publish_markers",
+        "column": "lineage_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_publish_markers",
+        "column": "publish_group_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_publish_markers",
+        "column": "commit_server_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_publish_markers",
+        "column": "manifest_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_publish_markers",
+        "column": "mapping_digest",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "sync_import_publish_markers",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_import_publish_markers",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_publish_markers",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_receipts",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_receipts",
+        "column": "batch_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_receipts",
+        "column": "ordinal",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_receipts",
+        "column": "mutation_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_receipts",
+        "column": "client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "sync_import_receipts",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_import_receipts",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_receipts",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_recurrence_families",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_recurrence_families",
+        "column": "lineage_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_recurrence_families",
+        "column": "source_recurrence_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_recurrence_families",
+        "column": "target_recurrence_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_staging_items",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_import_staging_items",
+        "column": "batch_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_import_staging_items",
+        "column": "ordinal",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_staging_items",
+        "column": "target_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_staging_items",
+        "column": "entity_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_staging_items",
+        "column": "operation_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "sync_import_staging_items",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_import_staging_items",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_import_staging_items",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_mutation_receipts",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_mutation_receipts",
+        "column": "device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_mutation_receipts",
+        "column": "client_sequence",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_mutation_receipts",
+        "column": "mutation_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_mutation_receipts",
+        "column": "mutation_payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_mutation_receipts",
+        "column": "route",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_mutation_receipts",
+        "column": "status",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_mutation_receipts",
+        "column": "received_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_mutation_receipts",
+        "column": "retain_until",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "sync_mutation_receipts",
+        "column": "payload_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "sync_mutation_receipts",
+        "column": "payload_json",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_mutation_receipts",
+        "column": "payload_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "intent_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "owner_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "ordinal",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "advance_days",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "local_time",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "timezone_mode",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "method",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_reminder_anniversary_templates",
+        "column": "is_enabled",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_reminder_event_templates",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_reminder_event_templates",
+        "column": "intent_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_event_templates",
+        "column": "owner_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_reminder_event_templates",
+        "column": "ordinal",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "sync_reminder_event_templates",
+        "column": "remind_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_reminder_event_templates",
+        "column": "advance_minutes",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_event_templates",
+        "column": "method",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_event_templates",
+        "column": "message",
+        "nullable": "YES"
+      },
+      {
+        "type": "boolean",
+        "table": "sync_reminder_event_templates",
+        "column": "is_enabled",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_event_templates",
+        "column": "source",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_reminder_habit_templates",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "sync_reminder_habit_templates",
+        "column": "intent_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_habit_templates",
+        "column": "owner_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "sync_reminder_habit_templates",
+        "column": "ordinal",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_habit_templates",
+        "column": "local_time",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_habit_templates",
+        "column": "timezone_mode",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "sync_reminder_habit_templates",
+        "column": "method",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_accounts",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_accounts",
+        "column": "email",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_accounts",
+        "column": "normalized_email",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_accounts",
+        "column": "status",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_accounts",
+        "column": "email_verified_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_accounts",
+        "column": "disabled_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_accounts",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_accounts",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_accounts",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "user_agreement_acceptances",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_agreement_acceptances",
+        "column": "user_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_agreement_acceptances",
+        "column": "agreement_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_agreement_acceptances",
+        "column": "accepted_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_avatar_assets",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_avatar_assets",
+        "column": "user_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_avatar_assets",
+        "column": "storage_key",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_avatar_assets",
+        "column": "mime_type",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "user_avatar_assets",
+        "column": "size_bytes",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "user_avatar_assets",
+        "column": "width",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "user_avatar_assets",
+        "column": "height",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_avatar_assets",
+        "column": "etag",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_avatar_assets",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_avatar_assets",
+        "column": "deleted_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "user_devices",
+        "column": "account_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_devices",
+        "column": "device_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "user_devices",
+        "column": "installation_hash",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "user_devices",
+        "column": "display_name",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "user_devices",
+        "column": "device_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "table": "user_devices",
+        "column": "protocol_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "user_devices",
+        "column": "app_version",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "user_devices",
+        "column": "receive_reminders",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "user_devices",
+        "column": "sync_enabled",
+        "nullable": "NO"
+      },
+      {
+        "type": "bigint",
+        "table": "user_devices",
+        "column": "settings_revision",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_devices",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_devices",
+        "column": "last_seen_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_devices",
+        "column": "last_sync_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_devices",
+        "column": "revoked_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "user_devices",
+        "column": "revocation_reason",
+        "nullable": "YES"
+      },
+      {
+        "type": "uuid",
+        "table": "user_preferences",
+        "column": "user_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_preferences",
+        "column": "locale",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_preferences",
+        "column": "timezone",
+        "nullable": "NO"
+      },
+      {
+        "type": "ARRAY",
+        "table": "user_preferences",
+        "column": "default_reminder_methods",
+        "nullable": "NO"
+      },
+      {
+        "type": "jsonb",
+        "table": "user_preferences",
+        "column": "settings",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_preferences",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_preferences",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "user_preferences",
+        "column": "habit_progress_color",
+        "nullable": "NO"
+      },
+      {
+        "type": "boolean",
+        "table": "user_preferences",
+        "column": "auto_enable_reminders_on_other_devices",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_profiles",
+        "column": "user_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_profiles",
+        "column": "username",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_profiles",
+        "column": "normalized_username",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_profiles",
+        "column": "display_name",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_profiles",
+        "column": "avatar_asset_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_profiles",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_profiles",
+        "column": "updated_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_sessions",
+        "column": "id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_sessions",
+        "column": "user_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_sessions",
+        "column": "token_family_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_sessions",
+        "column": "platform",
+        "nullable": "NO"
+      },
+      {
+        "type": "character varying",
+        "table": "user_sessions",
+        "column": "device_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "character varying",
+        "table": "user_sessions",
+        "column": "app_version",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_sessions",
+        "column": "expires_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_sessions",
+        "column": "last_used_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_sessions",
+        "column": "revoked_at",
+        "nullable": "YES"
+      },
+      {
+        "type": "character varying",
+        "table": "user_sessions",
+        "column": "revocation_reason",
+        "nullable": "YES"
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "user_sessions",
+        "column": "created_at",
+        "nullable": "NO"
+      },
+      {
+        "type": "uuid",
+        "table": "user_sessions",
+        "column": "device_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "table": "user_sessions",
+        "column": "registration_state",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "table": "user_sessions",
+        "column": "attempted_installation_hash",
+        "nullable": "YES"
+      }
+    ],
+    "cases": [
+      {
+        "id": "PG-FIELD-125-TYPED",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-PUBLICATION-HISTORY-SET",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-PUBLICATION-HISTORY-REGRESSION",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-LINEAGE-PERMANENT",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-LINEAGE-ACCOUNT-DELETED",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-OVER-CAP-TERMINAL-DECLARATION",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-OVER-CAP-LIVE-RESERVATION",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-OVER-CAP-CANNOT-PUBLISH",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-STAGE-CLOSED-SET",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-UNPUBLISHED-MAPPING",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-MAPPING-IMMUTABLE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-MAPPING-RETAIN",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-MAPPING-EPOCH-BINDING",
+        "expected_sqlstate": "23503",
+        "actual_sqlstate": "23503",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-MAPPING-TENANT-BINDING",
+        "expected_sqlstate": "23503",
+        "actual_sqlstate": "23503",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-MAPPING-PUBLICATION-NULLS",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-NEXT-EPOCH-TARGET-COLLISION",
+        "expected_sqlstate": "23505",
+        "actual_sqlstate": "23505",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-NEXT-EPOCH-NEW-TARGET",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-MAPPING-PUBLISH",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-MAPPING-FIRST-PUBLISH-IMMUTABLE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-MAPPING-PUBLICATION-REGRESSION",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-FAMILY-IMMUTABLE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-FAMILY-RETAIN",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-IMPORT-ACCOUNT-DELETION-RELEASE",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-ZERO-DELTA",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-NULL-DELTA",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-HASH-IMMUTABLE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-ACCEPTED-NOOP",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-EFFECT-PAIR",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-APPLY",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-APPLIED-IMMUTABLE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-RETAIN",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-OP-ACCOUNT-SCOPE",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-BARRIER-REGRESSION",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-BARRIER-RETAIN",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-ACCOUNT-DELETE-CASCADE",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-MAX-SAFE",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-OVER-MAX",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-NEGATIVE-REVISION",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-MAX-NEXT-NULL",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-EARLY-NEXT-NULL",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-ACK-AHEAD",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-CURSOR-KEY-RANGE-REGRESSION",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-CURSOR-KEY-UNSAFE-RETIREMENT",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-CURSOR-KEY-RANGE-ADVANCE",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-CURSOR-KEY-UPPER-REGRESSION",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-CURSOR-KEY-TTL-REGRESSION",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-CURSOR-KEY-LIVE-BOOTSTRAP-RETAINS",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-CURSOR-KEY-OLD-GENERATION-RETIREMENT",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-CURSOR-KEY-FLOOR-RETIREMENT",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-BOOTSTRAP-UNRECORDED-KEY-TTL",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-BOOTSTRAP-RECORDED-KEY-TTL",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-BOOTSTRAP-SNAPSHOT-IMMUTABLE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-BOOTSTRAP-SUPERSEDE",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-BOOTSTRAP-ITEM-ORDINAL",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-BOOTSTRAP-ITEM-IMMUTABLE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-CROSS-ACCOUNT-STRONG-REFERENCE",
+        "expected_sqlstate": "23503",
+        "actual_sqlstate": "23503",
+        "passed": true
+      },
+      {
+        "id": "PG-ANNIVERSARY-OPAQUE-WEAK-CATEGORY",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-CATEGORY-PHYSICAL-DELETE-WEAK-REFERENCE",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-TIMED-END-NULL",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-HABIT-401-DAYS",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-RECURRENCE-TUPLE-IMMUTABLE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-RECURRENCE-LIFECYCLE-METADATA",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-DUPLICATE-ACTIVE-INSTALLATION",
+        "expected_sqlstate": "23505",
+        "actual_sqlstate": "23505",
+        "passed": true
+      },
+      {
+        "id": "PG-TENTH-DEVICE",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-ELEVENTH-DEVICE",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-REVOKED-ROW-NOT-REACTIVATED",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-DEVICE-UNICODE-64",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      },
+      {
+        "id": "PG-DEVICE-UNICODE-65",
+        "expected_sqlstate": "23514",
+        "actual_sqlstate": "23514",
+        "passed": true
+      },
+      {
+        "id": "PG-REMINDER-OWNER-TEMPLATE-MISMATCH",
+        "expected_sqlstate": "23503",
+        "actual_sqlstate": "23503",
+        "passed": true
+      },
+      {
+        "id": "PG-RAW-LIVE-JSONB-ABSENT",
+        "expected_sqlstate": "00000",
+        "actual_sqlstate": "00000",
+        "passed": true
+      }
+    ],
+    "mapped_fields_checked": 125
+  },
+  "source_sha256": {
+    "cloud_backend/src/main/resources/db/migration/V1__identity_schema.sql": "111d507ac4d7bc32c109b7f31176b06e7c03a8d3a7f807f4fb1b8529ed96ab7e",
+    "cloud_backend/src/main/resources/db/migration/V2__email_change_requests.sql": "5eb2186ff6901ddb441a298d3046ff3b895dfeccae2695b32a6d4be5c372ae99",
+    "cloud_backend/src/main/resources/db/migration/V3__avatar_assets.sql": "0dcf1ce4b9110d2b4a1b8bd3b4021bb383251fd0e22059a46648d63d53215119",
+    "contracts/fixtures/sync/v1/postgres_vectors.json": "5cd670a183bc441485e9554ee1e0b466a37b1d6f63c2edd51b603e26fe8a1e72",
+    "contracts/fixtures/sync/v1/target_vectors.json": "d096774ac5cc73bfe3eda84656380f9aca53cc12b042d9e2fe0239a194b38b18",
+    "contracts/spikes/sync_v1/build_storage_fixtures.py": "4377a15a7feec34145aa49349d90354e2d9c797ac1475e9d3923dd73f46496f0",
+    "contracts/spikes/sync_v1/build_sync_postgres_contract.py": "421005650db7348161d286b3c9dd6cda463c137ef488200888bd9e0ac09d4eb2",
+    "contracts/spikes/sync_v1/build_sync_storage_contract.py": "a8aa4539c7cd4b562b1acba6a0927c487a6c241db1da86cdeb186f3510f94728",
+    "contracts/spikes/sync_v1/counter_reference.py": "60aa11741eda581a26a6dc1d2d1937d10ecb35a747a49a82f6d4acc22a4cd3da",
+    "contracts/spikes/sync_v1/domain_reference.py": "4d3559aca4203d9adbe6ad6314616012267c2d5b904c3ae3bca3eeb968943971",
+    "contracts/spikes/sync_v1/identity_reference.py": "10b5eb81fff9ef943de0ed51ec3f61e5cd16cbf319daebcae8e08cc86f19802e",
+    "contracts/spikes/sync_v1/PostgresModelProbe.java": "d25f1b4c58d96af88a7ddf388091398c25c3c8b3d02296fb9806cfd7063f09b3",
+    "contracts/spikes/sync_v1/protocol_reference.py": "32b727dacf3b8e3c8e81bef64779ef7886f8afbba2ec80353e0fa46b310d85e3",
+    "contracts/spikes/sync_v1/run_storage_spike.py": "626a7e5439a89e49fd3fb4cae11ca52c4d638e887fe5e675532f2fd455e9129c",
+    "contracts/spikes/sync_v1/schema_validation_reference.py": "d969e1b383cb008d6e4381742c479893a3a6f931044af76bfc3d410b4f091ffd",
+    "contracts/spikes/sync_v1/sqlite_reference.py": "37fe91b62dfd9149fc288a805d788a3efc14e5a7816173355ba6608e4c5e2e12",
+    "contracts/spikes/sync_v1/storage_reference.py": "b855ebf154b921ce3b9bce8f5e04da2e682b9311889ef21b46ded2ba3d9ac771",
+    "contracts/spikes/sync_v1/storage_v5_probe.cpp": "71e1c58ac54d72265dfc2ae0b075fd15432bcfd25b964816ff3c7482cc794e3a",
+    "contracts/storage/calendar_core_storage.yaml": "cccd26b05e440d9e1f5c48622204b6b49ade03f36e1e918453196488330437c2",
+    "contracts/storage/cloud_sync_postgresql_v1.sql": "898eaa10cc9f80d8052bd63ec90d887cb3259895623a93784a796d4edcb8ab6b",
+    "contracts/storage/cloud_sync_postgresql_v1.yaml": "3a993bfe4c369878b5196237b29d631d4f017d4dcea902cbf5e80ad318c23453",
+    "contracts/storage/guest_import_source_lease_backup.schema.json": "e5444d9ad2bda76ab09d894a52464fd876aee93f65c252d98a4aa340d8f447f7",
+    "contracts/sync/import_cleanup_confirm_response.schema.json": "6dacb40516e6f0f9757395412bd4c5cc744ec1a76603fc0fd0dab8b26f405950",
+    "contracts/sync/import_publication_evidence.schema.json": "bd953479f3961373f3a5890a6ed0c36a4bfc88917efb34d84b8b4059c1e7b494",
+    "contracts/sync/import_range_close_proof.schema.json": "4f329c3459e1b25dabfef7cc3dfde6b229933712c802b511b8e5028a3f9e2bbb",
+    "contracts/sync/import_status_response.schema.json": "63220e64fde093e8e8e8ee2bb95e1e2e54057c8f3bc615cb509c9e476e27ceb1",
+    "contracts/sync/native_prepared_exchange_request.schema.json": "0d55ef6607b560063c9c11bd39d4690ad0f97f5265e8e7bc3eb60e4598652551",
+    "contracts/sync/sync_bootstrap_item.schema.json": "87e85a1f5eb574724f42dc987d755ad6ecd8f365ed736b24c1d2e1cc64005dba",
+    "contracts/sync/sync_conflict_delta.schema.json": "e1899fb72ccb1a881fc48e02dcfa3a13f2810ea54ba107ff07ae3cf24af8812b",
+    "contracts/sync/sync_conflict_detail.schema.json": "4bb9d5da0ba63d10280424e6693bad1994255646038fde0465e1d3e73361fe68",
+    "contracts/sync/sync_deleted_entity_anchor.schema.json": "6e70446fa48f91aaf2ba556a720d49ec1c70d0b079c8a895681a319a7253348e",
+    "contracts/sync/sync_device_fence_response.schema.json": "f54febd94f29463a31dfd3d070ca1a5281a0a1d698ea64df775e983c4127b931",
+    "contracts/sync/sync_error_registry.yaml": "acb44cce4529f78beffa7fb5aa3d7050bbaca629f4031f0340e2a8b036617a09",
+    "contracts/sync/sync_fact_after_image.schema.json": "cd5abc5a248f3cb0009cdf719f791bb4e175f8c7e2215b5d98e502c16fd5f50e",
+    "contracts/sync/sync_field_projection.schema.json": "8e64a4a048bbeb8330127eb3f38d753acc77dec560a89ea51ae9c780af5896aa",
+    "contracts/sync/sync_field_registry.yaml": "456f20734d234a6bfc3d7402e795c1d71563c4f9a7317ddbc569b699039fe645",
+    "contracts/sync/sync_hashed_mutation.schema.json": "4549c01628a3b4291192d80d1db42113b12333186a2adda5eaf86e2cc91656b3",
+    "contracts/sync/sync_import_commit_result.schema.json": "03341090466d677afb58f30c2c02c22655a7f60e93bac404da9ea7d9cd879a98",
+    "contracts/sync/sync_import_manifest.schema.json": "dd6ba4fa2d740dab08cbf198cf62e1d070a1fdbf9108279dec74252aea03c8a5",
+    "contracts/sync/sync_import_provenance.schema.json": "ce0a688ae02c59495c40c07c8077934989be76046f38d5c4a2711265d1455bb6",
+    "contracts/sync/sync_import_publish_item.schema.json": "8f7811cd7447cb17475ce9fc2b246c1f26147359747e5dff4434c4c4ae085b1e",
+    "contracts/sync/sync_import_publish_marker.schema.json": "20cf88c40e416080a8384288c48b6038fa814fcd46643136be4dfb4277d2b24e",
+    "contracts/sync/sync_merge_key.schema.json": "e999983688e9c315f64789ab8ecb3b9633d24772517b270d711fb4c46ff2f435",
+    "contracts/sync/sync_mutation.schema.json": "cec516377c625a8731a758c8c0abe537daa7ffae35bcd0c1603a6346eb076cf1",
+    "contracts/sync/sync_owned_dependency.schema.json": "022a2b54c53481e1311f2382af58e7a47140794a839aa6f33bd7bdc2465811b0",
+    "contracts/sync/sync_requesting_device_causal_anchor.schema.json": "c597e5347777ae3f3c3f0e614322bc049e536169b27ad0976712df15c6ae2909",
+    "contracts/sync/sync_sequence_recovery_bundle.schema.json": "330751c07362d99070ee87ca8cf1788b06b0af24aedd296f531456479f9859bd",
+    "contracts/sync/sync_terminal_upload_result.schema.json": "0470a26ef2ea4c08f069fa0db1694894cb2df2978d49c55dc421809aa05c2cef",
+    "contracts/sync/sync_tombstone.schema.json": "e993ffd25695707ad7b825e8fe965938cf95abff3fc75b4b73421686516d1869",
+    "contracts/sync/v1/account_profile_fact.schema.json": "2bc05c7838b35b2cc2820ec01cf28e0659bb197c7e0abba49aaf30348ba17937",
+    "contracts/sync/v1/anniversary_create_payload.schema.json": "7442a0836c10ec8dc472b327cb01411335f4ebfc441a9610550c94573f12e4b8",
+    "contracts/sync/v1/anniversary_delete_payload.schema.json": "d82362de2a34a9d1c8711b3f927d25fb2a5f320c3b3d033c568085b479475e4a",
+    "contracts/sync/v1/anniversary_fact.schema.json": "0ccd7f199b82816eb3fc9a4c14efd56c3bdf43dcd883acfca8560aa4f439dc51",
+    "contracts/sync/v1/anniversary_import_delete_payload.schema.json": "1f0f45fde52f409d46e99deb5161b6c6aa1bc2da82410b7577bf85f3b3de37bf",
+    "contracts/sync/v1/anniversary_import_payload.schema.json": "05240d26feb1f213d37271ee775e656a7b398ec41251a5c27acd504a425d59a5",
+    "contracts/sync/v1/anniversary_patch.schema.json": "ee253005301925f67b065a7157dfc47a47efd54d87e61c67e4a172844cd6ad60",
+    "contracts/sync/v1/anniversary_recurrence_create_payload.schema.json": "6bd554e0892d1f8acc3839e6347940509bfc1f959fa56532ee1bb51b0be23866",
+    "contracts/sync/v1/anniversary_recurrence_delete_payload.schema.json": "a3a12e7d56c1647aaa6435534a2a0b893143c2941ac5737aab6729d96ff5147a",
+    "contracts/sync/v1/anniversary_recurrence_fact.schema.json": "0805c9d322f86fd8aa192a836247ff20aa47309ac2e25f4b6924cd80bb4632d8",
+    "contracts/sync/v1/anniversary_recurrence_import_delete_payload.schema.json": "7471a47bb6466cb91ed9dab2dcce65936c2d2bf390d5433d203b512153b8cdf0",
+    "contracts/sync/v1/anniversary_recurrence_import_payload.schema.json": "f3ca4d4ec8d52260c185e0ef3847a0fc7020d519a951e0069116ed920c7752e2",
+    "contracts/sync/v1/anniversary_recurrence_restore_payload.schema.json": "397fd3863f5155a1ce7d15085c90689d40995ea83676a732027cb6df9b30d954",
+    "contracts/sync/v1/anniversary_restore_payload.schema.json": "56a08954fabf61e9bf12e482df79918dc6d7595695b62134437cf57669834714",
+    "contracts/sync/v1/anniversary_update_payload.schema.json": "96e2330df4f7e0c59102e96fe2411d19c157d19412869b5dceff5436f5ab46ae",
+    "contracts/sync/v1/category_create_payload.schema.json": "eb61376a48d5cc62fe4c4c134acdc363d9d16e30c644fdb4c39da4e3ade93ca2",
+    "contracts/sync/v1/category_delete_payload.schema.json": "f71644bf11d6d664a1793b4bdc6ada335bd04b925010019e857291c1f4a78cb6",
+    "contracts/sync/v1/category_fact.schema.json": "b3f154a5f6c7a410ed1f9665263536f5950307bf7fb2749e1ed88f2eb5f275b1",
+    "contracts/sync/v1/category_import_delete_payload.schema.json": "02e3823d5f0260a55a816833c8f7c8e7c37695421e41cafd8d3ab416fc1f9f92",
+    "contracts/sync/v1/category_import_payload.schema.json": "e603cbc02bed394af42249e38516a492edb10fa1852258e546abce1c9b5c3e8f",
+    "contracts/sync/v1/category_patch.schema.json": "32d98a2e569939eeae26ded1a4069df6fd8aee975b96a213441f25d0c5b7cc0f",
+    "contracts/sync/v1/category_restore_payload.schema.json": "3a4783852150105d82adf9df78736158f229f3c08030afcd60f78e11a2704b7b",
+    "contracts/sync/v1/category_update_payload.schema.json": "845e06b191f106853006f254b5a3bf6497e42f630a220356c2eab660c857205c",
+    "contracts/sync/v1/event_create_payload.schema.json": "b14a71c895d4d707f9ca06148ee0ae309568739b5b50b9b69e76c77129488d52",
+    "contracts/sync/v1/event_delete_payload.schema.json": "08e6c695d89e55c1aac6134357de62f100068b08872ed931ef084ecc2e924442",
+    "contracts/sync/v1/event_fact.schema.json": "b048df16e1d07470535b0f2dea79a61b51c19eec72f17d3e174733a1510a1e84",
+    "contracts/sync/v1/event_import_delete_payload.schema.json": "5ff1b6f777d534e65232333fa651ec1cad4afb8c1500eb61788b578caaa241d4",
+    "contracts/sync/v1/event_import_payload.schema.json": "8fd36d5cd364c3c08c36e3d4ec5bd2c9909144773ab0c2e0fa301e4978010569",
+    "contracts/sync/v1/event_occurrence_state_create_payload.schema.json": "9e571887c7ebe0702f1e5ac807648ba4047b4bc6062065c52a6b4bc9cc46e909",
+    "contracts/sync/v1/event_occurrence_state_fact.schema.json": "8967eca0816d987d44ec588339c135a6a4be569e966dc7cac875dc433e5709e6",
+    "contracts/sync/v1/event_occurrence_state_import_delete_payload.schema.json": "c59ef3f29e4cf809e810bfd7cffe0153480ab6e438565a35cedffc34c30fd35b",
+    "contracts/sync/v1/event_occurrence_state_import_payload.schema.json": "a6df70559e6873bd29a008eca4a0d8cdfd8f12dcebd2ea5664ee40efa3f473ed",
+    "contracts/sync/v1/event_occurrence_state_patch.schema.json": "2e3539d44411e96ca97e85efbf43dc72857a8792ebbb061dda9eaec188ceaf97",
+    "contracts/sync/v1/event_occurrence_state_update_payload.schema.json": "613b2917f643eb98f9ca057686994e89fa4cdcd1f2173e1ad3a1ea3019635e09",
+    "contracts/sync/v1/event_patch.schema.json": "f29a6746f15f78cf561cb4bf8afd6f1833a73674f20630f682f198a5fafc88e3",
+    "contracts/sync/v1/event_recurrence_create_payload.schema.json": "0a2c6cd2a4aa1d583befbcd36633d7f3ee22882f118c9980f572defeeaf2d376",
+    "contracts/sync/v1/event_recurrence_fact.schema.json": "5f857d1eb32be704a36c1a7bd2d51ebe58c157e3e88771503584b48cca144df2",
+    "contracts/sync/v1/event_recurrence_import_delete_payload.schema.json": "d23dbdbf1bc1872050bea3aecfaef086113949362e6d9a54e4d8eb70149cc6de",
+    "contracts/sync/v1/event_recurrence_import_payload.schema.json": "27eac373767161204202c49adfd59703529fc031671e38152937cca70366549b",
+    "contracts/sync/v1/event_restore_payload.schema.json": "f8086cbc9b66f8a8d417005b9d20bbd3d9ecaf8ccc55df2058264fafe43dc998",
+    "contracts/sync/v1/event_update_payload.schema.json": "69b4f0d25c3e78e78a71b0f15ac16e88bc113690e989b66c547bad770225f2c0",
+    "contracts/sync/v1/habit_check_in_clear_payload.schema.json": "a5b269ee7820d86b50a189b59152577c6300cc48588ea5697d44b05e21fae3b9",
+    "contracts/sync/v1/habit_check_in_decrement_payload.schema.json": "3c5f884168646a7c8434ef0bc1f503d15fdec78872ecaba8da4fae3fa5c4acf4",
+    "contracts/sync/v1/habit_check_in_fact.schema.json": "0444a28a2b4bb60f33eb34f791a0be6e5291cea4d9c8b4cf36030390e68df054",
+    "contracts/sync/v1/habit_check_in_import_delete_payload.schema.json": "f53c2caefbfdc66344b3f3470eefa431644401c56ae04ac8a5994e0c00675755",
+    "contracts/sync/v1/habit_check_in_import_payload.schema.json": "381277ea7a8832cce9f9024e98342a90ffcd01f0414db417ba2bca44e14abbeb",
+    "contracts/sync/v1/habit_check_in_increment_payload.schema.json": "c869140300d121c6d536b10f1e73577277c889078e982c9dbbd87324323bb6f8",
+    "contracts/sync/v1/habit_check_in_replace_total_payload.schema.json": "1e7339f944addce4c6b3f288cf5b50df19251e2dc5d4f1e314b0c20ef5ae37a7",
+    "contracts/sync/v1/habit_create_payload.schema.json": "20cf2163a07692d2a16f672b801dc54a533ac3611a8cccc9310031e884dc58d0",
+    "contracts/sync/v1/habit_delete_payload.schema.json": "69373441b28d3df5dcb3d219d95bcf5d700a891a98be1c92f6ad32bed9f387e8",
+    "contracts/sync/v1/habit_fact.schema.json": "00522c01eb85d9e32155102d702f41f72ba429e2447efdf18ca6790a42478bd8",
+    "contracts/sync/v1/habit_import_delete_payload.schema.json": "21d5863ec3ac02a8f3d541ea9346d468e8206a3e5cc6bb6ef79b6bc8fbd0e046",
+    "contracts/sync/v1/habit_import_payload.schema.json": "3d9ba6adc94a6c36d97b6290f9ad59bdf97b015344f36351e690b9b73d3a0af6",
+    "contracts/sync/v1/habit_patch.schema.json": "93ef39d7e28bba9ac8669ec7040415ddb137f9baeb552a789f578c971f66f4b6",
+    "contracts/sync/v1/habit_recurrence_create_payload.schema.json": "c5b8f502b60013469934d9a60955e88e512bd2621aba1efc1ed3571a4425fb0a",
+    "contracts/sync/v1/habit_recurrence_delete_payload.schema.json": "f2d436839bef89840ec4a5bf2bd32a145950a2f46f3d44835a2303549de86dd8",
+    "contracts/sync/v1/habit_recurrence_fact.schema.json": "691727d2fd9a43e8cc42ff4db89cc806af0a711af8f30c1a42fbad141ca7b380",
+    "contracts/sync/v1/habit_recurrence_import_delete_payload.schema.json": "9a56176dffce5dc854fb7108595ce011fb5e846266c78e7fffb815ee0aba1cdc",
+    "contracts/sync/v1/habit_recurrence_import_payload.schema.json": "c727cb627a9de09730763bce7a00bc651eea3835cb6a8015bc0987108ac159f3",
+    "contracts/sync/v1/habit_recurrence_restore_payload.schema.json": "a76d1059c045ded0bfadedb9b9f6a453551e15ce4c5a24a54faeecbde2fd4b56",
+    "contracts/sync/v1/habit_restore_payload.schema.json": "aedf17a965c372fa07f79f26aa06245b33edac133b63cc799203c65ade3f5581",
+    "contracts/sync/v1/habit_update_payload.schema.json": "e67abff18e8406742a21390a582df4e82837027c1364c286434ec0e9b7f80e17",
+    "contracts/sync/v1/reminder_intent_anniversary_create_payload.schema.json": "c8dd7ef43648d5c5613bf3e7d175355ada39a5cc9899e9b68e86c8ed522886a7",
+    "contracts/sync/v1/reminder_intent_anniversary_fact.schema.json": "1ed82aa09a6c9b6e7e59c91c32c635b711b90e20960e0fec4f4ddb254d997d50",
+    "contracts/sync/v1/reminder_intent_anniversary_import_payload.schema.json": "ba61b43ac9d5ca91829cf0e0561dbed6e95ba641c67f5a3abbc4743f82efd912",
+    "contracts/sync/v1/reminder_intent_anniversary_patch.schema.json": "16c2df3511a17490cf8339863ca1a27ed2faae59cf2a2318f094062285353146",
+    "contracts/sync/v1/reminder_intent_anniversary_update_payload.schema.json": "00bd1f0241db36cf9e2ba1ebae609ab6fa78923aca5579e826cea1cc210a035f",
+    "contracts/sync/v1/reminder_intent_event_create_payload.schema.json": "327b803bcb2de9d7a0148cd0b75849903085d5994206931646e184df81fcf0e3",
+    "contracts/sync/v1/reminder_intent_event_fact.schema.json": "8fbce0d500004c3e2b547aa094996e3bf1cced398e9346661675f6a91878a9e2",
+    "contracts/sync/v1/reminder_intent_event_import_delete_payload.schema.json": "3a07f78f3abd5d982b9ecbc163bc9644d177ae4ec1bb76b1ea15777600551725",
+    "contracts/sync/v1/reminder_intent_event_import_payload.schema.json": "a475e00ea6e1c87bf97aa892adae4264f6648fe6333685cd438994ead588abe6",
+    "contracts/sync/v1/reminder_intent_event_patch.schema.json": "03bbf97d5157c8561009ae79cc398d27d07d79f02b9f41fd2019f65d4f66b5e1",
+    "contracts/sync/v1/reminder_intent_event_update_payload.schema.json": "0b1f162c72dde989f7f33ff50f523a6ca8b2ea2ad58ded0470881e722bc6e69a",
+    "contracts/sync/v1/reminder_intent_fact.schema.json": "77c1cc6ec60676ff5ee3b46f9f257988907c652b6f0619273288a98d69c16a7b",
+    "contracts/sync/v1/reminder_intent_habit_create_payload.schema.json": "ca5c4bf7eabde8c606894bf57eabf46f6a5be3d44c4d267484088a3ac54d27d1",
+    "contracts/sync/v1/reminder_intent_habit_fact.schema.json": "7eec66a109073018f57045be62f6f25615467a151bb1698a58ef4d46864cf754",
+    "contracts/sync/v1/reminder_intent_habit_import_payload.schema.json": "6e5de79c71c17b58c540d9e6af075d7ee732e984163eeaf749f7561c2153243f",
+    "contracts/sync/v1/reminder_intent_habit_patch.schema.json": "34738a2368db9010a6bbc41c5b7ee85350de2d861b1fa16ce8f8c1acf821b5b1",
+    "contracts/sync/v1/reminder_intent_habit_update_payload.schema.json": "616979947508a5b875281c11c82a7ff383946ad70a5e9efd24b0a6159f0f7dbb",
+    "contracts/sync/v1/sync_fact.schema.json": "8ba48673eb9fcc2d65a8b6ffcee07a4877ec83297ce5e4eb07dd15d2bf20b74b",
+    "contracts/sync/v1/user_preferences_fact.schema.json": "b2546dab09ec0c7c151284e084b562025c538d02f565b66849baff54ab7160a8",
+    "contracts/sync/v1/user_preferences_import_payload.schema.json": "91e397ebcb9cfa08ccf459df2e9bf4520013334d1ac75ea18e665087c9adfb5c",
+    "contracts/sync/v1/user_preferences_patch.schema.json": "b8de960522176a9a1c7e3e12ca0107b9a95c19e394283c60d5c3378a892086da",
+    "contracts/sync/v1/user_preferences_update_payload.schema.json": "fa40c6f69c9290ed3a8fa2c58f094c121e62eae34e5326effa631163dd8010f0",
+    "contracts/tests/test_sync_storage.py": "58485d79c1849deb2eb9998040eee96400eb20018b4b139a5b672cf9d3d1ece6",
+    "contracts/user/account_profile_snapshot.schema.json": "22d57fc6c2cbf8e5028fc3a28f10f30b72759689e86b47261c74d23b22ef25ba",
+    "contracts/user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+    "cpp_core/include/excellent_calendar/storage/json/anniversary_json_codec.hpp": "1cfb60f6699366f953be18f82f896f0f89278d628c85bae61707a408ef08f665",
+    "cpp_core/include/excellent_calendar/storage/json/atomic_json_file_store.hpp": "d7aa29ffb5623e2c952bc078bb0e6effe54222c0e519fa1a12d902b4bcddb2e4",
+    "cpp_core/include/excellent_calendar/storage/json/calendar_core_v2_storage_bootstrap.hpp": "d722686fac02c105025e98293635159c3812cc205122859f431ecf8799dbc2f7",
+    "cpp_core/include/excellent_calendar/storage/json/calendar_core_v3_storage_bootstrap.hpp": "bae0c6f36836dddfc55c59cc523a2331ca9ebf8215c9d537b302a500e70f7648",
+    "cpp_core/include/excellent_calendar/storage/json/calendar_workflow_coordinator.hpp": "840a1cba9b4896d4ae6fb310b8e5c43bfa8bf6cb0ffd4d38864ae98c239dea34",
+    "cpp_core/include/excellent_calendar/storage/json/category_json_codec.hpp": "2582c63170c76e2301d442c83a0828a1b5587dd00f905a812a7c43f97f1a3d83",
+    "cpp_core/include/excellent_calendar/storage/json/habit_json_codec.hpp": "7a682d39033d359137192d18e12941d67bf06dcc8c3e0716314378b3fe4ad42c",
+    "cpp_core/include/excellent_calendar/storage/json/habit_state_validator.hpp": "9c80615b1a87f2ca0a0848951c3e9172dd92f774f91a6004b1809ee024685b14",
+    "cpp_core/include/excellent_calendar/storage/json/json_anniversary_transaction.hpp": "f0dcc636fcf1400039d4fce56442c94099caace419ace75bb52ac5b97e6ca48f",
+    "cpp_core/include/excellent_calendar/storage/json/json_category_repository.hpp": "434b318c17340ec96356552d4c6d1778691fe7e6fa24caee79a7d89d68e7bc10",
+    "cpp_core/include/excellent_calendar/storage/json/json_event_reminder_transaction.hpp": "954ac32531d02d168b6fb793fb36fc1b714b4031e188a5a98affe72235e08330",
+    "cpp_core/include/excellent_calendar/storage/json/json_event_repository.hpp": "64ad4cd431799fd46f4f17fd117272ce1018f197abbde7a5f5ffb066296207a1",
+    "cpp_core/include/excellent_calendar/storage/json/json_notification_repository.hpp": "540fb95a5fcfd091c216d2b97ad89db83a3b9b67fffa303ba1650a9e92cbc3da",
+    "cpp_core/include/excellent_calendar/storage/json/json_recurring_event_transaction.hpp": "b9188216905b6a0aa6a16525a834356fb2585470f58a5e7a858bfe36bd988673",
+    "cpp_core/include/excellent_calendar/storage/json/json_reminder_notification_transaction.hpp": "24a300373152283c265bf3164170361d21377d09a6bea643aae16bc0360aadd3",
+    "cpp_core/include/excellent_calendar/storage/json/json_reminder_repository.hpp": "fc20e8898f0d2d374f0c95b095fd8074ddd8b23579d0f44802aa1b153f2bee9c",
+    "cpp_core/include/excellent_calendar/storage/json/json_snapshot_transaction.hpp": "d0f8108d000df46fa6230f3b5f6934da3b52f4d77fae587c9f31b27f2fb341c6",
+    "cpp_core/include/excellent_calendar/storage/json/legacy_json_codec.hpp": "0284bc0a8c6ec8a0ca458f020bc3c5c92a40205bb1022f623b9e6d34aae2ac7f",
+    "cpp_core/include/excellent_calendar/storage/json/recurring_event_json_codec.hpp": "b1cb97992e65236b8cb1d788e9e5c211fe924ad6db2e1dbe963af7ae45761bf1",
+    "cpp_core/include/excellent_calendar/storage/runtime_storage_lease.hpp": "b04e3669c4e8514937c8ee4b587967c1987f6e79e81de41436410352e12ad36c",
+    "cpp_core/include/excellent_calendar/storage/sqlite/sqlite_calendar_database.hpp": "1ef9a4d7ddaadb9e881f3d281938d95ea198c39670791e20a4a5d48e8e819111",
+    "cpp_core/include/excellent_calendar/storage/sqlite/sqlite_repository_adapters.hpp": "b9e9b847154081de47c53140b606b4d86f702c7bd1addc1abe303b7e9ad7417b",
+    "cpp_core/src/storage/json/anniversary_json_codec.cpp": "bfcc174ab33ac83f862fe7cb0de8a011d0019b5a5c77c9ca941eb26a4238773e",
+    "cpp_core/src/storage/json/atomic_json_file_store.cpp": "c472b8fd9b498974624ab333638c82a8b011090c4d8a55e9f62a22ce0ed12ade",
+    "cpp_core/src/storage/json/calendar_core_v2_storage_bootstrap.cpp": "1b2f8ed65bab409cbc98ca885fea7fd6ddc5c9ab23a077433b8c2cc1c79c9fac",
+    "cpp_core/src/storage/json/calendar_core_v3_storage_bootstrap.cpp": "625a2d982e76b9f4c03a536e58780477b81b0f18d01b5f1a54186ebe52372dea",
+    "cpp_core/src/storage/json/calendar_workflow_coordinator.cpp": "2e70c4736bb8052dbfad52d85fd4dc97cc763ea1f6c95b339bc7e7af40640152",
+    "cpp_core/src/storage/json/category_json_codec.cpp": "42abe1d428d68f617781e6bc093bd796b2167cb58780f31d704c2ab107937a52",
+    "cpp_core/src/storage/json/habit_json_codec.cpp": "03d01c755a9e0efc50a980123bff2a1e1b19b5e44b6ade0bdf7bd838e54652a0",
+    "cpp_core/src/storage/json/habit_state_validator.cpp": "9882cee5dedefe730c0df413f11de1c13d637d1964d86ddac282ec2ae372c69f",
+    "cpp_core/src/storage/json/json_anniversary_transaction.cpp": "8a1a5985321abf2568588e1a3a67e65d00c4c71f08695651c7f56bb624cd4a7a",
+    "cpp_core/src/storage/json/json_category_repository.cpp": "7ff19aff236bbd235b7f9acfd7e749925ff12524fc986a013f6ae51dfc2037c0",
+    "cpp_core/src/storage/json/json_event_reminder_transaction.cpp": "9c1d4d45e5f130c92d80018da7754ebe93a452ebe9359af54c4500d34b07d764",
+    "cpp_core/src/storage/json/json_event_repository.cpp": "ddc5aa3350bae552ec424e8d4fc2541f17e9771f9d57ac59391b65305d3dcc0d",
+    "cpp_core/src/storage/json/json_notification_repository.cpp": "74e9acd7e004018653f071c993aa3cb937f25751c37cca4130a6a67f3bea166f",
+    "cpp_core/src/storage/json/json_recurring_event_transaction.cpp": "d906dad33099ec29f0e19a36dd4e28aa7c66320f96d0208c2a0fbb054a6e69a7",
+    "cpp_core/src/storage/json/json_reminder_notification_transaction.cpp": "5ccc4d869055ca0d3c26956a129455fc6f507a45df007ac4d41ff8d516938a1a",
+    "cpp_core/src/storage/json/json_reminder_repository.cpp": "3a119785d89ab0bc4d553e331b3ef78312c0f2f1b190dbaca8d1ff397f6ea16e",
+    "cpp_core/src/storage/json/json_snapshot_transaction.cpp": "bfc0b373f2ac4f509f8042243f12f10d9d27da2ae6ce00a722137cf4d2a0dd09",
+    "cpp_core/src/storage/json/recurring_event_json_codec.cpp": "e23c3b226a0c929e90a1b2c0224f89c50e84fab15bd26e5850dbba52d3c022b0",
+    "cpp_core/src/storage/json/recurring_event_state_validator.cpp": "e1536c6c4011fe978a82352e98487d075e1e8eddb9285e9bed8dd7215719acdf",
+    "cpp_core/src/storage/runtime_storage_lease.cpp": "ec9ace7ee7bda984b5899457968e4a6d314705ca506d192c9fa481dee10b38af",
+    "cpp_core/src/storage/sqlite/sqlite_calendar_database.cpp": "9b2b400e072f11bd2421b0bb363e34747488554bd5650981286a00f245c7d491",
+    "cpp_core/src/storage/sqlite/sqlite_repository_adapters.cpp": "b72b521e635e12e6f6bc462cbf5f8f2cb8c1d22f497f9afb3c042ec2cdb57711"
+  },
+  "frozen_checker_libraries_sha256": {
+    "libexcellent_calendar_core.a": "1ea26967cb2a872ead4424706f2623442c4387de5cea1dcc7a6d7d7b9edd7fb3",
+    "libexcellent_calendar_date_tz.a": "50ecb07332212445584d720a6ad7c27990446f77b5d1696ac58981e9b8c40d8c",
+    "libexcellent_calendar_sqlite.a": "d844d9f5ee0f0cc71abba0b1c16804971f7b35bd16a3dbb5ae61a56f7b3ae97f"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/backend_list_sync_conflicts_request.schema.json",
+  "title": "SyncV1 backend_list_sync_conflicts_request",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.5,8,12",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "target_type",
+    "page_token",
+    "page_size"
+  ],
+  "properties": {
+    "status": {
+      "enum": [
+        "unresolved",
+        "resolved",
+        "all"
+      ]
+    },
+    "target_type": {
+      "oneOf": [
+        {
+          "enum": [
+            "category",
+            "event",
+            "event_recurrence",
+            "event_occurrence_state",
+            "anniversary",
+            "anniversary_recurrence",
+            "habit",
+            "habit_recurrence",
+            "habit_check_in",
+            "reminder_intent"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "page_token": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 16,
+      "maxLength": 2048,
+      "pattern": "^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}[AEIMQUYcgkosw048]|[A-Za-z0-9_-][AQgw])?$"
+    },
+    "page_size": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    }
+  }
+}

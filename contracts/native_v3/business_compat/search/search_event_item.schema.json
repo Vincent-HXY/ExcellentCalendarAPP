@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/search/search_event_item.schema.json",
+  "title": "SearchEventItem",
+  "description": "One logical Event result with one C++-selected occurrence. Status and temporal projection use the shared Calendar Event formulas at evaluated_at; timed and all-day values remain distinct, and recurring navigation carries revision plus deterministic occurrence identity.",
+  "x-contract-version": 3,
+  "x-search-contract-revision": 2,
+  "x-implementation-status": "planned",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "target_type",
+    "target_id",
+    "title",
+    "match",
+    "category",
+    "updated_at",
+    "status",
+    "is_all_day",
+    "is_recurring",
+    "occur_at",
+    "occur_date",
+    "location",
+    "recurrence_revision",
+    "occurrence_key"
+  ],
+  "properties": {
+    "target_type": {
+      "const": "event"
+    },
+    "target_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "match": {
+      "$ref": "https://excellent-calendar.local/contracts/search/search_match_projection.schema.json"
+    },
+    "category": {
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/search/search_category_projection.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "overdue",
+        "completed",
+        "skipped"
+      ]
+    },
+    "is_all_day": {
+      "type": "boolean"
+    },
+    "is_recurring": {
+      "type": "boolean"
+    },
+    "occur_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "occur_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "location": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recurrence_revision": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "occurrence_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "is_all_day": {
+            "const": true
+          }
+        },
+        "required": [
+          "is_all_day"
+        ]
+      },
+      "then": {
+        "properties": {
+          "occur_at": {
+            "type": "null"
+          },
+          "occur_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "occur_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "occur_date": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "is_recurring": {
+            "const": true
+          }
+        },
+        "required": [
+          "is_recurring"
+        ]
+      },
+      "then": {
+        "properties": {
+          "recurrence_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "occurrence_key": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "recurrence_revision": {
+            "type": "null",
+            "maximum": 9007199254740991
+          },
+          "occurrence_key": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "x-contract-domain": "native",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

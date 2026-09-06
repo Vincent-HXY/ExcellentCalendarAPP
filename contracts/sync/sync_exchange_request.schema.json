@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_exchange_request.schema.json",
+  "title": "SyncV1 sync_exchange_request",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.2-6.3",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "device_id",
+        "sync_transport_generation",
+        "mode",
+        "cursor",
+        "acknowledged_client_sequence_through",
+        "upload_mutations",
+        "download_limit"
+      ],
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "sync_transport_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "mode": {
+          "const": "normal"
+        },
+        "cursor": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 2048,
+          "pattern": "^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}[AEIMQUYcgkosw048]|[A-Za-z0-9_-][AQgw])?$"
+        },
+        "acknowledged_client_sequence_through": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "upload_mutations": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 100,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/sync/sync_hashed_mutation.schema.json"
+          }
+        },
+        "download_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "device_id",
+        "sync_transport_generation",
+        "mode",
+        "cursor",
+        "acknowledged_client_sequence_through",
+        "upload_mutations",
+        "download_limit"
+      ],
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "sync_transport_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "mode": {
+          "const": "ack_only"
+        },
+        "cursor": {
+          "type": "null"
+        },
+        "acknowledged_client_sequence_through": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "upload_mutations": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 0,
+          "items": {
+            "$ref": "https://excellent-calendar.local/contracts/sync/sync_hashed_mutation.schema.json"
+          }
+        },
+        "download_limit": {
+          "const": 0
+        }
+      }
+    }
+  ]
+}

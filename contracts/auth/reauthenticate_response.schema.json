@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/auth/reauthenticate_response.schema.json",
+  "title": "SyncV1 reauthenticate_response",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reauth_token",
+    "expires_at",
+    "purpose",
+    "target_device_id"
+  ],
+  "properties": {
+    "reauth_token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 4096,
+      "x-sensitive": true,
+      "x-cache-policy": "broker_memory_or_encrypted_broker_record_only",
+      "x-log-policy": "never"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "purpose": {
+      "const": "device_revoke"
+    },
+    "target_device_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    }
+  }
+}

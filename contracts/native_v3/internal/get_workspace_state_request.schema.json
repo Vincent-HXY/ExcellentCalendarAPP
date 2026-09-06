@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal/get_workspace_state_request.schema.json",
+  "title": "SyncV1 get_workspace_state_request",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "binding"
+  ],
+  "properties": {
+    "binding": {
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/native_v3/internal/runtime_binding.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "x-exposure": "kotlin_jni_cpp_only"
+}

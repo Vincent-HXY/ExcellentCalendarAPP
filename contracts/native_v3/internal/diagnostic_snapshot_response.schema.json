@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal/diagnostic_snapshot_response.schema.json",
+  "title": "SyncV1 diagnostic_snapshot_response",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "native_contract_version",
+    "sync_protocol_version",
+    "storage_format_version",
+    "sync_enabled",
+    "pending_count_bucket",
+    "oldest_pending_age_bucket",
+    "outbox_bytes_bucket",
+    "failed_count",
+    "unresolved_count",
+    "unclaimed_notice_count",
+    "native_blocked_reason",
+    "ack_watermark_dirty",
+    "bootstrap_active",
+    "import_active"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "native_contract_version": {
+      "const": 3
+    },
+    "sync_protocol_version": {
+      "const": 1
+    },
+    "storage_format_version": {
+      "const": 6
+    },
+    "sync_enabled": {
+      "type": "boolean"
+    },
+    "pending_count_bucket": {
+      "enum": [
+        "zero",
+        "1_99",
+        "100_4999",
+        "5000_19999",
+        "20000_plus"
+      ]
+    },
+    "oldest_pending_age_bucket": {
+      "enum": [
+        "none",
+        "under_72h",
+        "72h_under_14d",
+        "14d_plus"
+      ]
+    },
+    "outbox_bytes_bucket": {
+      "enum": [
+        "zero",
+        "under_64mib",
+        "64_under_256mib",
+        "256mib_plus"
+      ]
+    },
+    "failed_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "unresolved_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "unclaimed_notice_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "native_blocked_reason": {
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/sync/sync_error_code.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "ack_watermark_dirty": {
+      "type": "boolean"
+    },
+    "bootstrap_active": {
+      "type": "boolean"
+    },
+    "import_active": {
+      "type": "boolean"
+    }
+  },
+  "x-exposure": "kotlin_jni_cpp_only"
+}

@@ -1,0 +1,76 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Original user-local date. A non-null recurrence_id means this date supplies the yearly month/day anchor."
+    },
+    "calendar_type": {
+      "const": "solar"
+    },
+    "category_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recurrence_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "Null for a one-time Anniversary. A non-null value references one active, exclusively owned Anniversary recurrence with frequency=yearly and interval=1.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "importance": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "unimportant_noturgent",
+        "important_noturgent",
+        "unimportant_urgent",
+        "important_urgent",
+        null
+      ]
+    }
+  },
+  "minProperties": 1,
+  "dependentRequired": {
+    "date": [
+      "calendar_type",
+      "recurrence_id"
+    ],
+    "calendar_type": [
+      "date",
+      "recurrence_id"
+    ],
+    "recurrence_id": [
+      "date",
+      "calendar_type"
+    ]
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/v1/anniversary_patch.schema.json",
+  "title": "SyncV1 anniversary patch",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.2,7.7"
+}

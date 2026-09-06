@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/proof/proof_key_revocation_record.schema.json",
+  "title": "SyncV1 proof_key_revocation_record",
+  "x-contract-domain": "sync_proof",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.1,7.6,8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "installation_id",
+    "revoked_key_ids"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "installation_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "revoked_key_ids": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 4096,
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "uniqueItems": true
+    }
+  },
+  "x-exposure": "backend_and_kotlin_jni_cpp_only_never_flutter_event_or_diagnostics",
+  "x-owner": "kotlin_installation_private_registry",
+  "x-lifecycle": "monotone set union in the same installation; retained through account clear/logout; excluded from backup and D2D"
+}

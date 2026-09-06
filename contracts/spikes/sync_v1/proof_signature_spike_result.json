@@ -1,0 +1,62 @@
+{
+  "spike_version": 1,
+  "passed": true,
+  "scope": "platform crypto primitive and JNI adapter only",
+  "capsule_claim_authentication_verified": false,
+  "key_rotation_verified": false,
+  "product_dependency_changed": false,
+  "android_x86_os_executed": false,
+  "consumers": {
+    "java21": {
+      "passed": true,
+      "cases": 14,
+      "actual_output_sha256": "6328782d80baf04a486ae6ba94361e387ff2a2f60afd2b18199942971d012dbb"
+    },
+    "windows_cng_cpp": {
+      "passed": true,
+      "cases": 14,
+      "actual_output_sha256": "6328782d80baf04a486ae6ba94361e387ff2a2f60afd2b18199942971d012dbb"
+    },
+    "android_jca_arm64-v8a": {
+      "passed": true,
+      "cases": 14,
+      "actual_output_sha256": "6328782d80baf04a486ae6ba94361e387ff2a2f60afd2b18199942971d012dbb"
+    },
+    "android_jni_arm64-v8a": {
+      "passed": true,
+      "cases": 14,
+      "actual_output_sha256": "6328782d80baf04a486ae6ba94361e387ff2a2f60afd2b18199942971d012dbb"
+    },
+    "android_jca_armeabi-v7a": {
+      "passed": true,
+      "cases": 14,
+      "actual_output_sha256": "6328782d80baf04a486ae6ba94361e387ff2a2f60afd2b18199942971d012dbb"
+    },
+    "android_jni_armeabi-v7a": {
+      "passed": true,
+      "cases": 14,
+      "actual_output_sha256": "6328782d80baf04a486ae6ba94361e387ff2a2f60afd2b18199942971d012dbb"
+    }
+  },
+  "builds": {
+    "windows_cng_cpp": "675e4d15a2ca2320a561f5b825985f43586a177c5c3424f6860d0962a575d126",
+    "arm64-v8a": "ab028863bfd683fe93705b4e048ea5f4cfad4e16f8bb8912dab97ec4faf52735",
+    "armeabi-v7a": "c0b82f1d4ff870f7b123d180f104885e654e73b2fedc2c4d078a5efca809c037",
+    "x86_64": "e5b1584b88f39ab35567747b310fed7fac70a134005d9b55f6a5b04b69e8f0bb"
+  },
+  "errors": [],
+  "cleanup_errors": [],
+  "dex_sha256": "0c0898db913dbdeb3072bf6b27754b90f5d2b4426a6ee1a7dede6aa50a70281b",
+  "device": {
+    "abi": "arm64-v8a,armeabi-v7a,armeabi",
+    "sdk": "33",
+    "model": "RMX3687"
+  },
+  "source_sha256": {
+    "contracts/spikes/sync_v1/run_proof_signature_spike.py": "9e17aeca20620d9a94a113bbda0a279f8c446a8a7c917da6b6138eb59f292ede",
+    "contracts/spikes/sync_v1/ProofSignatureProbe.java": "4efd5ece7d5d100a510190375048e8e85d073795bf4123905845caffed0d37b7",
+    "contracts/spikes/sync_v1/proof_signature_probe.cpp": "f2a0ae132bbfb1e05aaaa4d28deec66040bd9ac00aa6b5c68311f0660bcb9e5a",
+    "contracts/spikes/sync_v1/sha256_probe.hpp": "98d1dc05941fd613ac9f5b04f4121d9a777f2670abd9799ae9c53b1c470f2922",
+    "contracts/fixtures/sync/v1/proof_signature_vectors.json": "7cd0150208fac2d0a35a05b663eb52f4e5582ba14a635a50348051f711b93776"
+  }
+}

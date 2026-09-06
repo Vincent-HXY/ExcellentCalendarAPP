@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/event/event_occurrence_list_response.schema.json",
+  "title": "EventOccurrenceListResponse",
+  "description": "Stable ascending occurrence page within the requested expansion window.",
+  "x-contract-version": 3,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "has_more",
+    "next_cursor"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/event/event_occurrence_response.schema.json"
+      }
+    },
+    "has_more": {
+      "type": "boolean"
+    },
+    "next_cursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "x-contract-domain": "native",
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

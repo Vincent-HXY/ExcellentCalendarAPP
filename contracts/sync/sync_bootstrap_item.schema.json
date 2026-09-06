@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_bootstrap_item.schema.json",
+  "title": "SyncV1 sync_bootstrap_item",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/6.3",
+  "oneOf": [
+    {
+      "$ref": "https://excellent-calendar.local/contracts/sync/sync_fact_after_image.schema.json"
+    },
+    {
+      "$ref": "https://excellent-calendar.local/contracts/sync/sync_tombstone.schema.json"
+    },
+    {
+      "$ref": "https://excellent-calendar.local/contracts/sync/sync_deleted_entity_anchor.schema.json"
+    },
+    {
+      "$ref": "https://excellent-calendar.local/contracts/sync/sync_import_publish_marker.schema.json"
+    },
+    {
+      "$ref": "https://excellent-calendar.local/contracts/sync/sync_requesting_device_causal_anchor.schema.json"
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "conflict"
+      ],
+      "properties": {
+        "kind": {
+          "const": "unresolved_conflict"
+        },
+        "conflict": {
+          "$ref": "https://excellent-calendar.local/contracts/sync/sync_conflict_detail.schema.json"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/anniversary/anniversary_detail_view_response.schema.json",
+  "title": "AnniversaryDetailViewResponse",
+  "description": "Public detail aggregate combining the C++ domain detail with Kotlin-owned current scheduling capability. It contains no Alarm ID, journal, or delivery history.",
+  "x-contract-version": 3,
+  "x-anniversary-reminder-revision": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "detail",
+    "capability"
+  ],
+  "properties": {
+    "detail": {
+      "$ref": "https://excellent-calendar.local/contracts/native_v3/anniversary/anniversary_detail_response.schema.json"
+    },
+    "capability": {
+      "$ref": "https://excellent-calendar.local/contracts/anniversary/anniversary_schedule_capability_response.schema.json"
+    }
+  },
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-native-compatibility-revision": "anniversary_opaque_category_v1"
+}

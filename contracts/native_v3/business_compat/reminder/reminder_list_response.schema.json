@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/business_compat/reminder/reminder_list_response.schema.json",
+  "title": "ReminderListResponse",
+  "description": "Paginated reminder response.",
+  "x-contract-version": 3,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "pagination"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/native_v3/business_compat/reminder/reminder_response.schema.json"
+      }
+    },
+    "pagination": {
+      "$ref": "https://excellent-calendar.local/contracts/common/pagination_response.schema.json"
+    }
+  },
+  "x-contract-domain": "native",
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/5,6.1,8.4"
+}

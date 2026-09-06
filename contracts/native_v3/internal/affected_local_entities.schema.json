@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal/affected_local_entities.schema.json",
+  "title": "SyncV1 affected_local_entities",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_ids",
+    "habit_ids",
+    "anniversary_ids",
+    "reminder_ids",
+    "notification_ids"
+  ],
+  "properties": {
+    "event_ids": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50000,
+      "items": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "uniqueItems": true
+    },
+    "habit_ids": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50000,
+      "items": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "uniqueItems": true
+    },
+    "anniversary_ids": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50000,
+      "items": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "uniqueItems": true
+    },
+    "reminder_ids": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50000,
+      "items": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "uniqueItems": true
+    },
+    "notification_ids": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50000,
+      "items": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "uniqueItems": true
+    }
+  },
+  "x-exposure": "kotlin_jni_cpp_only"
+}

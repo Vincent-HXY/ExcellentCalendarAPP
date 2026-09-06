@@ -1,0 +1,512 @@
+{
+  "fixture_version": 1,
+  "scope": "actual isolated Android Keystore/JNI lifecycle; synthetic ciphertext restore only",
+  "cases": [
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-manifest-backup-disabled",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "manifest-backup-disabled"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-manifest-no-internet-permission",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "manifest-no-internet-permission"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-fresh-no-keystore-alias",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "fresh-no-keystore-alias"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-keystore-key-not-exportable",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "keystore-key-not-exportable"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-keystore-aes256-gcm-background-policy",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "keystore-aes256-gcm-background-policy"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-randomized-wrap-no-iv-reuse",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "randomized-wrap-no-iv-reuse"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-wrapped-binary-layout-136",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "wrapped-binary-layout-136"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-unwrap-exact-binary-key",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "unwrap-exact-binary-key"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-account-aad",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-account-aad"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-workspace-aad",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-workspace-aad"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-installation-aad",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-installation-aad"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-schema-aad",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-schema-aad"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-record-tamper-0",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-record-tamper-0"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-record-tamper-60",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-record-tamper-60"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-record-tamper-76",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-record-tamper-76"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-record-tamper-88",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-record-tamper-88"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-record-tamper-135",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-record-tamper-135"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-reject-short-record",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "reject-short-record"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-jni-key-length-before-create",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "jni-key-length-before-create"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-keystore-jni-sqlcipher-20000-rows",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "keystore-jni-sqlcipher-20000-rows"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-sqlcipher-wrong-key-rejected",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "sqlcipher-wrong-key-rejected"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-sqlcipher-wrong-owner-rejected",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "sqlcipher-wrong-owner-rejected"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-sqlcipher-wrong-workspace-rejected",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "sqlcipher-wrong-workspace-rejected"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-initial-revocation-record-initial",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "initial",
+        "assertion": "revocation-record-initial"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-process_restart-manifest-backup-disabled",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "process_restart",
+        "assertion": "manifest-backup-disabled"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-process_restart-manifest-no-internet-permission",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "process_restart",
+        "assertion": "manifest-no-internet-permission"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-process_restart-reopen-keystore-jni-encrypted-rows",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "process_restart",
+        "assertion": "reopen-keystore-jni-encrypted-rows"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-process_restart-revocation-survives-old-empty-trust",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "process_restart",
+        "assertion": "revocation-survives-old-empty-trust"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-apk_upgrade-manifest-backup-disabled",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "apk_upgrade",
+        "assertion": "manifest-backup-disabled"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-apk_upgrade-manifest-no-internet-permission",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "apk_upgrade",
+        "assertion": "manifest-no-internet-permission"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-apk_upgrade-reopen-keystore-jni-encrypted-rows",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "apk_upgrade",
+        "assertion": "reopen-keystore-jni-encrypted-rows"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-apk_upgrade-revocation-survives-old-empty-trust",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "apk_upgrade",
+        "assertion": "revocation-survives-old-empty-trust"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-crypto_destroy-manifest-backup-disabled",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "crypto_destroy",
+        "assertion": "manifest-backup-disabled"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-crypto_destroy-manifest-no-internet-permission",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "crypto_destroy",
+        "assertion": "manifest-no-internet-permission"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-crypto_destroy-crypto-destroy-alias-absent",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "crypto_destroy",
+        "assertion": "crypto-destroy-alias-absent"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-crypto_destroy-ciphertext-files-may-remain",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "crypto_destroy",
+        "assertion": "ciphertext-files-may-remain"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-crypto_destroy-leftover-wrapper-cannot-recover-key",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "crypto_destroy",
+        "assertion": "leftover-wrapper-cannot-recover-key"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-reinstall-manifest-backup-disabled",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "reinstall",
+        "assertion": "manifest-backup-disabled"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-reinstall-manifest-no-internet-permission",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "reinstall",
+        "assertion": "manifest-no-internet-permission"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-reinstall-reinstall-changes-installation",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "reinstall",
+        "assertion": "reinstall-changes-installation"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-reinstall-reinstall-has-no-old-keystore-key",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "reinstall",
+        "assertion": "reinstall-has-no-old-keystore-key"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-reinstall-reinstall-has-no-old-account-or-wrapper",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "reinstall",
+        "assertion": "reinstall-has-no-old-account-or-wrapper"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-restored_ciphertext-manifest-backup-disabled",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "restored_ciphertext",
+        "assertion": "manifest-backup-disabled"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-restored_ciphertext-manifest-no-internet-permission",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "restored_ciphertext",
+        "assertion": "manifest-no-internet-permission"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-restored_ciphertext-restored-wrapper-installation-rejected",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "restored_ciphertext",
+        "assertion": "restored-wrapper-installation-rejected"
+      },
+      "expected": {
+        "passed": true
+      }
+    },
+    {
+      "id": "FX-RETENTION-NOTIFY-android-key-restored_ciphertext-recreated-alias-cannot-decrypt-old-wrapper",
+      "rule_anchor": "cloud-sync-02/4.2,8.3,8.4",
+      "input": {
+        "phase": "restored_ciphertext",
+        "assertion": "recreated-alias-cannot-decrypt-old-wrapper"
+      },
+      "expected": {
+        "passed": true
+      }
+    }
+  ]
+}

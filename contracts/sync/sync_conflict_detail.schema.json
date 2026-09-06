@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/sync/sync_conflict_detail.schema.json",
+  "title": "SyncV1 sync_conflict_detail",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/7.5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "conflict_id",
+    "conflict_version",
+    "target_type",
+    "target_id",
+    "status",
+    "source_device_id",
+    "received_at",
+    "conflicting_groups",
+    "auto_merged_groups",
+    "recovery_snapshot"
+  ],
+  "properties": {
+    "conflict_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "conflict_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "target_type": {
+      "enum": [
+        "category",
+        "event",
+        "event_recurrence",
+        "event_occurrence_state",
+        "anniversary",
+        "anniversary_recurrence",
+        "habit",
+        "habit_recurrence",
+        "habit_check_in",
+        "user_preferences",
+        "account_profile",
+        "reminder_intent"
+      ]
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 53
+    },
+    "status": {
+      "const": "unresolved"
+    },
+    "source_device_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "conflicting_groups": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "server_candidate",
+          "local_candidate"
+        ],
+        "properties": {
+          "key": {
+            "$ref": "https://excellent-calendar.local/contracts/sync/sync_merge_key.schema.json"
+          },
+          "server_candidate": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "projection"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "value"
+                  },
+                  "projection": {
+                    "$ref": "https://excellent-calendar.local/contracts/sync/sync_field_projection.schema.json"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "entity_version",
+                  "delete_server_sequence"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "deleted"
+                  },
+                  "entity_version": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "delete_server_sequence": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "absent"
+                  }
+                }
+              }
+            ]
+          },
+          "local_candidate": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "projection"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "value"
+                  },
+                  "projection": {
+                    "$ref": "https://excellent-calendar.local/contracts/sync/sync_field_projection.schema.json"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "entity_version",
+                  "delete_server_sequence"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "deleted"
+                  },
+                  "entity_version": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "delete_server_sequence": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "server_candidate": {
+                  "properties": {
+                    "kind": {
+                      "const": "absent"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "key": {
+                  "properties": {
+                    "target_type": {
+                      "enum": [
+                        "event_recurrence",
+                        "anniversary_recurrence",
+                        "habit_recurrence",
+                        "reminder_intent"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "auto_merged_groups": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "projection",
+          "resulting_entity_version",
+          "resulting_field_version"
+        ],
+        "properties": {
+          "projection": {
+            "$ref": "https://excellent-calendar.local/contracts/sync/sync_field_projection.schema.json"
+          },
+          "resulting_entity_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "resulting_field_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      }
+    },
+    "recovery_snapshot": {
+      "oneOf": [
+        {
+          "$ref": "https://excellent-calendar.local/contracts/sync/v1/sync_fact.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

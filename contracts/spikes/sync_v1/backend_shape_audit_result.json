@@ -1,0 +1,2392 @@
+{
+  "audit_version": 1,
+  "passed": true,
+  "errors": [],
+  "endpoints": [
+    {
+      "operation": "auth.register",
+      "method": "POST",
+      "path": "/api/v1/auth/register",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_EMAIL_ALREADY_EXISTS": 409,
+        "AUTH_USERNAME_ALREADY_EXISTS": 409,
+        "AUTH_PASSWORD_POLICY_VIOLATION": 400
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "register.valid",
+        "register.same_key_different_payload"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/registration_request.schema.json",
+        "target_schema": "backend_sync_v1/auth/registration_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.RegisterRequestDto",
+        "schema_closure": {
+          "auth/registration_request.schema.json": "c4aa0f33913e6808c102ac640e5de8853aae87bdaaa039a8e65132a4ac431dc5"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/registration_pending_response.schema.json",
+        "target_schema": "auth/registration_pending_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.RegistrationPendingResponseDto",
+        "schema_closure": {
+          "auth/email_challenge_response.schema.json": "0c9536b7de09fddfc49d4a88173540c2d8747d05022f11110607ade7953bd8a1",
+          "auth/registration_pending_response.schema.json": "6b129e56f5a316380cf64aa9eb7379dc1f590b5c8c794325cb3edbc151fe2803"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.registration.verify",
+      "method": "POST",
+      "path": "/api/v1/auth/registration/verify",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "one_time_challenge"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_VERIFICATION_INVALID": 400,
+        "AUTH_VERIFICATION_EXPIRED": 400,
+        "AUTH_VERIFICATION_USED": 400,
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED": null
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED"
+      ],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "verify.valid",
+        "verify.credential_extra_key",
+        "verify.credential_wrong_union"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/verify_registration_request.schema.json",
+        "target_schema": "auth/verify_registration_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.VerifyRegistrationRequestDto",
+        "schema_closure": {
+          "auth/verification_credential.schema.json": "1b4f9bf3dac7f595b0c4dbb16825ea9b016b8d7b60c9e5475266c674f5034e2c",
+          "auth/verify_registration_request.schema.json": "c96c21cb90062293131f836e4ec10e87730246f30cdbcb000631aead6f729e6f"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/authentication_response.schema.json",
+        "target_schema": "backend_sync_v1/auth/authentication_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.AuthenticationResponseDto",
+        "schema_closure": {
+          "auth/authentication_response.schema.json": "98835a3d749f4087c41875c9fa740701e36bc3e19e287f8bb9a4abff4814322a",
+          "auth/token_pair_response.schema.json": "232536dcf9528f73e948998450069c30c95c6673af2a7dc2a41bdd17ae64bc35",
+          "user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+          "user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+          "user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+          "user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+          "user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.registration.resend",
+      "method": "POST",
+      "path": "/api/v1/auth/registration/resend",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_VERIFICATION_INVALID": 400,
+        "AUTH_VERIFICATION_EXPIRED": 400,
+        "AUTH_VERIFICATION_USED": 400
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "resend.too_early",
+        "resend.valid"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/resend_registration_request.schema.json",
+        "target_schema": "auth/resend_registration_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.ResendRegistrationRequestDto",
+        "schema_closure": {
+          "auth/resend_registration_request.schema.json": "5ef0d3834cb0deb146d9a2c5280a4c209c8bd9b1a0a6c2416f208224df2797ab"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/email_challenge_response.schema.json",
+        "target_schema": "auth/email_challenge_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.EmailChallengeResponseDto",
+        "schema_closure": {
+          "auth/email_challenge_response.schema.json": "0c9536b7de09fddfc49d4a88173540c2d8747d05022f11110607ade7953bd8a1"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.registration.email.update",
+      "method": "PATCH",
+      "path": "/api/v1/auth/registration/email",
+      "current_controller_present": false,
+      "current_idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_NOT_FOUND": null,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_ACCOUNT_ALREADY_VERIFIED": null,
+        "AUTH_CURRENT_PASSWORD_INVALID": 400,
+        "AUTH_EMAIL_ALREADY_EXISTS": 409
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [
+        "AUTH_ACCOUNT_ALREADY_VERIFIED",
+        "AUTH_ACCOUNT_NOT_FOUND"
+      ],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "registration_email.absent_route"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/update_registration_email_request.schema.json",
+        "target_schema": "auth/update_registration_email_request.schema.json",
+        "current_jvm_dto": null,
+        "schema_closure": {
+          "auth/update_registration_email_request.schema.json": "9b97bbb087e00294ec40c2bd2d6ed4024968ed81eb42725c1ec6536b9c89203f"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "non_dto_reason": "controller_absent"
+      },
+      "response": {
+        "current_schema": "auth/registration_pending_response.schema.json",
+        "target_schema": "auth/registration_pending_response.schema.json",
+        "current_jvm_dto": null,
+        "schema_closure": {
+          "auth/email_challenge_response.schema.json": "0c9536b7de09fddfc49d4a88173540c2d8747d05022f11110607ade7953bd8a1",
+          "auth/registration_pending_response.schema.json": "6b129e56f5a316380cf64aa9eb7379dc1f590b5c8c794325cb3edbc151fe2803"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "non_dto_reason": "controller_absent"
+      }
+    },
+    {
+      "operation": "auth.login",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_INVALID_CREDENTIALS": 401,
+        "AUTH_EMAIL_UNVERIFIED": 403,
+        "AUTH_ACCOUNT_DISABLED": 403
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "login.valid",
+        "login.invalid_password",
+        "login.unknown_key",
+        "login.scalar_coercion",
+        "login.after_logout_all"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/login_request.schema.json",
+        "target_schema": "auth/login_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.LoginRequestDto",
+        "schema_closure": {
+          "auth/login_request.schema.json": "863d5050f4cd852af36ffa9fab192d7ac6d649323d7f4e672b8b1c2fa145ddef"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/authentication_response.schema.json",
+        "target_schema": "backend_sync_v1/auth/authentication_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.AuthenticationResponseDto",
+        "schema_closure": {
+          "auth/authentication_response.schema.json": "98835a3d749f4087c41875c9fa740701e36bc3e19e287f8bb9a4abff4814322a",
+          "auth/token_pair_response.schema.json": "232536dcf9528f73e948998450069c30c95c6673af2a7dc2a41bdd17ae64bc35",
+          "user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+          "user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+          "user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+          "user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+          "user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.token.refresh",
+      "method": "POST",
+      "path": "/api/v1/auth/token/refresh",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "atomic_refresh_token_rotation"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_REFRESH_TOKEN_INVALID": 401,
+        "AUTH_REFRESH_TOKEN_REUSED": 401,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "refresh.valid"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/refresh_session_request.schema.json",
+        "target_schema": "auth/refresh_session_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.RefreshSessionRequestDto",
+        "schema_closure": {
+          "auth/refresh_session_request.schema.json": "3ddc255a6ac1a770dd80d83b448566921404296a8ba5252c909dd67fbc1a4337"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/token_pair_response.schema.json",
+        "target_schema": "auth/token_pair_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.TokenPairResponseDto",
+        "schema_closure": {
+          "auth/token_pair_response.schema.json": "232536dcf9528f73e948998450069c30c95c6673af2a7dc2a41bdd17ae64bc35"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.logout",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "natural"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_INTERNAL_ERROR": 500
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "logout.valid"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/logout_request.schema.json",
+        "target_schema": "auth/logout_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.LogoutRequestDto",
+        "schema_closure": {
+          "auth/logout_request.schema.json": "88ba84fcaca365bbb04f02fb6e41af23c906791780cfa6b93ec7bcec14c35f94"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "common/operation_response.schema.json",
+        "target_schema": "auth/server_logout_terminal_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.OperationResponseDto",
+        "schema_closure": {
+          "common/operation_response.schema.json": "113851c3b29f78672793bd68f092b8ec63d02a42fe0e506fceac5ffbfba5aaf8"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.logout_all",
+      "method": "POST",
+      "path": "/api/v1/auth/logout-all",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "natural"
+      },
+      "current_declared_error_http_status": {
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "logout_all.valid"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "common/empty_request.schema.json",
+        "target_schema": "common/empty_request.schema.json",
+        "current_jvm_dto": null,
+        "schema_closure": {
+          "common/empty_request.schema.json": "a53fc06e431dc59bb0fd2380517a27dd6ca6ac05c03bea9bc479b06a583fe95f"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "non_dto_reason": "no_json_body_or_multipart_binary_schema"
+      },
+      "response": {
+        "current_schema": "common/operation_response.schema.json",
+        "target_schema": "common/operation_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.OperationResponseDto",
+        "schema_closure": {
+          "common/operation_response.schema.json": "113851c3b29f78672793bd68f092b8ec63d02a42fe0e506fceac5ffbfba5aaf8"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.password_reset.request",
+      "method": "POST",
+      "path": "/api/v1/auth/password-reset/request",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "password_reset.request"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/password_reset_request.schema.json",
+        "target_schema": "auth/password_reset_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.PasswordResetRequestDto",
+        "schema_closure": {
+          "auth/password_reset_request.schema.json": "f9364d5e2b0a48f27575ddc19bfb7999ac588efb8bfc408179c49c25b5cce21d"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/password_reset_dispatch_response.schema.json",
+        "target_schema": "auth/password_reset_dispatch_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.PasswordResetDispatchResponseDto",
+        "schema_closure": {
+          "auth/password_reset_dispatch_response.schema.json": "1ad76f75850c28511ab578ec00494e8c5437b19f464d4df540d00e8ff9b963bf"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.password_reset.confirm",
+      "method": "POST",
+      "path": "/api/v1/auth/password-reset/confirm",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "one_time_challenge"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_VERIFICATION_INVALID": 400,
+        "AUTH_VERIFICATION_EXPIRED": 400,
+        "AUTH_VERIFICATION_USED": 400,
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED": null,
+        "AUTH_PASSWORD_POLICY_VIOLATION": 400
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED"
+      ],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "password_reset.confirm"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/confirm_password_reset_request.schema.json",
+        "target_schema": "auth/confirm_password_reset_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.ConfirmPasswordResetRequestDto",
+        "schema_closure": {
+          "auth/confirm_password_reset_request.schema.json": "6dd80665fa39bff5849f0ffe4af1c14b502739cfd25f6e6c4f807733c7ff3dd0",
+          "auth/verification_credential.schema.json": "1b4f9bf3dac7f595b0c4dbb16825ea9b016b8d7b60c9e5475266c674f5034e2c"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "common/operation_response.schema.json",
+        "target_schema": "common/operation_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.OperationResponseDto",
+        "schema_closure": {
+          "common/operation_response.schema.json": "113851c3b29f78672793bd68f092b8ec63d02a42fe0e506fceac5ffbfba5aaf8"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.password.change",
+      "method": "POST",
+      "path": "/api/v1/auth/password/change",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_CURRENT_PASSWORD_INVALID": 400,
+        "AUTH_PASSWORD_UNCHANGED": 400,
+        "AUTH_PASSWORD_POLICY_VIOLATION": 400,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "password.change"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/change_password_request.schema.json",
+        "target_schema": "auth/change_password_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.ChangePasswordRequestDto",
+        "schema_closure": {
+          "auth/change_password_request.schema.json": "8448eee957221343f087244403eab25caf4bc301ccb752febe8801e22519ca39"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/authentication_response.schema.json",
+        "target_schema": "backend_sync_v1/auth/authentication_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.AuthenticationResponseDto",
+        "schema_closure": {
+          "auth/authentication_response.schema.json": "98835a3d749f4087c41875c9fa740701e36bc3e19e287f8bb9a4abff4814322a",
+          "auth/token_pair_response.schema.json": "232536dcf9528f73e948998450069c30c95c6673af2a7dc2a41bdd17ae64bc35",
+          "user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+          "user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+          "user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+          "user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+          "user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.email_change.request",
+      "method": "POST",
+      "path": "/api/v1/auth/email-change/request",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_CURRENT_PASSWORD_INVALID": 400,
+        "AUTH_EMAIL_ALREADY_EXISTS": 409,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "email_change.request"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/request_email_change_request.schema.json",
+        "target_schema": "auth/request_email_change_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.RequestEmailChangeRequestDto",
+        "schema_closure": {
+          "auth/request_email_change_request.schema.json": "38c05b7bf09d4836b17bf6135236d810d4bff6737d3adde7d8d613643e25d426"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/email_challenge_response.schema.json",
+        "target_schema": "auth/email_challenge_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.EmailChallengeResponseDto",
+        "schema_closure": {
+          "auth/email_challenge_response.schema.json": "0c9536b7de09fddfc49d4a88173540c2d8747d05022f11110607ade7953bd8a1"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "auth.email_change.confirm",
+      "method": "POST",
+      "path": "/api/v1/auth/email-change/confirm",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "one_time_challenge"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_RATE_LIMITED": 429,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_EMAIL_ALREADY_EXISTS": 409,
+        "AUTH_VERIFICATION_INVALID": 400,
+        "AUTH_VERIFICATION_EXPIRED": 400,
+        "AUTH_VERIFICATION_USED": 400,
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED": null,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [
+        "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED"
+      ],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "email_change.confirm"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "auth/confirm_email_change_request.schema.json",
+        "target_schema": "auth/confirm_email_change_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.ConfirmEmailChangeRequestDto",
+        "schema_closure": {
+          "auth/confirm_email_change_request.schema.json": "dadf9ec1ec7b61cd17d299dda02c49bc37044fd8bd3a5bb839ae808a1f872f13",
+          "auth/verification_credential.schema.json": "1b4f9bf3dac7f595b0c4dbb16825ea9b016b8d7b60c9e5475266c674f5034e2c"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "auth/authentication_response.schema.json",
+        "target_schema": "backend_sync_v1/auth/authentication_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.identity.api.AuthenticationResponseDto",
+        "schema_closure": {
+          "auth/authentication_response.schema.json": "98835a3d749f4087c41875c9fa740701e36bc3e19e287f8bb9a4abff4814322a",
+          "auth/token_pair_response.schema.json": "232536dcf9528f73e948998450069c30c95c6673af2a7dc2a41bdd17ae64bc35",
+          "user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+          "user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+          "user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+          "user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+          "user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "user.get_current",
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "read_only"
+      },
+      "current_declared_error_http_status": {
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "get_current.unauthenticated",
+        "get_current.valid"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "common/empty_request.schema.json",
+        "target_schema": "common/empty_request.schema.json",
+        "current_jvm_dto": null,
+        "schema_closure": {
+          "common/empty_request.schema.json": "a53fc06e431dc59bb0fd2380517a27dd6ca6ac05c03bea9bc479b06a583fe95f"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "non_dto_reason": "no_json_body_or_multipart_binary_schema"
+      },
+      "response": {
+        "current_schema": "user/current_user_response.schema.json",
+        "target_schema": "backend_sync_v1/user/current_user_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.userdevice.api.CurrentUserResponseDto",
+        "schema_closure": {
+          "user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+          "user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+          "user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+          "user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+          "user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "user.update_current",
+      "method": "PATCH",
+      "path": "/api/v1/users/me",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "patch_is_idempotent_for_same_payload"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_USERNAME_ALREADY_EXISTS": 409,
+        "AUTH_SESSION_EXPIRED": 401,
+        "USER_PROFILE_INVALID": 400
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "update_current.valid",
+        "update_current.empty",
+        "update_current.null",
+        "update_current.extra",
+        "update_current.invalid_timezone",
+        "update_current.fixed_offset",
+        "update_current.arbitrary_settings",
+        "update_current.locale",
+        "update_current.wechat",
+        "update_current.method_order",
+        "update_current.method_duplicates",
+        "update_current.method_empty",
+        "update_current.nested_setting"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "user/update_current_user_request.schema.json",
+        "target_schema": "backend_sync_v1/user/update_current_user_request.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.userdevice.api.UpdateCurrentUserRequestDto",
+        "schema_closure": {
+          "user/update_current_user_request.schema.json": "e74078160d5671230ca37d01ea74f611cc8d9695c48f2efac01d0d912e5ac704",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      },
+      "response": {
+        "current_schema": "user/current_user_response.schema.json",
+        "target_schema": "backend_sync_v1/user/current_user_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.userdevice.api.CurrentUserResponseDto",
+        "schema_closure": {
+          "user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+          "user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+          "user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+          "user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+          "user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "user.avatar.upload",
+      "method": "POST",
+      "path": "/api/v1/users/me/avatar",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": true,
+        "header": "Idempotency-Key"
+      },
+      "current_declared_error_http_status": {
+        "API_VALIDATION_FAILED": 400,
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_SESSION_EXPIRED": 401,
+        "AVATAR_TYPE_UNSUPPORTED": 415,
+        "AVATAR_TOO_LARGE": 413,
+        "AVATAR_UPLOAD_FAILED": 500
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "avatar.upload",
+        "avatar.same_key_different_content"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "user/avatar_upload_request.schema.json",
+        "target_schema": "user/avatar_upload_request.schema.json",
+        "current_jvm_dto": null,
+        "schema_closure": {
+          "user/avatar_upload_request.schema.json": "9d72e773299da22bd722c9a04e7658bb6151270a7a011dde2a243e779500d965"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "non_dto_reason": "no_json_body_or_multipart_binary_schema"
+      },
+      "response": {
+        "current_schema": "user/current_user_response.schema.json",
+        "target_schema": "backend_sync_v1/user/current_user_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.userdevice.api.CurrentUserResponseDto",
+        "schema_closure": {
+          "user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+          "user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+          "user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+          "user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+          "user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    },
+    {
+      "operation": "user.avatar.delete",
+      "method": "DELETE",
+      "path": "/api/v1/users/me/avatar",
+      "current_controller_present": true,
+      "current_idempotency": {
+        "required": false,
+        "behavior": "natural"
+      },
+      "current_declared_error_http_status": {
+        "API_UNAUTHENTICATED": 401,
+        "API_FORBIDDEN": 403,
+        "API_INTERNAL_ERROR": 500,
+        "AUTH_ACCOUNT_DISABLED": 403,
+        "AUTH_SESSION_EXPIRED": 401
+      },
+      "declaration_only_errors_requiring_04_enum_producer": [],
+      "target_implementation_status": "planned",
+      "observed_http_case_ids": [
+        "avatar.delete"
+      ],
+      "current_declared_error_status": 200,
+      "target_error_status_policy": "sync_error_registry semantic HTTP status plus ApiResult; old 200-only rule retained only in frozen legacy revision",
+      "request": {
+        "current_schema": "common/empty_request.schema.json",
+        "target_schema": "common/empty_request.schema.json",
+        "current_jvm_dto": null,
+        "schema_closure": {
+          "common/empty_request.schema.json": "a53fc06e431dc59bb0fd2380517a27dd6ca6ac05c03bea9bc479b06a583fe95f"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "non_dto_reason": "no_json_body_or_multipart_binary_schema"
+      },
+      "response": {
+        "current_schema": "user/current_user_response.schema.json",
+        "target_schema": "backend_sync_v1/user/current_user_response.schema.json",
+        "current_jvm_dto": "com.excellentcalendar.cloud.userdevice.api.CurrentUserResponseDto",
+        "schema_closure": {
+          "user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+          "user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+          "user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+          "user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+          "user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+          "user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+        },
+        "shape_rule": "strict exact keys/types/null/union in target Schema; reject scalar coercion and unknown fields before DTO binding",
+        "top_level_field_match": true
+      }
+    }
+  ],
+  "scope": "compiled DTO nested Bean Validation metadata, complete request/response Schema closure, declared errors and existing HTTP dispositions",
+  "production_corrections_implemented": false,
+  "all_business_error_paths_executed": false,
+  "compiled_dtos": {
+    "request_instances_created": false,
+    "application_context_started": false,
+    "records": {
+      "com.excellentcalendar.cloud.identity.api.AuthenticationResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "current_user": {
+            "java_name": "currentUser",
+            "java_type": "com.excellentcalendar.cloud.userdevice.api.CurrentUserResponseDto",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "tokens": {
+            "java_name": "tokens",
+            "java_type": "com.excellentcalendar.cloud.identity.api.TokenPairResponseDto",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.ChangePasswordRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "current_password": {
+            "java_name": "currentPassword",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 128,
+                  "min": 1
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "new_password": {
+            "java_name": "newPassword",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 128,
+                  "min": 8
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.ConfirmEmailChangeRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "credential": {
+            "java_name": "credential",
+            "java_type": "com.excellentcalendar.cloud.identity.api.VerificationCredentialDto",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotNull",
+                "attributes": {}
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "email_change_request_id": {
+            "java_name": "emailChangeRequestId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotNull",
+                "attributes": {}
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.ConfirmPasswordResetRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "credential": {
+            "java_name": "credential",
+            "java_type": "com.excellentcalendar.cloud.identity.api.VerificationCredentialDto",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotNull",
+                "attributes": {}
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "email": {
+            "java_name": "email",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Email",
+                "attributes": {
+                  "flags": [],
+                  "regexp": ".*"
+                }
+              },
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 254,
+                  "min": 0
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "new_password": {
+            "java_name": "newPassword",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 128,
+                  "min": 8
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.EmailChallengeResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "action_id": {
+            "java_name": "actionId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "challenge_id": {
+            "java_name": "challengeId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "credential_types": {
+            "java_name": "credentialTypes",
+            "java_type": "java.util.List<java.lang.String>",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "expires_at": {
+            "java_name": "expiresAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "masked_email": {
+            "java_name": "maskedEmail",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "purpose": {
+            "java_name": "purpose",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "resend_available_at": {
+            "java_name": "resendAvailableAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.LoginRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "email": {
+            "java_name": "email",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Email",
+                "attributes": {
+                  "flags": [],
+                  "regexp": ".*"
+                }
+              },
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 254,
+                  "min": 0
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "password": {
+            "java_name": "password",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 128,
+                  "min": 1
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.LogoutRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "refresh_token": {
+            "java_name": "refreshToken",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 8192,
+                  "min": 32
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.OperationResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "message": {
+            "java_name": "message",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "performed": {
+            "java_name": "performed",
+            "java_type": "boolean",
+            "primitive": true,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.PasswordResetDispatchResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "accepted": {
+            "java_name": "accepted",
+            "java_type": "boolean",
+            "primitive": true,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "resend_available_at": {
+            "java_name": "resendAvailableAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.PasswordResetRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "email": {
+            "java_name": "email",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Email",
+                "attributes": {
+                  "flags": [],
+                  "regexp": ".*"
+                }
+              },
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 254,
+                  "min": 0
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.RefreshSessionRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "refresh_token": {
+            "java_name": "refreshToken",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 8192,
+                  "min": 32
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.RegisterRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "agreement_accepted": {
+            "java_name": "agreementAccepted",
+            "java_type": "boolean",
+            "primitive": true,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.AssertTrue",
+                "attributes": {}
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "agreement_version": {
+            "java_name": "agreementVersion",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 64,
+                  "min": 1
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "display_name": {
+            "java_name": "displayName",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 40,
+                  "min": 1
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "email": {
+            "java_name": "email",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Email",
+                "attributes": {
+                  "flags": [],
+                  "regexp": ".*"
+                }
+              },
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 254,
+                  "min": 0
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "locale": {
+            "java_name": "locale",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Pattern",
+                "attributes": {
+                  "flags": [],
+                  "regexp": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+                }
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 35,
+                  "min": 0
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "password": {
+            "java_name": "password",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 128,
+                  "min": 8
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "timezone": {
+            "java_name": "timezone",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 64,
+                  "min": 1
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "username": {
+            "java_name": "username",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Pattern",
+                "attributes": {
+                  "flags": [],
+                  "regexp": "^[a-z0-9_]{3,24}$"
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.RegistrationPendingResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "account_id": {
+            "java_name": "accountId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "challenge": {
+            "java_name": "challenge",
+            "java_type": "com.excellentcalendar.cloud.identity.api.EmailChallengeResponseDto",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.RequestEmailChangeRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "current_password": {
+            "java_name": "currentPassword",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 128,
+                  "min": 1
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "new_email": {
+            "java_name": "newEmail",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Email",
+                "attributes": {
+                  "flags": [],
+                  "regexp": ".*"
+                }
+              },
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 254,
+                  "min": 0
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.ResendRegistrationRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "challenge_id": {
+            "java_name": "challengeId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotNull",
+                "attributes": {}
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.TokenPairResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "access_token": {
+            "java_name": "accessToken",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "access_token_expires_at": {
+            "java_name": "accessTokenExpiresAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "refresh_token": {
+            "java_name": "refreshToken",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "refresh_token_expires_at": {
+            "java_name": "refreshTokenExpiresAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "session_id": {
+            "java_name": "sessionId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "token_type": {
+            "java_name": "tokenType",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.VerificationCredentialDto": {
+        "class_constraints": [],
+        "fields": {
+          "code": {
+            "java_name": "code",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Pattern",
+                "attributes": {
+                  "flags": [],
+                  "regexp": "^[0-9]{6}$"
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "credential_type": {
+            "java_name": "credentialType",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotBlank",
+                "attributes": {}
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Pattern",
+                "attributes": {
+                  "flags": [],
+                  "regexp": "^(code|link_token)$"
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "link_token": {
+            "java_name": "linkToken",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 512,
+                  "min": 32
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.identity.api.VerifyRegistrationRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "challenge_id": {
+            "java_name": "challengeId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotNull",
+                "attributes": {}
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "credential": {
+            "java_name": "credential",
+            "java_type": "com.excellentcalendar.cloud.identity.api.VerificationCredentialDto",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.NotNull",
+                "attributes": {}
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.userdevice.api.AvatarInfoResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "asset_id": {
+            "java_name": "assetId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "etag": {
+            "java_name": "etag",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "thumbnail_url": {
+            "java_name": "thumbnailUrl",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "updated_at": {
+            "java_name": "updatedAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "url": {
+            "java_name": "url",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.userdevice.api.CurrentUserResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "account": {
+            "java_name": "account",
+            "java_type": "com.excellentcalendar.cloud.userdevice.api.UserAccountResponseDto",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "preferences": {
+            "java_name": "preferences",
+            "java_type": "com.excellentcalendar.cloud.userdevice.api.UserPreferencesResponseDto",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "profile": {
+            "java_name": "profile",
+            "java_type": "com.excellentcalendar.cloud.userdevice.api.UserProfileResponseDto",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.userdevice.api.UpdateCurrentUserRequestDto": {
+        "class_constraints": [],
+        "fields": {
+          "default_reminder_methods": {
+            "java_name": "defaultReminderMethods",
+            "java_type": "java.util.List<java.lang.String>",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 3,
+                  "min": 0
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [
+              {
+                "type_argument_index": 0,
+                "java_type": "java.lang.String",
+                "cascaded": false,
+                "constraints": [
+                  {
+                    "annotation": "jakarta.validation.constraints.Pattern",
+                    "attributes": {
+                      "flags": [],
+                      "regexp": "^(ring|popup|wechat)$"
+                    }
+                  }
+                ],
+                "container_elements": []
+              }
+            ],
+            "size_unit": "container_cardinality"
+          },
+          "display_name": {
+            "java_name": "displayName",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "com.excellentcalendar.cloud.userdevice.api.CodePointLength",
+                "attributes": {
+                  "max": 40,
+                  "min": 1
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "locale": {
+            "java_name": "locale",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Pattern",
+                "attributes": {
+                  "flags": [],
+                  "regexp": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+                }
+              },
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 35,
+                  "min": 0
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "settings": {
+            "java_name": "settings",
+            "java_type": "java.util.Map<java.lang.String, java.lang.Object>",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "timezone": {
+            "java_name": "timezone",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Size",
+                "attributes": {
+                  "max": 64,
+                  "min": 1
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "username": {
+            "java_name": "username",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [
+              {
+                "annotation": "jakarta.validation.constraints.Pattern",
+                "attributes": {
+                  "flags": [],
+                  "regexp": "^[a-z0-9_]{3,24}$"
+                }
+              }
+            ],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.userdevice.api.UserAccountResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "created_at": {
+            "java_name": "createdAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "email": {
+            "java_name": "email",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "email_verified_at": {
+            "java_name": "emailVerifiedAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "id": {
+            "java_name": "id",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "status": {
+            "java_name": "status",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "updated_at": {
+            "java_name": "updatedAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.userdevice.api.UserPreferencesResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "created_at": {
+            "java_name": "createdAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "default_reminder_methods": {
+            "java_name": "defaultReminderMethods",
+            "java_type": "java.util.List<java.lang.String>",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "locale": {
+            "java_name": "locale",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "settings": {
+            "java_name": "settings",
+            "java_type": "java.util.Map<java.lang.String, java.lang.Object>",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "timezone": {
+            "java_name": "timezone",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "updated_at": {
+            "java_name": "updatedAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "user_id": {
+            "java_name": "userId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          }
+        }
+      },
+      "com.excellentcalendar.cloud.userdevice.api.UserProfileResponseDto": {
+        "class_constraints": [],
+        "fields": {
+          "avatar": {
+            "java_name": "avatar",
+            "java_type": "com.excellentcalendar.cloud.userdevice.api.AvatarInfoResponseDto",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "created_at": {
+            "java_name": "createdAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "display_name": {
+            "java_name": "displayName",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          },
+          "updated_at": {
+            "java_name": "updatedAt",
+            "java_type": "java.time.Instant",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "user_id": {
+            "java_name": "userId",
+            "java_type": "java.util.UUID",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "container_cardinality"
+          },
+          "username": {
+            "java_name": "username",
+            "java_type": "java.lang.String",
+            "primitive": false,
+            "constraints": [],
+            "cascaded": false,
+            "container_elements": [],
+            "size_unit": "UTF16_code_units"
+          }
+        }
+      }
+    },
+    "roots": [
+      "com.excellentcalendar.cloud.identity.api.AuthenticationResponseDto",
+      "com.excellentcalendar.cloud.identity.api.ChangePasswordRequestDto",
+      "com.excellentcalendar.cloud.identity.api.ConfirmEmailChangeRequestDto",
+      "com.excellentcalendar.cloud.identity.api.ConfirmPasswordResetRequestDto",
+      "com.excellentcalendar.cloud.identity.api.EmailChallengeResponseDto",
+      "com.excellentcalendar.cloud.identity.api.LoginRequestDto",
+      "com.excellentcalendar.cloud.identity.api.LogoutRequestDto",
+      "com.excellentcalendar.cloud.identity.api.OperationResponseDto",
+      "com.excellentcalendar.cloud.identity.api.PasswordResetDispatchResponseDto",
+      "com.excellentcalendar.cloud.identity.api.PasswordResetRequestDto",
+      "com.excellentcalendar.cloud.identity.api.RefreshSessionRequestDto",
+      "com.excellentcalendar.cloud.identity.api.RegisterRequestDto",
+      "com.excellentcalendar.cloud.identity.api.RegistrationPendingResponseDto",
+      "com.excellentcalendar.cloud.identity.api.RequestEmailChangeRequestDto",
+      "com.excellentcalendar.cloud.identity.api.ResendRegistrationRequestDto",
+      "com.excellentcalendar.cloud.identity.api.TokenPairResponseDto",
+      "com.excellentcalendar.cloud.identity.api.VerifyRegistrationRequestDto",
+      "com.excellentcalendar.cloud.userdevice.api.CurrentUserResponseDto",
+      "com.excellentcalendar.cloud.userdevice.api.UpdateCurrentUserRequestDto"
+    ]
+  },
+  "dispositions": {
+    "java_string_size": "Bean Validation Size(String) counts UTF-16 code units; Contract lengths count Unicode code points. 04 must validate target Schema/code points before DTO binding and remove narrower duplicate constraints in the same compatibility release.",
+    "nullable_and_union": "Bean constraints, required JSON members, exact nested unions and service-domain checks are separate gates; @Valid metadata is recorded recursively and never substitutes for the target Schema.",
+    "idempotency": "Existing register JSON and avatar multipart replay old success on changed content; accepted ADR-Sync-06 requires typed request digest and HTTP 409 API_IDEMPOTENCY_KEY_REUSED.",
+    "unknown_and_coercion": "Existing 39 HTTP cases expose ignored unknown fields and numeric password coercion; target rejects both for every request, including nested credential.",
+    "profile_preferences": "Target registration locale zh-CN, profile writer username/display_name only, four portable preferences with separate revisions; old locale/settings preserved only by the documented migration/read compatibility.",
+    "http_errors": "Semantic status/retry mirror is observed; each old declared error is mapped above, missing producers remain explicit 04 work. The absent registration-email PATCH remains unavailable."
+  },
+  "compiled_probe_sha256": "2828e3e0ba0f6bcf2b493029a5f9557b364bd767a493f42156f54dbbfa13efba",
+  "compiled_dto_sha256": {
+    "com.excellentcalendar.cloud.identity.api.AuthenticationResponseDto": "92f8ec877c9f72dbb331bf27ff2e55c2fa99d5f508f625c2dcb96fc3c18a6d79",
+    "com.excellentcalendar.cloud.identity.api.ChangePasswordRequestDto": "0380d68e1660f2cdf8807c1c60139a93457f01dc6023e1001cc9c39af7e1e156",
+    "com.excellentcalendar.cloud.identity.api.ConfirmEmailChangeRequestDto": "d7e5c054b0602bbdd2211e5898a256061235c50a1b6c7698c64f63e295c47642",
+    "com.excellentcalendar.cloud.identity.api.ConfirmPasswordResetRequestDto": "a8525ed0a9d1baa9fffdc7ab74b7ca4684354ad3a588abd2dcbd5753cb3f27c6",
+    "com.excellentcalendar.cloud.identity.api.EmailChallengeResponseDto": "43a3888ec802c85b3c609418e4e96fb1bfc70aa3e3309b6ee99e1f0a402a38d3",
+    "com.excellentcalendar.cloud.identity.api.LoginRequestDto": "89d4f616a1fbaf6f4a1fecfddd0cf3a1c0c01a2220fdedcfbe0de08cd0804993",
+    "com.excellentcalendar.cloud.identity.api.LogoutRequestDto": "1ed786321f9b1c75d8a3e0e14b0ec444c88320bb25df4f906d87e0cb1c9d22d6",
+    "com.excellentcalendar.cloud.identity.api.OperationResponseDto": "d8413b94350793903f4a5c187bb69f45ae5bca1e9a3c8e305b440485a3e775f1",
+    "com.excellentcalendar.cloud.identity.api.PasswordResetDispatchResponseDto": "79fe07a18bbf1b11134d40a344cfb254252fef398690cefe29701a03600484b3",
+    "com.excellentcalendar.cloud.identity.api.PasswordResetRequestDto": "7a97f0d82f2b2c713a76bb91dbaa6ef187621f27ff31ad2b717fcda443c0dc00",
+    "com.excellentcalendar.cloud.identity.api.RefreshSessionRequestDto": "a3cc6e40ca25d3a8b7716b147e67e5992fadb4a36500dade83d8d4febcf82813",
+    "com.excellentcalendar.cloud.identity.api.RegisterRequestDto": "b76c4da2def7eece9889d001a6184b4f57114d21075be488694b36ec539fb7a2",
+    "com.excellentcalendar.cloud.identity.api.RegistrationPendingResponseDto": "1ee73bc4a59404407c580a3311c9db0faa10e1eb44a77de10ed758a1788ad5c6",
+    "com.excellentcalendar.cloud.identity.api.RequestEmailChangeRequestDto": "cc535ace5c2736001e6d3a54715f2df656a66eee6e218716fab34f2474d5ce7b",
+    "com.excellentcalendar.cloud.identity.api.ResendRegistrationRequestDto": "9cafe54cc300381339e46ad521c2620d9f8069993aa755249c33070cd12c60d8",
+    "com.excellentcalendar.cloud.identity.api.TokenPairResponseDto": "66782edc2282c51518f7f8c387d9d24e316dea99c65d4138be9b2267c3b9c7e4",
+    "com.excellentcalendar.cloud.identity.api.VerificationCredentialDto": "13ef5ea6b7e015cf17b27315176c608a8bdd0d602b35b2f28135388293cb82d9",
+    "com.excellentcalendar.cloud.identity.api.VerifyRegistrationRequestDto": "f1926fa96c200aa167cc97f89a76534c27f39d98a0a6ba32cf4fdd38cbc6a625",
+    "com.excellentcalendar.cloud.userdevice.api.AvatarInfoResponseDto": "394e5ee3a1bf00b56ffeb4e96c2c8ec848caf7ee231dfa322b38b3c992c3eec0",
+    "com.excellentcalendar.cloud.userdevice.api.CurrentUserResponseDto": "684c6a056a57f2cd210ac0f43d5e268be401e7d27c73ec1b2bac8851f8541dc7",
+    "com.excellentcalendar.cloud.userdevice.api.UpdateCurrentUserRequestDto": "ee6bb90a7e195d9d91d0b2e671419d7d77946208602caeffe1e9666b96e6baa6",
+    "com.excellentcalendar.cloud.userdevice.api.UserAccountResponseDto": "21c103056e769f53da52c7211e4ebea9932aeee6e84faee50cbcd1204835f976",
+    "com.excellentcalendar.cloud.userdevice.api.UserPreferencesResponseDto": "cae87496ed266612b91574411a07a244c8e25e627884503074021f1352e21587",
+    "com.excellentcalendar.cloud.userdevice.api.UserProfileResponseDto": "29d66098193f4e813c7a0f680ba7741b69596bcd64678627b7d5ccfed81ec1d0"
+  },
+  "source_sha256": {
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/admin/package-info.java": "eff130c226d8a3c7526d6da76156c8c278b22c740949a546a0d9abac4542dd40",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/ai/package-info.java": "7cf553699ea3a6210c63115dcd223c7ef8e1d66737b2edd18c37f0bc41344d1f",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/backup/package-info.java": "aa89ab0d02452e3d9cb170a73a23e6373ce651819c7086aaad32de754caceb2e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/api/ApiProcessConfiguration.java": "c56b3856455316bc9bc903828dc335214519c36e426a38f0de28ca210605b976",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/package-info.java": "6d1d145c3dcd2398a0e407f23c728679c9bfff636004deb2b4217df57eba6527",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/runtime/RuntimeConfiguration.java": "f71238936355ea8041abc11e01d5ef7741b1eced87aebc59c130b72a1fcf77fc",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/runtime/RuntimeProperties.java": "2b57d5b400081e07d6912e0f969a6486f07d137deaf03f6f80830a6cb6d7af38",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/runtime/RuntimeRole.java": "608a717d02bfc92d88eff905a46fea9cf809fbc823f49e3c49c8456645f3ff02",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/scheduler/SchedulerProcessConfiguration.java": "ad2f4fb29bbb644ed2555eb2b132560aec9028b5f055b0b4251c89687fe14ba1",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/boot/worker/WorkerProcessConfiguration.java": "a051f7e401e6c2233a19497b69b6a75def9e742b3c600bbd05b2afadec3d2ef1",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/calendar/package-info.java": "1f655fda1131fb5166045b1ca8293868be284905160814bbb2e5ce7afae47e55",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/CloudBackendApplication.java": "4ab7ac0dbefc0a6f4a178f300c7eecb3e213fbb64ec005f07366257ae5f3162b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/datedmessage/package-info.java": "85a4ecccee7771dd81e3593925ec6f6b7e8fca6ba499ecc5851a9c9a96b8c60b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/holiday/package-info.java": "0f0232b8dd42aafe7719ce29c090374c560603231a2b950f71b249cc07a8fa10",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/AuthenticationResponseDto.java": "9a7321fff743251db7a164a35b753bc33ee20755983548a5c5a1b0008f7bdfe2",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/AvatarInfoResolver.java": "ccff984e742e0376c34fcf41ddd92d946b3f8f26e7a9831a4e6fe801207a4d16",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/ChangePasswordRequestDto.java": "25688702245b5f833c8058c8ce09c30b140a01552f0f3caefc8ba20aeaee13fb",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/ConfirmEmailChangeRequestDto.java": "635b61705bfe19a8f46b3f22a3debed80dc2e931f869276d9d80c9d27dde3cc9",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/ConfirmPasswordResetRequestDto.java": "740c82a2696b3ab5b0af027650c87d8a1ed64b622697f911b630daab8deb6d87",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/CredentialInput.java": "e3198d1f1efb5b320ef8b112a5e0fe2a8d1624070c118ed29ab942955734a239",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/EmailChallengeResponseDto.java": "289595c1aa4904092cd0f3b7d25649884c4b725a3c54a7b131ec3ec94bf541d4",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/EmailChangeController.java": "a4bc99253edc101213ca2fadde48c65975a582de874ff130bd242643dbfe529e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/LoginRequestDto.java": "12af13b4c34bcc1afa9eb8cc414dc04aeb6c50a7de71295019a42e9ef07ad65e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/LogoutRequestDto.java": "ffa38839b7b4b21a18aa1249f05d78a8326085b966efa3ebc1e109beaca2745d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/OperationResponseDto.java": "d40f499f4050cefade99d2d53c5de4c516f5c60db2e3fe9b767c18c5cc1b42de",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordController.java": "8a6aaf6f656e5261250c57860059a0496bd5f2ea93220a37832cbb3b1804ce6a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordResetDispatchResponseDto.java": "abf36de6535be2d5932bc81faa2356ceb9cd3dfe443329407285f0b39cf27e6f",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PasswordResetRequestDto.java": "9b17d9a0f603fc56b7f87124f718dfe61ec6438086e85809ee48b3f162e50fcf",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/PrincipalSupport.java": "35cde8ddb28b6c32434b3d5a4b68874b4ff611c9e9dba3538a5e8cab6a98d57f",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RefreshSessionRequestDto.java": "af7149e28252875ba1428eccfdc147b4b51e9f954d81a32cc04fba99d89fae2b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegisterRequestDto.java": "6915fa6204d12aae634e4d6505bbacbbbd416b06483399f02ae28a27f758af87",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegistrationController.java": "7bf471c1eab82917b19bc921d8132a1aa7328bdfdd1fb21875d95d183bb0eea6",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RegistrationPendingResponseDto.java": "d3d4c0b9c5d74375601a72722896a525591fccf15ccc47d99c5c8b4eb7babca6",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/RequestEmailChangeRequestDto.java": "6b7b6cbbd044b368caa04251cce0680123a3dd0f2f6ee5d859feb1243c850c40",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/ResendRegistrationRequestDto.java": "3684f0438629e35c2825eb9d05a4d2ddc17356a0e71e73d015695b1ef1473882",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/SessionController.java": "f0ce3c28aeed9a3f1f2e8fa1c602f672e4676f1fe866189076e3f98300744454",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/TokenPairResponseDto.java": "d9f6ee10c68aea47c3b215e0942cc52d74dd2923eb33e8540868e53eb27fc954",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/VerificationCredentialDto.java": "cbd1ee7e1f7b6e766ad3a230f2d03c4121f82a5ad955af2300ad243bc6076d02",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/api/VerifyRegistrationRequestDto.java": "c9473e23a44987cb94de579fc3bd27eec35883e816e43f3d1bdcf54e6d5f2a00",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/AuthenticationResults.java": "44b1991b858e3e92da8b0ffcb3fcdac3d20b6ee1b15d007cb747e136f2d3adb1",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/EmailChangeService.java": "e5d3b9c53817c844e935f133d6b7c3a36cb86409f732c65bc90c8647279eb6d7",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/PasswordService.java": "f6a61c975839e3214e4b5132fd461c0b7f96002aed6ca334ba7fc24a456ec9b9",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/RegistrationService.java": "029d52d0c3a4e5a4c095c95f989b3a6c4136561ff01af82b322d06ff7ad4d64a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/SessionService.java": "edd006059dd2d4965b1380546e9705f75837906fff30a793493f5ea349a26e7b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/support/AuthenticationAssembler.java": "21bf29d70179b25cbac5f48bec2266d0c07ab65e81ea26870352b33e1465d2f6",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/support/ChallengeSupport.java": "ad7c4eb0b0c1fdc4924db72387f7615b803ad9268e79b33ea304b5839a318723",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/support/PendingEmailChangeRequestPersister.java": "01ad404222c30c617f30e04f64efa11af2a00a497d79fd675f25f731f964c37e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/support/SessionIssuer.java": "61b3a29ce181e23a0e2c9dd91cfebe1ab3ee3b7bb4a9040c8380c57d6781bd75",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/application/support/TimingEqualizer.java": "039ba634ef214041648036589abac61a3d693b8f3980d82add245a7f10334254",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/EmailActionPurpose.java": "fdaae42b01ee08ff24be7324fafeeb7adb463b80603b3b88185ff7dbf880a682",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/EmailChangeStatus.java": "1aae3810fa97240ab692d4751fdac888d16aabe632e0fc7ef3314f5cf4c3d385",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/MailSender.java": "f38ef484a82f9c1b59610f05ad6d05c39e8f07dab8b50b93f7cbe42af5b0a938",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/NormalizedEmail.java": "3ce7bae4a5a40fc2719da0ac705d8024781ae56ed48f7f26da34fd9a6b75be18",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/package-info.java": "854cba91f1b75497d4e31773b242da3d5b3d6e5d62ab975007a690e024baae53",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/PasswordHasher.java": "b71388ca49d034e3ace7d9b07936c65045f99401965b1b3b5f618207f5dcc4e8",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/PasswordPolicy.java": "434338836030972219f638e7edeabc1cbb9101616d67771be69745bfdb8596cc",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/RateLimiter.java": "1609a155d4533f0a19cb0349fc8261642cf5ddf2ba02fbf98852ea8037894f4f",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/RefreshTokenGenerator.java": "8281712638ce85cefcb0f108f5cc9f53a80ff133a11550d94afc84f0260dd383",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/SessionRevocationReason.java": "edef58fe36e126b6d0ad80994f6d7a662fac8794c83567626c9a86a80f72a1d1",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/TokenHash.java": "6c7e10d84cd178e19ca2d35211bc6febf4ff08c9d0a690bf6ae59e92fd292c4a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/UserAccountStatus.java": "c68751e880eac03351ba99366a2dfd4d0bdc809e8dd4ee1b73bb88f6d937dfdc",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/VerificationCodeGenerator.java": "6742f15979088274aa8e9a6d1552853f655765a786be535d005eda771f11ec3d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/domain/VerificationCredentialType.java": "829fb8440f7a4b7a83cad8b35cc1766483cc550065f550086f99d6abe52f4d4f",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/Argon2PasswordHasher.java": "2acb305fc7a6939f76d6818e427f37f05412b5030e5d011af0403b4bf69891a6",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/ConsoleMailSender.java": "f506cb7690a9d664fea45df1af71d4d4d679f1a5535e17f20944fbfc708a6ffe",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/IdentityProperties.java": "8f9c73d56abf310420b14e5ff3ff050bfa8a654e74563ccfd7610c6d6cdd1a0c",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/InMemoryRateLimiter.java": "19884080325d26f3c1b88ed547517662546e9fe8ef548d6e8c2af6de650b8f02",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/MailConfiguration.java": "76ab05573c804ebbf267bd58ee8b5ea046d608df44d34108c6963155e25b0e14",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/MailSendingProperties.java": "4e68bb5c7620c2f30b00acaaafac67975e595336055c68b968e72db9b9fc9dee",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/EmailActionChallengeEntity.java": "52562afb65a8a81e99350320faeb6c3221973e79ce7ad570cb534e3e8c1a64c5",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/EmailActionChallengeRepository.java": "c59347d2f6c454940bf7f6cdebd49b59b9f81300e454c1d73a4233079c56d601",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/EmailChangeRequestEntity.java": "3c3d942b67c01c767f20d0bb14b7f5daf2329b9bc8bbaa6ff2fb61e853e48313",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/EmailChangeRequestRepository.java": "821bee0d60c09cffcab76e23f6b0f7c1436045eb2475bfec559f35eeb13634a9",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/PasswordCredentialEntity.java": "c80332cbd49d52410770ccdaf14d375b08e63bf53c068d9a9e50bcf9af0ebd50",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/PasswordCredentialRepository.java": "c8d06c6f31ae0793ae19fdb8158919fcb0f59926dfd0124aa040a32a18471cc4",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/RefreshTokenGrantEntity.java": "e850a04b7e292e3f4f561c376d6a83368b040a7c808de8b7ae897be00bfacae4",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/RefreshTokenGrantRepository.java": "dc7f15ae0c59beeedf49456f028a84352206d42fa23c1d709bd76e721c51a791",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/UserAccountEntity.java": "a6b7e0c0cf1f88ee1d7569c05d75306868c6b67a83cbc6a6be0ec65a610ad0a0",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/UserAccountRepository.java": "57cebaf0fe6b860724bcbeab2656594a95c9b591ca725e336704191fc93d81b4",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/UserAgreementAcceptanceEntity.java": "dd54f760dc90e84738af3d43e0c83e4f6a657cb7786ae9c93e054ff5ad24ec01",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/UserAgreementAcceptanceRepository.java": "ae15df4cbe8252f7b2f3277ae05a41be7703fa94cee056315596460392bacc25",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/UserSessionEntity.java": "3eaa2e3a6da60551dfa78a1d7554bf85a2813b3a8cf495ce8d3beebd59ec9930",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/persistence/UserSessionRepository.java": "ae5811b9b5dc16ce146b523b3330ac42ff95d313cccf82e7531303257667a4b5",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/RateLimitProperties.java": "b5e8a3909820b30740539cbd69ac0349e844d85aa9679f5454c0e54272cdc76e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/SecureRandomRefreshTokenGenerator.java": "65e6a44c5e51b08cdbb901b7068dc07125406cfeab10748e47a7d7a5cae1df78",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/SecureRandomVerificationCodeGenerator.java": "ce63ed07f5f12c63cc91ae5887c3c8483305eddce573f29157737e979c388c54",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/security/DbAuthenticatedPrincipalResolver.java": "3efe3e7363de666b9c36447ef63195ea09071b7d9e4820d9d2f87304d5f18a91",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/SmtpMailSender.java": "33c842f0d07180544e919759d28e642a88f3e5d7c8004efe06b7e8451af01353",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/infrastructure/UnconfiguredMailSender.java": "a75e84abc8198cd087ec3d391eafea6ea94f68614bb0942fee6de624a48cabca",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/identity/package-info.java": "4aa26bf13ef7596eff51deb2391e9771d0c467c778003fd25738295c32a940ec",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/api/IfNoneMatch.java": "274d81d7e87f3cb0aadf617df777dc41ac9bcbcf691bcf5a886b933585785f66",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/api/MediaAvatarController.java": "153b1bf9a6f103392a1efc3fc6906ac02f7c32e162774b66b9ce2a87769e6985",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/application/AvatarAssetService.java": "1af4e9c07fb79fa758df02d94f28ab5cc6d84140c9393953cddb440094a041c9",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/application/AvatarImageProcessor.java": "1565cebae9260c77bf05f8796757e3d4741537771dc3e906902e231b8d14cb87",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/application/DefaultAvatarAssetService.java": "a5432710c68177b5ac93ba5ce1cdaa6f7b03ff182b18e0d3108312fe42d73eba",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/application/JpegExifOrientation.java": "ec57f9864bbd3544fefd10a074d3be5cb3ec1f1c01b31fd1a780b3c5242de955",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/application/package-info.java": "eebac6bac73f776abec5f1b6a76b5007be871c554d899e70fef3f24b5e6b4511",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/domain/AvatarStorage.java": "0a3cd1d684eede1a40b491bff8d6838497e92a9e324e0d419fd421935af3b545",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/infrastructure/LocalDiskAvatarStorage.java": "517ea5f72e3f51c74446b215b806c918807465512f29445e53cbe7d0ba171d96",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/infrastructure/MediaProperties.java": "34dd78781c6b7f75713ce33b76d2264c4567d791d1eaff0f4697728b9a56d53a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/infrastructure/persistence/UserAvatarAssetEntity.java": "0b1c6efc92cd34f8deb2403280f851d7d0b9e574bb8942bdf452342575a8c759",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/infrastructure/persistence/UserAvatarAssetRepository.java": "cdba56a273e372c4e19405fa3fd3cd3097b82774369e0d5fdb11549e6a70804d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/media/package-info.java": "bfd69c1df9fcca59d6b62978f92c9391df1dc38e62b2ad5ed55191ac10d91da5",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/notification/package-info.java": "74950d4c06751f88464e3986ce5dc52e625ba487213cb034b2beaa816dbf8c5c",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/ApiErrorCode.java": "a80ce09b827155b9a90f12681cf9fa6efb08c7762b98693270814987b591ba7d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/ApiErrorContextResponse.java": "f61d52189d8256c6cb0f85e6c3faec6002839d2a7ceebf9ca1b359982cb48462",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/ApiErrorResponse.java": "4c6e6889973ac81126854e94397963bae125fce975bdf258d0bee0134a8d47ff",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/ApiException.java": "4d8d163d9f780d94a185554e57ef6df71a0a9beb42af3fb0dc471e24b9d82b18",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/ApiFieldErrorResponse.java": "cc400e642fc5d6c76b51b98cd70d14996db43b41c8940b07f0ba56bc74008544",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/ApiResultResponse.java": "ff8413a267e30f88d196b8b6c9963973659ac36e9fa04dd92f524dd83dfedcad",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/ApiResultWriter.java": "90ec8c589f48a653273d01010ca608e7a96b5aa55769e815ee8d61ae15fbb259",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/GlobalApiExceptionHandler.java": "f79e4f4eefccaa172a8c0c7469936a042e495e3a5e364f89facf42cb8bfe2d21",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/JacksonConfiguration.java": "872802b8620cb92635eb2dbe6a8bafe37695b2514510196529270221b2853a3c",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/package-info.java": "4f91d8c699bca0d9ee028e79a7f205722fb840b01153117293872c0d32d7168c",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/api/RequestContext.java": "2bf52d0d347d3bffeb3426e9f57c283de65be1ee5c7274e843c8ea3747496876",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyConfiguration.java": "5f0f846feef1b124f55f3132a66577f567ba4714f91e5e858f72425f7cf13233",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyFilter.java": "aeda0fe405d60f7a3251653e6af285ce01f951d814d17c379b83f77634351b4a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyProperties.java": "4b70d4a8bc71f71057cdea79453cb06b4928b214d0cc5f3c9ca6c19f67b8461b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyRecordEntity.java": "26f974cff64ba0534cfb646550acae11881c9d33ab43dcb8fdac5489d63485e0",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyRecordRepository.java": "ffc04f0cf5b5fafcbda8a8c63011f6f7264df422bbf7b76b920a5a3dc6e04e3a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/idempotency/IdempotencyStore.java": "b539350e70b6164eefbdf705d22f72069e16c03c5178ff6c96ec9acc7ab45790",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/observability/ObservabilityConfiguration.java": "5f65b2dcc63d46cc88e66a605b5c1d843b45bde545841d732e7740a508711089",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/observability/RequestIdFilter.java": "11705bf20a003b668ba6f7f5b3a9bafd3f428fb074063e46630e424d7d656b25",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/observability/RequestIdGenerator.java": "58d5be6f7a32afbe7359beec1d526747b3a0679140ce57fec2cd94f5b7c9e364",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/package-info.java": "d14095265e2865adb2e401ec7cb04f20fb73feb9e637d31be851010f390baf22",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/AccessTokenVerifier.java": "7216d158496853a24a4b5c03f3651a120171eab694304087f89e102cb59e56d8",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/ApiAuthenticationToken.java": "404ba6fe2ab43b3b4d4048b176c4df5c025b011fe73b709bb0daae20e6590dd9",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/ApiSecurityConfiguration.java": "7a8c68e0fe448a7d517bdd8b24b8c8fe0cfaa74fe5d51c46ea2cf2dc6f92bee9",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/ApiSecurityErrorHandlers.java": "21e59a4fc573f62c74e5086711f1e3e9a002ad6b78d5f4546741abf0b286545d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/AuthenticatedPrincipal.java": "798596f5b461e366fc40f4e74c67501873ac5e34bb59ff90e001d56a673b5e4c",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/AuthenticatedPrincipalResolver.java": "c939aed7ec392e3933bd05f46a53b12bad62403b2fece3196e58ff2d43f806af",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/BearerTokenAuthenticationFilter.java": "49496262761ad77cd1fc6034c67a79b0c117b1f11ff15b2e4435019ebd384c3b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/CorsProperties.java": "1ff4129ad54c7316b0e5dc875e169542240c0edebf6d8cdeb978217db38a7075",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/JwtCryptoConfiguration.java": "ec97d5a09d53427ea2f09f002dce9d7ccccf1fff621f5de4d1a5bbdfd8746550",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/JwtIssuer.java": "465091fe6b80c6c8f98a4e27fdc0b613b0fc3e744328caa48f0357c1a0ca4ac7",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/JwtProperties.java": "b4137b764be77bc8670dcacfcf24c4714d03b1dabe22a90e6ad9099346a37c25",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/security/package-info.java": "7293add8677b2f3d86456a3c9da3b6b0b10190c3e2f177f09070c217e582dddb",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/time/IanaTimezones.java": "6497e7e64f5b0bbf89c4fdd6d6a5435bf60b3199028fb937ea1b435de87e04cb",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/time/IdGenerator.java": "c5b556ebb1af76ffd56dfe88901c5faf2cdcc6bd54b9cc72c64300f1a6d4af79",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/time/package-info.java": "a0844f8145026fc48f87061cc9dc560f682b2da20c231bf6a385d925de2a73bd",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/platform/time/TimeConfiguration.java": "c86ae31dd3b5904f9d6b8db94a8fd31807b20cfd000c7a6fe28de9188b35543c",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/reminder/package-info.java": "62d331f32a7507694f0a888f93c0d02daf0f684c5997c739f695d13c1616cf2e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/search/package-info.java": "eb30378259518379064309f19e6e950baaaf93a20c8187c02d966c43b2a90754",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/sync/package-info.java": "522885eb2664cd3cdb18db8786b99ea1366e0739c6f02d820b8124a06bd0f7a0",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/AvatarController.java": "367875e744709d846bbcc3d1b0adae92812d5f17b091e45aa9f03ec5f20fac1a",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/AvatarInfoResponseDto.java": "b4e2e5fbff682f8fb94f4ae764f49895256eaed6886c43e478298dd1472d3a50",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/CodePointLength.java": "6a083fe0ef098c0baa3a94e68c10bb8f9d7e2a996e5bf94b7136ecbb70682d9c",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/CodePointLengthValidator.java": "dea5e6d991e0b8422cb060fc1712be2ecaba559b7675a09c5b0535080b9ce79d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/CurrentUserResponseDto.java": "4777494d03d284377e321114dd2aa18d4fdc19a160bd3ddbfa05239e9339b104",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/package-info.java": "c9126d0baa4b446fcc1ec53831db729848d0171e881479cc402e920e7b919f27",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UpdateCurrentUserRequestDto.java": "86ad0df8f6096b5ef916af372a9bdcbf44e6f5c3ea18d614b6ac638033f68c8e",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UserAccountResponseDto.java": "aef3e5f98e02f91e2ae08eb80dd3dd472bb152adfc3fe69a507c7115be4a50a4",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UserController.java": "0e8a712a185233e8aec7a59915ebd4dda7524c4a7358af0a6e60e5ca3b91fec4",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UserPreferencesResponseDto.java": "1f8d4a35b8dcd59b16130d4f28815341410b33b76572c926451225e4ea2f1c7d",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UserProfileResponseDto.java": "023201f7baaa4645148263918349df6f533daacd6cd2d7e173a6684566742ea2",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/api/UserResponseAssembler.java": "69be312fac485cf23412c6dc486d24ef419eb41b1fcace2da6ff044917c9a015",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/application/AvatarService.java": "a38e0c80df0cf715fd0c769abdf403cd49bea1ab949aa7294b4346f094c934d5",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/application/DefaultProfileService.java": "4efe7d26fe4317b695a912540e6dc963f073ed350a26ff3759a6f61edb7c0f22",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/application/package-info.java": "fd8c067a53427d64277f7f78733daa65e2ba415573c8c1f80778307b8450a1c5",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/application/ProfileService.java": "9912a51b38436fed909daa57d698113b301b0a2efe2022356a88c4072c1fb935",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/domain/NormalizedUsername.java": "4ec464c7f0048a7877c3095459f13213a8585f31d17d9765644b1ac1eb8f62c5",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/domain/ReminderMethod.java": "fa48ebbbdabd9f42aedde00d57c199ef692510a861c8c93ee97abf4beb8cf1ab",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/domain/UserSettingsValue.java": "b36cf3a822c5755f831977702a1a4165c5453f6c69c3339fc3a2f18aa57168af",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/infrastructure/persistence/UserPreferencesEntity.java": "ebafb5bab9c06f58acdc59f95c4c44d7e8d1b941c5cc50935139ec773348f415",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/infrastructure/persistence/UserPreferencesRepository.java": "51cf90aa6a1d0555c96af201cd71f418187ac8642d3735aeda8163a0b391dca6",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/infrastructure/persistence/UserProfileEntity.java": "0e7b6a37f5cc1345e57edbda417a1e1e1cfa829d8e93b72a9147fb90948a533b",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/infrastructure/persistence/UserProfileRepository.java": "6b0e1942fb99de511e3cadcb90753b8843288651a644b27b83e84e10d127d7a9",
+    "cloud_backend/src/main/java/com/excellentcalendar/cloud/userdevice/package-info.java": "b9acf205c4e25e5387a23f80194c69a86a395a7f85874bb289d4c2bb445006dd",
+    "cloud_backend/src/main/resources/application-api.yml": "eb72f484b80aa6f2b36508ac9b393dd655d76fe72afa225bb9bae6e0e3c6cc9a",
+    "cloud_backend/src/main/resources/application-local.yml": "6ffbfaf7024dd258a47b61d9a719f33270ef7aa0c45986287ba99f641e943f2b",
+    "cloud_backend/src/main/resources/application-scheduler.yml": "f9338be85c0aeb0f05ef71d6727fcf248038b430093d782004f46f23a5f5786a",
+    "cloud_backend/src/main/resources/application-worker.yml": "0f995df626fe38cd85d0f0ac02a4285a9504355d21bfa588359e6bf02243633e",
+    "cloud_backend/src/main/resources/application.yml": "3e32090f16919fe09d58e4f33137d8e00fba6a3a6ca2a44b237a20b758b4e5ae",
+    "contracts/auth/authentication_response.schema.json": "98835a3d749f4087c41875c9fa740701e36bc3e19e287f8bb9a4abff4814322a",
+    "contracts/auth/change_password_request.schema.json": "8448eee957221343f087244403eab25caf4bc301ccb752febe8801e22519ca39",
+    "contracts/auth/confirm_email_change_request.schema.json": "dadf9ec1ec7b61cd17d299dda02c49bc37044fd8bd3a5bb839ae808a1f872f13",
+    "contracts/auth/confirm_password_reset_request.schema.json": "6dd80665fa39bff5849f0ffe4af1c14b502739cfd25f6e6c4f807733c7ff3dd0",
+    "contracts/auth/email_challenge_response.schema.json": "0c9536b7de09fddfc49d4a88173540c2d8747d05022f11110607ade7953bd8a1",
+    "contracts/auth/login_request.schema.json": "863d5050f4cd852af36ffa9fab192d7ac6d649323d7f4e672b8b1c2fa145ddef",
+    "contracts/auth/logout_request.schema.json": "88ba84fcaca365bbb04f02fb6e41af23c906791780cfa6b93ec7bcec14c35f94",
+    "contracts/auth/password_reset_dispatch_response.schema.json": "1ad76f75850c28511ab578ec00494e8c5437b19f464d4df540d00e8ff9b963bf",
+    "contracts/auth/password_reset_request.schema.json": "f9364d5e2b0a48f27575ddc19bfb7999ac588efb8bfc408179c49c25b5cce21d",
+    "contracts/auth/refresh_session_request.schema.json": "3ddc255a6ac1a770dd80d83b448566921404296a8ba5252c909dd67fbc1a4337",
+    "contracts/auth/registration_pending_response.schema.json": "6b129e56f5a316380cf64aa9eb7379dc1f590b5c8c794325cb3edbc151fe2803",
+    "contracts/auth/registration_request.schema.json": "c4aa0f33913e6808c102ac640e5de8853aae87bdaaa039a8e65132a4ac431dc5",
+    "contracts/auth/request_email_change_request.schema.json": "38c05b7bf09d4836b17bf6135236d810d4bff6737d3adde7d8d613643e25d426",
+    "contracts/auth/resend_registration_request.schema.json": "5ef0d3834cb0deb146d9a2c5280a4c209c8bd9b1a0a6c2416f208224df2797ab",
+    "contracts/auth/server_logout_terminal_response.schema.json": "4a1a27ea49776a435ab92cf4b210db8ac3d0d7b6a19e0ec8a11873105810474a",
+    "contracts/auth/token_pair_response.schema.json": "232536dcf9528f73e948998450069c30c95c6673af2a7dc2a41bdd17ae64bc35",
+    "contracts/auth/update_registration_email_request.schema.json": "9b97bbb087e00294ec40c2bd2d6ed4024968ed81eb42725c1ec6536b9c89203f",
+    "contracts/auth/verification_credential.schema.json": "1b4f9bf3dac7f595b0c4dbb16825ea9b016b8d7b60c9e5475266c674f5034e2c",
+    "contracts/auth/verify_registration_request.schema.json": "c96c21cb90062293131f836e4ec10e87730246f30cdbcb000631aead6f729e6f",
+    "contracts/backend_api.yaml": "bd688c2ce4beaedda8fac1ae8a085f56714a1730c59f1420defcbf4ba1d029f9",
+    "contracts/backend_sync_v1/auth/authentication_response.schema.json": "29ca1575a8041f2882917656d28221c6148031887c8736746828bac01be51f48",
+    "contracts/backend_sync_v1/auth/registration_request.schema.json": "03d03f260adfb010a7a10eb229fdb405e9d97d8f2c8428e1d087ca8287002f78",
+    "contracts/backend_sync_v1/backend_api.yaml": "4d7fdd7ebe7b9f21b2ba2f0dce31d1beae42a0f138e48ca03c0d1582e89f2fcc",
+    "contracts/backend_sync_v1/user/current_user_response.schema.json": "ca1d364a98e1ea12feae4c9ab915ca4931b6d612a9c2b628571144c20fff5227",
+    "contracts/backend_sync_v1/user/update_current_user_request.schema.json": "c985491fdfc234c99c2f0defe8cd64ddb0b648009604ba489dbbb2e3ab8667a1",
+    "contracts/common/empty_request.schema.json": "a53fc06e431dc59bb0fd2380517a27dd6ca6ac05c03bea9bc479b06a583fe95f",
+    "contracts/common/operation_response.schema.json": "113851c3b29f78672793bd68f092b8ec63d02a42fe0e506fceac5ffbfba5aaf8",
+    "contracts/spikes/sync_v1/backend_http_calibration_result.json": "d6862a00c4f083f47db33fe61a72a2dccf7569d80b3107aa7027caa75b7f515d",
+    "contracts/spikes/sync_v1/BackendShapeProbe.java": "2c7d75864212dc1a1c52a819d2b014e7e819b923c17289319b1beb5a91ff0a23",
+    "contracts/spikes/sync_v1/run_backend_shape_audit.py": "849b26d32361cf0b57713ac787ce1b8005559b44ea7d51e2bfd580f8d7ff5cfd",
+    "contracts/sync/backend_calibration_audit.json": "2e8009bf26725542f72d518da8532ae102b4fb55e681c2e1a4ac5ea98ca51dc8",
+    "contracts/user/avatar_info.schema.json": "9e7242b1b67f5e013d6f5ff8f510b7be5698290097db1689d4bd6b015ceb1b9a",
+    "contracts/user/avatar_upload_request.schema.json": "9d72e773299da22bd722c9a04e7658bb6151270a7a011dde2a243e779500d965",
+    "contracts/user/current_user_response.schema.json": "6e793f4ede8735a362c1e69db6d922e54c9b37107f1704c48ea277f081c9517e",
+    "contracts/user/update_current_user_request.schema.json": "e74078160d5671230ca37d01ea74f611cc8d9695c48f2efac01d0d912e5ac704",
+    "contracts/user/user_account_response.schema.json": "cd985a91a17139ac358d80387945729b1a0cab1ef32ef1f7281416d587ef0aa8",
+    "contracts/user/user_preferences_response.schema.json": "acfb801f4edcd1b7691842b32c0ebd445e84b2ce2a3204d3a58be1f668fdb941",
+    "contracts/user/user_profile_response.schema.json": "edb1a8e0c642a68bdc1bebb9325be6eaafc9ef32afb220dcba21842455004319",
+    "contracts/user/user_settings.schema.json": "e80c1f95f5eec4c1f99d879742932ed4977b5a536f403e15febcdf5a449ba61b"
+  }
+}

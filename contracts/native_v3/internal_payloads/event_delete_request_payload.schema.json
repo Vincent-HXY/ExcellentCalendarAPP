@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal_payloads/event_delete_request_payload.schema.json",
+  "title": "SyncV1 event_delete_request_payload",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "description": "Deletes an Event. A recurring Event requires delete_mode=soft, recurrence_delete_scope=all_occurrences, and the expected current revision; individual occurrences use event_occurrence.cancel.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "delete_mode",
+    "recurrence_delete_scope",
+    "expected_recurrence_revision"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "delete_mode": {
+      "type": "string",
+      "enum": [
+        "soft",
+        "hard"
+      ]
+    },
+    "recurrence_delete_scope": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "all_occurrences",
+        null
+      ]
+    },
+    "expected_recurrence_revision": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

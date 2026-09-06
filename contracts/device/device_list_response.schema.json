@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/device/device_list_response.schema.json",
+  "title": "SyncV1 device_list_response",
+  "x-contract-domain": "sync_protocol",
+  "x-contract-version": 1,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registration_pending",
+    "current_device_id",
+    "devices"
+  ],
+  "properties": {
+    "registration_pending": {
+      "type": "boolean"
+    },
+    "current_device_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "devices": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 10,
+      "items": {
+        "$ref": "https://excellent-calendar.local/contracts/device/device_response.schema.json"
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "registration_pending": {
+          "const": true
+        },
+        "current_device_id": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "registration_pending": {
+          "const": false
+        },
+        "current_device_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        }
+      }
+    }
+  ]
+}

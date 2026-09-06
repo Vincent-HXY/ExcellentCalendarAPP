@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://excellent-calendar.local/contracts/native_v3/internal/bootstrap_identity.schema.json",
+  "title": "SyncV1 bootstrap_identity",
+  "x-contract-domain": "native",
+  "x-contract-version": 3,
+  "x-implementation-status": "planned",
+  "x-release-status": "planned",
+  "x-rule-anchor": "cloud-sync-02/8.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bootstrap_id",
+    "sync_transport_generation",
+    "account_generation",
+    "snapshot_upper_bound",
+    "device_highest_client_sequence_at_snapshot",
+    "device_client_confirmed_through_at_snapshot",
+    "device_next_client_sequence_at_snapshot",
+    "device_client_sequence_exhausted_at_snapshot",
+    "retention_floor_server_sequence",
+    "resolved_conflict_cleanup_before",
+    "expires_at",
+    "snapshot_item_count",
+    "snapshot_items_hash",
+    "total_page_count",
+    "page_item_limit"
+  ],
+  "properties": {
+    "bootstrap_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sync_transport_generation": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "account_generation": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "snapshot_upper_bound": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "device_highest_client_sequence_at_snapshot": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "device_client_confirmed_through_at_snapshot": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "device_next_client_sequence_at_snapshot": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "device_client_sequence_exhausted_at_snapshot": {
+      "type": "boolean"
+    },
+    "retention_floor_server_sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "resolved_conflict_cleanup_before": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "snapshot_item_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "snapshot_items_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "total_page_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "page_item_limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500
+    }
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {
+          "properties": {
+            "device_highest_client_sequence_at_snapshot": {
+              "maximum": 9007199254740990
+            },
+            "device_next_client_sequence_at_snapshot": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "device_client_sequence_exhausted_at_snapshot": {
+              "const": false
+            }
+          }
+        },
+        {
+          "properties": {
+            "device_highest_client_sequence_at_snapshot": {
+              "const": 9007199254740991
+            },
+            "device_next_client_sequence_at_snapshot": {
+              "type": "null"
+            },
+            "device_client_sequence_exhausted_at_snapshot": {
+              "const": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "x-exposure": "kotlin_jni_cpp_only"
+}
