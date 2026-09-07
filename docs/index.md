@@ -49,6 +49,9 @@
 | Windows 安装与开发环境配置         | `docs/guides/dev-setup-windows.md` | 安装、环境恢复或环境故障任务时读取                     |
 | 构建、测试、smoke test 和验收步骤  | `docs/guides/verification.md`      | 确定或执行验证范围时读取相关章节                       |
 | 当前已知问题、缺陷和阻塞           | `docs/issues/open.md`              | Bug、故障排查和风险评估优先读取                        |
+| 云同步-03 C++ 实施阻塞与先行测试   | `docs/issues/problem-cpp.md`；`cpp_core/tests/sync_v1/README.md` | C0 冻结输入漂移、writer 初步盘点、测试代码和后续验收预期；当前不表示 C1–C8 已完成 |
+| 云同步-05 Kotlin 先行测试与阻塞 | `docs/issues/problem-kotlin.md`；`flutter_client/android/sync-v1-acceptance.md`；`flutter_client/android/run-sync-v1-unit-tests.ps1` | K0 默认冻结门禁、隔离组件的先验测试和构建结果；不是 K1–K6 或生产接线完成证据 |
+| 云同步-06 Flutter 测试先行与阻塞 | `docs/plan/active/云同步-06-Flutter测试先行验收矩阵.md`；`docs/issues/problem-flutter.md`；`flutter_client/test/sync_v1/contract_preflight_test.dart` | F0 实际冻结校验、35 个方法和 fixture 入口检查；F1–F7 行为预期尚待转为产品测试，不表示分计划完成 |
 | 已解决的相似问题                   | `docs/issues/resolved/`            | 仅在追查相似根因、修复模式或回归时定向读取             |
 | 当前正在执行的任务与详细计划       | `docs/plan/active/`                | 功能开发、范围确认和进度任务优先定位对应计划           |
 | 过去已完成的开发计划               | `docs/plan/completed/`             | 只作为历史证据；现行资料不足时有限查阅                 |

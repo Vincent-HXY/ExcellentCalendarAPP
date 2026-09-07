@@ -12,6 +12,8 @@
 
 > 协议输入锁：`contracts/sync/sync_v1_revision_lock.json` 中的 `05_kotlin_android` 与其他三端锁定同一 revision/hash/fixture manifest。只在 `contracts/run_sync_v1_validation.py` 默认入口通过后按该机器版本实施；本层生产 implementation/release status 仍为 planned。
 
+> 2026-09-07 执行检查点：K0 默认 validator 因两份 Appearance Schema 与冻结输入漂移而阻塞。已交付测试先行的隔离组件与 29 项 JVM 先行测试（27 通过、2 个真实前置门禁失败），未接入生产同步链。测试范围、预期与剩余未写测试见 [Android 先行验收记录](../../../flutter_client/android/sync-v1-acceptance.md)，冲突及构建阻塞见 [problem-kotlin](../../issues/problem-kotlin.md)。K1–K6 尚未签收，不表示整份计划已完成。
+
 ## 1. 目标与完成口径
 
 本计划负责把已经冻结的云同步 Contract 接入 Android：建立账号凭据唯一所有者、workspace 与多 runtime 生命周期、账号数据库密钥管理、严格 HTTP transport、唯一后台同步队列、JNI batch adapter，以及 workspace-aware 的提醒 reconcile、退出、撤销和缓存清理。

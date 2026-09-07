@@ -2027,3 +2027,67 @@
 - 验证：默认门禁CONTRACT FROZEN，220 protected/961 Schema/1197机器输入，43项门禁反例通过；四语言1376项一致，协议53项、能力及Review22项、导入组件54项、组合恢复27项通过；SQLite11项/134回滚边界、PostgreSQL70项、20k/50k完整发布通过；手机64/32位及Java/Windows各49项证明验签通过。所有证据来源摘要匹配，未手改报告制造通过。
 - 冻结锁：888fee7a8767eed7ac95eb3c7a76707e8bd3ed3264695ebdf750cc837d3643a9；03–06同版输入，新产品能力仍planned。本轮未改产品业务源码，未重跑完整产品应用构建，既有未受影响的系统实验按原始证据保留。
 - Git交接：目标HXY；隔离分支codex/cloud-sync-02-review只提交Contracts及相关文档。33个外观/界面等其他任务文件和原有日志已备份并按摘要保护，不纳入本次提交；具体问题及验证详见云同步-02-Review复核与兼容修订记录.md。
+
+## 2026-09-07 02:00 +0800 云同步-03 C0 先行测试与冻结输入阻塞
+
+- Skill：cpp-core-feature、calendar-data-contracts。模块：cpp_core 测试/CMake、C++ 云同步问题文档与索引。
+- 目标：按云同步-03 C0–C8 顺序实施，正式开发前先写验证代码与预期；本次无手机，未决跨层问题记录 problem-cpp.md 并使用测试专用冻结输入。
+- 结果：部分完成 / C0 BLOCKED。新增正式冻结 preflight、只读 fixture 输入适配器、5 项输入准备测试、3 个真实 C++ SQLite/lease 基础场景及 writer 初步盘点/后续章节预期；未修改生产源码，C1–C8 未实施，不标记 Layer Complete。
+- 根因：37c3521 的 Appearance display 扩展修改两个受保护 request/response，并新增引用 Schema；当前同步旧基线与来源锁未接纳该兼容修订。官方默认入口实际报 Protected Contract drift。全部锁定来源比对只有这两项不匹配；问题、准确摘要、Source of Truth、影响与最小解除条件已写 docs/issues/problem-cpp.md（CPP-SYNC-001）。不撤销界面修改、不重写旧摘要伪造冻结。
+- 测试先行：所有新增代码均为测试和测试输入读取器。首次测试构建发现 UUIDv4 声明头文件遗漏，初次执行发现 fixture 文件的不同 expected 形状及 Category 持久化需要非空 sort_order；修正测试构造/解析后重建，不修改生产规则或削弱断言。
+- 验证：cmake -S cpp_core -B cpp_core/build-ninja -G Ninja -DEXCELLENT_CALENDAR_BUILD_TESTS=ON 退出 0；cmake --build cpp_core/build-ninja --target excellent_calendar_check 最终退出 0，15/15 目标通过，50.63 秒；其中 fixture 751 条仅做输入/预期闭合核对，不冒充 751 项同步行为通过。excellent_calendar_sync_v1_preflight 与 python contracts/run_sync_v1_validation.py 均退出 1（上述真实冻结冲突），不能由回归绿灯抵消。git diff --check 通过。
+- 未验证：v6/多 runtime/业务+Outbox/apply/bootstrap/import/SQLCipher 生产能力、性能、三 ABI 加密 APK、JNI/Backend/Flutter 消费签收和真实设备行为。本轮没有把 fake 接入生产路径。
+- 修改保护：开工工作区 clean；工作期间出现其他 Kotlin/Flutter 测试和 problem-kotlin.md，未读取、改写或回滚。无提交/推送。
+
+## 2026-09-07 02:05:30 +08:00 — 云同步-06 Flutter 测试先行与前置门禁
+
+- Skill：frontend-flutter-feature。
+- 负责模块：Flutter 云同步 F0 测试输入检查与 F1–F7 验收预期；未修改生产 Dart、Contract、Kotlin 或 C++。
+- 任务目标：按云同步-06 章节顺序完成产品功能，正式实现前先写测试及预期；无手机环节以测试替代，冲突记录到 docs/issues/problem-flutter.md。
+- 本次结果：部分完成/前置门禁未通过。新增 flutter_client/test/sync_v1/contract_preflight_test.dart，覆盖默认 validator、四端输入锁、35 个公开方法和 16 类 fixture 入口。新增云同步-06-Flutter测试先行验收矩阵.md，明确 F1–F7 仍为行为规格、尚未全部转成测试代码，不能据此宣称用户目标完成。
+- 冲突：两份 Appearance JSON Schema 的结构化摘要偏离冻结保护基线；现有会话仍是旧 Dart owner，新的同包 Native owner 尚待交接；既有 AppearancePage 缺失导致全项目 analyze 失败。记录 FLT-SYNC-001 至 FLT-SYNC-004，未重置摘要或隐藏失败。
+- 验证：默认 Contract validator 退出 1；Flutter F0 套件 54 项，53 通过、1 因真实冻结 gate 失败；新增测试格式化已执行；flutter analyze --no-pub test/sync_v1 通过；全项目 flutter analyze --no-pub 退出 1，26 项既有 Appearance 相关问题。全量 Flutter 测试、Debug APK、真实 Kotlin Handler/手机/多设备 smoke 未执行，均 UNVERIFIED。
+- 保护范围：保留同期 C++/Kotlin 任务和 docs/index.md/docs/log.md 的既有修改；索引仅增加本任务入口，日志仅追加。不提交、不升级依赖、不接入生产 Fake。
+
+## 2026-09-07 — 云同步-05 Kotlin 先行测试、隔离组件与 K0 阻塞
+
+- Skill：android-kotlin-native-feature。
+- 负责模块：flutter_client/android 的 bridge/sync 隔离组件、JVM 先行验收和 K0 Contract 输入检查。
+- 任务目标：按云同步-05 章节顺序实施，正式开发前先写相关测试与预期；无手机用测试替代，未决冲突写入 docs/issues/problem-kotlin.md。
+- 实际结果：部分完成 / K0 BLOCKED。先写第一批 26 个组件测试，再实现路由/lease、刷新 single-flight、AEAD binary key、严格 JSON 输入/URL/退避、耐久唤醒端口合并、BootEpoch/retention 时间计算及平台身份。后补正式 fixture/前置 gate，共 29 项；完整计划的所有功能测试尚未写完，K1–K6 没有签收。新增入口 run-sync-v1-unit-tests.ps1、sync-v1-acceptance.md，更新计划检查点与索引。
+- 验证：同版本 Kotlin/JUnit 重新编译运行 29 项，27 通过、2 失败、0 跳过；64 条正式 JCS 输入向量全部按预期拒绝或原样转发；100 并发 refresh 和 10,000 次 wake 合并通过。两项失败为默认 Contract validator 及归一化源摘要检查，均定位两份 Appearance Schema 漂移，没有改摘要、skip 或弱化 gate。最新输出为 flutter_client/build/sync-v1-jvm/8e23deb0d71b4feba327504587b50aeb/junit.txt。
+- 构建：标准 testDebugUnitTest/lintDebug 均因既有 Flutter AppearancePage/类型缺失失败；排除该已知 Flutter 编译节点后 compileDebugKotlin 与最终 lintDebug 成功。旧 HabitMethodHandlerTest 的 AppearancePreferencesStore 替身另有未实现方法。完整 APK、三 ABI、Release/TLS、真实 JNI/SQLCipher/Keystore、connected instrumentation 与多设备为 UNVERIFIED，没有把局部 lint 或 JVM 替身当作整体通过。
+- 边界：没有修改 Contract/C++/Flutter 实现，没有接入生产 v3 通道或新的 RT owner，没有新增依赖/升级版本。跨层替身仅在 src/test；bridge/sync 仍未组装进生产 Application/Worker/JNI。保留同期其他任务的文件和日志修改；日志仅追加。冲突、解除条件及剩余章节记录 KOT-SYNC-001 至 006。
+
+## 2026-09-07 02:19:35 +08:00 — 云同步 C++/Kotlin/Flutter 限制解除条件分析
+
+- 使用 Skill：calendar-data-contracts；负责模块：云同步 Plan 02/03/05/06 的 Contract、实施门禁与跨层交接分析。
+- 任务目标：只读核对 `problem-cpp.md`、`problem-kotlin.md`、`problem-flutter.md`，说明解除当前 C0/K0/F0 限制及完成三个分计划至少需要的工作；不实施功能修复。
+- 结果：确认三层共享的即时硬阻塞是 Appearance display 扩展未纳入 Sync V1 保护基线、完整来源闭包和四端 revision/hash。解除当前生产编码暂停至少需要保留 display 行为、完成新旧 reader/writer 兼容矩阵与受审阅的 Contract 修订、纳入 `display_preferences.schema.json`、重跑消费证据并重新封版；不得只替换摘要。进一步完成 C++、Kotlin、Flutter 分计划分别仍需 C1–C8、K1–K6、F1–F7，且 Kotlin/Flutter 生产集成依赖 C++-03、Backend-04 和同包 Session owner 迁移。
+- 实际验证：当前工作树执行 `python contracts/run_sync_v1_validation.py` 退出 1；`excellent_calendar_sync_v1_preflight` 退出 1；两者均复现 `local_appearance_response.schema.json` 与 `update_local_appearance_request.schema.json` 的受保护来源漂移。仅作门禁诊断，未运行 Flutter/Android 全量构建或设备测试。
+- 修改范围：仅向本日志追加本条；保留当前工作树内其他 C++、Kotlin、Flutter、计划、索引和问题文档修改，未改写或回滚。
+
+## 2026-09-07 16:06 +08:00 — Native v3 必要性与过度设计分析
+
+- 使用 Skill：`self-learning`、`calendar-data-contracts`；负责模块：Native v2/v3 Contract、云同步 workspace 路由与兼容边界。
+- 任务目标：通俗说明 `contracts/native_v3` 的来源、主要解决的问题与必要程度，并批判性判断是否存在过度设计；不修改产品代码或 Contract。
+- 结果：确认 Native v3 同时承载 Anniversary 分类弱引用放宽、显式 workspace/route/runtime 绑定、新同步与账号能力、recurrence counter 扩宽、通知路由和双时区修订。若继续实现多 workspace 云同步，建立 breaking Native revision 有较强必要性；但当前 510 文件、107 个公开方法与 90 个内部调用的整版快照明显扩大了认知和实施成本，完整形态的必要性仅为中低。v2 仍 active，v3 全部 planned，产品代码中未发现 v3 生产实现。
+- 验证状态：只读核对 ADR、领域模型、活动计划、机器冻结状态、v2/v3 注册表、代表性 Schema、生成器、文件数量及生产代码引用；未运行 Contract 全量验证、构建或设备测试。另确认 `docs/status/current.md` 仍写 Contract Pending，而机器 gate 与最新活动计划写 Contract Frozen，属于状态文档滞后。
+- 修改范围：仅追加本日志；保留工作树中全部既有修改，未改写 Contract、实现或测试。
+
+## 2026-09-07 16:13 +08:00 — `.agents/skills` 文档一致性审查
+
+- 使用 Skill：`review-worktree-architecture`；负责模块：`.agents/skills/**`、项目文档导航与当前架构基线。
+- 任务目标：只读检索 Skill 文档中技术细节过度固化、不符合当前开发状态、以及与当前 `docs/index.md`/项目级 `AGENTS.md` 冲突的内容。
+- 结果：判定 `CHANGES REQUIRED`。确认 C++ 与数据 Contract Skill 仍把 JSON 视为当前 writer，与 active SQLite v5 机器 Contract 冲突；Backend Skill 在 `backend/**` 与 `cloud_backend/**` 间自相矛盾并包含无效命令/路径；9 个 Skill 均未引用 `docs/index.md`，多份 Skill 绕过固定导航顺序、提高 README 优先级或把 `docs/log.md` 设为只读；另有不存在的 `DATA_MODEL.md`、`BUG_REPORT_TEMPLATE.md` 引用和大量易过期的领域/实现细节复制。
+- 验证状态：完整读取 9 个 `SKILL.md`，核对根 `AGENTS.md`、当前工作树 `docs/index.md`、`docs/architecture/overview.md`、`docs/status/current.md`、Storage v5 机器 Contract、Backend POM 与实际目录；执行定向路径存在性和引用检索。未运行产品构建或测试，因为本任务只审查文档；未创建独立测试文件。
+- 修改范围：仅追加本日志；未修改 Skill、索引、Contract、实现或测试，保留工作树中原有云同步相关修改。
+
+## 2026-09-07 16:17 +08:00 — `docs/domains` 与 `contracts` 对应关系审计
+
+- 使用 Skill：`calendar-data-contracts`；负责模块：领域模型文档、Native/Backend/Storage/Sync Contract 与事实源优先级。
+- 任务目标：只读判断当前 `contracts/` 是否能与 `docs/domains/` 相互对应，并评估“领域文档优先于传输 Contract”的设计理念是否已被项目规则一致表达。
+- 结果：部分对应，不能认定完整闭合。Event、OccurrenceState、Recurrence、Reminder、Notification、RecoveryBatch、Habit 四模型、Category、SearchIndex、SyncOperation、DatedMessage、UserPreferences 等核心响应字段可按 camelCase↔snake_case 对齐；Anniversary、Calendar/Search 投影和 Backend-only 认证模型属于跨多个 DTO/协议的职责对应，不是文件一一对应。`contracts/` 同时包含平台能力、公共包装、存储、生成的 Native v3 镜像、fixtures、tests 与 spikes，本就不应全部被解释为领域实体。
+- 发现：数据 Contract Skill 已明确 `用户需求 → docs/domains 领域语义 → contracts 传输协议 → 持久化 → 实现`，但根 `AGENTS.md` 的默认冲突顺序仍将 machine-verifiable contracts 排在 current domain invariants 前；`docs/domains/enums.md` 的 NotificationKind 汇总遗漏 `anniversary_catch_up`；旧 `sync_operation.md`/领域 README 仍写 Contract Pending/Decision Required，而机器 gate 已为 CONTRACT FROZEN；`contracts/README.md` 局部仍把 SQLite v4 写成当前 writer，与领域 README 和机器 Storage v5 冲突；Appearance display Contract 没有对应领域文档或完整状态元数据，且未进入 Sync 受审阅基线。
+- 验证：`run_anniversary_r1_validation.py`、`run_calendar_v1_validation.py`、`run_search_v1_validation.py` 退出 0；`run_habit_v1_validation.py` 退出 1（`display_preferences.schema.json` 缺少 integrated 状态）；`run_sync_v1_validation.py` 退出 1（受保护的 `local_appearance_response.schema.json` 漂移）。通过的套件证明 Schema/$ref 与对应模块机器规则闭合，不等于领域文档全量一致。
+- 修改范围：仅追加本日志；未修改 `docs/domains/`、`contracts/`、实现或测试，保留工作区中既有 C++/Kotlin/Flutter/计划/问题文档修改。
