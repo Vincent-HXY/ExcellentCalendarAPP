@@ -2091,3 +2091,74 @@
 - 发现：数据 Contract Skill 已明确 `用户需求 → docs/domains 领域语义 → contracts 传输协议 → 持久化 → 实现`，但根 `AGENTS.md` 的默认冲突顺序仍将 machine-verifiable contracts 排在 current domain invariants 前；`docs/domains/enums.md` 的 NotificationKind 汇总遗漏 `anniversary_catch_up`；旧 `sync_operation.md`/领域 README 仍写 Contract Pending/Decision Required，而机器 gate 已为 CONTRACT FROZEN；`contracts/README.md` 局部仍把 SQLite v4 写成当前 writer，与领域 README 和机器 Storage v5 冲突；Appearance display Contract 没有对应领域文档或完整状态元数据，且未进入 Sync 受审阅基线。
 - 验证：`run_anniversary_r1_validation.py`、`run_calendar_v1_validation.py`、`run_search_v1_validation.py` 退出 0；`run_habit_v1_validation.py` 退出 1（`display_preferences.schema.json` 缺少 integrated 状态）；`run_sync_v1_validation.py` 退出 1（受保护的 `local_appearance_response.schema.json` 漂移）。通过的套件证明 Schema/$ref 与对应模块机器规则闭合，不等于领域文档全量一致。
 - 修改范围：仅追加本日志；未修改 `docs/domains/`、`contracts/`、实现或测试，保留工作区中既有 C++/Kotlin/Flutter/计划/问题文档修改。
+
+## 2026-09-07 18:00:10 +08:00 — `.agents/skills` 瘦身与权威链一致性修正
+
+- 使用 Skill：`skill-creator`；负责模块：九份项目 Skill、Skill UI 元数据，以及与本次问题直接相关的架构/索引/领域/状态/活动计划/Contract 导航文档。
+- 任务目标：将 Skill 收敛为稳定的工作方法、范围、停止条件和验证纪律，删除易过期的具体技术与业务副本，并确保 `AGENTS.md → overview.md → docs/index.md → 当前 Domain/ADR/Active Plan/Machine Contract` 的导航和当前状态表述一致。
+- 结果：九份 `SKILL.md` 从 4349 行缩减到 884 行（减少 79.7%）。统一加入项目导航、Source of Truth、范围闸门、停止条件、风险相称验证和日志纪律；修正 Backend 根目录、SQLite v5/JSON 迁移角色、无效文档路径、README 优先级、设备验收与 `test_node/**` 记录边界，并移除硬编码版本、类名、方法名和重复领域规则。同步校准 `overview.md`、`docs/index.md`、当前状态、Sync 领域入口、04/06 Active Plan 及 `contracts/README.md` 中已确认的 Contract Frozen、下游未完成与 SQLite v5 active writer 表述；未修改 Machine Contract、产品实现或测试。
+- 验证：九份 Skill frontmatter、名称、允许键、描述长度、TODO、必需导航引用和旧问题表达式的独立静态校验通过；当前状态冲突定向扫描通过；`git diff --check` 通过。官方 `quick_validate.py` 因本机两个 Python 环境均缺少其 `PyYAML` 依赖而无法启动，未安装或升级依赖；按其源码规则完成了等价静态校验。文档任务未运行产品构建、Contract 全量验证或设备测试，均不作为本次完成依据。
+- 修改边界：保留工作树中既有 `AGENTS.md`、验证指南及云同步开发改动；本任务只修改上述 Skill 和直接相关文档，并追加本日志。
+
+## 2026-09-07 17:17 +08:00 — Domain-first 数据设计方法评估
+
+- 使用 Skill：`calendar-data-contracts`；负责模块：领域语义、跨层 Contract、持久化模型与开发顺序。
+- 任务目标：客观评估“先完成 `docs/domains`，再定义传输 Contract，最后按 Domain 设计数据库”的合理性、风险、替代方案和可调整流程；不实施生产变更。
+- 结果：认可领域语义优先，但不建议严格瀑布式执行。Domain 应决定业务含义、身份、所有权、不变量和生命周期；Contract 与 Storage 应作为两个不同的下游投影，并在 Domain 冻结前分别做传输可表达性、查询/事务/约束/迁移可实现性的反馈校验。Contract 不应序列化整个 Domain，数据库也不应逐字段镜像 Domain。
+- 建议流程：用例与验收样例 → Domain 草案 → Contract/Storage 双向可行性审查 → ADR 与 Domain baseline → 分别冻结 wire Contract 和 Storage/migration → 按垂直切片实现与验证。已发布协议和历史数据继续构成兼容约束，领域目标变化必须通过版本、迁移和升级顺序落地，不能凭文档优先级静默重解释。
+- 验证状态：只读核对当前 `AGENTS.md`、数据 Contract Skill、架构总览和文档索引；本任务为方法论分析，未运行产品构建、Contract validator 或设备测试。
+- 修改范围：仅追加本日志；未改动领域文档、Contract、Storage、实现或测试，保留工作树全部既有修改。
+
+## 2026-09-07 19:02 +08:00 — Appearance 请求与响应 Schema 讲解
+
+- 使用 Skill：self-learning、calendar-data-contracts；负责模块：Appearance Flutter/Kotlin Contract。
+- 任务目标：解释 local_appearance_response.schema.json 与 update_local_appearance_request.schema.json 的作用、字段约束和调用方向。
+- 结果：核对两个 Schema、display 引用、MethodChannel 映射、Dart DTO、Kotlin Handler 与 SharedPreferences Store；确认分别约束读取/更新成功的数据响应与更新请求，属于 Kotlin 本机配置能力，不经过 C++/JNI 或 Backend。说明 required/enum/additionalProperties/$ref、缺省 display 的双向差异，以及 Sync 冻结保护对这两个文件的依赖。
+- 验证状态：只读代码与定义核对；未运行构建、测试或设备验收，不对当前全量门禁作新通过声明。仅追加日志，保留已有修改。
+
+## 2026-09-07 19:03 +08:00 — `test_note/` 验收记录目录接入
+
+- 使用 Skill：skill-creator；负责模块：项目 Agent 规则、9 个项目专项 Skill、架构概览与文档索引。
+- 任务目标：将实际通过的真机或模拟器验收记录目录统一为 `test_note/`，允许所有项目专项 Skill 在符合 `AGENTS.md` 条件时写入，并补齐导航和架构说明。
+- 任务结果：9 个 `.agents/skills/*/SKILL.md` 均已允许在实际完成设备或模拟器验收后新增 `test_note/**` 记录；`AGENTS.md` 的测试策略和默认附加可写范围统一使用 `test_note/`；`docs/index.md` 增加记录入口和读取规则，`docs/architecture/overview.md` 明确该目录与生产实现分离、只记录实际通过环境。未创建空目录或虚构验收记录。
+- 验证状态：定向检索确认 9/9 个 Skill 均包含 `test_note/**`，目标文件中无残留 `test_node`，`git diff --check` 无空白错误。Skill Creator 的 `quick_validate.py` 因当前可用 Python 环境均缺少其 `PyYAML` 依赖而无法启动；未安装新依赖。此次仅修改规则与文档，未运行产品构建、业务测试或设备验收，因此未创建 `test_note/` 记录。
+
+## 2026-09-07 19:05 +08:00 — 取消字体扩展以解除同步阻塞的可行性说明
+
+- 使用 Skill：self-learning、calendar-data-contracts；负责模块：Appearance Contract 与关联实现。
+- 任务目标：回答取消 display 字体开发是否可解除同步冻结漂移。
+- 结果：可通过完整撤销字体扩展、恢复冻结协议输入来处理该漂移；需同步 Dart/Kotlin reader/writer、页面、字体资产配置与测试，不能仅回退两个 Schema。核对 37c3521 包含字体之外的 Inbox、Profile、Ring 界面改动，不能将整个提交回退等同于只取消字体。既有习惯进度颜色能力应保留。是否解除全部门禁仍需回退后实际验证。
+- 验证状态：只读核对提交范围与当前调用引用；未执行回退、构建或测试，仅追加日志并保留其他任务修改。
+
+## 2026-09-07 19:16 +08:00 — 定向撤销 Appearance 字体扩展并解除冻结阻塞
+
+- 使用 Skill：calendar-data-contracts、debug；Flutter 页面与 Android 验证参考 frontend-flutter-feature、android-kotlin-native-feature。负责模块：Appearance Contract、Dart/Kotlin 配置链路、字体资产配置和直接回归。
+- 用户目标：仅回退字体相关内容，保留收件箱、个人资料、响铃设置等界面改动。
+- 实现：核对 37c3521 后续无目标文件修改，按该提交父版本恢复两份冻结 Appearance Schema、颜色专用 Dart DTO/Controller/Fake、Kotlin Contract/Handler/Store 接口、原七色 AppearancePage 和 pubspec 字体配置。删除独立 display Schema/模型、AppTypography/AppText 及两套字体资源/许可证；未修改 main.dart 或 Inbox/Profile/Ring 文件。恢复现有颜色偏好，不清空 SharedPreferences；原字体键保留但不再读取或写入。
+- 保护：记录并两次复核 14 个其它界面/测试文件的 SHA-256，全部保持一致。既有 AGENTS、Skill、文档和计划修改均保留；未提交、推送或回退整个提交。删除内容可从 Git 提交 37c3521 恢复；两个字体二进制另保存在 C:/Users/vincent/AppData/Local/Temp/excellent-calendar-font-rollback-391cfb8e7b14493195fb6351167290db。
+- 回归依据：先添加颜色专用 Dart 测试，确认回退前有 2 项失败（响应额外输出 display、reader 接受 display）及 1 项通过；回退后 3/3 通过。增加 Kotlin 拒绝 display 且零颜色修改、响应精确颜色字段的测试，以及真实 MethodChannel/页面/持久化设备 smoke，复用既有时区 JNI smoke。
+- Contract：默认 `python contracts/run_sync_v1_validation.py` 与 `cmake --build cpp_core/build-ninja --target excellent_calendar_sync_v1_preflight` 均退出 0，220 protected / 961 schemas。未改写 validator、baseline、revision_lock 或冻结证据，总摘要仍为 888fee7a8767eed7ac95eb3c7a76707e8bd3ed3264695ebdf750cc837d3643a9。同步更新三份 problem 文档的当前结论，保留历史复现；本次仅解除字体导致的冻结/构建阻塞，不声明同步 C1–C8/K1–K6/F1–F7 已完成。
+- 主机验证：80 项定向 Flutter 测试通过；全量 `flutter test --no-pub --reporter expanded` 665/665 通过（含 Sync F0 54 项）；`flutter analyze --no-pub` 通过；标准 Gradle `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` 成功，无 -x 排除节点，JUnit 272 项中 271 通过、1 项既有 NotificationReminderBridgeTest.staleAlarmDoesNotDisplayNotification 保持原配置跳过；本次 Appearance 与 Sync preflight 无跳过。普通 `flutter build apk --debug --no-pub` 成功；Dart 格式化和 git diff --check 通过。没有 C++ 生产代码改动，未重复运行全部 C++ 业务测试。
+- 设备验证：realme RMX3687 / Android 13 / API 33，使用隔离 .device_test 包。设备曾锁屏，用户解锁后 Appearance 七色真实读写、display 请求拒绝且零副作用、页面点击以及 Flutter→Kotlin→JNI→C++ London DST smoke 2/2 通过，退出 0。通过记录见 test_note/2026-09-07-appearance-font-rollback-rmx3687.md。设备集成后重新构建普通 Debug APK，最终产物为 flutter_client/build/app/outputs/flutter-apk/app-debug.apk。
+
+## 2026-09-07 19:50 +08:00 — 配置 Android API 34 / API 36 模拟器
+
+- 使用 Skill：android-kotlin-native-feature；负责模块：Android SDK System Image 与本机 AVD 测试环境。
+- 任务目标：下载并配置 `EC_API36`、`EC_API34` 两台 Android Studio Device Manager 模拟器，将 AVD 可写数据放在 `B:\android\_image`，并验证可以实际启动。
+- 任务结果：安装 Google APIs x86_64 System Image `android-36.1` revision 4 与 `android-34` revision 14；创建 Pixel 7 规格的 `EC_API36`、`EC_API34`，AVD 主体分别位于 `B:\android\_image\avd\EC_API36.avd` 和 `B:\android\_image\avd\EC_API34.avd`。API 36.1 压缩包通过腾讯云国内镜像下载，并按 Google 官方仓库元数据核对文件大小 1,960,532,087 字节和 SHA-1 `15261872D5F0AE4B5728FAEFD0380D51B61A5B23`；API 34 由 Android SDK Manager 安装。
+- 验证状态：两台 AVD 均以禁用快照方式完成首次启动，ADB 均返回 `sys.boot_completed=1` 和正确 AVD 名称；`EC_API36` 返回 Android 16 / API 36，`EC_API34` 返回 Android 14 / API 34；Flutter 均可识别。验证后已正常关闭模拟器以释放资源。仅验证模拟器基础运行，未安装或测试 ExcellentCalendarAPP 业务功能。通过环境记录见 `test_note/2026-09-07-android-emulator-api34-api36.md`。
+
+## 2026-09-07 20:44 +08:00 — 模型进步下的 Skill 定位与迭代方法讨论
+
+- 使用 Skill：`openai-docs`；负责模块：项目 Skill 的职责、约束、验证与维护方法。
+- 任务目标：基于官方资料、研究和工程实践，批判性评估减少通用流程、突出人类偏好与验收的 Skill 设计理念，并寻找相反证据。
+- 结果：建议减少模型已具备的通用能力教学与重复规则，保留任务特有知识、偏好、授权边界及可观察的验收条件；区分 SKILL.md 入口与可按需加载的脚本/参考资源。指出模型进步不等于可靠性保证、检索相关性不等于权威性、自检不等于独立验收，Skill/Agent/RAG 也不是互相替代的演进阶段。建议对规则和整个 Skill 做配对消融，以任务通过率、违规/返工、无效阻塞、成本及人工审查时间衡量，而不以删减行数作为效果证据。
+- 资料：OpenAI [GPT-6 guidance](https://developers.openai.com/api/docs/guides/latest-model)、[Build skills](https://learn.chatgpt.com/docs/build-skills)、[Harness engineering](https://openai.com/index/harness-engineering/)；Anthropic [Harness design](https://www.anthropic.com/engineering/harness-design-long-running-apps)、[Context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)、[Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)；[AGENTS.md 研究 v2](https://arxiv.org/html/2602.11988v2)、[SkillsBench v4](https://arxiv.org/html/2602.12670v4)。区分研究基准与真实项目、厂商工程观察与受控实验，未把这些结果当作 GPT-6 在本项目的已验证表现。
+- 验证状态：读取当前 C++/Review Skill、架构和索引相关内容并实际打开外部原始资料；未执行本项目 Skill 消融实验、产品测试或构建。本轮只进行讨论，未修改 Skill、架构、Contract 或产品代码；仅追加本日志并保留已有工作树修改。
+
+## 2026-09-09 20:07:14 开发门禁与云同步执行阻塞核对
+- Skill：未使用专项 Skill（状态与计划核对，未实施生产修改）。
+- 负责模块：R2-C 云同步 01–06、当前状态与问题记录。
+- 任务目标：区分开发前置门禁、跨层集成阻塞、发布门槛及负责人待定事项。
+- 任务结果：默认 Sync validator 实际退出 0，CONTRACT FROZEN；Appearance 输入漂移及旧构建阻塞已有解除记录。当前状态页和 Kotlin 计划检查点仍有过时阻塞描述；Kotlin 计划旧通道名与 native_v3 机器定义冲突，采用冻结机器定义，接线前须对齐文档。C++ 单 runtime 与 Flutter 旧刷新 owner 仍存在，03–06 生产交付/集成未完成。受控 DNS hostname/更新权限仍为计划记录的公网与 Release 外部条件；已接受设计与内测风险不要求重复裁决。
+- 验证状态：本次统一 Contract 门禁通过（220 protected contracts / 961 schemas / 17 backend endpoints / 16 controllers）；定向核对计划、ADR、问题和生产入口。未重跑 C++、Flutter、Android、Backend 构建/测试或设备验收；历史通过记录不作为本次重新验证。保留用户全部现有修改，仅追加本日志。

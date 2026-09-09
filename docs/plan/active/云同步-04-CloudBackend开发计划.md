@@ -73,6 +73,8 @@
 
 ## 4. B0 前置门禁：Contract 与现状校准
 
+> 状态说明（2026-09-07）：本节表格保留的是 Contract 冻结前识别的实现漂移和停止条件，不代表当前仍处于 `DECISION REQUIRED`。Plan 02 与机器 gate 已为 `CONTRACT FROZEN`；实施时以 Accepted ADR、当前 Machine Contract、revision lock 和最新问题记录解释下列目标，现有 Backend 未完成的生产接入与验证仍按 B0–B7 收口。
+
 ### 4.1 已确认漂移及目标处理
 
 | 议题 | 当前事实 | 目标处理 | 未解除前状态 |
@@ -464,7 +466,7 @@ Scheduler 只执行持久化清理，不参与在线合并，也不扫描 Remind
 1. 清理过期且未消费的 reauth grant；保留最小安全审计，不记录 token 原文。
 2. resolved conflict到`resolved_at+30 days`且相关tombstone也满足安全cursor后，才CAS标记expired并有界删除整条candidate；unresolved conflict无限期保留并pin其tombstone。resolution幂等由独立receipt承担。
 3. 未被pin的tombstone满180天后，先原子推进account retention floor/必要generation，再按小批删除payload/change；落后设备收到`SYNC_CURSOR_EXPIRED`。同步写/保留轻量deleted-entity anchor，使其bootstrap后上传旧编辑仍得到typed delete-vs-edit conflict；anchor只随账号删除。
-4. 普通change feed按Contract冻结窗口清理：先在账号序列锁内原子推进`retention_floor_server_sequence`或必要generation，再小批删除低于floor且未被unconfirmed upload receipt、import publish、active bootstrap或unresolved conflict pin住的groups/items。旧cursor因此稳定得到expired/generation-mismatch；在ADR尚未冻结具体窗口前该清理切片保持blocked，不能默认永久保留或按表大小猜删。
+4. 普通change feed按已冻结的 ADR 与 Contract 保留规则清理：先在账号序列锁内原子推进`retention_floor_server_sequence`或必要generation，再小批删除低于floor且未被unconfirmed upload receipt、import publish、active bootstrap或unresolved conflict pin住的groups/items。旧cursor因此稳定得到expired/generation-mismatch；不得擅自改写冻结窗口、默认永久保留或按表大小猜删，规则变化必须先完成 Contract revision 和重新签收。
 5. active device中所有 `client_sequence > client_confirmed_through` receipt及其引用的effect group无限期保留；客户端只有在terminal receipt与effect已本地apply/权威bootstrap覆盖后，才由后续exchange推进confirmed水位。`≤ confirmed`仍至少保留180天/retention安全窗；revoked device未确认receipt/effect group自撤销至少180天。不能用“响应已发送”或通用24h TTL清理。
 6. import staging满30天时，普通且无published收敛义务的批可abandon；若已有begin reservation而suffix未收齐，必须用统一range-close事务生成proof并推进origin highest。reconciliation批通过同一use case标`superseded(reason=ttl_payload_reclaimed)`，lineage仍required/full-successor。compact range/proof/receipts受origin confirmed-through保护并至少保留180天；source workspace+epoch→lineage、同epoch mapping/provenance与marker保留至账号删除。published payload在同epoch cleanup-through越过前pin；清理不得留下失去manifest/epoch/lineage/range/proof的孤立ordinal。
 7. active device的`sync_device_causal_anchors`不随180天receipt清理；只保留每target/entity/key最新紧凑行。device revoke后按专门保留ADR清，不能影响active设备长期离线后继验证。

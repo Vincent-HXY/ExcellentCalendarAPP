@@ -36,11 +36,7 @@ internal class AppearanceMethodHandler(
                     }
                     return
                 }
-                val display = AppearanceContracts.displayUpdate(call.arguments)
-                execute(call.method, completion) {
-                    if (display == null) store!!.updateHabitProgressColor(token)
-                    else store!!.updateDisplayPreferences(token, display)
-                }
+                execute(call.method, completion) { store!!.updateHabitProgressColor(token) }
             }
             else -> completion.notImplemented()
         }
@@ -55,7 +51,7 @@ internal class AppearanceMethodHandler(
                     contractVersion = 2,
                 )
             } else try {
-                NativeResultContract.success(AppearanceContracts.response(operation(), store.getDisplayPreferences()), contractVersion = 2)
+                NativeResultContract.success(AppearanceContracts.response(operation()), contractVersion = 2)
             } catch (_: IllegalArgumentException) {
                 NativeResultContract.failure(
                     NativeErrorCodes.AppearanceColorTokenInvalid,

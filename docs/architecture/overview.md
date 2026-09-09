@@ -2,7 +2,7 @@
 
 > 定位：这是项目的**当前架构地图**，用于快速判断系统如何分层、代码应放在哪里、哪些边界不能绕过，以及哪些能力已经真实落地。
 >
-> 基线：2026-09-02。项目已进入 R2 开发阶段；实现状态以 `docs/status/current.md`、机器 Contract 和实际代码为准。Contract 或目录存在，不代表对应生产能力已经完成。
+> 基线：2026-09-07。项目已进入 R2 开发阶段；实现状态以 `docs/status/current.md`、机器 Contract 和实际代码为准。Contract 或目录存在，不代表对应生产能力已经完成。
 
 ## 1. Architecture at a Glance
 
@@ -187,6 +187,8 @@ ExcellentCalendarAPP/
 
 仓库顶层的 `android_native/`、`boundary_adapters/`、`local_storage/`、`ai_pipeline/` 目前主要是职责说明或占位骨架。查找真实客户端实现时，应优先进入 `flutter_client/` 和 `cpp_core/`，不要仅凭顶层目录名判断功能已经落地。
 
+设备验收证据与生产实现分离：首次实际完成真机或 `EC_API36` 模拟器验收时，按 `AGENTS.md` 创建 `test_note/` 并记录本次实际通过的环境。该目录不保存未执行版本清单；未出现的设备或系统版本不得推断为已验证。设备矩阵的追加安排由项目负责人根据这些记录另行决定。
+
 ## 4. Contract Boundary Rules
 
 `contracts/` 是所有跨语言调用和未来客户端↔后端边界的协议真相源。任何 Dart↔Kotlin、Kotlin↔C++ 或 Client↔Backend 变更，都必须先有 Contract 声明。
@@ -244,7 +246,7 @@ files/local_storage/calendar_core_storage_json
 - SQLite 成功后，原 JSON 集合保留为诊断/恢复快照，并把根 `storage_version` 标为 4 作为降级 guard；运行时不再从这些文件读取业务数据。旧两类 journal 只在迁移前恢复。
 - Calendar Core runtime 是进程级 owner；Android 通过 `AndroidNativeBridgeFactory` 统一创建和初始化。进程内 JNI 测试必须复用正式 factory，隔离 Store 时使用独立测试进程。
 - 回滚到任何 JSON writer 都不安全；旧运行时必须因 v4 guard 拒绝目录，不能继续写快照形成双写分叉。
-- SQLite v5 实现与主机回归已完成，正式激活和设备/故障矩阵仍待收口；FTS 仍是后续能力，当前搜索继续通过既有 Repository 语义实现。
+- SQLite v5 已进入正式 production composition 并激活；仍未执行的设备/故障矩阵继续作为明确验证债跟踪。FTS 仍是后续能力，当前搜索继续通过既有 Repository 语义实现。
 
 ## 7. Representative Flows
 
@@ -303,5 +305,6 @@ Reminder reconcile / recovery plan
 - [架构决策](./decisions/)：后续 ADR 入口。
 - [产品路线图](../status/roadmap.md)：从本地核心到 SQLite、云同步和扩展能力的演进顺序。
 - [验证指南](../guides/verification.md)：各层测试、构建和真机验收入口。
+- `test_note/`：首次设备或模拟器验收通过后创建，只保存实际通过环境的专项记录。
 
 阅读顺序建议：先读本文定位层级，再按任务进入对应 Domain/Contract；只有需要阶段状态、开放风险或历史原因时，再读 `status/current.md`、`issues/open.md` 和具体任务记录。

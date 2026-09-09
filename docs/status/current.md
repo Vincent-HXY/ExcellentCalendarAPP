@@ -1,6 +1,6 @@
 # ExcellentCalendarAPP 当前状态与 R2 入口基线
 
-> 研判时间：2026-09-04 16:37（Asia/Shanghai）
+> 研判时间：2026-09-07 16:13（Asia/Shanghai）
 >
 > 研判口径：以当前生产代码、机器 Contract、调用链、自动化测试和 `docs/log.md` 中最近一次实际验证记录为依据。计划归档不等于 Contract 已激活，代码存在也不等于生产环境或完整设备矩阵已经通过。
 >
@@ -18,9 +18,9 @@
 - Habit V1 已完成 Contract、C++ Core、SQLite v5、Kotlin/JNI/Android、Flutter/Appearance 和真实 production composition；白盒复核及后续黑盒确认的运行时、UI、分页与默认期限缺陷均已返修，主机门禁、production Habit JNI/SQLite v5 和已执行实机主链路通过。产品负责人于 2026-08-31 接受剩余设备矩阵为非阻断发布验证债后，Habit/Appearance 与 Storage v5 已统一为 `integrated + active`。
 - Calendar V1 已完成此前独立 Review 问题返修和复验；产品负责人明确接受 `OPEN-CAL-001` 的七项正式签名、设备与恢复矩阵为非阻断发布债，`calendar.*` 已统一为 `integrated + active`。Release 签名门禁已 fail-closed，但当前没有生产密钥签名或商店校验过的正式产物。
 - Search V1 Revision 2 已完成 C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 页面和真实生产链路汇整；独立 Review 与 Android 13 真机门禁已完成。产品负责人明确接受 `OPEN-SEA-001` 的搜索框 TalkBack 语义和正式签名链为发布后债，统一 Search Query 与 History 能力已切换为 `integrated + active`；SearchIndex/FTS 仍为 deferred/planned。
-- Local-first 云同步已形成产品与架构基线并建立 active 总计划，当前为 `ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED`；ADR与机器Contract尚未冻结，仍无生产同步Contract、服务端日历业务表或客户端同步引擎。
+- Local-first 云同步的 Plan 02 与机器 gate 已达到 `CONTRACT FROZEN`，03–06 的生产实现、跨层集成和多设备验收仍未完成；当前工作树的下游 preflight 还存在已记录的冻结输入漂移，不能据此宣称已有生产同步 API、服务端日历业务表或客户端同步引擎。
 
-R2 当前工作重心已经从 Habit、Calendar、Search 的功能交付转为“已发布能力维护 + 开放验证债收口 + Local-first 云同步 ADR/Contract”。R1 遗留的 Contract 状态、生产部署、设备矩阵和若干产品闭环仍需并行偿还，不能因阶段切换而从发布门禁中消失。
+R2 当前工作重心已经从 Habit、Calendar、Search 的功能交付转为“已发布能力维护 + 开放验证债收口 + Local-first 云同步分层实现与集成”。R1 遗留的 Contract 状态、生产部署、设备矩阵和若干产品闭环仍需并行偿还，不能因阶段切换而从发布门禁中消失。
 
 ## 二、完成度研判
 
@@ -29,7 +29,7 @@ R2 当前工作重心已经从 Habit、Calendar、Search 的功能交付转为�
 | 工程与跨层基础 | 约 92% | Contract、typed DTO、模块化 Kotlin Handler、JNI/C++ Boundary、SQLite v5、Calendar/Search 查询链与测试入口均已建立 |
 | 本地核心业务 | 约 92% | Event/Recurrence/Reminder/Anniversary/Category/Ring/Habit/Calendar View/Search 已落地并激活；开放验证债持续跟踪 |
 | 用户可见产品功能 | 约 70% | 日程、纪念日、Habit、Calendar View、认证、个人资料、响铃与 Search 均有真实页面；发布后矩阵和通知历史等仍未闭环 |
-| 账号与云端 | 约 30% | 认证/资料后端和客户端代码已实现；Contract 未激活；云同步只完成需求与架构盘点，设备/备份尚未实现 |
+| 账号与云端 | 约 30% | 认证/资料后端和客户端代码已实现但发布 Contract 未激活；Sync V1 Contract 已冻结，生产实现、设备和备份仍未完成 |
 | 整体产品范围 | **约 66%** | 按可交付功能闭环加权，不按文件数量计算；Habit、Calendar 与 Search 按带已接受验证债的发布能力计入，同步等大项仍未闭环 |
 
 该百分比只用于阶段判断。R2 的完成度仍应以对应计划（若已建立）的验收清单、Contract 状态和实际验证结果为准。
@@ -97,7 +97,7 @@ Habit 最近一次主机门禁已经覆盖 Contract、C++、Flutter、Android、
 
 - Backend API 与 Auth Refresh Token MethodChannel 存在“代码已实现、Contract 仍 planned”的明确差异；进入同步开发前必须专项审查并由负责人决定是否激活。
 - `notification.list` 有 MethodChannel 声明和 C++ 能力，但 Kotlin `NotificationMethodHandler` 未注册，Flutter 也没有通知历史页。
-- Habit、Calendar 与 Search 的代码、真实生产接线和机器 capability 已统一为 `integrated + active`；剩余验证债分别见 `OPEN-HAB-001`、`OPEN-CAL-001` 与 `OPEN-SEA-001`。Sync、AI 等仍不得因为只有 Schema 或能力名就计为已实现。
+- Habit、Calendar 与 Search 的代码、真实生产接线和机器 capability 已统一为 `integrated + active`；剩余验证债分别见 `OPEN-HAB-001`、`OPEN-CAL-001` 与 `OPEN-SEA-001`。Sync、AI 等仍不得因为 Contract 已冻结、存在 Schema 或能力名就计为产品实现。
 
 ### 2. 本地产品闭环
 
@@ -130,9 +130,9 @@ Habit 最近一次主机门禁已经覆盖 Contract、C++、Flutter、Android、
 
 ### R2-C：Local-first 云同步
 
-2026-09-03 已完成多轮产品访谈并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`。2026-09-04 已按实现 owner 拆出 Contracts/数据、C++/SQLite v6、CloudBackend、Kotlin/Android、Flutter 五份 active 分计划，并在总计划 §25 记录统一调用链与计划级架构审阅结论。游客/账号 workspace、退出缓存、同步实体闭包、提醒意图与设备投递、个性化白名单、字段级冲突、180 天 tombstone、无 FCM 弱网策略及内测发布边界等产品级方向和计划目标已经记录；它们仍须通过ADR、机器Contract与fixture正式冻结。当前状态为 `ACTIVE PLAN / CONTRACT PENDING / IMPLEMENTATION NOT STARTED`，尚未进入产品代码实现。
+2026-09-03 已建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，并按实现 owner 拆出 Contracts/数据、C++/SQLite、CloudBackend、Kotlin/Android、Flutter 五份 active 分计划。Plan 02、Accepted ADR、Machine Contract、fixture 和统一 gate 已完成冻结，当前状态为 `CONTRACT FROZEN / DOWNSTREAM IMPLEMENTATION NOT COMPLETE`；冻结协议允许 03–06 按同一基线实施，但不代表任何生产层或产品闭环已经完成。
 
-工程上下一步必须先完成计划中的 ADR、账号数据库加密 spike 和 Backend/Auth Contract 状态校准，再冻结与本地业务写同事务的 Outbox、服务端 change sequence/cursor、设备顺序号、实体/字段版本、删除 tombstone、服务端日历业务表及正式迁移。现有 `sync.apply`、`SyncOperation`、`SyncResult` 和 Backend `sync/calendar` 包仍只是概念占位；当前没有生产同步 API、账号分区、本地 Outbox、设备注册或客户端同步引擎。Appearance 的账号同步必须通过显式 Contract revision，游客设置继续保持本机所有权。
+工程上下一步是按冻结基线完成 03–06 的生产实现、消费签收、跨层集成和多设备验收，并先解决当前问题记录中的下游输入漂移。现有隔离组件、测试和 Backend 包不能替代生产同步 API、账号分区、本地 Outbox、设备注册或客户端同步引擎的完整实现；任何冻结基线变化都必须走显式 Contract revision 和重新签收。
 
 ### 并行维护轨
 
@@ -150,6 +150,6 @@ R2 开发期间持续偿还 R1 债务：Auth Contract 状态校准、通知历�
 
 ## 七、最终判断
 
-当前仓库已经具备 R2 所需的本地核心、账号代码基座、已激活的 SQLite v5、通知/响铃和主导航结构。Habit V1、月/周分类日历与独立搜索均已完成分层实现、真实集成、问题返修和发布状态切换，当前进入带明确开放验证债的维护阶段；Local-first 云同步只形成了可审阅的产品/架构基线与分层计划，当前处于 ADR、加密可行性和生产 Contract 门禁，尚未开始分层实现。
+当前仓库已经具备 R2 所需的本地核心、账号代码基座、已激活的 SQLite v5、通知/响铃和主导航结构。Habit V1、月/周分类日历与独立搜索均进入带明确开放验证债的维护阶段；Local-first 云同步已经完成 Plan 02 的 Contract/ADR/可行性冻结，但 03–06 的生产实现与产品闭环仍未完成，当前处于分层实现和集成门禁阶段。
 
 阶段切换的准确表述是：**R1 主体工程完成，项目进入 R2 开发；R1 的 Contract 激活、生产部署和兼容验证债务继续跟踪。**

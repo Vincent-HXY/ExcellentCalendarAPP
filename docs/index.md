@@ -48,6 +48,7 @@
 | 工具、SDK、依赖和构建版本          | `docs/guides/version.md`           | 版本、依赖、工具链或兼容性任务时读取                   |
 | Windows 安装与开发环境配置         | `docs/guides/dev-setup-windows.md` | 安装、环境恢复或环境故障任务时读取                     |
 | 构建、测试、smoke test 和验收步骤  | `docs/guides/verification.md`      | 确定或执行验证范围时读取相关章节                       |
+| 已通过的设备或模拟器验收记录       | `test_note/`（首次实际通过后创建） | 仅核对实际通过的设备、Android/API 版本和主要场景；未记录环境不得视为已验证 |
 | 当前已知问题、缺陷和阻塞           | `docs/issues/open.md`              | Bug、故障排查和风险评估优先读取                        |
 | 云同步-03 C++ 实施阻塞与先行测试   | `docs/issues/problem-cpp.md`；`cpp_core/tests/sync_v1/README.md` | C0 冻结输入漂移、writer 初步盘点、测试代码和后续验收预期；当前不表示 C1–C8 已完成 |
 | 云同步-05 Kotlin 先行测试与阻塞 | `docs/issues/problem-kotlin.md`；`flutter_client/android/sync-v1-acceptance.md`；`flutter_client/android/run-sync-v1-unit-tests.ps1` | K0 默认冻结门禁、隔离组件的先验测试和构建结果；不是 K1–K6 或生产接线完成证据 |
@@ -57,7 +58,7 @@
 | 过去已完成的开发计划               | `docs/plan/completed/`             | 只作为历史证据；现行资料不足时有限查阅                 |
 | 当前项目真实状态                   | `docs/status/current.md`           | 判断能力是否已完成、部分完成、未验证或未开始           |
 | 后续方向和阶段规划                 | `docs/status/roadmap.md`           | 讨论未来工作、优先级和依赖顺序时读取                   |
-| Local-first 云同步现状与设计入口   | 总计划 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；分计划 `云同步-02-Contracts与数据模型开发计划.md`、`云同步-03-CPP与SQLite-v6开发计划.md`、`云同步-04-CloudBackend开发计划.md`、`云同步-05-Kotlin-Android与会话调度开发计划.md`、`云同步-06-Flutter产品界面开发计划.md`（均位于同一 active 目录）；另见 `docs/status/current.md`、`docs/domains/sync_operation.md`、`contracts/sync/`、`contracts/backend_api.yaml` | 先读 01 §1.1 确认统一裁决顺序，再读 02 的目标协议；02 在 `CONTRACT FROZEN` 前只是跨层协调草案，冻结后的机器 Contract 才是 03–06 的直接接口真相源。ADR、加密 spike 与 Contract 冻结前不进入实现，现有同步 Schema 仍是 planned 占位 |
+| Local-first 云同步现状与设计入口   | 总计划 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；分计划 `云同步-02-Contracts与数据模型开发计划.md`、`云同步-03-CPP与SQLite-v6开发计划.md`、`云同步-04-CloudBackend开发计划.md`、`云同步-05-Kotlin-Android与会话调度开发计划.md`、`云同步-06-Flutter产品界面开发计划.md`（均位于同一 active 目录）；另见 `docs/status/current.md`、`docs/domains/sync_operation.md`、`contracts/sync/`、`contracts/backend_api.yaml` | 先读 01 §1.1 的裁决顺序，再以 02 和 `contracts/sync/ct0_gate_status.json` 确认冻结基线；当前为 `CONTRACT FROZEN`，03–06 的生产实现与集成状态仍须分别核对，不能由 Contract 冻结推断完成 |
 | 当前正在进行的评审                 | `docs/reviews/active/`             | Review 任务优先读取与目标变更相关的内容                |
 | 过去相似模块的评审经验             | `docs/reviews/archive/`            | 仅检索相同失败模式、架构问题或历史回归                 |
 | 开发日志                           | `docs/log.md`                      | 每个任务结束时追加；正常开发不全文读取                 |
@@ -66,7 +67,7 @@
 
 目录中的文件应先按文件名和关键词筛选，再读取命中章节。目录存在不代表需要读取其中全部文件。
 
-云同步-02 当前交付见 [Review复核与兼容修订记录](./plan/active/云同步-02-Review复核与兼容修订记录.md)，首次交付历史见 [冻结验收与交付记录](./plan/active/云同步-02-冻结验收与交付记录.md)，历史检查点见 [CT0审计与决策记录](./plan/active/云同步-02-CT0审计与决策记录.md)。七项 Accepted ADR、身份/字段及边界语义由 [Sync v1 模型](./domains/sync_v1_model.md) 导航；唯一状态为 `contracts/sync/ct0_gate_status.json`，四个下游 revision/hash 锁为 `contracts/sync/sync_v1_revision_lock.json`。机器入口为 `contracts/run_sync_v1_validation.py`，默认要求完整 Contract 封版证据；`--stage ct0` 可检查尚未封版的交付。Schema/方法/错误闭包见 `contracts/sync/capability_graph.yaml`、`contracts/native_v3/` 和 `contracts/backend_sync_v1/`，逻辑存储见 planned v6 节点及 `cloud_sync_postgresql_v1.yaml`；fixture manifest 区分四端解析往返和实际 owner 实验，所有新产品能力仍为 planned。
+云同步-02 的当前冻结状态以 `contracts/sync/ct0_gate_status.json` 为准，统一验证入口为 `contracts/run_sync_v1_validation.py`；语义与兼容入口见 [Sync v1 模型](./domains/sync_v1_model.md) 和 [Review复核与兼容修订记录](./plan/active/云同步-02-Review复核与兼容修订记录.md)。首次交付与 CT0 记录只在追查历史时读取。Contract 冻结不代表 03–06 的生产实现、集成或设备验收已经完成。
 
 ## 4. 按任务类型选择资料
 
@@ -131,6 +132,7 @@
 - 直接调用者和被调用者；
 - 数据读写路径；
 - 相关测试、构建目标和验证脚本；
+- 与当前任务直接相关的 `test_note/` 已通过环境记录（目录存在时）；
 - 与修改直接相邻的实现。
 
 ### Level 3：历史证据
@@ -205,7 +207,7 @@ rg -n -i "<keyword>" <file>
 2. 解析具体目标，例如创建、更新、查询、年度重复、倒计时或持久化；
 3. 在 `docs/domains/` 中检索 `anniversary`、`AnniversaryRecurrence`、`纪念日`，只读取对应领域资料及确认存在的直接依赖；
 4. 在 `docs/architecture/decisions/` 中检索年度重复、日期锚点、时区、身份、事务和存储等与本次目标有关的 ADR；
-5. Anniversary Reminder R1 与 occurrence 扩展已经发布；当前事实以 `docs/status/current.md` 和 Contract 为准，已完成的总计划位于 `docs/plan/completed/纪念日-02-Reminder与Occurrence开发计划.md`，子计划位于同目录，白盒评审归档于 `docs/reviews/archive/纪念日-02-Reminder与Occurrence-review计划.md`。只有追查需求、实现取舍、发布风险例外或回归原因时才读取这些历史计划；
+5. 从 `docs/status/current.md` 和当前 Machine Contract 确认发布状态；仅在追查历史取舍、发布例外或回归原因时读取 Anniversary 的 completed plan 和 archived review；
 6. 根据文档中的实体、方法和调用链定位代码与测试；
 7. 只有规则不明、来源冲突或验证异常时，才查 Anniversary 相关的 completed plan、resolved issue 和 archived review。
 
@@ -233,7 +235,7 @@ Habit 当前可以描述为正式能力已激活，但必须同时保留边界�
 
 开发 Habit、HabitCheckIn、Habit recurrence、统计、每日提醒或 Habit 页面时，应先读取 `docs/plan/completed/` 中的 Habit 主计划，再按所属层读取对应分计划和最小相关真相源。开发月/周分类日历和 Event occurrence、Anniversary occurrence、Habit 日状态聚合时，先读取 `docs/plan/completed/` 中的日历主计划、已冻结的日历-02 Contract 计划和所属的日历-03/04/05 分层计划；不得绕过 `contracts/calendar/` 由 Flutter 临时拼装。开发独立搜索、SearchIndex、中文匹配、搜索历史、三类筛选或 FTS 时，先读取 `docs/plan/completed/` 中的搜索主计划，再按层读取搜索-02/03/04/05 分层计划。Search V1 Contract Revision 2 已冻结并完成发布前 cutoff amendment；C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 页面、production composition、主机与 Android 13 设备门禁已闭环。产品负责人于 2026-09-02 接受 `OPEN-SEA-001` 两项为非阻断发布债，统一 Search Query/History 能力为 `integrated + active`；SearchIndex/FTS 继续 deferred/planned。机器入口为 `contracts/search/search_query_invariants.yaml` 与 `contracts/run_search_v1_validation.py`，审查证据见 `docs/log.md`。不得由 Flutter 分别查询三类后临时拼装，也不得把 SearchIndex/FTS 误报为已发布。四象限仍没有 active 实施计划。
 
-Local-first 云同步于 2026-09-03 形成产品与架构基线并建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；Plan 02 已于 2026-09-06 完成，当前状态为 `CONTRACT FROZEN / IMPLEMENTATION NOT STARTED`。Review 修订及本次 HXY 交付范围见 [复核与兼容修订记录](./plan/active/云同步-02-Review复核与兼容修订记录.md)，不表示产品云同步能力已实现。讨论、规划或实施同步时先读取该计划及§1.1裁决顺序，再读取 `docs/status/current.md` 的 R2-C、`docs/domains/sync_operation.md`、`docs/domains/user_sync_state.md`、`contracts/sync/`、`contracts/method_channels.yaml` 中的 `sync.apply`、`contracts/backend_api.yaml`、`cloud_backend/docs/implementation-status.md` 以及 Backend `sync/calendar` 包说明。现有 Schema 和空包仍只证明概念占位和账号基座；必须先完成 ADR、账号数据库加密 spike 与 Contract 冻结，再按 Contract/数据、C++/SQLite、Backend、Kotlin/Android、Flutter 和多设备验收分层推进。
+Local-first 云同步的 Plan 02 与机器 gate 当前为 `CONTRACT FROZEN`，但 03–06 的生产实现、跨层集成和多设备验收仍未完成。讨论或实施同步时，先读取总计划 §1.1 的裁决顺序和 `contracts/sync/ct0_gate_status.json`，再按所属层进入对应分计划、当前问题记录、Machine Contract、实现和测试；不得把冻结 Contract、Schema、隔离测试或账号代码基座误报为产品同步能力已完成。
 
 开始修改代码前，Codex 应能够明确回答：
 
@@ -262,6 +264,7 @@ Local-first 云同步于 2026-09-03 形成产品与架构基线并建立 `docs/p
 - 完成的 Review 从 `reviews/active/` 移入 `reviews/archive/`；
 - `status/current.md` 只记录当前事实，`status/roadmap.md` 只记录未来方向；
 - `docs/log.md` 只追加，不作为默认检索入口；
+- `test_note/` 只保存实际完成并通过的设备或模拟器验收记录，不维护未验证版本清单；
 - 路径缺失、索引过期或同一主题出现不一致入口时，必须报告，不得猜测。
 
 本索引应保持简洁、稳定和可导航，不能演变为需要每次全文阅读的大型项目说明书。

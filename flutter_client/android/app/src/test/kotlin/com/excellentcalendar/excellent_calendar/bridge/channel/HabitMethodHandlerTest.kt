@@ -92,6 +92,25 @@ class HabitMethodHandlerTest {
         assertEquals(NativeErrorCodes.AppearanceStorageFailed, errorCode(failed))
     }
 
+    @Test
+    fun appearanceRejectsRemovedTypographyBeforeSavingAndReturnsOnlyColor() {
+        val store = RecordingAppearanceStore()
+        val handler = AppearanceMethodHandler(store, executor())
+        val rejected = invoke(handler, NativeMethodChannelHandler.MethodAppearanceUpdateLocal, mapOf(
+            "habit_progress_color" to "blue",
+            "display" to mapOf("font_scale_percent" to 120, "font_weight_delta" to 0, "font_family" to "system"),
+        )).map()
+        assertEquals(NativeErrorCodes.ContractValidationFailed, errorCode(rejected))
+        assertEquals("teal", store.value)
+
+        val saved = invoke(handler, NativeMethodChannelHandler.MethodAppearanceUpdateLocal,
+            mapOf("habit_progress_color" to "blue")).map()
+        assertEquals(mapOf("habit_progress_color" to "blue"), data(saved))
+        val loaded = invoke(handler, NativeMethodChannelHandler.MethodAppearanceGetLocal,
+            emptyMap<String, Any?>()).map()
+        assertEquals(data(saved), data(loaded))
+    }
+
     private fun habitHandler(bridge: NativeHabitBridge): HabitMethodHandler {
         val calls = executor()
         return HabitMethodHandler(

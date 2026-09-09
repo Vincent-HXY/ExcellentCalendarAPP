@@ -13,7 +13,7 @@
 
 ## 1. 目标与完成口径
 
-本计划负责把云同步-01 已规定的产品要求，以及云同步-02 待冻结的 Contract，投影为 Flutter 侧可使用、可测试、可恢复且不泄露跨账号数据的用户流程。主要交付包括：
+本计划负责把云同步-01 已规定的产品要求，以及云同步-02 已冻结并由机器 gate 锁定的 Contract，投影为 Flutter 侧可使用、可测试、可恢复且不泄露跨账号数据的用户流程。主要交付包括：
 
 - 游客本机空间的完整入口，以及账号 workspace 的登录、注册、启动恢复和切换流程。
 - Kotlin `SessionCredentialBroker` 单一 Refresh Token owner 下的 Flutter 认证接线。

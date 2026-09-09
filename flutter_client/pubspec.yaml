@@ -62,16 +62,6 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-  assets:
-    - assets/fonts/NotoSansSC-OFL.txt
-    - assets/fonts/NotoSerifSC-OFL.txt
-  fonts:
-    - family: CalendarSansSC
-      fonts:
-        - asset: assets/fonts/NotoSansSC.ttf
-    - family: CalendarSerifSC
-      fonts:
-        - asset: assets/fonts/NotoSerifSC.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

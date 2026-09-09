@@ -19,9 +19,9 @@
 - JSON v1/v2/v3 只保留为冻结迁移输入：v1 Event/Reminder/Notification 进入隔离兼容表，v2 先完成 journal recovery 与 v2→v3 转换，v3 严格记录再事务导入 SQLite。迁移成功后原集合保留，但根版本改为 `storage_version=4`，阻止旧 JSON App 静默分叉数据。
 - Native Contract v2 是一次协调发布的 breaking change，已于 2026-08-08 作为同一发行版本激活。Dart DTO/Gateway、Kotlin validator/bridge、JNI、Android 调度与 SQLite Storage v5 当前保持同一发行链路。
 - Calendar View V1 与统一 Search Query/本地 History 已完成 Contract、C++/SQLite、Kotlin/JNI、Flutter 和真实 production composition，并于 2026-09-02 在登记发布后验证债后切换为 `integrated + active`。Calendar View 和 Search Query 都是只读派生投影，不新增业务事实表；SearchIndex/FTS 仍为 `planned/deferred`。
-- 本地能力优先，AI、云端同步、云端投送暂时不做完整实现。
-- `AIExtraction`、`SyncOperation` 等模型先作为未来能力预留，字段可先保持文档级设计。
-- Local-first 云同步已完成首轮需求与架构盘点，当前为 `SPECIALIST_SPLIT / DECISION_REQUIRED`；现有 `sync.apply`、`SyncOperation`、`SyncResult`、`UserSyncState` 和 Backend `sync/calendar` 包只证明概念占位，不证明生产同步 Contract 或实现已经存在。
+- 本地能力优先；AI、云端同步和云端投送只有在对应机器状态与分层验收通过后，才能计为已实现产品能力。
+- 旧 `AIExtraction`、`SyncOperation` 等概念模型不自动成为生产接口；实施时必须进入 `docs/index.md` 指向的当前领域模型、Accepted ADR、Active Plan 与 Machine Contract。
+- Local-first 云同步的 Sync v1 Accepted ADR、Machine Contract、fixtures 与 revision lock 已冻结，当前为 `CONTRACT FROZEN`；03–06 的生产实现、跨层集成和多设备验收仍未完成。旧 `sync.apply`、本页旧 `SyncOperation`/`UserSyncState` 表格和孤立 Backend 包不能证明产品同步能力已经存在。
 - 用户认证与个人资料由可选 Cloud Backend 作为真相源；本地只缓存可公开展示的当前用户资料，并由 Android 安全保存 Refresh Token。
 - `Reminder` 作为独立实体保存，不嵌入 `Event`、`Habit`、`Anniversary`。
 - 一个 `Event`、`Habit` 或 `Anniversary` 可以关联多条 `Reminder`。业务上可以理解为“提醒时间列表”，存储上是多条提醒记录。

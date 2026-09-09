@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../../gateway_interfaces/appearance_preferences_gateway.dart';
 import '../../native_contract/appearance/appearance_contract.dart';
-import '../../native_contract/appearance/display_preferences.dart';
 
 enum AppearancePhase { loading, ready, updating, error }
 
@@ -11,14 +10,12 @@ class AppearanceController extends ChangeNotifier {
   final AppearancePreferencesGateway _gateway;
   AppearancePhase _phase = AppearancePhase.loading;
   HabitProgressColorToken? _token;
-  DisplayPreferences _display = const DisplayPreferences();
   String? _errorMessage;
   int _generation = 0;
   bool _disposed = false;
 
   AppearancePhase get phase => _phase;
   HabitProgressColorToken? get token => _token;
-  DisplayPreferences get display => _display;
   String? get errorMessage => _errorMessage;
 
   Future<void> initialize() => load();
@@ -32,7 +29,6 @@ class AppearanceController extends ChangeNotifier {
       final response = await _gateway.getLocal();
       if (_disposed || generation != _generation) return;
       _token = response.habitProgressColor;
-      _display = response.display;
       _phase = AppearancePhase.ready;
     } catch (error) {
       if (_disposed || generation != _generation) return;
@@ -42,26 +38,18 @@ class AppearanceController extends ChangeNotifier {
     _notify();
   }
 
-  Future<bool> update(HabitProgressColorToken value) => _update(value, null);
-
-  Future<bool> updateDisplay(DisplayPreferences display) async {
-    if (_token == null || display == _display) return false;
-    return _update(_token!, display);
-  }
-
-  Future<bool> _update(HabitProgressColorToken value, DisplayPreferences? display) async {
-    if (_phase != AppearancePhase.ready || (value == _token && display == null)) return false;
+  Future<bool> update(HabitProgressColorToken value) async {
+    if (_phase == AppearancePhase.updating || value == _token) return false;
     final previous = _token;
     _phase = AppearancePhase.updating;
     _errorMessage = null;
     _notify();
     try {
       final response = await _gateway.updateLocal(
-        UpdateLocalAppearanceRequestDto(habitProgressColor: value, display: display),
+        UpdateLocalAppearanceRequestDto(habitProgressColor: value),
       );
       if (_disposed) return false;
       _token = response.habitProgressColor;
-      _display = response.display;
       _phase = AppearancePhase.ready;
       _notify();
       return true;
@@ -81,7 +69,7 @@ class AppearanceController extends ChangeNotifier {
         'APPEARANCE_COLOR_TOKEN_INVALID' ||
         'CONTRACT_VALIDATION_FAILED' ||
         'CONTRACT_VERSION_UNSUPPORTED' => '外观数据协议不兼容，请更新应用',
-        'APPEARANCE_STORAGE_FAILED' => '外观设置保存失败，请重试',
+        'APPEARANCE_STORAGE_FAILED' => '颜色偏好保存失败，请重试',
         _ => error.message,
       };
     }

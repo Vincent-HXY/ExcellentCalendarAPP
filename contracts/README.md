@@ -164,7 +164,7 @@ Native Contract v2 的公共外壳保持 active；Calendar Core SQLite Storage v
 
 ### Anniversary Reminder R1 Wire 兼容矩阵（Native v2 内部能力 revision）
 
-Native envelope、错误外壳和 `contract_version=2` 不变。R1 是同一 APK 内同步升级的模块能力 revision；Flutter、Kotlin、JNI、C++ 和 SQLite v4 已完成生产接线，当前统一为 `integrated + active`，禁止新旧组件混跑。尚未覆盖的设备矩阵按 2026-08-25 的发布决定作为已接受残余风险继续跟踪。
+Native envelope、错误外壳和 `contract_version=2` 不变。R1 是同一 APK 内同步升级的模块能力 revision；Flutter、Kotlin、JNI、C++ 和当前 SQLite v5 runtime 已完成生产接线，当前统一为 `integrated + active`，禁止新旧组件混跑。尚未覆盖的设备矩阵按 2026-08-25 的发布决定作为已接受残余风险继续跟踪。
 
 | Reader / Writer | 旧 Anniversary v2 shape | Reminder R1 shape | 结论 |
 | --- | --- | --- | --- |
@@ -237,7 +237,7 @@ Search V1 冻结前只有 `event.search` 与未接线的 SearchIndex projection�
 
 迁移后现有 Anniversary 固定 `reminders_enabled=false`、模板集合为空；旧 Reminder/Notification 的新 target-specific 字段按类型补成显式 `null`/空数组，既有 Event、Ring、Recovery、软删除与审计值逐字段保留。具体相邻迁移、journal 和失败恢复规则见 `storage/calendar_core_storage.yaml`。
 
-历史 Native v2 一期的实施依赖顺序为：领域/Contract 定稿 → C++ Domain、Clock、TZDB、workflow、Repository 与 Storage v2 → JNI/Kotlin contract 与调度 → Dart DTO/Gateway → 同一 APK 全链路验证与激活。该阶段于 2026-08-08 完成，并曾由 v2 writer 写入用户正式目录；这些完整 v2 数据现仅是 v4 bootstrap 中冻结 v2→v3 codec 的 migration source。当前 writer 是上述已激活的 SQLite Storage v4，JSON v1/v2/v3 均不再是运行时目标格式。
+历史 Native v2 一期的实施依赖顺序为：领域/Contract 定稿 → C++ Domain、Clock、TZDB、workflow、Repository 与 Storage v2 → JNI/Kotlin contract 与调度 → Dart DTO/Gateway → 同一 APK 全链路验证与激活。该阶段于 2026-08-08 完成，并曾由 v2 writer 写入用户正式目录；这些完整 v2 数据现仅通过冻结的 v2→v3→SQLite v4 相邻迁移链进入当前格式。当前唯一 writer 是已激活的 SQLite Storage v5；v4 仅是冻结的相邻迁移输入，JSON v1/v2/v3 均不再是运行时目标格式。
 
 ### v2 公共与内部能力边界
 
@@ -299,7 +299,7 @@ Compatibility fixture 位于 `fixtures/ring/`。4:59、5:00、5:01 三个 Recove
 - `anniversary_summary_response` 与 `anniversary_detail_response` 只返回非删除、公历实体的成功快照。农历请求使用稳定错误返回，不用 `unavailable` 成功值掩盖未实现能力。
 - Reminder 继续作为独立实体和调度任务真相源。Anniversary create/update 接受强类型 `reminder_plan`，detail 返回提醒设置与调度 capability；`anniversary.set_reminders_enabled` 和 `anniversary.list_occurrences` 已进入生产链。occurrence、template、rolling Reminder 和 catch-up delivery 身份由 `identity.yaml` 冻结并只由 C++ 生成。
 - `anniversary.update` 是带乐观并发控制的完整 replacement：调用方必须原样回传详情快照中的 `expected_updated_at`；C++ 在同一逻辑事务内比较，失配返回 `ANNIVERSARY_UPDATE_CONFLICT` 且零写入。成功更新必须产生不同的 `updated_at` 令牌，即使两个提交落在同一墙上时钟秒内。
-- Anniversary、Recurrence、Template、Reminder、Notification 和 Recovery 的共享写入已接入 Calendar Core SQLite v4 数据库事务；合法 v2 目录先通过连续、无损、可恢复的 v2→v3 migration，再与原生 v3 一样事务导入当前格式，损坏数据必须显式失败。
+- Anniversary、Recurrence、Template、Reminder、Notification 和 Recovery 的共享写入已接入当前 Calendar Core SQLite v5 数据库事务；合法 v2 目录先通过连续、无损、可恢复的 v2→v3→SQLite v4→v5 相邻迁移链进入当前格式，损坏数据必须显式失败。
 - 当前 Flutter Fake 中的“周末”和“春节”仅是视觉 fixture：动态“本周末”不保存为 Anniversary，农历春节不属于公历 V1 系统预设。
 
 ### Category integrated and active contract
@@ -310,9 +310,9 @@ Compatibility fixture 位于 `fixtures/ring/`。4:59、5:00、5:01 三个 Recove
 - Native Contract v2 已发布过不限制 Event `category_id` 格式的 reader，早期 Flutter 也曾提交非 UUID 硬编码值。因此 Event create/update/response/search 继续把该字段当稳定不透明字符串；本轮不收紧、不重解释历史值。新 Category 返回 UUID 后，自然通过同一字段建立引用。
 - `category.list` 使用显式空对象请求与 `CategoryListResponse.items`，不使用分页。返回只包含 `deleted_at = null` 的活动记录，稳定顺序为 `sort_order`（空值最后）、`created_at`、`id`。
 - Flutter 默认及 Release 生产 composition 均直接注入 `NativeCategoryRepository`，通过正式 MethodChannel/Kotlin handler/JNI/C++ Category API 访问 Store；不再存在验收开关或 blocked Repository。公开能力仍严格限定为 `category.list` 与 `category.create`。
-- Category Storage 当前是 Calendar Core SQLite v4 的独立 `categories` 表；`payload_json` 继续由冻结 v3 九字段存储 codec 严格编解码，SQLite 同时维护主键、稳定位置、活动分类排序索引与事务。当前真相源是 `storage/calendar_core_storage.yaml` 的 `calendar_core_v4`；`storage/category_store.schema.json` 仅保留 v2 迁移源形状，不复用 Response Schema 充当存储记录。
+- Category Storage 当前是 Calendar Core SQLite v5 的独立 `categories` 表；`payload_json` 继续由冻结 v3 九字段存储 codec 严格编解码，SQLite 同时维护主键、稳定位置、活动分类排序索引与事务。当前真相源是 `storage/calendar_core_storage.yaml` 的 `calendar_core_v5`；`storage/category_store.schema.json` 仅保留 v2 迁移源形状，不复用 Response Schema 充当存储记录。
 - Store 快照按 `id` 升序序列化；正式本地记录的 `color/sort_order` 必须非空，create 的空顺序在持久化前物化，因此本地业务 list 按 `sort_order -> created_at -> id` 投影。Response 的 null-last comparator 继续兼容非 Store/早期草案 reader。`sort_order` 在 Request、Response 和 Store 中统一限制为 JSON/IEEE-754 可精确往返的 `0..9007199254740991`；未指定顺序时 C++ workflow 在同一 SQLite 事务中按活动记录最大值追加，空集合从 `0` 开始，到达上界则返回 `CATEGORY_SORT_ORDER_EXHAUSTED` 且不写入。
-- Category 当前操作只改一个 SQLite 表，但仍通过完整快照 codec 与领域校验保证语义；写入和 generation 更新使用单个数据库事务。任何未来跨 Store Category workflow 必须复用 Storage v4 数据库事务与既有窄 Repository port。
+- Category 当前操作只改一个 SQLite 表，但仍通过完整快照 codec 与领域校验保证语义；写入和 generation 更新使用单个数据库事务。任何未来跨 Store Category workflow 必须复用当前 Storage 数据库事务与既有窄 Repository port。
 - Category 与 Event/Habit/Anniversary 是弱引用：缺失或软删除分类不使业务对象不可读，也不得级联清空 `category_id`。Event detail 中，无 ID 返回空 Category；非空 ID 命中活动 Category 时必须返回同 ID 对象；悬空/软删除时返回空对象投影但保留 Event 原 ID。既有非 UUID opaque reference 继续兼容；Category 记录自身只接受新 writer 生成的 UUIDv4。
 - `categories.json` 在历史 Storage v2 中是可加性文件；完整 v2 目录作为 migration source 时，缺失文件只可补精确空根，已有文件必须校验且禁止重置。v2→v3 与 v3→SQLite v4 迁移逐字段保留 Category；当前 writer 只写 SQLite，JSON 根仅保留并标记 v4 guard。不存在 Category v1 或 Flutter Fake migration，也不创建默认分类 fixture。
 - 2026-08-14 已关闭发布前的代码级一致性缺口：Event detail 三态聚合、Kotlin Event Category 校验、安全整数与 C++ 单点规范化已同步；Category 原子写增加持久化 prepared/committed 恢复状态，失败后读取与重建会先恢复旧快照，恢复持续失败则拒绝把 replacement 当作权威；Kotlin 已完整登记并透传 `CATEGORY_SORT_ORDER_EXHAUSTED`。
@@ -331,8 +331,8 @@ Contract v2 固定返回 `tzdb_version = 2026c`。C++ 已 vendored Howard Hinnan
 | Dart | 已切换到 v2 DTO/Gateway，拒绝 v1 与 malformed v2 | 保持契约与真实链路测试一致 |
 | Kotlin/JNI | 已切换到 v2 validator/bridge、CAS Alarm acknowledgement 与 prepared attempt 串行仲裁 | Kotlin 只编排系统能力，不复制 C++ 规则 |
 | C++ Domain/Boundary | 已接入 APK，Core 测试保持通过 | 后续变更必须同步真机验证 |
-| JSON Storage（历史） | v1/v2/v3 codec 与 journal recovery 仅作为 SQLite v4 migration source；迁移成功后保留记录并写 v4 guard | 禁止恢复为 live writer |
-| SQLite Storage | v4 schema、Repository adapter、统一事务、完整性校验和 v1/v2/v3 migration 已激活 | FTS 与未来 schema 变更必须独立设计版本化迁移 |
+| JSON Storage（历史） | v1/v2/v3 codec 与 journal recovery 仅作为通往 SQLite v4、再进入当前 v5 的 migration source；迁移成功后保留记录并写 v4 guard | 禁止恢复为 live writer |
+| SQLite Storage | v5 schema、Repository adapter、统一事务和完整性校验已激活；v4 保留为冻结的相邻迁移输入 | FTS 与未来 schema 变更必须独立设计版本化迁移 |
 | Import/Backup/Backend | 不受 Native v2 版本驱动 | 继续使用各自独立版本域 |
 
 ### UserData 预发布纠正
