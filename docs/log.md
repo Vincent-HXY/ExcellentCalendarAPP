@@ -2171,3 +2171,10 @@
 - 保留验证：Flutter lib、Skill、AGENTS.md、Backend 与 C++ 生产 src/include 与 c660662 完全一致；Android 非同步生产代码一致；全部删除的 Contract 均来自 3ccc2b6 之后的同步提交。原 HXY 工作目录保持原分支和现有修改，AI 目录原 .vscode 未提交配置保留。
 - 验证状态：Anniversary/Habit/Calendar/Search 四组 Contract 校验通过（213 Schema）；cmake 配置与 excellent_calendar_check 构建后测试 13/13 通过；flutter analyze 无问题；Flutter 611 项测试通过；Android Debug APK 构建通过；EC_API36 Android 16/API 36 的外观颜色真实通道及 Flutter→Kotlin→JNI→C++ 时区/DST smoke 2/2 通过。git diff --check 通过；设备记录见 test_note/2026-09-14-hxy-ai-baseline-api36.md。
 - 边界：早期未实现同步占位与兼容墓碑、Git 历史和历史日志保留；没有引入 AI 功能，后续需求另定。未验证其他设备环境，未进行远端推送。
+
+### 2026-09-14 17:14:07 +08:00 — 同步 HXY-AI 到 GitHub
+- 使用的 Skill：无（Git 远端同步）。
+- 负责模块：HXY-AI 分支交付。
+- 任务目标：将去除本轮云同步影响的 AI 实践基线上传到 GitHub，供其他设备下载。
+- 任务结果：已将 ae98016 推送至 origin/HXY-AI，并建立上游跟踪；本条日志随随后提交同步。未跟踪的 .vscode/ 本机配置不纳入交付。
+- 验证状态：git push 成功；本次只追加交付日志，不改动代码，沿用 ae98016 已通过的协议、C++、Flutter、Android 构建和 EC_API36 设备验证结果。
