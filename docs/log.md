@@ -2162,3 +2162,12 @@
 - 任务目标：区分开发前置门禁、跨层集成阻塞、发布门槛及负责人待定事项。
 - 任务结果：默认 Sync validator 实际退出 0，CONTRACT FROZEN；Appearance 输入漂移及旧构建阻塞已有解除记录。当前状态页和 Kotlin 计划检查点仍有过时阻塞描述；Kotlin 计划旧通道名与 native_v3 机器定义冲突，采用冻结机器定义，接线前须对齐文档。C++ 单 runtime 与 Flutter 旧刷新 owner 仍存在，03–06 生产交付/集成未完成。受控 DNS hostname/更新权限仍为计划记录的公网与 Release 外部条件；已接受设计与内测风险不要求重复裁决。
 - 验证状态：本次统一 Contract 门禁通过（220 protected contracts / 961 schemas / 17 backend endpoints / 16 controllers）；定向核对计划、ADR、问题和生产入口。未重跑 C++、Flutter、Android、Backend 构建/测试或设备验收；历史通过记录不作为本次重新验证。保留用户全部现有修改，仅追加本日志。
+
+### 2026-09-14 11:25:35 +08:00 — HXY-AI 从 c660662 建立去云同步基线
+- 使用的 Skill：calendar-data-contracts。
+- 负责模块：独立 worktree、Sync v1 Contract/组件/测试、文档导航与分支基线。
+- 任务目标：从 c660662 开始 AI 开发实践，移除本轮云同步影响，保留界面美化、Skill、账号登录/个人资料与后端框架；用户已确认保留范围。
+- 任务结果：HXY-AI 更新至 c660662 后清理 Sync v1 专用协议（含 Native v3、Backend Sync v1、workspace、fixtures、冻结工具）、规划中的 SQLite v6、C++/Kotlin/Flutter 同步组件与测试及云同步 active 计划/ADR；更新当前状态、路线与索引，增加 docs/plan/active/HXY-AI-branch-baseline.md。保留 Native v2 / SQLite v5 及 runtime Storage v5 校准；无用户数据库迁移，无版本升级。
+- 保留验证：Flutter lib、Skill、AGENTS.md、Backend 与 C++ 生产 src/include 与 c660662 完全一致；Android 非同步生产代码一致；全部删除的 Contract 均来自 3ccc2b6 之后的同步提交。原 HXY 工作目录保持原分支和现有修改，AI 目录原 .vscode 未提交配置保留。
+- 验证状态：Anniversary/Habit/Calendar/Search 四组 Contract 校验通过（213 Schema）；cmake 配置与 excellent_calendar_check 构建后测试 13/13 通过；flutter analyze 无问题；Flutter 611 项测试通过；Android Debug APK 构建通过；EC_API36 Android 16/API 36 的外观颜色真实通道及 Flutter→Kotlin→JNI→C++ 时区/DST smoke 2/2 通过。git diff --check 通过；设备记录见 test_note/2026-09-14-hxy-ai-baseline-api36.md。
+- 边界：早期未实现同步占位与兼容墓碑、Git 历史和历史日志保留；没有引入 AI 功能，后续需求另定。未验证其他设备环境，未进行远端推送。

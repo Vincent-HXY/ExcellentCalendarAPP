@@ -18,9 +18,9 @@
 - Habit V1 已完成 Contract、C++ Core、SQLite v5、Kotlin/JNI/Android、Flutter/Appearance 和真实 production composition；白盒复核及后续黑盒确认的运行时、UI、分页与默认期限缺陷均已返修，主机门禁、production Habit JNI/SQLite v5 和已执行实机主链路通过。产品负责人于 2026-08-31 接受剩余设备矩阵为非阻断发布验证债后，Habit/Appearance 与 Storage v5 已统一为 `integrated + active`。
 - Calendar V1 已完成此前独立 Review 问题返修和复验；产品负责人明确接受 `OPEN-CAL-001` 的七项正式签名、设备与恢复矩阵为非阻断发布债，`calendar.*` 已统一为 `integrated + active`。Release 签名门禁已 fail-closed，但当前没有生产密钥签名或商店校验过的正式产物。
 - Search V1 Revision 2 已完成 C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 页面和真实生产链路汇整；独立 Review 与 Android 13 真机门禁已完成。产品负责人明确接受 `OPEN-SEA-001` 的搜索框 TalkBack 语义和正式签名链为发布后债，统一 Search Query 与 History 能力已切换为 `integrated + active`；SearchIndex/FTS 仍为 deferred/planned。
-- Local-first 云同步的 Plan 02 与机器 gate 已达到 `CONTRACT FROZEN`，03–06 的生产实现、跨层集成和多设备验收仍未完成；当前工作树的下游 preflight 还存在已记录的冻结输入漂移，不能据此宣称已有生产同步 API、服务端日历业务表或客户端同步引擎。
+- HXY-AI 已剔除 Sync v1 专用协议、组件、测试和实施计划，保留 SQLite v5 本地能力与原有账号/资料基座。
 
-R2 当前工作重心已经从 Habit、Calendar、Search 的功能交付转为“已发布能力维护 + 开放验证债收口 + Local-first 云同步分层实现与集成”。R1 遗留的 Contract 状态、生产部署、设备矩阵和若干产品闭环仍需并行偿还，不能因阶段切换而从发布门禁中消失。
+R2 当前工作重心已经从 Habit、Calendar、Search 的功能交付转为“已发布能力维护 + 开放验证债收口 + AI 开发与实践”。R1 遗留的 Contract 状态、生产部署、设备矩阵和若干产品闭环仍需并行偿还，不能因阶段切换而从发布门禁中消失。
 
 ## 二、完成度研判
 
@@ -29,7 +29,7 @@ R2 当前工作重心已经从 Habit、Calendar、Search 的功能交付转为�
 | 工程与跨层基础 | 约 92% | Contract、typed DTO、模块化 Kotlin Handler、JNI/C++ Boundary、SQLite v5、Calendar/Search 查询链与测试入口均已建立 |
 | 本地核心业务 | 约 92% | Event/Recurrence/Reminder/Anniversary/Category/Ring/Habit/Calendar View/Search 已落地并激活；开放验证债持续跟踪 |
 | 用户可见产品功能 | 约 70% | 日程、纪念日、Habit、Calendar View、认证、个人资料、响铃与 Search 均有真实页面；发布后矩阵和通知历史等仍未闭环 |
-| 账号与云端 | 约 30% | 认证/资料后端和客户端代码已实现但发布 Contract 未激活；Sync V1 Contract 已冻结，生产实现、设备和备份仍未完成 |
+| 账号与云端 | 约 30% | 认证/资料后端和客户端代码已实现但发布 Contract 未激活；本分支不包含 Sync V1；设备和备份仍未完成 |
 | 整体产品范围 | **约 66%** | 按可交付功能闭环加权，不按文件数量计算；Habit、Calendar 与 Search 按带已接受验证债的发布能力计入，同步等大项仍未闭环 |
 
 该百分比只用于阶段判断。R2 的完成度仍应以对应计划（若已建立）的验收清单、Contract 状态和实际验证结果为准。
@@ -128,11 +128,9 @@ Habit 最近一次主机门禁已经覆盖 Contract、C++、Flutter、Android、
 - 月/周分类日历已按 Contract/数据、C++/SQLite、Kotlin/JNI、Flutter 四轨完成代码实现并接入真实 production composition；独立复审确认此前代码 Finding 已返修，已有主机、三 ABI、Android 13 隔离 JNI/SQLite/基础 UI，以及 Release 签名 fail-closed 与一次性非生产密钥 APK/AAB 验签证据。产品负责人于 2026-09-02 接受 `OPEN-CAL-001` 七项为发布后债，能力已切换为 `integrated + active`，计划和 Review 归档；当前仍没有生产密钥签名或商店校验过的正式包。
 - 独立搜索已完成 Search V1 Contract Revision 2、C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 页面和真实 production composition。History CAS、Unicode、Tab/lifecycle、recurrence 有界展开、completed-series cutoff、seeded 三类查询、撤销时限、本地化、History 强杀恢复、中文 IME、旋转与代表设备性能均已返修或验证；产品负责人接受 `OPEN-SEA-001` 两项发布后债后，`search.*` 已为 `integrated + active`。SearchIndex/FTS 继续 deferred/planned，四象限仍没有 active 实施计划。
 
-### R2-C：Local-first 云同步
+### HXY-AI：AI 开发与实践
 
-2026-09-03 已建立 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`，并按实现 owner 拆出 Contracts/数据、C++/SQLite、CloudBackend、Kotlin/Android、Flutter 五份 active 分计划。Plan 02、Accepted ADR、Machine Contract、fixture 和统一 gate 已完成冻结，当前状态为 `CONTRACT FROZEN / DOWNSTREAM IMPLEMENTATION NOT COMPLETE`；冻结协议允许 03–06 按同一基线实施，但不代表任何生产层或产品闭环已经完成。
-
-工程上下一步是按冻结基线完成 03–06 的生产实现、消费签收、跨层集成和多设备验收，并先解决当前问题记录中的下游输入漂移。现有隔离组件、测试和 Backend 包不能替代生产同步 API、账号分区、本地 Outbox、设备注册或客户端同步引擎的完整实现；任何冻结基线变化都必须走显式 Contract revision 和重新签收。
+以 c660662 为代码基线，保留界面美化、Skill 和既有本地能力；移除 Sync v1、规划中的 SQLite v6 及专用实施计划。现有账号登录、个人资料与后端框架保留。Native v2 / SQLite v5 不升级，AI 功能按后续明确需求实现。
 
 ### 并行维护轨
 
@@ -150,6 +148,6 @@ R2 开发期间持续偿还 R1 债务：Auth Contract 状态校准、通知历�
 
 ## 七、最终判断
 
-当前仓库已经具备 R2 所需的本地核心、账号代码基座、已激活的 SQLite v5、通知/响铃和主导航结构。Habit V1、月/周分类日历与独立搜索均进入带明确开放验证债的维护阶段；Local-first 云同步已经完成 Plan 02 的 Contract/ADR/可行性冻结，但 03–06 的生产实现与产品闭环仍未完成，当前处于分层实现和集成门禁阶段。
+当前仓库已经具备 R2 所需的本地核心、账号代码基座、已激活的 SQLite v5、通知/响铃和主导航结构。Habit V1、月/周分类日历与独立搜索均进入带明确开放验证债的维护阶段；本分支用于 AI 开发与实践，Sync v1 的代码、协议和实施计划已移除。
 
 阶段切换的准确表述是：**R1 主体工程完成，项目进入 R2 开发；R1 的 Contract 激活、生产部署和兼容验证债务继续跟踪。**

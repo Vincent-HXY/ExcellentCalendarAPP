@@ -816,13 +816,3 @@ errors:
     module: reminder
     message: "Reminder is not deliverable"
     retryable: false
-
-planned_revisions:
-- revision: cloud_sync_v1
-  contract_domain: sync_protocol
-  version: 1
-  registry: sync/sync_error_registry.yaml
-  implementation_status: planned
-  release_status: planned
-  compatibility: historical registry and schemas retained; explicit revision selection
-    only; no fallback

@@ -428,38 +428,10 @@ if(EXCELLENT_CALENDAR_BUILD_TESTS)
         target_link_libraries(excellent_calendar_search_performance PRIVATE psapi)
     endif()
 
-    add_executable(
-        excellent_calendar_sync_v1_storage_baseline_tests
-        tests/sync_v1_storage_baseline_tests.cpp
-    )
-    target_link_libraries(
-        excellent_calendar_sync_v1_storage_baseline_tests
-        PRIVATE excellent_calendar_core
-    )
-    add_test(
-        NAME excellent_calendar_sync_v1_storage_baseline_tests
-        COMMAND excellent_calendar_sync_v1_storage_baseline_tests
-    )
-    add_test(
-        NAME excellent_calendar_sync_v1_fixture_preparation_tests
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sync_v1/test_contract_input.py
-    )
-    # Separate exit gate: a pre-existing Contract drift must not be hidden by
-    # passing v5 regressions or test-only fixture preparation.
-    add_custom_target(
-        excellent_calendar_sync_v1_preflight
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sync_v1/run_preflight.py
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-        USES_TERMINAL
-    )
-
     add_custom_target(
         excellent_calendar_check
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
         DEPENDS
-        excellent_calendar_sync_v1_storage_baseline_tests
         excellent_calendar_core_tests
         excellent_calendar_reminder_tests
         excellent_calendar_recurrence_tests

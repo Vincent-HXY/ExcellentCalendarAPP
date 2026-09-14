@@ -1,5 +1,7 @@
 # ExcellentCalendarAPP 文档索引
 
+> HXY-AI 分支基线：c660662。保留 UI、Skill、本地业务与现有账号/资料后端；Sync v1 专用代码、协议和实施计划已剔除。具体范围见 [分支说明](./plan/active/HXY-AI-branch-baseline.md)。
+
 ## 1. 定位
 
 本文件用于指导 Codex 按任务定向找到强相关资料。
@@ -50,15 +52,11 @@
 | 构建、测试、smoke test 和验收步骤  | `docs/guides/verification.md`      | 确定或执行验证范围时读取相关章节                       |
 | 已通过的设备或模拟器验收记录       | `test_note/`（首次实际通过后创建） | 仅核对实际通过的设备、Android/API 版本和主要场景；未记录环境不得视为已验证 |
 | 当前已知问题、缺陷和阻塞           | `docs/issues/open.md`              | Bug、故障排查和风险评估优先读取                        |
-| 云同步-03 C++ 实施阻塞与先行测试   | `docs/issues/problem-cpp.md`；`cpp_core/tests/sync_v1/README.md` | C0 冻结输入漂移、writer 初步盘点、测试代码和后续验收预期；当前不表示 C1–C8 已完成 |
-| 云同步-05 Kotlin 先行测试与阻塞 | `docs/issues/problem-kotlin.md`；`flutter_client/android/sync-v1-acceptance.md`；`flutter_client/android/run-sync-v1-unit-tests.ps1` | K0 默认冻结门禁、隔离组件的先验测试和构建结果；不是 K1–K6 或生产接线完成证据 |
-| 云同步-06 Flutter 测试先行与阻塞 | `docs/plan/active/云同步-06-Flutter测试先行验收矩阵.md`；`docs/issues/problem-flutter.md`；`flutter_client/test/sync_v1/contract_preflight_test.dart` | F0 实际冻结校验、35 个方法和 fixture 入口检查；F1–F7 行为预期尚待转为产品测试，不表示分计划完成 |
 | 已解决的相似问题                   | `docs/issues/resolved/`            | 仅在追查相似根因、修复模式或回归时定向读取             |
 | 当前正在执行的任务与详细计划       | `docs/plan/active/`                | 功能开发、范围确认和进度任务优先定位对应计划           |
 | 过去已完成的开发计划               | `docs/plan/completed/`             | 只作为历史证据；现行资料不足时有限查阅                 |
 | 当前项目真实状态                   | `docs/status/current.md`           | 判断能力是否已完成、部分完成、未验证或未开始           |
 | 后续方向和阶段规划                 | `docs/status/roadmap.md`           | 讨论未来工作、优先级和依赖顺序时读取                   |
-| Local-first 云同步现状与设计入口   | 总计划 `docs/plan/active/云同步-01-Local-first多设备同步开发计划.md`；分计划 `云同步-02-Contracts与数据模型开发计划.md`、`云同步-03-CPP与SQLite-v6开发计划.md`、`云同步-04-CloudBackend开发计划.md`、`云同步-05-Kotlin-Android与会话调度开发计划.md`、`云同步-06-Flutter产品界面开发计划.md`（均位于同一 active 目录）；另见 `docs/status/current.md`、`docs/domains/sync_operation.md`、`contracts/sync/`、`contracts/backend_api.yaml` | 先读 01 §1.1 的裁决顺序，再以 02 和 `contracts/sync/ct0_gate_status.json` 确认冻结基线；当前为 `CONTRACT FROZEN`，03–06 的生产实现与集成状态仍须分别核对，不能由 Contract 冻结推断完成 |
 | 当前正在进行的评审                 | `docs/reviews/active/`             | Review 任务优先读取与目标变更相关的内容                |
 | 过去相似模块的评审经验             | `docs/reviews/archive/`            | 仅检索相同失败模式、架构问题或历史回归                 |
 | 开发日志                           | `docs/log.md`                      | 每个任务结束时追加；正常开发不全文读取                 |
@@ -67,7 +65,6 @@
 
 目录中的文件应先按文件名和关键词筛选，再读取命中章节。目录存在不代表需要读取其中全部文件。
 
-云同步-02 的当前冻结状态以 `contracts/sync/ct0_gate_status.json` 为准，统一验证入口为 `contracts/run_sync_v1_validation.py`；语义与兼容入口见 [Sync v1 模型](./domains/sync_v1_model.md) 和 [Review复核与兼容修订记录](./plan/active/云同步-02-Review复核与兼容修订记录.md)。首次交付与 CT0 记录只在追查历史时读取。Contract 冻结不代表 03–06 的生产实现、集成或设备验收已经完成。
 
 ## 4. 按任务类型选择资料
 
@@ -235,7 +232,6 @@ Habit 当前可以描述为正式能力已激活，但必须同时保留边界�
 
 开发 Habit、HabitCheckIn、Habit recurrence、统计、每日提醒或 Habit 页面时，应先读取 `docs/plan/completed/` 中的 Habit 主计划，再按所属层读取对应分计划和最小相关真相源。开发月/周分类日历和 Event occurrence、Anniversary occurrence、Habit 日状态聚合时，先读取 `docs/plan/completed/` 中的日历主计划、已冻结的日历-02 Contract 计划和所属的日历-03/04/05 分层计划；不得绕过 `contracts/calendar/` 由 Flutter 临时拼装。开发独立搜索、SearchIndex、中文匹配、搜索历史、三类筛选或 FTS 时，先读取 `docs/plan/completed/` 中的搜索主计划，再按层读取搜索-02/03/04/05 分层计划。Search V1 Contract Revision 2 已冻结并完成发布前 cutoff amendment；C++/SQLite、Kotlin/JNI/AtomicFile History、Flutter 页面、production composition、主机与 Android 13 设备门禁已闭环。产品负责人于 2026-09-02 接受 `OPEN-SEA-001` 两项为非阻断发布债，统一 Search Query/History 能力为 `integrated + active`；SearchIndex/FTS 继续 deferred/planned。机器入口为 `contracts/search/search_query_invariants.yaml` 与 `contracts/run_search_v1_validation.py`，审查证据见 `docs/log.md`。不得由 Flutter 分别查询三类后临时拼装，也不得把 SearchIndex/FTS 误报为已发布。四象限仍没有 active 实施计划。
 
-Local-first 云同步的 Plan 02 与机器 gate 当前为 `CONTRACT FROZEN`，但 03–06 的生产实现、跨层集成和多设备验收仍未完成。讨论或实施同步时，先读取总计划 §1.1 的裁决顺序和 `contracts/sync/ct0_gate_status.json`，再按所属层进入对应分计划、当前问题记录、Machine Contract、实现和测试；不得把冻结 Contract、Schema、隔离测试或账号代码基座误报为产品同步能力已完成。
 
 开始修改代码前，Codex 应能够明确回答：
 

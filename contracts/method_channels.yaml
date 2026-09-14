@@ -732,13 +732,3 @@ event_channels:
     ordering: sequence_strictly_increasing_per_runtime_instance
     duplicate_delivery: allowed
     recovery: subscribe_then_ring.get_state
-
-planned_revisions:
-- revision: cloud_sync_v1
-  contract_domain: native
-  version: 3
-  registry: native_v3/method_channels.yaml
-  implementation_status: planned
-  release_status: planned
-  compatibility: historical registry and schemas retained; explicit revision selection
-    only; no fallback

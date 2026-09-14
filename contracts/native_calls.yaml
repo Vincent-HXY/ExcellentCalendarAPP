@@ -603,13 +603,3 @@ calls:
     result:
       envelope: common/native_result.schema.json
       data: search/search_query_response.schema.json
-
-planned_revisions:
-- revision: cloud_sync_v1
-  contract_domain: native
-  version: 3
-  registry: native_v3/native_calls.yaml
-  implementation_status: planned
-  release_status: planned
-  compatibility: historical registry and schemas retained; explicit revision selection
-    only; no fallback
